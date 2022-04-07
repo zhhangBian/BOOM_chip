@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#compile start.S
+#compile start.S.bak
 
 GCC_BIN=../../toolchains/loongarch32_gnu/install/bin/
 CFLAGS="-nostdlib -mlong-calls -static -nostdinc -fno-builtin"

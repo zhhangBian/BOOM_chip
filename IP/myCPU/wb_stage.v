@@ -58,7 +58,22 @@ module wb_stage(
     output [31:0] debug_wb_pc                      ,
     output [ 3:0] debug_wb_rf_wen                  ,
     output [ 4:0] debug_wb_rf_wnum                 ,
-    output [31:0] debug_wb_rf_wdata
+    output [31:0] debug_wb_rf_wdata                ,
+    output [31:0] debug_wb_inst                    ,
+
+    // difftest
+    output        ws_valid_diff                    ,
+    output        ws_cnt_inst_diff                 ,
+    output [63:0] ws_timer_64_diff                 ,
+    output [ 7:0] ws_inst_ld_en_diff               ,
+    output [31:0] ws_ld_paddr_diff                 ,
+    output [31:0] ws_ld_vaddr_diff                 ,
+    output [ 7:0] ws_inst_st_en_diff               ,
+    output [31:0] ws_st_paddr_diff                 ,
+    output [31:0] ws_st_vaddr_diff                 ,
+    output [31:0] ws_st_data_diff                  ,
+    output        ws_csr_rstat_en_diff             ,
+    output [31:0] ws_csr_data_diff
 );
 
 reg         ws_valid;
@@ -95,7 +110,17 @@ wire        ws_br_pre;
 wire        ws_br_pre_error;
 wire        ws_idle;
 
-assign {ws_idle        ,  //217:217
+assign {ws_csr_data    ,  //459:428 for difftest
+        ws_csr_rstat_en,  //427:427 for difftest
+        ws_st_data     ,  //426:395 for difftest
+        ws_inst_st_en  ,  //394:387 for difftest
+        ws_ld_vaddr    ,  //386:355 for difftest
+        ws_ld_paddr    ,  //354:323 for difftest
+        ws_inst_ld_en  ,  //322:315 for difftest
+        ws_cnt_inst    ,  //314:314 for difftest
+        ws_timer_64    ,  //313:250 for difftest
+        ws_inst        ,  //249:218 for difftest
+        ws_idle        ,  //217:217
         ws_br_pre_error,  //216:216
         ws_br_pre      ,  //215:215
         ws_dcache_miss ,  //214:214
@@ -250,5 +275,34 @@ assign debug_wb_pc       = ws_pc;
 assign debug_wb_rf_wen   = {4{rf_we}};
 assign debug_wb_rf_wnum  = ws_dest;
 assign debug_wb_rf_wdata = ws_final_result;
+assign debug_wb_inst     = ws_inst;
+
+// difftest
+wire [31:0] ws_inst         ;
+wire        ws_cnt_inst     ;
+wire [63:0] ws_timer_64     ;
+wire [ 7:0] ws_inst_ld_en   ;
+wire [31:0] ws_ld_paddr     ;
+wire [31:0] ws_ld_vaddr     ;
+wire [ 7:0] ws_inst_st_en   ;
+wire [31:0] ws_st_data      ;
+wire        ws_csr_rstat_en ;
+wire [31:0] ws_csr_data     ;
+
+assign ws_valid_diff        = real_valid        ;
+assign ws_timer_64_diff     = ws_timer_64       ;
+assign ws_cnt_inst_diff     = ws_cnt_inst       ;
+
+assign ws_inst_ld_en_diff   = ws_inst_ld_en     ;
+assign ws_ld_paddr_diff     = ws_ld_paddr       ;
+assign ws_ld_vaddr_diff     = ws_ld_vaddr       ;
+
+assign ws_inst_st_en_diff   = ws_inst_st_en     ;
+assign ws_st_paddr_diff     = ws_ld_paddr_diff  ;
+assign ws_st_vaddr_diff     = ws_ld_vaddr_diff  ;
+assign ws_st_data_diff      = ws_st_data        ;
+
+assign ws_csr_rstat_en_diff = ws_csr_rstat_en   ;
+assign ws_csr_data_diff     = ws_csr_data       ;
 
 endmodule

@@ -2,13 +2,13 @@
 #include "regdef.h"
 #include "cpu_cde.h"
 
-#define lab3  1 
+#define lab3  1
 #define lab6  1 
 #define lab7  1 
 #define lab8  1 
 #define lab9  1 
 #define lab14 1
-#define lab16 1
+#define lab16 0
 
 #define cacop_enable 1
 
@@ -54,6 +54,7 @@ test_finish:
     LI        (t2, UART_ADDR)
     st.w      zero, t2, 0
 1:
+//    .word 0x80000000 // nemu trap
     syscall 0x11
 
 ##avoid cpu run error
@@ -526,64 +527,64 @@ inst_test:
 ###lab3 test
 #if lab3
     bl n1_lu12i_w_test    #lu12i.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n2_add_w_test   #add.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n3_addi_w_test  #add.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n4_sub_w_test   #sub.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n5_slt_test    #slt
-    bl idle_1s
+    #bl idle_1s
     
     bl n6_sltu_test   #sltu
-    bl idle_1s
+    #bl idle_1s
     
     bl n7_and_test    #and
-    bl idle_1s
+    #bl idle_1s
     
     bl n8_or_test     #or
-    bl idle_1s
+    #bl idle_1s
     
     bl n9_xor_test    #xor
-    bl idle_1s
+    #bl idle_1s
     
     bl n10_nor_test   #nor
-    bl idle_1s
+    #bl idle_1s
     
     bl n11_slli_w_test   #slli.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n12_srli_w_test   #srli.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n13_srai_w_test   #srai.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n14_ld_w_test    #ld.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n15_st_w_test    #st.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n16_beq_test   #beq
-    bl idle_1s
+    #bl idle_1s
     
     bl n17_bne_test   #bne
-    bl idle_1s
+    #bl idle_1s
     
     bl n18_bl_test   #bl
-    bl idle_1s
+    #bl idle_1s
     
     bl n19_jirl_test    #jirl
-    bl idle_1s
+    #bl idle_1s
     
     bl n20_b_test    #b
-    bl idle_1s
+    #bl idle_1s
     
 #endif
 ############################
@@ -591,52 +592,52 @@ inst_test:
 ###lab6 test
 #if lab6
     bl n21_pcaddu12i_test   #pcaddu12i
-    bl idle_1s
+    #bl idle_1s
     
     bl n22_slti_test   #slti
-    bl idle_1s
+    #bl idle_1s
     
     bl n23_sltui_test  #sltui
-    bl idle_1s
+    #bl idle_1s
     
     bl n24_andi_test   #andi
-    bl idle_1s
+    #bl idle_1s
     
     bl n25_ori_test    #ori
-    bl idle_1s
+    #bl idle_1s
     
     bl n26_xori_test   #xori
-    bl idle_1s
+    #bl idle_1s
     
     bl n27_sll_w_test   #sll.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n28_sra_w_test   #sra.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n29_srl_w_test   #srl.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n30_div_w_test    #div.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n31_div_wu_test   #div.wu
-    bl idle_1s
+    #bl idle_1s
     
     bl n32_mul_w_test   #mul.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n33_mulh_w_test  #mulh.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n34_mulh_wu_test   #mulh.wu
-    bl idle_1s
+    #bl idle_1s
     
     bl n35_mod_w_test   #mod.w
-    bl idle_1s
+    #bl idle_1s
     
     bl n36_mod_wu_test   #mod.wu
-    bl idle_1s
+    #bl idle_1s
     
 #endif
 ############################
@@ -644,34 +645,34 @@ inst_test:
 ###lab7 test
 #if lab7
     bl n37_blt_test          #blt
-    bl idle_1s
+    #bl idle_1s
     
     bl n38_bge_test       #bge
-    bl idle_1s
+    #bl idle_1s
     
     bl n39_bltu_test       #bltu
-    bl idle_1s
+    #bl idle_1s
     
     bl n40_bgeu_test       #bgeu
-    bl idle_1s
+    #bl idle_1s
     
     bl n41_ld_b_test       #ld.b
-    bl idle_1s
+    #bl idle_1s
     
     bl n42_ld_h_test     #ld.h
-    bl idle_1s
+    #bl idle_1s
     
     bl n43_ld_bu_test     #ld.bu
-    bl idle_1s
+    #bl idle_1s
     
     bl n44_ld_hu_test       #ld.hu
-    bl idle_1s
+    #bl idle_1s
     
     bl n45_st_b_test       #st.b
-    bl idle_1s
+    #bl idle_1s
     
     bl n46_st_h_test    #st.h
-    bl idle_1s
+    #bl idle_1s
     
 #endif
 ############################
@@ -687,7 +688,7 @@ lab8_csr_init:
     csrwr t0, csr_eentry 
 
     bl n47_syscall_ex_test       #syscall
-    bl idle_1s
+    #bl idle_1s
 #endif 
 ############################
 ############################
@@ -708,50 +709,50 @@ lab9_csr_init:
     csrwr t0, csr_eentry
 
     bl n48_brk_ex_test         #brk ex 
-    bl idle_1s 
+    #bl idle_1s 
 
     bl n49_ti_ex_test          #timer int ex 
-    bl idle_1s 
+    #bl idle_1s 
 
 #ifndef ENABLE_TRACE
     bl n50_ine_ex_test         #ine ex 
-    bl idle_1s  
+    #bl idle_1s  
 #endif
 
 #ifndef ENABLE_TRACE
     bl n51_soft_int_ex_test    #soft int ex 
-    bl idle_1s 
+    #bl idle_1s 
 #endif
 
     bl n52_adef_ex_test         #adef ex 
-    bl idle_1s  
+    #bl idle_1s  
 
     bl n53_ale_ld_w_ex_test     #ld.w ale ex 
-    bl idle_1s 
+    #bl idle_1s 
 
     bl n54_ale_ld_h_ex_test     #ld.h ale ex 
-    bl idle_1s 
+    #bl idle_1s 
 
     bl n55_ale_ld_hu_ex_test    #ld.hu ale ex 
-    bl idle_1s 
+    #bl idle_1s 
     
     bl n56_ale_st_h_ex_test      #st.h ale ex 
-    bl idle_1s 
+    #bl idle_1s 
 
     bl n57_ale_st_w_ex_test      #st.w ale ex 
-    bl idle_1s 
+    #bl idle_1s 
 
     bl n58_ti_ex_idle_test      #timer int ex with idle 
-    bl idle_1s  
+    #bl idle_1s  
 
 #ifndef ENABLE_TRACE
     bl n59_rdcnt_test          #rdcntvl.w and rdcntvh.w test 
-    bl idle_1s 
+    #bl idle_1s 
 #endif
 
 #ifndef ENABLE_TRACE
     bl n60_atomic_ins_test      #ll.w and sc.w test 
-    bl idle_1s 
+    #bl idle_1s 
 #endif
 #endif
 
@@ -794,58 +795,58 @@ lab14_csr_init:
     bl tlb_initialization
 
     bl n61_tlbrd_tlbwr_test
-    bl idle_1s
+    #bl idle_1s
 
 #ifndef ENABLE_TRACE
     bl tlb_initialization
     bl n62_tlbfill_test
-    bl idle_1s 
+    #bl idle_1s 
 #endif
 
     bl tlb_initialization
     bl n63_tlbsrch_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n64_invtlb_0x0_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n65_invtlb_0x1_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n66_invtlb_0x2_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n67_invtlb_0x3_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n68_invtlb_0x4_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n69_invtlb_0x5_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n70_invtlb_0x6_test
-    bl idle_1s
+    #bl idle_1s
 
     bl tlb_initialization
     bl n71_invtlb_inv_op_test
-    bl idle_1s
+    #bl idle_1s
  
     bl n72_tlb_4MB
-    bl idle_1s
+    #bl idle_1s
 
     bl n73_tlb_ex_test
-    bl idle_1s 
+    #bl idle_1s 
 
     bl n74_dmw_test
-    bl idle_1s
+    #bl idle_1s
 #endif 
 
 #if lab16 
@@ -875,26 +876,26 @@ cacop_disable:
 
 #ifndef ENABLE_TRACE  
     bl n75_icacop_op0
-    bl idle_1s
+    #bl idle_1s
 
     bl n76_dcacop_op0
-    bl idle_1s
+    #bl idle_1s
 
     bl n77_icacop_op1
-    bl idle_1s
+    #bl idle_1s
 
     bl n78_dcacop_op1
-    bl idle_1s
+    #bl idle_1s
 
     bl n79_icacop_op2
-    bl idle_1s
+    #bl idle_1s
 
     bl n80_dcacop_op2 
-    bl idle_1s
+    #bl idle_1s
 
     bl n81_cache_writeback
 #endif
-    bl idle_1s
+    #bl idle_1s
 #endif 
 
 test_end:

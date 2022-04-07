@@ -59,7 +59,9 @@ module id_stage(
     output [31:0]                       btb_operate_pc    ,
     output [ 4:0]                       btb_operate_index ,
     //to rf: for write back
-    input  [`WS_TO_RF_BUS_WD -1:0]      ws_to_rf_bus  
+    input  [`WS_TO_RF_BUS_WD -1:0]      ws_to_rf_bus      ,
+    // difftest
+    output [31:0]                       rf_to_diff [31:0]
 );
 
 reg         ds_valid   ;
@@ -297,7 +299,13 @@ assign br_bus       = {btb_pre_error_flush,           //32:32
                        btb_pre_error_flush_target     //31:0
                       };
 
-assign ds_to_es_bus = {inst_idle     ,  //235:235
+assign ds_to_es_bus = {inst_csr_rstat_en,  // 349:349 for difftest
+                       inst_st_en       ,  // 348:341 for difftest
+                       inst_ld_en       ,  // 340:333 for difftest
+                       (inst_rdcntvl_w | inst_rdcntvh_w | inst_rdcntid_w), //332:332  for difftest
+                       timer_64      ,  //331:268  for difftest
+                       ds_inst       ,  //267:236  for difftest
+                       inst_idle     ,  //235:235
                        btb_pre_error_flush, //234:234
                        br_to_btb     ,  //233:233
                        ds_icache_miss,  //232:232
@@ -722,7 +730,8 @@ regfile u_regfile(
     .rdata2 (rf_rdata2),
     .we     (rf_we    ),
     .waddr  (rf_waddr ),
-    .wdata  (rf_wdata )
+    .wdata  (rf_wdata ),
+    .rf_o   (rf_to_diff)
     );
 
 assign {es_dep_need_stall,
@@ -926,5 +935,17 @@ assign btb_pre_error_flush_target = br_taken ? br_target : ds_pc + 32'h4;
 assign pipeline_no_empty = es_to_ds_valid || ms_to_ds_valid || ws_to_ds_valid || !write_buffer_empty;
 assign dbar_stall = inst_dbar && pipeline_no_empty;
 assign ibar_stall = inst_ibar && pipeline_no_empty;
+
+// difftest
+wire [7:0]  inst_ld_en;
+wire [7:0]  inst_st_en;
+wire        inst_csr_rstat_en;
+
+// ll ldw ldhu ldh ldbu ldb
+assign inst_ld_en = {2'b0, inst_ll_w, inst_ld_w, inst_ld_hu, inst_ld_h, inst_ld_bu, inst_ld_b};
+// sc(llbit = 1) stw sth stb
+assign inst_st_en = {4'b0, ds_llbit && inst_sc_w, inst_st_w, inst_st_h, inst_st_b};
+assign inst_csr_rstat_en = (inst_csrrd || inst_csrwr || inst_csrxchg) && (csr_idx == 14'd5);
+
 
 endmodule

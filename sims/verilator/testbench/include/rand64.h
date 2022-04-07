@@ -1,10 +1,12 @@
-#pragma once
+#ifndef CHIPLAB_RAND64_H
+#define CHIPLAB_RAND64_H
+
+#include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 #include <cstring>
-#include <string> 
-#include "common.h"
+#include <string>
 
 #define RAND_TLB_TABLE_ENTRY 16384
 #define EBASE_ADDR    0x1c001000
@@ -51,8 +53,7 @@ public:
 };
 */
 
-class BinaryType
-{
+class BinaryType {
 public:
     long long data;
     FILE* f;
@@ -78,8 +79,7 @@ public:
     }
 };
 
-class HexType
-{
+class HexType {
 public:
     long long data;
     FILE* f;
@@ -107,8 +107,7 @@ public:
     }
 };
 
-class StrType
-{
+class StrType {
 public:
     char data[128];
     FILE* f;
@@ -126,12 +125,7 @@ public:
     }
 };
 
-
-
-
-
-class Tlb
-{
+class Tlb {
 public:
     long long vpn_table[RAND_TLB_TABLE_ENTRY];
     long long pfn_table[RAND_TLB_TABLE_ENTRY];
@@ -244,8 +238,7 @@ public:
  
 };
 
-class Rand64
-{
+class Rand64 {
 public:
     char testpath[128];
     char flagpath[128];
@@ -265,41 +258,9 @@ public:
     int         tlb_ex;
     int         last_split;
    
-    Rand64(const char* path, const char* result_flag_path){
-        #ifdef RAND_TEST
-        strcpy(testpath,path);
-        strcpy(flagpath,result_flag_path);
-        result_flag = fopen(flagpath, "a+");
-        printf("Start load random res\n");
-        result_type  = new BinaryType(path,"result_type");
-        vpn          = new BinaryType(path,"page");
-        pfn          = new BinaryType(path,"pfn");
-        pcs          = new HexType   (path,"pc");
-        result_addrs = new HexType   (path,"address");
-        value1       = new HexType   (path,"value1");
-        instructions = new HexType   (path,"instruction");
-        init_regs    = new HexType   (path,"init.reg");
-        comments     = new StrType   (path,"comment");
-        tlb          = new Tlb();
-        cpu_ex       = 1;
-        tlb_ex       = 0;
-        last_split   = 0;
-        for (int i=0;i<32;i++) {
-            gr_ref[i] = 0;
-        }
-        #ifdef RAND32
-        printf("This is Rand32 test\n");
-        #else
-        printf("This is Rand64 test\n");
-        #endif
-        #endif
+    Rand64(const char* path, const char* result_flag_path);
 
-
-    }
-
-    ~Rand64(){
-        fclose(result_flag);
-    }
+    ~Rand64();
 
     int init_all(){
         int error = 0;
@@ -480,6 +441,6 @@ public:
     }
 };
 
-
+#endif  // CHIPLAB_RAND64_H
 
 

@@ -1,4 +1,8 @@
-#include "common.h"
+#ifndef CHIPLAB_TIME_LIMIT_H
+#define CHIPLAB_TIME_LIMIT_H
+
+#include "cpu_tool.h"
+
 class CpuTimeLimit:public CpuTool
 {
 public:
@@ -27,3 +31,5 @@ public:
         return (cont=='N')?status_time_limit:0;
     }
 };
+
+#endif  // CHIPLAB_TIME_LIMIT_H

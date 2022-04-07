@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CHIPLAB_RF_TRACE_H
+#define CHIPLAN_RF_TRACE_H
+
 #include "common.h"
 #include <zlib.h>
 #include <cstring>
@@ -143,3 +145,5 @@ public:
         return res;
     }
 };
+
+#endif  // CHIPLAN_RF_TRACE_H

@@ -1,0 +1,7 @@
+.idea
+cmake-build-debug
+CMakeLists.txt
+toolchains/*
+!toolchains/README
+software/random_res
+sims/verilator/run_func/single.log

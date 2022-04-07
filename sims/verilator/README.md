@@ -7,7 +7,7 @@
 	- `CPU_2CMT` : 双发射    
 
 ## Quick Start
-一下为一个简单的仿真例程，方便用户快速上手仿真过程。在进行仿真之前，用户需安装好verilator、gtkware以及qemu。
+以下为一个简单的仿真例程，方便用户快速上手仿真过程。在进行仿真之前，用户需安装好verilator、gtkware以及qemu。
 ```
 cd $CHIPLAB_HOME/sims/verilator/run_func #进入func仿真目录中
 ./configure.sh --run func/func_lab3      #以仿真运行的程序func_lab3为例子生成对应的Makefile

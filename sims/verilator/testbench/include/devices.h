@@ -1,5 +1,8 @@
-#pragma once
-#include "common.h"
+#ifndef CHIPLAB_DEVICES_H
+#define CHIPLAB_DEVICES_H
+
+#include "cpu_tool.h"
+
 class CpuDevices:public CpuTool
 {
 public:
@@ -35,3 +38,5 @@ public:
         return 0;
     }
 };
+
+#endif  // CHIPLAB_DEVICES_H

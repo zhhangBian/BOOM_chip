@@ -64,7 +64,34 @@ module csr(
     input  [31:0]                   tlbidx_in    ,
     input  [ 9:0]                   asid_in      ,
     //general use
-    output [ 1:0]                   plv_out 
+    output [ 1:0]                   plv_out      ,
+    // csr regs for diff
+    output [31:0]                   csr_crmd_diff,
+    output [31:0]                   csr_prmd_diff,
+    output [31:0]                   csr_ectl_diff,
+    output [31:0]                   csr_estat_diff,
+    output [31:0]                   csr_era_diff,
+    output [31:0]                   csr_badv_diff,
+    output [31:0]                   csr_eentry_diff,
+    output [31:0]                   csr_tlbidx_diff,
+    output [31:0]                   csr_tlbehi_diff,
+    output [31:0]                   csr_tlbelo0_diff,
+    output [31:0]                   csr_tlbelo1_diff,
+    output [31:0]                   csr_asid_diff,
+    output [31:0]                   csr_save0_diff,
+    output [31:0]                   csr_save1_diff,
+    output [31:0]                   csr_save2_diff,
+    output [31:0]                   csr_save3_diff,
+    output [31:0]                   csr_tid_diff,
+    output [31:0]                   csr_tcfg_diff,
+    output [31:0]                   csr_tval_diff,
+    output [31:0]                   csr_ticlr_diff,
+    output [31:0]                   csr_llbctl_diff,
+    output [31:0]                   csr_tlbrentry_diff,
+    output [31:0]                   csr_dmw0_diff,
+    output [31:0]                   csr_dmw1_diff,
+    output [31:0]                   csr_pgdl_diff,
+    output [31:0]                   csr_pgdh_diff
 );
 
 localparam CRMD  = 14'h0;
@@ -683,5 +710,33 @@ always @(posedge clk) begin
         csr_disable_cache <= wr_data;
     end
 end
+
+// difftest
+assign csr_crmd_diff        = csr_crmd;
+assign csr_prmd_diff        = csr_prmd;
+assign csr_ectl_diff        = csr_ectl;
+assign csr_estat_diff       = csr_estat;
+assign csr_era_diff         = csr_era;
+assign csr_badv_diff        = csr_badv;
+assign csr_eentry_diff      = csr_eentry;
+assign csr_tlbidx_diff      = csr_tlbidx;
+assign csr_tlbehi_diff      = csr_tlbehi;
+assign csr_tlbelo0_diff     = csr_tlbelo0;
+assign csr_tlbelo1_diff     = csr_tlbelo1;
+assign csr_asid_diff        = csr_asid;
+assign csr_save0_diff       = csr_save0;
+assign csr_save1_diff       = csr_save1;
+assign csr_save2_diff       = csr_save2;
+assign csr_save3_diff       = csr_save3;
+assign csr_tid_diff         = csr_tid;
+assign csr_tcfg_diff        = csr_tcfg;
+assign csr_tval_diff        = csr_tval;
+assign csr_ticlr_diff       = csr_ticlr;
+assign csr_llbctl_diff      = {csr_llbctl[31:1], llbit};
+assign csr_tlbrentry_diff   = csr_tlbrentry;
+assign csr_dmw0_diff        = csr_dmw0;
+assign csr_dmw1_diff        = csr_dmw1;
+assign csr_pgdl_diff        = csr_pgdl;
+assign csr_pgdh_diff        = csr_pgdh;
 
 endmodule

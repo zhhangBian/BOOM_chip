@@ -1,4 +1,8 @@
+#ifndef CHIPLAB_GOLDEN_TRACE_H
+#define CHIPLAB_GOLDEN_TRACE_H
+
 #include "common.h"
+#include "cpu_tool.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -505,3 +509,5 @@ class GoldenTrace:CpuTool
 
     }
 };
+
+#endif  // CHIPLAB_GOLDEN_TRACE_H

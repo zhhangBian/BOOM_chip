@@ -46,7 +46,11 @@ module mem_stage(
     input  [31:0]     csr_dmw1       ,
     input  [ 1:0]     csr_plv        ,
     input  [ 1:0]     csr_datm       ,
-    input             disable_cache  ,     
+    input             disable_cache  ,
+    // from addr trans for difftest
+    input  [ 7:0]     data_index_diff   ,
+    input  [19:0]     data_tag_diff     ,
+    input  [ 3:0]     data_offset_diff  ,
     //to addr trans 
     output            data_addr_trans_en,   
     output            dmw0_en           ,
@@ -102,7 +106,16 @@ wire        ms_cacop;
 wire        ms_idle;
 wire [31:0] ms_error_va;
 
-assign {ms_error_va      ,  //214:183
+assign {ms_csr_data      ,  //424:393  for difftest
+        ms_csr_rstat_en  ,  //392:392  for difftest
+        ms_st_data       ,  //391:360  for difftest
+        ms_inst_st_en    ,  //359:352  for difftest
+        ms_ld_vaddr      ,  //351:320  for difftest
+        ms_inst_ld_en    ,  //319:312  for difftest
+        ms_cnt_inst      ,  //311:311  for difftest
+        ms_timer_64      ,  //310:247  for difftest
+        ms_inst          ,  //246:215  for difftest
+        ms_error_va      ,  //214:183
         ms_idle          ,  //182:182
         ms_cacop         ,  //181:181
         ms_preld_inst    ,  //180:180
@@ -167,7 +180,17 @@ wire        excp_ppi ;
 wire        da_mode  ;
 wire        pg_mode  ;
 
-assign ms_to_ws_bus = {ms_idle        ,  //217:217
+assign ms_to_ws_bus = {ms_csr_data    ,  //459:428 for difftest
+                       ms_csr_rstat_en,  //427:427 for difftest
+                       ms_st_data     ,  //426:395 for difftest
+                       ms_inst_st_en  ,  //394:387 for difftest
+                       ms_ld_vaddr    ,  //386:355 for difftest
+                       ms_ld_paddr    ,  //354:323 for difftest
+                       ms_inst_ld_en  ,  //322:315 for difftest
+                       ms_cnt_inst    ,  //314:314 for difftest
+                       ms_timer_64    ,  //313:250 for difftest
+                       ms_inst        ,  //249:218 for difftest
+                       ms_idle        ,  //217:217
                        ms_br_pre_error,  //216:216
                        ms_br_pre      ,  //215:215
                        dcache_miss    ,  //214:214
@@ -309,5 +332,26 @@ assign ms_wr_tlbehi = ms_csr_we && (ms_csr_idx == 14'h11) && ms_valid; //stall e
 assign cacop_op = ms_dest;
 assign cacop_op_mode    = cacop_op[4:3];
 assign cacop_op_mode_di = ms_cacop && ((cacop_op_mode == 2'b0) || (cacop_op_mode == 2'b1));
+
+// difftest
+wire        ms_cnt_inst     ;
+wire [63:0] ms_timer_64     ;
+wire [31:0] ms_inst         ;
+wire [ 7:0] ms_inst_ld_en   ;
+wire [31:0] ms_ld_paddr     ;
+wire [31:0] ms_ld_vaddr     ;
+wire [ 7:0] ms_inst_st_en   ;
+wire [31:0] ms_st_data      ;
+wire        ms_csr_rstat_en ;
+wire [31:0] ms_csr_data     ;
+
+reg  [ 7:0] tmp_data_index  ;
+reg  [ 3:0] tmp_data_offset ;
+always @(posedge clk) begin
+    tmp_data_index  <= data_index_diff;
+    tmp_data_offset <= data_offset_diff;
+end
+
+assign ms_ld_paddr = {data_tag_diff, tmp_data_index, tmp_data_offset};
 
 endmodule

@@ -135,7 +135,13 @@ wire        preld_inst       ;
 wire        es_br_pre_error  ;
 wire        es_br_pre        ;
 
-assign {es_idle          ,  //235:235
+assign {es_csr_rstat_en  ,  //349:349  for difftest
+        es_inst_st_en    ,  //348:341  for difftest
+        es_inst_ld_en    ,  //340:333  for difftst
+        es_cnt_inst      ,  //332:332  for difftest
+        es_timer_64      ,  //331:268  for difftest
+        es_inst          ,  //236:267  for difftest
+        es_idle          ,  //235:235
         es_br_pre_error  ,  //234:234
         es_br_pre        ,  //233:233
         es_icache_miss   ,  //232:232
@@ -181,7 +187,16 @@ wire [31:0] es_alu_src2   ;
 wire [31:0] es_alu_result ;
 wire [31:0] exe_result    ;
 
-assign es_to_ms_bus = {error_va         ,  //214:183
+assign es_to_ms_bus = {es_csr_data      ,  //424:393  for difftest
+                       es_csr_rstat_en  ,  //392:392  for difftest
+                       data_wdata       ,  //391:360  for difftest
+                       es_inst_st_en    ,  //359:352  for difftest
+                       data_addr        ,  //351:320  for difftest
+                       es_inst_ld_en    ,  //319:312  for difftest
+                       es_cnt_inst      ,  //311:311  for difftest
+                       es_timer_64      ,  //310:247  for difftest
+                       es_inst          ,  //246:215  for difftest
+                       error_va         ,  //214:183
                        es_idle          ,  //182:182
                        es_cacop         ,  //181:181
                        preld_inst       ,  //180:180
@@ -346,5 +361,13 @@ assign preld_inst = es_preld && ((preld_hint == 5'd0) || (preld_hint == 5'd8))/*
 assign preld_en   = preld_inst && dcache_req_or_inst_en; 
 
 assign data_fetch = (data_valid || es_cacop|| preld_en) && data_addr_ok || es_tlbsrch;
+
+// difftest
+wire [31:0] es_inst         ;
+wire [63:0] es_timer_64     ;
+wire        es_cnt_inst     ;
+wire [ 7:0] es_inst_ld_en   ;
+wire [ 7:0] es_inst_st_en   ;
+wire        es_csr_rstat_en ;
 
 endmodule
