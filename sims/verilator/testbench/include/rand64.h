@@ -43,8 +43,6 @@
 #define RAND_BUS_GR_RTL         0
 #endif
 
-
-
 /*
 class Rand64
 {
@@ -259,186 +257,24 @@ public:
     int         last_split;
    
     Rand64(const char* path, const char* result_flag_path);
-
     ~Rand64();
 
-    int init_all(){
-        int error = 0;
-        error |= init_gr_ref();
-        error |= tlb_init();
-        return error;
-    }
-    int init_gr_ref(){
-        for (int i=0;i<32;i++) {
-            if(!init_regs->read_next()) {
-                gr_ref[i] = init_regs->data;
-            }
-            else {
-                return 1;
-            }
-        }
-        return 0;
-    }
-    int tlb_init(){
-        int error=0;
-        int i,j;
-        printf("TLB INIT\n");
-        printf("Max entry = %d\n",RAND_TLB_TABLE_ENTRY);
-        srand(CACHE_SEED);
-        for (i=0;i<RAND_TLB_TABLE_ENTRY;i++) {
-            error |= vpn->read_next();
-            error |= pfn->read_next();
-            tlb->vpn_table[i] = vpn->data;
-            tlb->pfn_table[i] = pfn->data;
-            tlb->cca[i] = rand()%2;
-        }
-        
-        if (error) {
-            printf("TLB INIT Might be wrong\n"); 
-            fprintf(result_flag, "RUN FAIL!\n");
-            return 1;
-        } else {
-            error |= vpn->read_next();
-        }
-        tlb->tlb_size = vpn->data;
-        printf("READ TLB ENTRY FINISHED\n");
-        printf("READING TLB PAGE SIZE\n");
-        switch(tlb->tlb_size) {
-            case (12):
-                tlb->tlb_mask = 0x0fffffffff000LL;
-                break;
-            case (13):
-                tlb->tlb_mask = 0x0ffffffffe000LL;
-                break;
-            case (14):
-                tlb->tlb_mask = 0x0ffffffffc000LL;
-                break;
-            case (15):
-                tlb->tlb_mask = 0x0ffffffff8000LL;
-                break;
-            case (16):
-                tlb->tlb_mask = 0x0ffffffff0000LL;
-                break;
-            default:
-                tlb->tlb_mask = 0;
-                printf("NO THIS SIZE\n");
-                printf("i = %d,SIZE = %x\n",i,tlb->tlb_size);
-                
-        }
-                printf("i = %d,SIZE = %x\n",i,tlb->tlb_size);
+    int init_all();
+    int init_gr_ref();
+    int tlb_init();
 
-        int count;
-        for (i=0;i<RAND_TLB_TABLE_ENTRY;i++) { 
-            count = 0;
-            for (j=i+1;j<RAND_TLB_TABLE_ENTRY;j++) {
-                if ((tlb->pfn_table[j]&(tlb->tlb_mask>>12)) == (tlb->pfn_table[i]&(tlb->tlb_mask>>12))) {
-                    tlb->cca[j] = tlb->cca[i];
-                    count += 1;
-                    if (count == 3)
-                        break;
-                }
-            }
-        }
-        return 0;
+    int read_next_compare();
 
-    }
-    int read_next_compare(){
-        int error=0;
-        error |= result_type->read_next();
-        error |= pcs->read_next();
-        error |= result_addrs->read_next();
-        error |= value1->read_next();
-        error |= instructions->read_next();
-        error |= comments->read_next();
-        return error;
-    }
-    int print(){
-        printf("%llx\n",result_type->data);
-        printf("%llx\n",vpn->data);
-        printf("%llx\n",pfn->data);
-        printf("%llx\n",pcs->data);
-        printf("%llx\n",result_addrs->data);
-        printf("%llx\n",value1->data);
-        printf("%llx\n",instructions->data);
-        return 0;
-    }
-    void print_ref() {
-        for (int i=0;i<32;i++) {
-            #ifdef RAND32
-            printf("gr_ref[%02d] = %08llx\n",i,gr_ref[i]&0xffffffffll);
-            #else
-            printf("gr_ref[%02d] = %016llx\n",i,gr_ref[i]);
-            #endif
-        }
-        //fr
-        return;
-    }
-    void print_ref(long long *gr_rtl) {
-         for (int i=0;i<32;i++) {
-            #ifdef RAND32
-            printf("gr_ref[%02d] = %08llx%010sgr_rtl[%02d] = %08llx\n",i,gr_ref[i]&0xffffffffll,"",i,gr_rtl[i]&0xffffffffll);
-            #else
-            printf("gr_ref[%02d] = %016llx%010sgr_rtl[%02d] = %016llx\n",i,gr_ref[i],"",i,gr_rtl[i]);
-            #endif
-        }
+    int print();
+    void print_ref();
+    void print_ref(long long *gr_rtl);
 
-    }
-    int compare(long long *gr_rtl) {
-        for (int i=1;i<32;i++) {
-            #ifdef RAND32
-            if ((int)gr_rtl[i]!=(int)gr_ref[i]) {
-            #else
-            if (gr_rtl[i]!=gr_ref[i]) {
-            #endif
-            printf("gr_ref[%02d] = %016llx%010sgr_rtl[%02d] = %016llx\n",i,gr_ref[i],"",i,gr_rtl[i]);
-            printf("Compare Fail\n");
-            fprintf(result_flag, "RUN FAIL!\n");
-                return 1;
-            }
-        }
-        return 0;
-    }
-    int update(int commit_num, vluint64_t main_time) {
-        if (!commit_num) {
-            return 0;
-        }
-        printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
-        //printf("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        for (int i=0;i<commit_num;i++) {
-            if (read_next_compare()) {
-                printf("Update Fail\n");
-                fprintf(result_flag, "RUN FAIL!\n");
-                return 1;
-            }
-            update_once(main_time);
-        }
-        printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-        printf("\n\n");
-        return 0;
-    }
-    void update_once(vluint64_t main_time) {
-    if (result_addrs->data == 0)
-        return;
-    printf("[%dns] Updating ref reg, instruction is %08x, pc is 0x%016x, result_type is 0x%0x\n",main_time,instructions->data,pcs->data,result_type->data);
-    printf("Inst assembly is %s\n",comments->data);
-        switch(result_type->data) {
-            case 0:
-                break;
-            case 1:
-                gr_ref[result_addrs->data] = value1->data;
-                printf("Update Value = %016llx\n\n",value1->data);
-                break;
-            case 2:
-                break;
-            default:
-                printf("other case\n");
-                printf("result type=%llx\n\n",result_type->data);
-                break;
-        }
-    }
-    int tlb_refill_once(long long bad_vaddr) {
-        return tlb->find_entry(bad_vaddr);
-    }
+    int compare(long long *gr_rtl);
+
+    int update(int commit_num, vluint64_t main_time);
+    void update_once(vluint64_t main_time);
+
+    int tlb_refill_once(long long bad_vaddr);
 };
 
 #endif  // CHIPLAB_RAND64_H

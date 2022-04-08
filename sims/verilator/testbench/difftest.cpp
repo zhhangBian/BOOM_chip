@@ -43,18 +43,6 @@ int Difftest::step(vluint64_t &main_time) {
     }
     estat_last = dut.csr.estat;
 
-    /* check simulation end */
-    if (dut.commit[0].pc == END_PC) {
-        sim_over = true;
-    }
-    if (sim_over) {
-        printf("==============================================================\n");
-        printf("test end!!\n");
-        fprintf(trace_out, "==============================================================\n");
-        fprintf(trace_out, "test end!!\n");
-        return STATE_END;
-    }
-
     dut.csr.this_pc = dut.commit[0].pc;
 
     // TODO: check timeout
@@ -102,6 +90,18 @@ int Difftest::step(vluint64_t &main_time) {
         return STATE_RUNNING;
     }
 #endif
+
+    /* check simulation end */
+    if (dut.commit[0].pc == END_PC || dut.excp.exceptionPC == END_PC) {
+        sim_over = true;
+    }
+    if (sim_over) {
+        printf("==============================================================\n");
+        printf("test end!!\n");
+        fprintf(trace_out, "==============================================================\n");
+        fprintf(trace_out, "test end!!\n");
+        return STATE_END;
+    }
 
     /* Set 0 when not compare */
     if (!progress) {

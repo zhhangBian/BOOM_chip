@@ -59,7 +59,8 @@ CpuTool::CpuTool(Vtop* top) {
     this->top = top;
 }
 
-// TODO: add --diff
+extern char* difftest_ref_so;
+
 void CpuTool::parse_args(int argc, char **argv, char **env) {
 #define PARSE_FLAG(val,label) if(strcmp(argv[i],label)==0){val = i+1>=argc || strcmp(argv[i+1],"0")!=0;}
 #define PARSE_STR(val,label) if(i+1<argc && strcmp(argv[i],label)==0){val = argv[i+1];}
@@ -79,6 +80,7 @@ void CpuTool::parse_args(int argc, char **argv, char **env) {
         PARSE_INT(save_bp_time,"--save-bp-time")
         PARSE_STR(ram_save_bp_file,"--ram-save-bp-file")
         PARSE_STR(top_save_bp_file,"--top-save-bp-file")
+        PARSE_STR(difftest_ref_so, "--diff")
         PARSE_INT(restore_bp_time,"--restore-bp-time")
         PARSE_STR(ram_restore_bp_file,"--ram-restore-bp-file")
         PARSE_STR(top_restore_bp_file,"--top-restore-bp-file")

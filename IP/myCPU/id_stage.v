@@ -815,8 +815,6 @@ assign inst_valid = inst_add_w     |
                     inst_and       |
                     inst_or        |
                     inst_xor       |
-                    inst_orn       |
-                    inst_andn      |
                     inst_sll_w     |
                     inst_srl_w     |
                     inst_sra_w     |
@@ -859,7 +857,6 @@ assign inst_valid = inst_add_w     |
                     inst_bltu      |
                     inst_bgeu      |
                     inst_lu12i_w   |
-                    inst_pcaddi    |
                     inst_pcaddu12i |
                     inst_csrrd     |
                     inst_csrwr     |

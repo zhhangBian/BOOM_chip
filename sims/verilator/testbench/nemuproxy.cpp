@@ -20,9 +20,9 @@ NemuProxy::NemuProxy(int coreid) {
 
     if (difftest_ref_so == NULL) {
         printf("--diff is not given, "
-                "try to use $(CHIPLAB_HOME)/nemu/la32-nemu-interpreter-so by "
+                "try to use $(CHIPLAB_HOME)/toolchains/nemu/la32-nemu-interpreter-so by "
                 "default\n");
-        const char* so = "/nemu/la32-nemu-interpreter-so";
+        const char* so = "/toolchains/nemu/la32-nemu-interpreter-so";
         char* buf = (char*)malloc(strlen(chiplab_home) + strlen(so) + 1);
         strcpy(buf, chiplab_home);
         strcat(buf, so);
