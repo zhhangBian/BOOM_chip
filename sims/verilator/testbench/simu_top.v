@@ -128,11 +128,13 @@ module simu_top
 
 );
 
+`ifndef RAND_TEST
 assign num_data          = soc.confreg.num_data         ; 
 assign open_trace        = soc.confreg.open_trace       ; 
 assign num_monitor       = soc.confreg.num_monitor      ;
 assign confreg_uart_data = soc.confreg.confreg_uart_data;
 assign write_uart_valid  = soc.confreg.write_uart_valid ;
+`endif
 
 soc_top #(
     .BUS_WIDTH(BUS_WIDTH),

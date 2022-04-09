@@ -8,7 +8,8 @@ else ifeq ($(VERILATOR_HOME2), $(wildcard $(VERILATOR_HOME2)))
 VERILATOR_HOME=$(VERILATOR_HOME2)
 else
 #add your verilator include path to this var, then delete this line.
-$(error Please install verilator or config the installed path here.)
+VERILATOR_HOME=/home/yangzhaoxin/opt/verilator/share/verilator
+#$(error Please install verilator or config the installed path here.)
 endif
 
 
@@ -39,6 +40,7 @@ TESTBENCH_INCLUDE = ../testbench/include
 SIMU_TOP = ../testbench
 SIMU_INCLUDE =$(TOP_SOC_SRC)
 SIMU_TOP_NAME=simu_top
+DIFFTEST=difftest
 INCLUDE += -I${TESTBENCH_INCLUDE}
 INCLUDE += -I${OBJ_DIR}
 
@@ -153,7 +155,7 @@ verilator:${VERILATOR_SRC}
 	@echo "COMPILING verilog..."
 	@echo "============================================================================================================="
 	@echo "============================================================================================================="
-	verilator ${VERILATOR_INCLUDE} ${WAVEOPTION} --threads ${THREAD} -O3 -Wno-fatal -DSIMU -DSIMULATION=1 -Wall --trace -cc ${VFLAGS} ${SIMU_TOP_NAME}.v ${VERILATOR_SRC}
+	verilator ${VERILATOR_INCLUDE} ${WAVEOPTION} --threads ${THREAD} -O3 -Wno-fatal -DSIMU -DSIMULATION=1 -Wall --trace -cc ${VFLAGS} ${SIMU_TOP_NAME}.v ${DIFFTEST}.v ${VERILATOR_SRC}
 	+make -C ${OBJ_DIR} -f "V${SIMU_TOP_NAME}.mk"
 
 testbench:${TESTBENCH_SRC}/*.cpp 
@@ -162,7 +164,7 @@ testbench:${TESTBENCH_SRC}/*.cpp
 	@echo "COMPILING testbench..."
 	@echo "============================================================================================================="
 	@echo "============================================================================================================="
-	g++ -O3 -pthread -DVL_THREADED -DCACHE_SEED=${CACHE_SEED} -DRESET_VAL=${RESET_VAL} -DRESET_SEED=${RESET_SEED} ${CFLAGS} ${INCLUDE} ${VERILATED_SRC} ${VCD_SRC} ${FST_SRC} ${SAVE_SRC} $? ${ALL_LIB} -o output -lz
+	g++ -O3 -pthread -DVL_THREADED -DCACHE_SEED=${CACHE_SEED} -DRESET_VAL=${RESET_VAL} -DRESET_SEED=${RESET_SEED} ${CFLAGS} ${INCLUDE} ${VERILATED_SRC} ${VCD_SRC} ${FST_SRC} ${SAVE_SRC} $? ${ALL_LIB} -o output -lz -ldl
 
 simulation_run_random:
 	@echo "============================================================================================================="

@@ -26,9 +26,59 @@ static uint32_t estat_flag;
 static uint32_t estat_mask;
 static uint32_t estat_new;
 
+static int dead_clock = 0;
+
 int Difftest::step(vluint64_t &main_time) {
     progress = false;
+    idx_commit = 0;
 
+    while (idx_commit < DIFFTEST_COMMIT_WIDTH && dut.commit[idx_commit].valid && dut.commit[idx_commit].wen) {
+        dead_clock = 0;
+    #ifndef TRACE_COMP
+        dut.commit[idx_commit].valid = 0;
+    #endif
+    #ifdef OUTPUT_PC_INFO
+        #ifdef PRINT_CLK_TIME
+        printf("[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        #else
+        printf("mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        #endif
+    #endif
+
+    #ifdef SIMU_TRACE
+        #ifdef PRINT_CLK_TIME
+        fprintf(trace_out, "[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        #else
+        fprintf(trace_out, "mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        #endif
+		fflush(NULL);
+    #endif
+        idx_commit++;
+    }
+
+#ifdef DEAD_CLOCK_EN
+    dead_clock++;
+    if (dead_clock > DEAD_CLOCK_SIZE) {
+        printf("CPU status no change for %d clocks, simulation must exist error!!!!\n", DEAD_CLOCK_SIZE);
+        return STATE_TIME_LIMIT;
+    }
+#endif
+
+#ifndef TRACE_COMP
+    if (dut.commit[0].pc == END_PC || dut.excp.exceptionPC == END_PC) {
+        sim_over = true;
+    }
+    if (sim_over) {
+        printf("==============================================================\n");
+        printf("test end!!\n");
+        fprintf(trace_out, "==============================================================\n");
+        fprintf(trace_out, "test end!!\n");
+        return STATE_END;
+    }
+    return STATE_RUNNING;
+#else
+    /* the index of instructions per commit */
+    idx_commit = 0;
     /* pull down estat bit-by-bit */
     estat_flag = 0x00000004;
     estat_new = dut.csr.estat & 0x00001ffc;
@@ -45,12 +95,8 @@ int Difftest::step(vluint64_t &main_time) {
 
     dut.csr.this_pc = dut.commit[0].pc;
 
-    // TODO: check timeout
-
     /* exec the first instruction */
     do_first_instr_commit();
-    /* the index of instructions per commit */
-    idx_commit = 0;
 
     /* sync estat to nemu */
     if (dut.commit[0].valid && dut.commit[0].csr_rstat) {
@@ -143,24 +189,9 @@ int Difftest::step(vluint64_t &main_time) {
         }
         return STATE_ABORT;
     } else {
-    #ifdef OUTPUT_PC_INFO
-        #ifdef PRINT_CLK_TIME
-        printf("[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[0].pc, dut.commit[0].wdest, dut.commit[0].wdata);
-        #else
-        printf("mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[0].pc, dut.commit[0].wdest, dut.commit[0].wdata);
-        #endif
-    #endif
-
-    #ifdef SIMU_TRACE
-        #ifdef PRINT_CLK_TIME
-        fprintf(trace_out, "[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[0].pc, dut.commit[0].wdest, dut.commit[0].wdata);
-        #else
-        fprintf(trace_out, "mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[0].pc, dut.commit[0].wdest, dut.commit[0].wdata);
-        #endif
-		fflush(NULL);
-    #endif
         return STATE_RUNNING;
     }
+#endif
 }
 
 extern void *get_img_start();

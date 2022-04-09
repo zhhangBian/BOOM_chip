@@ -31,6 +31,9 @@ public:
 
     /* difftest execute one step to compare dut and ref */
     int process();
+
+    /* used by slice */
+    void close();
 };
 
 #endif //CHIPLAB_EMU_H

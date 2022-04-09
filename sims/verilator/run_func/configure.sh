@@ -86,6 +86,8 @@ TAIL_WAVEFORM=n
 WAVEFORM_TAIL_SIZE=10000
 TAIL_SIMU_TRACE=n
 TRACE_TAIL_SIZE=100000
+DEAD_CLOCK_EN=y
+DEAD_CLOCK_SIZE=10000
 CONFIG_LOG="./configure.sh"
 
 #get opt 
@@ -223,70 +225,83 @@ do
     case $software in 
         func/func_lab3) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_lab4) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_lab6) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_lab7) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_lab8) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_lab9) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_lab14) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_lab16) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         func/func_advance) 
             RUN_FUNC=y
+            DEAD_CLOCK_EN=y
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
         my_program)
             RUN_FUNC=n 
             RUN_C=y
+            DEAD_CLOCK_EN=n
             mkdir -p ./obj/
             mkdir -p ./log/
             ;;
         dhrystone) 
             RUN_FUNC=n
             RUN_C=y
+            DEAD_CLOCK_EN=n
             mkdir -p ./obj/
             mkdir -p ./log/
             ;;
         coremark) 
             RUN_FUNC=n
             RUN_C=y
+            DEAD_CLOCK_EN=n
             mkdir -p ./obj/
             mkdir -p ./log/
             ;;
         linux) 
             RUN_FUNC=n
             RUN_C=y
+            DEAD_CLOCK_EN=n
             mkdir -p ./obj/
             mkdir -p ./log/
             ;;
@@ -330,6 +345,8 @@ echo "TAIL_WAVEFORM=$TAIL_WAVEFORM" >> $CONFIG_SOFT
 echo "WAVEFORM_TAIL_SIZE=$WAVEFORM_TAIL_SIZE" >> $CONFIG_SOFT
 echo "TAIL_SIMU_TRACE=$TAIL_SIMU_TRACE" >> $CONFIG_SOFT
 echo "TRACE_TAIL_SIZE=$TRACE_TAIL_SIZE" >> $CONFIG_SOFT
+echo "DEAD_CLOCK_EN=$DEAD_CLOCK_EN" >> $CONFIG_SOFT
+echo "DEAD_CLOCK_SIZE=$DEAD_CLOCK_SIZE" >> $CONFIG_SOFT
 
 if [ ! -f "$CONFIG_LOG_FILE" ]; then 
     touch $CONFIG_LOG_FILE 

@@ -5,10 +5,14 @@
 FILE* trace_out;
 FILE* uart_out;
 
+/* ram to nemu */
 static uint8_t *ram;
 static long img_size = 0;
-
 void *get_img_start() { return &ram[0]; }
+
+static unsigned long trace_next_start = 0;
+static int prefix_end;
+static unsigned long tail_base = 0;
 
 static vluint64_t hex2int64(const char *buf, const int width) {
     vluint64_t data = 0, h = 0;
@@ -23,7 +27,25 @@ Emulator::Emulator(Vtop *top, const char *path, const char *file_out, const char
     dm = new DiffManage();
 
     sprintf(simu_out_path, "./%s%s", path, file_out);
-    printf("simu out path == %s\n", simu_out_path);
+
+#ifdef SLICE_SIMU_TRACE
+    int simu_out_path_index = 0;
+    char suffix[80];
+    int suffix_index = 0;
+    while (simu_out_path[simu_out_path_index] != '\0') {
+        simu_out_path_index++;
+    }
+    prefix_end = simu_out_path_index;
+    sprintf(suffix, ".%ldns-%ldns", trace_next_start, trace_next_start+TRACE_SLICE_SIZE);
+    while (suffix[suffix_index] != '\0') {
+        simu_out_path[simu_out_path_index] = suffix[suffix_index];
+        simu_out_path_index++;
+        suffix_index++;
+    }
+    simu_out_path[simu_out_path_index] = '\0';
+    trace_next_start += TRACE_SLICE_SIZE;
+#endif
+
     if ((trace_out = fopen(simu_out_path, "w")) == NULL) {
         printf("simu_trace.txt open error!!!!\n");
         fprintf(trace_out, "simu_trace.txt open error!!!!\n");
@@ -126,7 +148,80 @@ void Emulator::init_ram(const char *path, const char *file_in) {
     }
 }
 
+void Emulator::close() {
+    if (trace_out) {
+        fclose(trace_out);
+    }
+    int i;
+    //clear simu_out_path string
+    for (i = prefix_end; i < 128; i++) {
+        simu_out_path[i] = 0;
+    }
+}
+
 int Emulator::process() {
+#ifdef TAIL_SIMU_TRACE
+    if (tail_base + TRACE_TAIL_SIZE <= *main_time) {
+        tail_base += TRACE_TAIL_SIZE;
+        if (trace_out) {
+            fclose(trace_out);
+        }
+
+        if ((trace_out = fopen(simu_out_path, "w")) == NULL) {
+            printf("simu_trace.txt open error!!!!\n");
+            fprintf(trace_out, "simu_trace.txt open error!!!!\n");
+            exit(0);
+        }
+    }
+#endif
+
+#ifdef SLICE_SIMU_TRACE
+    #ifdef TAIL_SIMU_TRACE
+				if (tail_base + TRACE_TAIL_SIZE <= *main_time)
+					tail_base += TRACE_TAIL_SIZE;
+
+				if (trace_next_start <= *main_time) {
+					close();
+					char suffix[80];
+					int simu_out_path_index = prefix_end;
+					int suffix_index = 0;
+					sprintf(suffix, ".%ldns-%ldns", trace_next_start - tail_base, trace_next_start + TRACE_SLICE_SIZE - tail_base);
+					while(suffix[suffix_index] != '\0') {
+						simu_out_path[simu_out_path_index] = suffix[suffix_index];
+						simu_out_path_index++;
+						suffix_index++;
+					}
+					simu_out_path[simu_out_path_index] = '\0';
+					trace_next_start += TRACE_SLICE_SIZE;
+    		    	if ((trace_out = fopen(simu_out_path, "w")) == NULL) {
+    		    	    printf("simu_trace.txt open error!!!!\n");
+    		    	    fprintf(trace_out, "simu_trace.txt open error!!!!\n");
+    		    	    exit(0);
+    		    	}
+				}
+			#else
+				if (trace_next_start <= *main_time) {
+					close();
+					char suffix[80];
+					int simu_out_path_index = prefix_end;
+					int suffix_index = 0;
+					sprintf(suffix, ".%ldns-%ldns", trace_next_start, trace_next_start+TRACE_SLICE_SIZE);
+					while(suffix[suffix_index] != '\0') {
+						simu_out_path[simu_out_path_index] = suffix[suffix_index];
+						simu_out_path_index++;
+						suffix_index++;
+					}
+					simu_out_path[simu_out_path_index] = '\0';
+					trace_next_start += TRACE_SLICE_SIZE;
+    		    	if ((trace_out = fopen(simu_out_path, "w")) == NULL) {
+    		    	    printf("simu_trace.txt open error!!!!\n");
+    		    	    fprintf(trace_out, "simu_trace.txt open error!!!!\n");
+    		    	    exit(0);
+    		    	}
+				}
+			#endif
+#endif
+
     trapCode = dm->difftest_state();
     if (trapCode != STATE_RUNNING) {
         printf("trapeCode = %d\n", trapCode);
