@@ -1,7 +1,5 @@
 #include "rand64.h"
 
-#define RAND_TEST
-
 Rand64::Rand64(const char *path, const char *result_flag_path) {
 #ifdef RAND_TEST
     strcpy(testpath, path);
