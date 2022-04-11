@@ -100,12 +100,12 @@ generate
         begin: match
             always @(posedge clk) begin
                 if (s0_fetch) begin
-                    s0_odd_page_buffer[i] <= (tlb_ps[i] == 6'd12) ? s0_odd_page : s0_vppn[9];
-                    match0[i] <= (tlb_e[i] == 1'b1) && ((tlb_ps[i] == 6'd12) ? s0_vppn == tlb_vppn[i] : s0_vppn[18:10] == tlb_vppn[i][18:10]) && ((s0_asid == tlb_asid[i]) || tlb_g[i]);
+                    s0_odd_page_buffer[i] <= (tlb_ps[i] == 6'd12) ? s0_odd_page : s0_vppn[8];
+                    match0[i] <= (tlb_e[i] == 1'b1) && ((tlb_ps[i] == 6'd12) ? s0_vppn == tlb_vppn[i] : s0_vppn[18: 9] == tlb_vppn[i][18: 9]) && ((s0_asid == tlb_asid[i]) || tlb_g[i]);
                 end
                 if (s1_fetch) begin
-                    s1_odd_page_buffer[i] <= (tlb_ps[i] == 6'd12) ? s1_odd_page : s1_vppn[9];
-                    match1[i] <= (tlb_e[i] == 1'b1) && ((tlb_ps[i] == 6'd12) ? s1_vppn == tlb_vppn[i] : s1_vppn[18:10] == tlb_vppn[i][18:10]) && ((s1_asid == tlb_asid[i]) || tlb_g[i]);
+                    s1_odd_page_buffer[i] <= (tlb_ps[i] == 6'd12) ? s1_odd_page : s1_vppn[8];
+                    match1[i] <= (tlb_e[i] == 1'b1) && ((tlb_ps[i] == 6'd12) ? s1_vppn == tlb_vppn[i] : s1_vppn[18: 9] == tlb_vppn[i][18: 9]) && ((s1_asid == tlb_asid[i]) || tlb_g[i]);
                 end
             end
         end

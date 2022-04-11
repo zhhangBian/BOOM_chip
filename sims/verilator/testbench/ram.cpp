@@ -564,8 +564,8 @@ int CpuRam::read_random_vlog(){
             int wen = 1<<(addr%4);
             data_temp = data_temp&0xff;
             data_temp = data_temp<<24 | data_temp<<16 | data_temp<<8 | data_temp;
-            printf("Wrint one byte %llx %x\n",addr,data_temp&0xff);
-            printf("%llx %x %x\n",addr%~0x3,wen,data_temp);
+            //printf("Wrint one byte %llx %x\n",addr,data_temp&0xff);
+            //printf("%llx %x %x\n",addr%~0x3,wen,data_temp);
             write4B(addr&~0x3,wen,data_temp);
         } else {
             for (int i=0;i<byte_num;i++) {

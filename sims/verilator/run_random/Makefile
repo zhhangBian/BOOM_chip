@@ -141,6 +141,14 @@ ifeq ('${SLICE_WAVEFORM}', 'y')
 CFLAGS += -DSLICE_WAVEFORM
 endif  
 
+ifeq ('${TRACE_COMP}', 'y')
+CFLAGS += -DTRACE_COMP
+endif 
+
+ifeq ('${SIMU_TRACE}', 'y')
+CFLAGS += -DSIMU_TRACE 
+endif 
+
 VERILATOR_INCLUDE += -y ${SIMU_TOP} 
 ALL_VERILATOR_SRC += ${SIMU_TOP}/*.v
 

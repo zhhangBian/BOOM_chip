@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #define RAND_TLB_TABLE_ENTRY 16384
 #define EBASE_ADDR    0x1c001000
@@ -106,6 +107,33 @@ public:
     }
 };
 
+class HexNormalType
+{
+public:
+    long long data;
+    FILE* f;
+    char testpath[128]; 
+    HexNormalType(const char* path,const char* file_name){
+        sprintf(testpath,"./%s%s.res",path,file_name);
+        printf("%s\n",testpath);
+        f     = fopen(testpath,"rt");
+        data  = 0;
+    }
+    int read_next(){
+        char line[65];
+
+        if (!fgets(line,65,f))
+            return 1;
+
+        if (line[0]=='@'){
+            if (!fgets(line,65,f))
+                return 1;
+        }
+        char* temp;
+        data = strtoll(line,&temp,16);
+        return 0;
+    }
+};
 class StrType {
 public:
     char data[128];
@@ -126,10 +154,11 @@ public:
 
 class Tlb {
 public:
-    long long vpn_table[RAND_TLB_TABLE_ENTRY];
-    long long pfn_table[RAND_TLB_TABLE_ENTRY];
-    int       cca      [RAND_TLB_TABLE_ENTRY];
-    int       page_size[RAND_TLB_TABLE_ENTRY];
+    int tlb_entry_num;
+    std::vector<long long> vpn_table;
+    std::vector<long long> pfn_table;
+    std::vector<int      > cca      ;
+    std::vector<int      > page_size;
     unsigned long long tlb_size;
     unsigned long long tlb_mask;
     unsigned long long refill_vpn;
@@ -142,10 +171,16 @@ public:
     unsigned int       we1;
     unsigned int       v0;
     unsigned int       v1;
-    Tlb(){
+    Tlb(int tlb_entrys){
+        tlb_entry_num = tlb_entrys;
         refill_index = 7;
         cca0 = 1;//todo gailv peizhi
         cca1 = 1;
+        vpn_table.reserve(tlb_entrys);
+        pfn_table.reserve(tlb_entrys);
+        cca.reserve(tlb_entrys);
+        page_size.reserve(tlb_entrys);
+
     }
     int find_entry(long long bad_vaddr){
         int i,j;
@@ -160,7 +195,7 @@ public:
         int page_big = 0;
         page_found = 0;
         long long mask_temp = 0xfffffffff;
-        for (i=0;i<RAND_TLB_TABLE_ENTRY;i++) {
+        for (i=0;i<tlb_entry_num;i++) {
             //if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[i] & (tlb_mask>>12))>>(tlb_size - 11)) {
             if (page_size[i]==12) {
                 if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) == (vpn_table[i] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) {
@@ -187,7 +222,7 @@ public:
                 }
         }
         if (!page_big) {
-            for (j=i+1;j<RAND_TLB_TABLE_ENTRY;j++) {
+            for (j=i+1;j<tlb_entry_num;j++) {
                 if (page_size[j] == page_size[i]) {
                     //if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[j] & (tlb_mask>>12))>>(tlb_size - 11)) {
                     if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) == (vpn_table[j] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) {
@@ -295,10 +330,12 @@ public:
     HexType*    instructions;
     HexType*    init_regs;
     StrType*    comments;
+	HexNormalType*	parameters;
     Tlb*        tlb;
     int         cpu_ex;
     int         tlb_ex;
     int         last_split;
+    int         tlb_entry_num;
    
     Rand64(const char* path, const char* result_flag_path);
     ~Rand64();

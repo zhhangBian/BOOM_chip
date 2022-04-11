@@ -129,7 +129,7 @@ int Difftest::step(vluint64_t &main_time) {
 
 #ifdef RAND_TEST
     if (!diff_flag) {
-        if (dut.event.eret) {
+        if (dut.excp.eret) {
             diff_flag = true;
         }
         proxy->regcpy(dut_regs_ptr, DIFFTEST_TO_REF, DIFF_TO_REF_ALL);

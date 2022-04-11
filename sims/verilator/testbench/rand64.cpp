@@ -19,7 +19,10 @@ Rand64::Rand64(const char *path, const char *result_flag_path) {
     instructions = new HexType(path, "instruction");
     init_regs = new HexType(path, "init.reg");
     comments = new StrType(path, "comment");
-    tlb = new Tlb();
+    parameters = new HexNormalType(path,"parameter");
+    parameters->read_next();
+    tlb_entry_num = parameters->data;
+    tlb = new Tlb(tlb_entry_num);
     cpu_ex = 1;
     tlb_ex = 0;
     last_split = 0;
@@ -56,9 +59,9 @@ int Rand64::tlb_init() {
         int error=0;
         int i,j;
         printf("TLB INIT\n");
-        printf("Max entry = %d\n",RAND_TLB_TABLE_ENTRY);
+        printf("Max entry = %d\n",tlb_entry_num);
         srand(CACHE_SEED);
-        for (i=0;i<RAND_TLB_TABLE_ENTRY;i++) {
+        for (i=0;i<tlb_entry_num;i++) {
             error |= vpn->read_next();
             error |= pfn->read_next();
             error |= cca->read_next();

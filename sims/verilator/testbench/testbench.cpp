@@ -114,6 +114,7 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
             printf("RAND TEST INIT FAILED\n");
             return ;
         }
+	ram->read_random_vlog();
     #endif
         printf("Start\n");
         while(true){
