@@ -11,19 +11,19 @@ script:
 start:
 	@mkdir -p obj
 ifeq ('${TRACE_COMP}', 'y')
-	${GCC_BIN}/loongarch32-unknown-elf-gcc \
+	${GCC_BIN}/loongarch32-linux-gnu-gcc \
 		-Iinclude -nostdinc -nostdlib -D_KERNEL  -fno-builtin -D__loongarch32\
 		-DMEMSTART=0x10000000 -DMEMSIZE=0x04000 -DCPU_COUNT_PER_US=1000     \
 		-DENABLE_TRACE -S start.S > obj/start.s 
 else
-	${GCC_BIN}/loongarch32-unknown-elf-gcc \
+	${GCC_BIN}/loongarch32-linux-gnu-gcc \
 		-Iinclude -nostdinc -nostdlib -D_KERNEL -fno-builtin -D__loongarch32\
 		-DMEMSTART=0x10000000 -DMEMSIZE=0x04000 -DCPU_COUNT_PER_US=1000     \
 		-S start.S > obj/start.s 
 endif
 
 haha:
-	${GCC_BIN}/loongarch32-unknown-elf-as -mabi=ilp32 obj/start.s -o obj/start.o
+	${GCC_BIN}/loongarch32-linux-gnu-as -mabi=ilp32 obj/start.s -o obj/start.o
 
 libinst.a:
 	make -C inst $@

@@ -15,9 +15,9 @@ XLFLAGS="-I./ -I./barebones/ \
 XCFLAGS="-static -Ofast -funroll-all-loops -Ibarebones -I. -DPERFORMANCE_RUN=1 -DITERATIONS=1 -c"  
 
 mv coremark.bin main.elf 
-${GCC_BIN}/loongarch32-unknown-elf-objdump -alD main.elf > test.s 
-${GCC_BIN}/loongarch32-unknown-elf-objcopy -O binary -j .start -j .main main.elf main.bin
-${GCC_BIN}/loongarch32-unknown-elf-objcopy -O binary -j .rodata -j .data -j .sdata -j .init_array -j .got main.elf main.data
+${GCC_BIN}/loongarch32-linux-gnu-objdump -alD main.elf > test.s 
+${GCC_BIN}/loongarch32-linux-gnu-objcopy -O binary -j .start -j .main main.elf main.bin
+${GCC_BIN}/loongarch32-linux-gnu-objcopy -O binary -j .rodata -j .data -j .sdata -j .init_array -j .got main.elf main.data
 
 mkdir -p obj 
 mv main.elf  ./obj/ 
