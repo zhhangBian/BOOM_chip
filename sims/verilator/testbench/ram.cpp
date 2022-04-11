@@ -550,6 +550,37 @@ int CpuRam::process_write(vluint64_t main_time,vluint64_t a,vluint64_t m,unsigne
     return 0;
 }
 
+int CpuRam::read_random_vlog(){
+    printf("Start load data vlog\n");
+    FILE* data_vlog = fopen(this->data_vlog_file,"rt");
+    assert(data_vlog!=nullptr);
+    vluint64_t addr;
+    int byte_num,data;
+    char line[65];
+    while(fgets(line,65,data_vlog)!=NULL){
+        sscanf(line,"%llx %x  %x\n",&addr, &byte_num,&data);
+        int data_temp = data;
+        if (byte_num == 1) {
+            int wen = 1<<(addr%4);
+            data_temp = data_temp&0xff;
+            data_temp = data_temp<<24 | data_temp<<16 | data_temp<<8 | data_temp;
+            printf("Wrint one byte %llx %x\n",addr,data_temp&0xff);
+            printf("%llx %x %x\n",addr%~0x3,wen,data_temp);
+            write4B(addr&~0x3,wen,data_temp);
+        } else {
+            for (int i=0;i<byte_num;i++) {
+                int wen = 1<<(addr%4);
+                data_temp = data_temp&0xff;
+                data_temp = data_temp<<24 | data_temp<<16 | data_temp<<8 | data_temp;
+                write4B(addr&~0x3,wen,data_temp);
+                data_temp = data>>(8*((i+1)%4));
+                addr = addr+1;
+            }
+        }
+    }
+    printf("Finish load data vlog\n");
+    return 0;
+}
 CpuRam::~CpuRam() {
     if (mem_out) {
         fclose(mem_out);

@@ -14,6 +14,7 @@
 #define REG_INIT_ADDR 0x1c003000
 #define EX_TLBR    0x3f
 #define EX_SYSCALL 0x0b
+#define MASK(page_size) 	(0xffffffffffffffff<<page_size)
 
 #ifdef RAND32
 // #define RAND_BUS_GR_RTL         0
@@ -127,7 +128,8 @@ class Tlb {
 public:
     long long vpn_table[RAND_TLB_TABLE_ENTRY];
     long long pfn_table[RAND_TLB_TABLE_ENTRY];
-    int       cca[RAND_TLB_TABLE_ENTRY];
+    int       cca      [RAND_TLB_TABLE_ENTRY];
+    int       page_size[RAND_TLB_TABLE_ENTRY];
     unsigned long long tlb_size;
     unsigned long long tlb_mask;
     unsigned long long refill_vpn;
@@ -155,32 +157,72 @@ public:
         unsigned long long       we0;
         unsigned long long       we1;
         int page0_odd;
+        int page_big = 0;
         page_found = 0;
+        long long mask_temp = 0xfffffffff;
         for (i=0;i<RAND_TLB_TABLE_ENTRY;i++) {
-            if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[i] & (tlb_mask>>12))>>(tlb_size - 11)) {
-                pfn0 = pfn_table[i]&0xfffffffffLL;
-                we0  = vpn_table[i]>>36;
-                cca0 = cca[i];
-                refill_vpn = bad_vaddr;
-                page_found += 1;
-                break;
+            //if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[i] & (tlb_mask>>12))>>(tlb_size - 11)) {
+            if (page_size[i]==12) {
+                if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) == (vpn_table[i] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) {
+                    pfn0 = pfn_table[i]&0xfffffffffLL;
+                    we0  = vpn_table[i]>>36;
+                    cca0 = cca[i];
+                    refill_vpn = bad_vaddr;
+                    page_found += 1;
+                    tlb_size = page_size[i];
+                    break;
+                }
+            } else {
+                if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 12)) == (vpn_table[i] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 12)) {
+                    pfn0 = pfn_table[i]&0xfffffffffLL;
+                    we0  = vpn_table[i]>>36;
+                    cca0 = cca[i];
+                    refill_vpn = bad_vaddr;
+                    page_found += 1;
+                    tlb_size = page_size[i] - 1;
+                    page_big = 1;
+                    printf("Find a big page. Seperate to two pages\n");
+                    break;
+                    }
+                }
+        }
+        if (!page_big) {
+            for (j=i+1;j<RAND_TLB_TABLE_ENTRY;j++) {
+                if (page_size[j] == page_size[i]) {
+                    //if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[j] & (tlb_mask>>12))>>(tlb_size - 11)) {
+                    if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) == (vpn_table[j] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) {
+                        pfn1 = pfn_table[j]&0xfffffffffLL;
+                        we1  = vpn_table[j]>>36;
+                        cca1 = cca[j];
+                        page_found += 1;
+                        break;
+                    }
+                }
             }
         }
-        for (j=i+1;j<RAND_TLB_TABLE_ENTRY;j++) {
-            if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[j] & (tlb_mask>>12))>>(tlb_size - 11)) {
-                pfn1 = pfn_table[j]&0xfffffffffLL;
-                we1  = vpn_table[j]>>36;
-                cca1 = cca[j];
-                page_found += 1;
-                break;
-            }
-         }
 
         if (page_found == 0) {
             printf("TLB ENTRY NOT FOUND\n");
             return 1;
         }
-        page0_odd = (vpn_table[i] >> (tlb_size - 12))& 1;
+
+        if (page_big) {
+            this->pfn0 = pfn0;
+            this->we0         = we0;
+            this->cca0        = cca0;
+            this->v0          = 1;
+
+            this->pfn1 = pfn0 + (1<<(page_size[i]-13));
+            this->we1         = we0;
+            this->cca1        = cca0;
+            this->v1          = 1;
+            refill_index += 1;
+            refill_index &= 0x7;
+            return 0;
+        }
+
+        //4KB page found. Need to check one or two entry.
+        page0_odd = (vpn_table[i] >> (page_size[i] - 12))& 1;
         if (page_found == 1) {
             if (page0_odd) {
                 this->pfn0 = 0;
@@ -245,6 +287,8 @@ public:
     BinaryType* result_type;
     BinaryType* vpn;
     BinaryType* pfn;
+    BinaryType* cca;
+    BinaryType* page_size;
     HexType*    pcs;
     HexType*    result_addrs;
     HexType*    value1;

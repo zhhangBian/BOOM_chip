@@ -24,5 +24,5 @@ golden_trace_make:golden_trace.txt
 golden_trace.txt:./qemu_log_helper.py test.s single.log
 	python3 ./qemu_log_helper.py --asm test.s --log single.log --dump-rftrace golden_trace.txt 
 
-ram.dat:../../../../../software/random_boot/rom.vlog inst.vlog data.vlog
-	cat ../../../../../software/random_boot/rom.vlog inst.vlog data.vlog > ram.dat
+ram.dat:../../../../../software/random_boot/rom.vlog inst.vlog
+	cat ../../../../../software/random_boot/rom.vlog inst.vlog > ram.dat

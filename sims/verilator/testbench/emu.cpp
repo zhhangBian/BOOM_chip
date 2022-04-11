@@ -23,7 +23,7 @@ static vluint64_t hex2int64(const char *buf, const int width) {
     return data;
 }
 
-Emulator::Emulator(Vtop *top, const char *path, const char *file_out, const char *uart_path, const char *file_in): CpuTool(top), trapCode(STATE_RUNNING) {
+Emulator::Emulator(Vtop *top, const char *path, const char *file_out, const char *uart_path, const char *file_in, const char *data_vlog): CpuTool(top), trapCode(STATE_RUNNING) {
     dm = new DiffManage();
 
     sprintf(simu_out_path, "./%s%s", path, file_out);
@@ -61,6 +61,9 @@ Emulator::Emulator(Vtop *top, const char *path, const char *file_out, const char
     }
 
     init_ram(path, file_in);
+    #ifdef RAND_TEST
+    init_random_vlog(path, data_vlog);
+    #endif
 }
 
 void Emulator::init_emu(vluint64_t* main_time) {
@@ -145,6 +148,29 @@ void Emulator::init_ram(const char *path, const char *file_in) {
     } else {
         printf("%s file format is not supported. You should use file format like xxx.dat or xxx.bin.\n", img);
         exit(1);
+    }
+}
+void Emulator::init_random_vlog(const char *path, const char *file_in) {
+    sprintf(img, "./%s%s", path, file_in);
+    assert(img != NULL);
+    printf("Data vlog is %s\n", img);
+    FILE *data_vlog = fopen(img, "rt");
+    
+    vluint64_t addr;
+    int byte_num,data;
+    char line[65];
+    while(fgets(line,65,data_vlog)!=NULL){
+        sscanf(line,"%llx %x  %x\n",&addr, &byte_num,&data);
+        int data_temp = data;
+        if (byte_num == 1) {
+            ram[addr] = (char) data;
+        } else {
+            for (int i=0;i<byte_num;i++) {
+                data_temp = data_temp&0xff;
+                ram[addr+i] = (char)data_temp;
+                data_temp = data>>(8*((i+1)%4));
+            }
+        }
     }
 }
 

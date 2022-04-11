@@ -26,6 +26,7 @@ int CpuTool::rf_trace_no_repeat = 0;
 unsigned int CpuTool::end_pc = 0;
 
 const char ram_file_default[] = "ram.dat";
+const char data_vlog_file_default[] = "data.vlog";
 const char rand_path_default[] = "RES/res2020_mulh_0/";
 const char result_flag_path_default[] = "RES/result_flag.txt";
 const char simu_trace_file_default[] = "./simu_trace.txt";
@@ -34,6 +35,7 @@ const char golden_trace_file_default[] = "./golden_trace.txt";
 const char uart_output_file_default[] = "./uart_output.txt";
 const char null_file[] = " ";
 const char* CpuTool::ram_file = ram_file_default;
+const char* CpuTool::data_vlog_file = data_vlog_file_default;
 const char* CpuTool::rand_path = rand_path_default;
 const char* CpuTool::result_flag_path = result_flag_path_default;
 const char* CpuTool::simu_trace_file = simu_trace_file_default;
@@ -96,6 +98,7 @@ void CpuTool::parse_args(int argc, char **argv, char **env) {
         PARSE_FLAG(rf_trace_no_repeat,"--rf-trace-no-repeat")
 
         PARSE_STR (ram_file,"--ram")
+        PARSE_STR (data_vlog_file,"--data-vlog")
         PARSE_STR (rand_path,"--rand-path")
         PARSE_STR (result_flag_path, "--result-flag-path")
 

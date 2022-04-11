@@ -12,7 +12,7 @@ CpuTestbench::CpuTestbench(int argc, char **argv, char **env, vluint64_t *main_t
             printf("Warning: restore_bp_time is not equal with %s's main_time\n", top_restore_bp_file);
         }
     }
-    emu = new Emulator(top, "./", simu_trace_file, uart_output_file, ram_file);
+    emu = new Emulator(top, "./", simu_trace_file, uart_output_file, ram_file, data_vlog_file);
     ram = new CpuRam(top, rand64, *main_time, &uart_status, mem_trace_file);
     if (restore_bp_time != 0) {
         uart_config = uart_status.uart_config;

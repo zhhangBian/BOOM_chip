@@ -230,6 +230,7 @@ public:
     int process_write(vluint64_t main_time,vluint64_t a,vluint64_t m,unsigned* d);
     int process_write(vluint64_t main_time,vluint64_t a,vluint64_t m,vluint64_t d);
     int process_write(vluint64_t main_time,vluint64_t a,vluint64_t m,unsigned int d);
+    int read_random_vlog();
 
 };
 

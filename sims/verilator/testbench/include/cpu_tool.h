@@ -50,6 +50,7 @@ public:
     static int dump_delay;
     static int dump_trace;
     const static char* ram_file;
+    const static char* data_vlog_file;
     const static char* rand_path;
     const static char* result_flag_path;
     const static char* pc_trace_ifile;

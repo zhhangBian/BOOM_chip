@@ -23,11 +23,12 @@ public:
     char simu_out_path[128];
     char uart_out_path[128];
 
-    Emulator(Vtop *top, const char*path, const char* file_out, const char*uart_path, const char*file_in);
+    Emulator(Vtop *top, const char*path, const char* file_out, const char*uart_path, const char*file_in, const char*data_vlog);
     ~Emulator();
 
     /* do init work such as init_difftest, init_nemuproxy */
     void init_emu(vluint64_t* main_time);
+    void init_random_vlog(const char *path, const char *file_in);
 
     /* difftest execute one step to compare dut and ref */
     int process();

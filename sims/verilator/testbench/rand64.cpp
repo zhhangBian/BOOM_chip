@@ -11,6 +11,8 @@ Rand64::Rand64(const char *path, const char *result_flag_path) {
     result_type = new BinaryType(path, "result_type");
     vpn = new BinaryType(path, "page");
     pfn = new BinaryType(path, "pfn");
+    cca = new BinaryType(path,"cca");
+    page_size = new BinaryType(path,"page_size");
     pcs = new HexType(path, "pc");
     result_addrs = new HexType(path, "address");
     value1 = new HexType(path, "value1");
@@ -51,67 +53,31 @@ int Rand64::init_gr_ref() {
 }
 
 int Rand64::tlb_init() {
-    int error = 0;
-    int i, j;
-    printf("TLB INIT\n");
-    printf("Max entry = %d\n", RAND_TLB_TABLE_ENTRY);
-    srand(CACHE_SEED);
-    for (i = 0; i < RAND_TLB_TABLE_ENTRY; i++) {
-        error |= vpn->read_next();
-        error |= pfn->read_next();
-        tlb->vpn_table[i] = vpn->data;
-        tlb->pfn_table[i] = pfn->data;
-        tlb->cca[i] = rand() % 2;
-    }
-
-    if (error) {
-        printf("TLB INIT Might be wrong\n");
-        fprintf(result_flag, "RUN FAIL!\n");
-        return 1;
-    } else {
-        error |= vpn->read_next();
-    }
-    tlb->tlb_size = vpn->data;
-    printf("READ TLB ENTRY FINISHED\n");
-    printf("READING TLB PAGE SIZE\n");
-    switch (tlb->tlb_size) {
-        case (12):
-            tlb->tlb_mask = 0x0fffffffff000LL;
-            break;
-        case (13):
-            tlb->tlb_mask = 0x0ffffffffe000LL;
-            break;
-        case (14):
-            tlb->tlb_mask = 0x0ffffffffc000LL;
-            break;
-        case (15):
-            tlb->tlb_mask = 0x0ffffffff8000LL;
-            break;
-        case (16):
-            tlb->tlb_mask = 0x0ffffffff0000LL;
-            break;
-        default:
-            tlb->tlb_mask = 0;
-            printf("NO THIS SIZE\n");
-            printf("i = %d,SIZE = %x\n", i, tlb->tlb_size);
-
-    }
-    printf("i = %d,SIZE = %x\n", i, tlb->tlb_size);
-
-    int count;
-    for (i = 0; i < RAND_TLB_TABLE_ENTRY; i++) {
-        count = 0;
-        for (j = i + 1; j < RAND_TLB_TABLE_ENTRY; j++) {
-            if ((tlb->pfn_table[j] & (tlb->tlb_mask >> 12)) == (tlb->pfn_table[i] & (tlb->tlb_mask >> 12))) {
-                tlb->cca[j] = tlb->cca[i];
-                count += 1;
-                if (count == 3)
-                    break;
-            }
+        int error=0;
+        int i,j;
+        printf("TLB INIT\n");
+        printf("Max entry = %d\n",RAND_TLB_TABLE_ENTRY);
+        srand(CACHE_SEED);
+        for (i=0;i<RAND_TLB_TABLE_ENTRY;i++) {
+            error |= vpn->read_next();
+            error |= pfn->read_next();
+            error |= cca->read_next();
+            error |= page_size->read_next();
+            tlb->vpn_table[i] = vpn->data;
+            tlb->pfn_table[i] = pfn->data;
+            tlb->cca[i] = cca->data;
+            tlb->page_size[i] = page_size->data;
         }
-    }
-    return 0;
-
+        
+        if (error) {
+            printf("TLB INIT Might be wrong\n"); 
+            fprintf(result_flag, "RUN FAIL!\n");
+            return 1;
+        } else {
+            error |= vpn->read_next();
+        }
+        printf("READ TLB ENTRY FINISHED\n");
+        return 0;
 }
 
 int Rand64::read_next_compare() {
