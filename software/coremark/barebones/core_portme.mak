@@ -21,13 +21,13 @@
 OUTFLAG= -o
 # Flag : CC
 #	Use this flag to define compiler to use
-CC 		= ../../toolchains/loongarch32_gnu/install/bin/loongarch32-unknown-elf-gcc
+CC 		= ../../toolchains/loongarch32_gnu/install/bin/loongarch32-linux-gnu-gcc
 # Flag : LD
 #	Use this flag to define compiler to use
-LD		= ../../toolchains/loongarch32_gnu/install/bin/loongarch32-unknown-elf-gcc
+LD		= ../../toolchains/loongarch32_gnu/install/bin/loongarch32-linux-gnu-gcc
 # Flag : AS
 #	Use this flag to define compiler to use
-AS		= ../../toolchains/loongarch32_gnu/install/bin/loongarch32-unknown-elf-as
+AS		= ../../toolchains/loongarch32_gnu/install/bin/loongarch32-linux-gnu-as
 # Flag : CFLAGS
 #	Use this flag to define compiler options. Note, you can add compiler options from the command line using XCFLAGS="other flags"
 PORT_CFLAGS = -Ofast
