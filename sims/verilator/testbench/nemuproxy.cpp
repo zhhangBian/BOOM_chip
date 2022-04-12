@@ -8,8 +8,6 @@
 extern char* chiplab_home;
 extern char* difftest_ref_so;
 
-#define DEBUG
-
 NemuProxy::NemuProxy(int coreid) {
 #ifdef DEBUG
     char *current_path = NULL;

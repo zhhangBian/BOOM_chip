@@ -213,7 +213,7 @@ void Difftest::do_instr_commit(int i) {
 
     /* tlbfill */
     if (dut.commit[i].is_TLBFILL) {
-        printf("get a tlbfill inst from dut, give nemu an index: %d\n",dut.commit[i].TLBFILL_index);
+        // printf("get a tlbfill inst from dut, give nemu an index: %d\n",dut.commit[i].TLBFILL_index);
         proxy->tlbfill_index_set(dut.commit[i].TLBFILL_index);
     }
 
