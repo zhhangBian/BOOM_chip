@@ -8,7 +8,7 @@ LEAF(n72_tlb_4MB)
 
     invtlb 0x0, zero, zero
 
-    li    t0, 0x16000000            #index with 4MB PS
+    li    t0, 0x15000000            #index with 4MB PS
     li    t2, 8<<23
     li    t3, 1<<23
     add.w t1, t2, t3                #VPN
@@ -26,11 +26,11 @@ LEAF(n72_tlb_4MB)
     FILL_TLB_4MB(0x00003640, 0x00007240)
 
 ###tlb hit: G=0
-    TEST_TLBP_4MB(0x000000aa, 0x1, 0x16000000)
-    TEST_TLBP_4MB(0x000000aa, 0x2, 0x16000001)
-    TEST_TLBP_4MB(0x000000aa, 0x3, 0x16000002)
+    TEST_TLBP_4MB(0x000000aa, 0x1, 0x15000000)
+    TEST_TLBP_4MB(0x000000aa, 0x2, 0x15000001)
+    TEST_TLBP_4MB(0x000000aa, 0x3, 0x15000002)
 ###tlb hit: G=1
-    TEST_TLBP_4MB(0x000000bb, 0x4, 0x16000003)
+    TEST_TLBP_4MB(0x000000bb, 0x4, 0x15000003)
 ###tlb miss: no matching asid
     TEST_TLBP_NOMATCHING_4MB(0x000003f0, 0x2)
 ###tlb miss: no matching VPN
