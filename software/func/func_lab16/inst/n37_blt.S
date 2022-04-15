@@ -5,7 +5,7 @@
 LEAF(n37_blt_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_BLT(0x53da7664, 0xd0bb3643, 0xede1bda0, 0x9184955e, 0x00000000, 0x00000000)
     TEST_BLT(0xc815806e, 0x1d9f9515, 0xc6ecc9a4, 0x6f0d3944, 0xc6ecc9a4, 0x6f0d3944)

@@ -5,7 +5,7 @@
 LEAF(n44_ld_hu_test)
     
     addi.w s0, s0, 1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_LD_HU(0xc5e0fd00, 0xd1dfc, 0x000055e, 0x000055c, 0x0000c5e0)
     TEST_LD_HU(0x258707b2, 0xdbd8c, 0x0000c34, 0x0000c34, 0x000007b2)

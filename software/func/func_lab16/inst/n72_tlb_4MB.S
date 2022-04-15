@@ -4,16 +4,16 @@
 
 LEAF(n72_tlb_4MB)
     addi.w s0, s0 ,0x1
-	li     s2, 0x0
+	li.w     s2, 0x0
 
     invtlb 0x0, zero, zero
 
-    li    t0, 0x15000000            #index with 4MB PS
-    li    t2, 8<<23
-    li    t3, 1<<23
+    li.w    t0, 0x15000000            #index with 4MB PS
+    li.w    t2, 8<<23
+    li.w    t3, 1<<23
     add.w t1, t2, t3                #VPN
 
-    li    t2, 0x000000aa
+    li.w    t2, 0x000000aa
     csrwr t2, csr_asid
 
 ###TLB item 1

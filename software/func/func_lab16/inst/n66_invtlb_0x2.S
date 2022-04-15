@@ -9,15 +9,15 @@ LEAF(n66_invtlb_0x2_test)
     csrrd  t6, csr_tlbelo0 
     csrrd  t7, csr_tlbelo1 
     csrrd  t8, csr_tlbidx 
-    li     t0, 0x80000000 
+    li.w     t0, 0x80000000 
     or     t8, t8, t0 
     srli.w t8, t8, 0x5
 
     invtlb 0x2, zero, zero
 
 #ifndef ENABLE_TRACE
-	li     t1, 0x0c00001e
-	li     t2, 0x0c000020
+	li.w     t1, 0x0c00001e
+	li.w     t2, 0x0c000020
     add.w t0, zero, t1
     add.w t4, zero, t2 
 1:
@@ -40,8 +40,8 @@ LEAF(n66_invtlb_0x2_test)
     addi.w t0, t0, 0x1  
     bne   t0, t4, 1b
 
-	li     t1, 0x0c000000
-	li     t2, 0x0c00001e
+	li.w     t1, 0x0c000000
+	li.w     t2, 0x0c00001e
     add.w t0, zero, t1
     add.w t4, zero, t2
 2:
@@ -50,7 +50,7 @@ LEAF(n66_invtlb_0x2_test)
     tlbrd
     csrrd t1, csr_tlbidx
     srli.w t1, t1, 0x5
-    li    t2, 0x00600000
+    li.w    t2, 0x00600000
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b
@@ -60,8 +60,8 @@ LEAF(n66_invtlb_0x2_test)
     bne s2, zero, inst_error
 
 #if 0
-    li    t1, 0xa
-    li    t2, 0xb
+    li.w    t1, 0xa
+    li.w    t2, 0xb
     invtlb 0x0, t1, t2
 ###detect exception
     beq s2, zero, inst_error

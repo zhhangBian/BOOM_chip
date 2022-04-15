@@ -4,7 +4,7 @@
 
 LEAF(n63_tlbsrch_test)
     addi.w s0, s0 ,0x1
-	li     s2, 0x0
+	li.w     s2, 0x0
 
 ###tlb hit: G=0
     TEST_TLBP(0x000000aa, 0x2, 0x0c000001)

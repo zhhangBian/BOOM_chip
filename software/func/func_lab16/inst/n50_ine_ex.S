@@ -5,18 +5,18 @@
 LEAF(n50_ine_ex_test)
    
   addi.w  s0, s0, 1 
-  li      t0, 0xd0000 
-  li      s2, 0x3 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0x3 
   st.w    s2, t0, 0 
   //clear ti
-  li      t0, 0x1 
+  li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
   //init usr mode
-  li      t0, 0x3
-  li      t1, 0x7 
+  li.w      t0, 0x3
+  li.w      t1, 0x7 
   csrxchg t0, t1, csr_crmd 
   lu12i.w s7, 0x30 
-  li      t5, 0x3 //used for verify prmd 
+  li.w      t5, 0x3 //used for verify prmd 
 
 ##inst test 
 ###1 
@@ -24,24 +24,24 @@ LEAF(n50_ine_ex_test)
 1: 
   TEST_INE_EX(0x0) 
   bne     s2, s7, inst_error  
-  li      t0, 0xd0000 
-  li      s2, 0xf 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0xf 
   st.w    s2, t0, 0 
   syscall 0          //return to kernel mode
   csrrd   t0, csr_crmd 
-  li      t1, 0x7 
+  li.w      t1, 0x7 
   and     t0, t0, t1 
-  li      t1, 0x0
+  li.w      t1, 0x0
   bne     t1, t0, inst_error  
 
-  li      t5, 0   //used for verify prmd 
-  li      t0, 0xd0000 
-  li      s2, 0x3
+  li.w      t5, 0   //used for verify prmd 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0x3
   st.w    s2, t0, 0
 //#ifndef ENABLE_TRACE
 ###2
-  li      t7, 0xd0000
-  li      s2, 0x03 
+  li.w      t7, 0xd0000
+  li.w      s2, 0x03 
   la.local  s4, 1f
   st.w    t7, t7, 4
   st.w    s4, t7, 4 
@@ -51,14 +51,14 @@ LEAF(n50_ine_ex_test)
   ld.w    t1, t7, 4 
   bne     t1, s4, inst_error
   bne     s2, s7, inst_error 
-  li      s2, 0x3
+  li.w      s2, 0x3
   st.w    s2, t7, 0 
 
 ###3
-  li      s2, 0x03
+  li.w      s2, 0x03
   la.local  s4, 1f
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   div.w   t7, t1, s0 
 1:
   TEST_INE_EX(0xf9000000)
@@ -66,7 +66,7 @@ LEAF(n50_ine_ex_test)
   bne     s2, s7, inst_error 
 
 ###4
-  li      s2, 0x03
+  li.w      s2, 0x03
   la.local  s4, 1f 
 1:
   TEST_INE_EX(0x887b8000)
@@ -74,10 +74,10 @@ LEAF(n50_ine_ex_test)
   bne     s2, s7, inst_error 
 
 ###5
-  li      s2, 0x03
+  li.w      s2, 0x03
   la.local  s4, 1f 
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   mul.w   t7, s0, t7
 1:
   TEST_INE_EX(0x88000200)
@@ -85,7 +85,7 @@ LEAF(n50_ine_ex_test)
   bne     s2, s7, inst_error 
 
 ###6 
-  li      s2, 0x03 
+  li.w      s2, 0x03 
   la.local  s4, 1f
 1:
   TEST_INE_EX(0xf36e0000)
@@ -93,7 +93,7 @@ LEAF(n50_ine_ex_test)
   bne     s2, s7, inst_error 
 
 ###7
-  li      s2, 0x03 
+  li.w      s2, 0x03 
   la.local  s4, 1f
   csrwr   s2, csr_era
 1:
@@ -102,8 +102,8 @@ LEAF(n50_ine_ex_test)
   bne     s2, s7, inst_error 
 //#endif
 
-  li      t0, 0x0 
-  li      t1, 0x3 
+  li.w      t0, 0x0 
+  li.w      t1, 0x3 
   csrxchg t0, t1, csr_crmd 
 ###score +++
   addi.w  s3, s3, 1

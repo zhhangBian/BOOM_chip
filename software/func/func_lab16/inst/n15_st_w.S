@@ -5,7 +5,7 @@
 LEAF(n15_st_w_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_ST_W(0x61754443, 0xd77a0,  0x714,  0x714, 0x61754443)
     TEST_ST_W(0x5c4fb45a, 0xd4aac,  0x76c,  0x76c, 0x5c4fb45a)

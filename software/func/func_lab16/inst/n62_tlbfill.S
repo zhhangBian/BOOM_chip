@@ -4,12 +4,12 @@
 
 LEAF(n62_tlbfill_test)
     addi.w s0, s0 ,0x1
-	li     s2, 0x0
+	li.w     s2, 0x0
 
-    li     t0, 0x0c000000 #index
-    li     t1, 0xabc<<13  #VPN
-    li     t2, 0x0fabc041 #PFN1 
-    li     t3, 0x0ffbc041 #PFN1 
+    li.w     t0, 0x0c000000 #index
+    li.w     t1, 0xabc<<13  #VPN
+    li.w     t2, 0x0fabc041 #PFN1 
+    li.w     t3, 0x0ffbc041 #PFN1 
     csrwr  t0, csr_tlbidx
     csrwr  t1, csr_tlbehi
     csrwr  t2, csr_tlbelo0
@@ -19,19 +19,19 @@ LEAF(n62_tlbfill_test)
     tlbfill
     tlbfill
    
-    li     t6, 0x20
-    li     t5, 0x0
-    li     t4, 0x0
-    li     t0, 0x0c000000
+    li.w     t6, 0x20
+    li.w     t5, 0x0
+    li.w     t4, 0x0
+    li.w     t0, 0x0c000000
 
 2:
     addi.w t1, t0, 0x0
     csrwr  t1, csr_tlbidx
     tlbrd
     csrrd  t1, csr_tlbehi
-    li     t2, 0xffffe000
+    li.w     t2, 0xffffe000
     and    t1, t1, t2
-    li     t2, 0xabc << 13
+    li.w     t2, 0xabc << 13
     bne    t1, t2, 1f
     addi.w t5, t5, 0x1 
 1:
@@ -39,7 +39,7 @@ LEAF(n62_tlbfill_test)
     addi.w t0, t0, 0x1
     bne    t4, t6, 2b
 
-    li     t1, 0x0
+    li.w     t1, 0x0
     beq    t5, t1, inst_error
 
 ###detect exception

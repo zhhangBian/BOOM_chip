@@ -18,10 +18,10 @@ reset_exception:
     # Set Win 0/Win 1
     # LA32
     # Win 0 is just for boot use
-    li          $r2, 0x19
+    li.w          $r2, 0x19
 	csrwr		$r2, 0x180			# set DM Win0, uncached
 	
-    li          $r2, 0xa0000019
+    li.w          $r2, 0xa0000019
 	csrwr		$r2, 0x181			# set DM Win1, cached
 
     ori			$r1, $r0, 0x30
@@ -29,7 +29,7 @@ reset_exception:
 
     #tlbp
     #tlbp
-    li          $r2, 0xa0000000
+    li.w          $r2, 0xa0000000
 	la.local	$r1, next
 	or			$r1, $r1, $r2
 	jirl		$r0, $r1, 0			# jump to next inst through DM Win 0 to make sure all following inst fetch uncached
@@ -39,7 +39,7 @@ next:
     # set EPC=0
     csrwr   $r0, 0x6
 	
-    li          $r2, 0x80000009
+    li.w          $r2, 0x80000009
 	csrwr		$r2, 0x180			# set DM Win1, cached
 
 
@@ -56,18 +56,18 @@ next:
     invtlb 0, $r0, $r0
 
     # Set Ebase
-    li     $r1, EBASE_ADDR
+    li.w     $r1, EBASE_ADDR
     csrwr   $r1, 0xc
     # set TLB Ebase
-    li     $r1, TLBR_BASE_ADDR
+    li.w     $r1, TLBR_BASE_ADDR
     csrwr   $r1, 0x88
 
     # set ASID to 0xf
-    li      $r1, 0xf
+    li.w      $r1, 0xf
     csrwr   $r1, 0x18
 
     # load init registers
-    li     $r31, REG_INIT_ADDR
+    li.w     $r31, REG_INIT_ADDR
     ld.w    $r1 , $r31,  1<<3
     ld.w    $r2 , $r31,  2<<3
     ld.w    $r3 , $r31,  3<<3
@@ -113,7 +113,7 @@ tlb_refill:
     # in this test. Testbench will prepare the tlb related data.
     csrwr   $r1, 0x30
     csrwr   $r2, 0x31
-    li     $r1, TLB_READ_ADDR
+    li.w     $r1, TLB_READ_ADDR
     ld.w    $r2, $r1, 0
     csrwr   $r2, 0x10
     ld.w    $r2, $r1, 1<<3
@@ -122,7 +122,7 @@ tlb_refill:
     csrwr   $r2, 0x12
     ld.w    $r2, $r1, 3<<3
     csrwr   $r2, 0x13
-    li      $r2, 0xf
+    li.w      $r2, 0xf
     csrwr   $r2, 0x18
     tlbfill
     csrrd   $r2, 0x31

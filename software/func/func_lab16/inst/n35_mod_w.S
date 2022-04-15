@@ -5,7 +5,7 @@
 LEAF(n35_mod_w_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_MOD_W(0x56bedfa4, 0x20831400, 0x15b8b7a4)
     TEST_MOD_W(0xfda5ea8a, 0xfac1873c, 0xfda5ea8a)

@@ -5,18 +5,18 @@
 LEAF(n53_ale_ld_w_ex_test)
    
   addi.w  s0, s0, 1 
-  li      t0, 0xd0000 
-  li      s2, 0x6 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0x6 
   st.w    s2, t0, 0 
   //clear ti
-  li      t0, 0x1 
+  li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
   //init usr mode
-  li      t0, 0x3
-  li      t1, 0x7 
+  li.w      t0, 0x3
+  li.w      t1, 0x7 
   csrxchg t0, t1, csr_crmd 
   lu12i.w s7, 0x60 
-  li      t5, 0x3 //used for verify prmd 
+  li.w      t5, 0x3 //used for verify prmd 
 
 ##inst test
 ###1 
@@ -26,26 +26,26 @@ LEAF(n53_ale_ld_w_ex_test)
   ld.w    t2, a0, -0x7bb 
   bne     s2, s7, inst_error 
   bne     t2, t3, inst_error 
-  li      t0, 0xd0000 
-  li      s2, 0xf 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0xf 
   st.w    s2, t0, 0 
   syscall 0     //return to kernel mode
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
   csrrd   t0, csr_crmd 
-  li      t1, 0x7 
+  li.w      t1, 0x7 
   and     t0, t0, t1 
-  li      t1, 0x0 
+  li.w      t1, 0x0 
   bne     t1, t0, inst_error  
 
-  li      t5, 0x0   //used for verify prmd 
-  li      t0, 0xd0000 
-  li      s2, 0x6
+  li.w      t5, 0x0   //used for verify prmd 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0x6
   st.w    s2, t0, 0 
 
 ###2
-  li      t7, 0xd0000
-  li      s2, 0x06 
+  li.w      t7, 0xd0000
+  li.w      s2, 0x06 
   TEST_LD_W_ALE(0x3101bbec, 0xd7748, 0x000006a2, 0x000006a0, 0xc0442bd0)
   la.local  s4, 1f
   st.w    t7, t7, 4
@@ -60,19 +60,19 @@ LEAF(n53_ale_ld_w_ex_test)
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
   csrrd   t0, csr_crmd 
-  li      t1, 0x7 
+  li.w      t1, 0x7 
   and     t0, t0, t1 
-  li      t1, 0x0 
+  li.w      t1, 0x0 
   bne     t1, t0, inst_error 
-  li      s2, 0x6 
+  li.w      s2, 0x6 
   st.w    s2, t7, 0  
 
 ###3
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_LD_W_ALE(0x94a1ade4, 0xd59dc, 0x00004ee, 0x00004ec, 0x68929b5c)
   la.local  s4, 1f 
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   div.w   t7, t1, s0 
 1: 
   ld.w    t2, a0, 0x4ee 
@@ -83,7 +83,7 @@ LEAF(n53_ale_ld_w_ex_test)
   bne     a3, t0, inst_error
 
 ###4
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_LD_W_ALE(0xe2b0a2c0, 0xd7748, 0x0000173, 0x0000170, 0x7423d85f)
   la.local  s4, 1f 
 1: 
@@ -95,11 +95,11 @@ LEAF(n53_ale_ld_w_ex_test)
   bne     a3, t0, inst_error
 
 ###5
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_LD_W_ALE(0x0f9edafa, 0xd5bac, 0x0000003e, 0x0000003c, 0xdd064458)
   la.local  s4, 1f 
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   mul.w   t7, s0, t7
 1: 
   ld.w    t2, a0, 0x3e 
@@ -110,7 +110,7 @@ LEAF(n53_ale_ld_w_ex_test)
   bne     a3, t0, inst_error
 
 ###6
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_LD_W_ALE(0x5077f320, 0xd0704, -0x1c1, -0x1c4, 0x15148b6c)
   la.local  s4, 1f 
 1: 
@@ -122,7 +122,7 @@ LEAF(n53_ale_ld_w_ex_test)
   bne     a3, t0, inst_error
 
 ###7
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_LD_W_ALE(0xb27f9788, 0xd759c, -0x7bb, -0x7bc, 0x3958f252)
   la.local  s4, 1f 
   csrwr   s2, csr_era
@@ -134,8 +134,8 @@ LEAF(n53_ale_ld_w_ex_test)
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
 
-  li      t0, 0x0 
-  li      t1, 0x3 
+  li.w      t0, 0x0 
+  li.w      t1, 0x3 
   csrxchg t0, t1, csr_crmd 
 ###score +++
   addi.w  s3, s3, 1

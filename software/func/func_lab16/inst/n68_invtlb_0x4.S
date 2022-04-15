@@ -9,14 +9,14 @@ LEAF(n68_invtlb_0x4_test)
     csrrd  t6, csr_tlbelo0 
     csrrd  t7, csr_tlbelo1 
     csrrd  t8, csr_tlbidx 
-    li     t0, 0x80000000 
+    li.w     t0, 0x80000000 
     or     t8, t8, t0 
     srli.w t8, t8, 0x5
 
-    li    s4, 0x000000aa
+    li.w    s4, 0x000000aa
     invtlb 0x4, s4, zero
 
-	li     t4, 0x0c000000
+	li.w     t4, 0x0c000000
     addi.w t0, t4, 0x0
     addi.w t4, t4, 0xa
 1:
@@ -39,7 +39,7 @@ LEAF(n68_invtlb_0x4_test)
     addi.w t0, t0, 0x1  
     bne   t0, t4, 1b
 
-	li     t4, 0x0c000000
+	li.w     t4, 0x0c000000
     addi.w t0, t4, 0xa
     addi.w t4, t4, 0x20
 2:
@@ -48,7 +48,7 @@ LEAF(n68_invtlb_0x4_test)
     tlbrd
     csrrd t1, csr_tlbidx
     srli.w t1, t1, 0x5
-    li    t2, 0x00600000
+    li.w    t2, 0x00600000
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b
@@ -56,8 +56,8 @@ LEAF(n68_invtlb_0x4_test)
 ###detect exception
     bne s2, zero, inst_error
 ##
-#    li    t1, 0xa
-#    li    t2, 0xb
+#    li.w    t1, 0xa
+#    li.w    t2, 0xb
 #    invtlb 0x0, t1, t2
 ###detect exception
 #    beq s2, zero, inst_error

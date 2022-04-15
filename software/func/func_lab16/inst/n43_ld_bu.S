@@ -5,7 +5,7 @@
 LEAF(n43_ld_bu_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_LD_BU(0x79dbf0ff, 0xd5498, 0x0000408, 0x0000408, 0x000000ff)
     TEST_LD_BU(0x9b5bab6c, 0xd4430, 0x000052e, 0x000052c, 0x0000005b)

@@ -9,26 +9,26 @@ LEAF(n76_dcacop_op0)
     la.local  t7, start
 start:
 
-    li      t0, 0xd0100000
-    li      t1, 0xffffffff
+    li.w      t0, 0xd0100000
+    li.w      t1, 0xffffffff
     st.w    t1, t0, 0x0
 
 # set up the inst DMW, let the MAT=01(Coherent Cached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t7, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x11
+    li.w        t3, 0x11
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw1
     invtlb    0x0, zero, zero
 
-    li        t7, 0xd0100000
+    li.w        t7, 0xd0100000
 # set up the inst DMW, let the MAT=01(Coherent Cached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t7, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x11
+    li.w        t3, 0x11
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw0
@@ -36,44 +36,44 @@ start:
 
 # set up the CRMD, let DA=0, PG=1, and PRL=0
     //let DA=0 and PG=1 and prl=0
-    li      t0, 0x10
-    li      t1, 0x1f
+    li.w      t0, 0x10
+    li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li      t0, 0xd0100000
+    li.w      t0, 0xd0100000
     ld.w    t1, t0, 0x0
 
 # set up the DMW, let the MAT=00(Strongly-Ordered UnCached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t7, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x1
+    li.w        t3, 0x1
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw0
     invtlb    0x0, zero, zero
     
 # bypass the dcacop and directly write to the physical memory
-    li        t0, 0xd0100000
-    li        t1, 0x00000000 
+    li.w        t0, 0xd0100000
+    li.w        t1, 0x00000000 
     st.w      t1, t0, 0x0
 
 # invalid the old data in dcache
     
-    li        t0, 0xd0100000
+    li.w        t0, 0xd0100000
 
-    li        t1, 0xffffffff
+    li.w        t1, 0xffffffff
     slli.w    t1, t1, OFFSET
-    li        t2, 0xffffffff
+    li.w        t2, 0xffffffff
     slli.w    t2, t2, OFFSET+INDEX
-    li        t3, 0x0
+    li.w        t3, 0x0
     nor       t2, t3, t2
     and       t1, t1, t2
 
     and       t0, t0, t1
 
-    li        t1, 0x0
-    li        t2, WAY
+    li.w        t1, 0x0
+    li.w        t2, WAY
 
 invalid_cache_line: 
     cacop     0x01, t0, 0x0 
@@ -82,18 +82,18 @@ invalid_cache_line:
     bne       t1, t2, invalid_cache_line
 
 # set up the DMW, let the MAT=01(Coherent Cached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t7, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x11
+    li.w        t3, 0x11
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw0
     invtlb    0x0, zero, zero
 
-    li        t0, 0xd0100000
+    li.w        t0, 0xd0100000
     ld.w      t1, t0, 0x0
-    li        t2, 0x00000000
+    li.w        t2, 0x00000000
     bne       t1, t2, inst_error
 
 inst_pass:
@@ -103,8 +103,8 @@ inst_pass:
     addi.w    s3, s3, 0x1
 ###output
 inst_error:
-    li        t0, 0x8 
-    li        t1, 0x1f 
+    li.w        t0, 0x8 
+    li.w        t1, 0x1f 
     csrxchg   t0, t1, csr_crmd
 
     slli.w    t1, s0, 24

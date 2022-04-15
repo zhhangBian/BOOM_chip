@@ -13,84 +13,84 @@ start:
     csrwr     zero, csr_dmw1
 
 # set up the DMW, let the MAT=00(Strongly-Ordered UnCached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t7, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x1
+    li.w        t3, 0x1
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw0
     invtlb    0x0, zero, zero 
 
-    li        t0, 0xd0100000
+    li.w        t0, 0xd0100000
 # set up the DMW, let the MAT=00(Strongly-Ordered UnCached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t0, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x1
+    li.w        t3, 0x1
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw1
     invtlb    0x0, zero, zero 
 
 //let DA=0 and PG=1 and prl=0
-    li      t0, 0x10
-    li      t1, 0x1f
+    li.w      t0, 0x10
+    li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li        t0, 0xd0100000
-    li        t1, 0x0 
-    li        t2, WAY*4
-    li        t3, 0x11111111
+    li.w        t0, 0xd0100000
+    li.w        t1, 0x0 
+    li.w        t2, WAY*4
+    li.w        t3, 0x11111111
 1: 
     st.w      t3, t0, 0x0
-    li        t4, 0x1<<(OFFSET+INDEX+1)
+    li.w        t4, 0x1<<(OFFSET+INDEX+1)
     add.w     t0, t0, t4
     addi.w    t1, t1, 0x1 
     bne       t1, t2, 1b
 
-    li        t0, 0xd0100000
+    li.w        t0, 0xd0100000
 # set up the inst DMW, let the MAT=01(Coherent Cached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t0, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x11
+    li.w        t3, 0x11
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw1
     invtlb    0x0, zero, zero 
 
-# replace the modified cache line
+# replace the modified cache li.wne
 
-    li      t0, 0xd0100000
+    li.w      t0, 0xd0100000
     ld.w    t1, t0, 0x0 
-    li      t1, 0xffffffff
+    li.w      t1, 0xffffffff
     st.w    t1, t0, 0x0
 
-    li        t0, 0xd0100000+ (0x1<<(OFFSET+INDEX+1))
-    li        t1, 0x1
-    li        t2, WAY*4
+    li.w        t0, 0xd0100000+ (0x1<<(OFFSET+INDEX+1))
+    li.w        t1, 0x1
+    li.w        t2, WAY*4
 2: 
     ld.w      t3, t0, 0x0
-    li        t4, 0x1<<(OFFSET+INDEX+1)
+    li.w        t4, 0x1<<(OFFSET+INDEX+1)
     add.w     t0, t0, t4
     addi.w    t1, t1, 0x1 
     bne       t1, t2, 2b
  
-    li        t0, 0xd0100000
+    li.w        t0, 0xd0100000
 # set up the DMW, let the MAT=00(Strongly-Ordered UnCached)
-    li        t1, 0xe0000000
+    li.w        t1, 0xe0000000
     and       t1, t0, t1
     srli.w    t2, t1, 0x4
-    li        t3, 0x1
+    li.w        t3, 0x1
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw1
     invtlb    0x0, zero, zero
 
-    li        t0, 0xd0100000
+    li.w        t0, 0xd0100000
     ld.w      t1, t0, 0x0
-    li        t2, 0xffffffff
+    li.w        t2, 0xffffffff
     bne       t1, t2, inst_error
 
 inst_pass:
@@ -100,8 +100,8 @@ inst_pass:
     addi.w    s3, s3, 0x1
 ###output
 inst_error:
-    li        t0, 0x8 
-    li        t1, 0x1f 
+    li.w        t0, 0x8 
+    li.w        t1, 0x1f 
     csrxchg   t0, t1, csr_crmd 
 
     slli.w    t1, s0, 24

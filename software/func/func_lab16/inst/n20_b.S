@@ -5,7 +5,7 @@
 LEAF(n20_b_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_B(0x8c3e1efa, 0xeb2bd57c, 0x8c3e1efa, 0xeb2bd57c)
     TEST_B(0xfbc1f5d0, 0xb91bc0b0, 0xfbc1f5d0, 0xb91bc0b0)
