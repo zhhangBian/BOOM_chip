@@ -456,7 +456,7 @@ struct tms      time_info;
 
 #include <stdio.h>
                 /* for strcpy, strcmp */
-#define stderr 1
+#define stderr 0
 #define Null 0 
                 /* Value of a Null pointer */
 #define true  1
