@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1. Chiplab用户手册 &mdash; CHIPLAB  文档</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/translations.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="2. verilator仿真环境说明" href="Simulation/verilator.html" />
+    <link rel="prev" title="Welcome to chiplab’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> CHIPLAB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="在文档中搜索" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">1. Chiplab用户手册</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">1.1. 前言</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">1.2. 目录结构</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">1.3. 使用方法</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#toolchains">1.3.1. toolchains目录构建</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">1.3.2. 依赖安装</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">1.3.3. 实验步骤</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id6">1.3.3.1. 参数设置</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mycpu">1.3.3.2. 替换myCPU</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id7">1.3.3.3. 仿真</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id8">1.3.3.4. 综合、下板</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#la32-nemu">1.3.4. LA32-NEMU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id9">1.3.5. 工具下载链接</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id10">1.3.6. 常见问题</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qemu">1.3.6.1. qemu无法运行</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#testbench">1.3.6.2. testbench无法编译</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">1.3.7. 交流群</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation/verilator.html">2. verilator仿真环境说明</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">CHIPLAB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><span class="section-number">1. </span>Chiplab用户手册</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Quick-Start.md.txt" rel="nofollow"> 查看页面源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="chiplab">
+<h1><span class="section-number">1. </span>Chiplab用户手册<a class="headerlink" href="#chiplab" title="永久链接至标题"></a></h1>
+<section id="id1">
+<h2><span class="section-number">1.1. </span>前言<a class="headerlink" href="#id1" title="永久链接至标题"></a></h2>
+<p>chiplab项目致力于构建基于loongarch primary的soc敏捷开发平台。该项目还处于初始的状态，如发现问题，希望能够将issues发送至chenzeshuai&#64;loongson.cn。</p>
+</section>
+<section id="id2">
+<h2><span class="section-number">1.2. </span>目录结构<a class="headerlink" href="#id2" title="永久链接至标题"></a></h2>
+<p>.<br />
+├── chip<br />
+│　　└── soc_demo<br />
+│　　　　　├── loongson<br />
+│　　　　　├── Baixin<br />
+│　　　　　└── sim<br />
+├── fpga<br />
+│　　└── loongson<br />
+│　　└── Baixin<br />
+├── IP<br />
+│　　├── AMBA<br />
+│　　├── APB_DEV<br />
+│　　　　　├── URT<br />
+│　　　　　└── NAND<br />
+│　　├── AXI_DELAY_RAND<br />
+│　　├── AXI_SRAM_BRIDGE<br />
+│　　├── BRIDGE<br />
+│　　├── DMA<br />
+│　　├── SPI<br />
+│　　├── MAC<br />
+│　　├── CONFREG<br />
+│　　├── myCPU<br />
+│　　└── xilinx_ip<br />
+├── scripts<br />
+├── sims<br />
+│　　└── verilator<br />
+│　　　　　├── run_func<br />
+│　　　　　├── run_random<br />
+│　　　　　└── testbench<br />
+├── software<br />
+│　　├── coremark<br />
+│　　├── dhrystone<br />
+│　　├── func<br />
+│　　├── linux<br />
+│　　├── random_boot<br />
+│　　├── random_res<br />
+│　　└── generic<br />
+└── toolchains<br />
+　　　├── lib<br />
+　　　├── loongarch32_gnu<br />
+　　　├── qemu<br />
+　　　└── system_newlib</p>
+</section>
+<section id="id3">
+<h2><span class="section-number">1.3. </span>使用方法<a class="headerlink" href="#id3" title="永久链接至标题"></a></h2>
+<section id="toolchains">
+<h3><span class="section-number">1.3.1. </span>toolchains目录构建<a class="headerlink" href="#toolchains" title="永久链接至标题"></a></h3>
+<p>仓库中不包括<code class="docutils literal notranslate"><span class="pre">toolchains</span></code>目录，需要用户获取到二进制后自己构建。对各个目录进行介绍。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lib</span></code> : 存有后续会提到的依赖库。当依赖库无法正常安装时可从该目录中拷贝。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">loongarch32_gnu</span></code> : <code class="docutils literal notranslate"><span class="pre">gcc</span></code>工具链。<code class="docutils literal notranslate"><span class="pre">install.tar</span></code>包解压后得到<code class="docutils literal notranslate"><span class="pre">install</span></code>文件夹，将该文件夹拷贝至该目录下即可。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qemu</span></code> : 模拟器。<code class="docutils literal notranslate"><span class="pre">qemu_system_loongon32.zip</span></code>解压后的<code class="docutils literal notranslate"><span class="pre">qemu-system-loongson32</span></code>拷贝至该目录即可。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">system_newlib</span></code> : <code class="docutils literal notranslate"><span class="pre">newlib</span></code> C库，用于编译裸机C程序。内容包括<code class="docutils literal notranslate"><span class="pre">libc.a</span> <span class="pre">libg.a</span> <span class="pre">libm.a</span> <span class="pre">libpmon.a</span> <span class="pre">pmon.ld</span> <span class="pre">start.o</span></code>，<code class="docutils literal notranslate"><span class="pre">newlib.tar</span></code>解压后，将这些文件拷贝至该目录下即可。</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3><span class="section-number">1.3.2. </span>依赖安装<a class="headerlink" href="#id4" title="永久链接至标题"></a></h3>
+<p>以ubuntu为例</p>
+<ul class="simple">
+<li><p>verilator 仿真工具</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Prerequisites:    </span>
+<span class="c1">#sudo apt-get install git make autoconf g++ flex bison    </span>
+<span class="c1">#sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)    </span>
+<span class="c1">#sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)    </span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">gitee</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">mirrors</span><span class="o">/</span><span class="n">Verilator</span><span class="o">.</span><span class="n">git</span>
+<span class="n">git</span> <span class="n">checkout</span> <span class="n">v4</span><span class="mf">.216</span>
+<span class="c1"># Every time you need to build:</span>
+<span class="n">unsetenv</span> <span class="n">VERILATOR_ROOT</span>  <span class="c1"># For csh; ignore error if on bash</span>
+<span class="n">unset</span> <span class="n">VERILATOR_ROOT</span>  <span class="c1"># For bash</span>
+<span class="n">cd</span> <span class="n">verilator</span>
+<span class="n">autoconf</span>        <span class="c1"># Create ./configure script</span>
+<span class="o">./</span><span class="n">configure</span>
+<span class="n">make</span>
+<span class="n">sudo</span> <span class="n">make</span> <span class="n">install</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>gtkwave 图形化显示波形</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">gtkwave</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>qemu模拟器、gcc</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">libisl</span><span class="o">-</span><span class="n">dev</span> <span class="n">libmpfr</span><span class="o">-</span><span class="n">dev</span> <span class="n">libgtk</span><span class="o">-</span><span class="mi">3</span><span class="o">-</span><span class="n">dev</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#ubuntu 20.04 需安装 libnettle6</span>
+<span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ftp</span><span class="o">.</span><span class="n">gnu</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">gnu</span><span class="o">/</span><span class="n">nettle</span><span class="o">/</span><span class="n">nettle</span><span class="o">-</span><span class="mf">3.2</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">tar</span> <span class="o">-</span><span class="n">xvf</span> <span class="n">nettle</span><span class="o">-</span><span class="mf">3.2</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">cd</span> <span class="n">nettle</span><span class="o">-</span><span class="mf">3.2</span>
+<span class="o">./</span><span class="n">configure</span> <span class="o">&amp;&amp;</span> <span class="n">make</span> <span class="o">-</span><span class="n">j</span>
+<span class="n">make</span> <span class="n">install</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>vivado （综合下板需要）</p></li>
+</ul>
+<p>如若libisl和libmpfr库安装存在问题，可直接使用<code class="docutils literal notranslate"><span class="pre">toolchains/lib</span></code>中的库文件。</p>
+</section>
+<section id="id5">
+<h3><span class="section-number">1.3.3. </span>实验步骤<a class="headerlink" href="#id5" title="永久链接至标题"></a></h3>
+<section id="id6">
+<h4><span class="section-number">1.3.3.1. </span>参数设置<a class="headerlink" href="#id6" title="永久链接至标题"></a></h4>
+<p>设置CHIPLAB_HOME系统变量</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">CHIPLAB_HOME</span><span class="o">=</span><span class="s2">&quot;your own chiplab pwd address&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="mycpu">
+<h4><span class="section-number">1.3.3.2. </span>替换myCPU<a class="headerlink" href="#mycpu" title="永久链接至标题"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">IP/myCPU</span></code>中存放的是处理器核代码，对外的接口和核顶层模块名称固定。该环境默认处理器核已实现<code class="docutils literal notranslate"><span class="pre">AXI</span></code>总线。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">core_top</span><span class="p">(</span>
+    <span class="nb">input</span>           <span class="n">aclk</span><span class="p">,</span>
+    <span class="nb">input</span>           <span class="n">aresetn</span><span class="p">,</span>
+    <span class="nb">input</span>    <span class="p">[</span> <span class="mi">7</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">intrpt</span><span class="p">,</span> 
+    <span class="o">//</span><span class="n">AXI</span> <span class="n">interface</span> 
+    <span class="o">//</span><span class="n">read</span> <span class="n">reqest</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">arid</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">araddr</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">7</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">arlen</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">2</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">arsize</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">1</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">arburst</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">1</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">arlock</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">arcache</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">2</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">arprot</span><span class="p">,</span>
+    <span class="n">output</span>          <span class="n">arvalid</span><span class="p">,</span>
+    <span class="nb">input</span>           <span class="n">arready</span><span class="p">,</span>
+    <span class="o">//</span><span class="n">read</span> <span class="n">back</span>
+    <span class="nb">input</span>    <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">rid</span><span class="p">,</span>
+    <span class="nb">input</span>    <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">rdata</span><span class="p">,</span>
+    <span class="nb">input</span>    <span class="p">[</span> <span class="mi">1</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">rresp</span><span class="p">,</span>
+    <span class="nb">input</span>           <span class="n">rlast</span><span class="p">,</span>
+    <span class="nb">input</span>           <span class="n">rvalid</span><span class="p">,</span>
+    <span class="n">output</span>          <span class="n">rready</span><span class="p">,</span>
+    <span class="o">//</span><span class="n">write</span> <span class="n">request</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awid</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awaddr</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">7</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awlen</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">2</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awsize</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">1</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awburst</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">1</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awlock</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awcache</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">2</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">awprot</span><span class="p">,</span>
+    <span class="n">output</span>          <span class="n">awvalid</span><span class="p">,</span>
+    <span class="nb">input</span>           <span class="n">awready</span><span class="p">,</span>
+    <span class="o">//</span><span class="n">write</span> <span class="n">data</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">wid</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">wdata</span><span class="p">,</span>
+    <span class="n">output</span>   <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">wstrb</span><span class="p">,</span>
+    <span class="n">output</span>          <span class="n">wlast</span><span class="p">,</span>
+    <span class="n">output</span>          <span class="n">wvalid</span><span class="p">,</span>
+    <span class="nb">input</span>           <span class="n">wready</span><span class="p">,</span>
+    <span class="o">//</span><span class="n">write</span> <span class="n">back</span>
+    <span class="nb">input</span>    <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">bid</span><span class="p">,</span>
+    <span class="nb">input</span>    <span class="p">[</span> <span class="mi">1</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">bresp</span><span class="p">,</span>
+    <span class="nb">input</span>           <span class="n">bvalid</span><span class="p">,</span>
+    <span class="n">output</span>          <span class="n">bready</span><span class="p">,</span>
+    <span class="o">//</span><span class="n">debug</span> <span class="n">info</span>
+    <span class="n">output</span> <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug0_wb_pc</span><span class="p">,</span>
+    <span class="n">output</span> <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug0_wb_rf_wen</span><span class="p">,</span>
+    <span class="n">output</span> <span class="p">[</span> <span class="mi">4</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug0_wb_rf_wnum</span><span class="p">,</span>
+    <span class="n">output</span> <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug0_wb_rf_wdata</span>
+    <span class="c1">#ifdef CPU_2CMT</span>
+    <span class="p">,</span>
+    <span class="n">output</span> <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug1_wb_pc</span><span class="p">,</span>
+    <span class="n">output</span> <span class="p">[</span> <span class="mi">3</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug1_wb_rf_wen</span><span class="p">,</span>
+    <span class="n">output</span> <span class="p">[</span> <span class="mi">4</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug1_wb_rf_wnum</span><span class="p">,</span>
+    <span class="n">output</span> <span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">0</span><span class="p">]</span> <span class="n">debug1_wb_rf_wdata</span>
+    <span class="c1">#endif</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h4><span class="section-number">1.3.3.3. </span>仿真<a class="headerlink" href="#id7" title="永久链接至标题"></a></h4>
+<p>仿真的工作目录位于<code class="docutils literal notranslate"><span class="pre">sims/verilator/run_*</span></code>，当前仅支持<code class="docutils literal notranslate"><span class="pre">verilator</span></code>。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">run_func</span></code> : 该工作目录下可运行<code class="docutils literal notranslate"><span class="pre">func</span></code>测试用例、<code class="docutils literal notranslate"><span class="pre">dhrystone</span></code>、<code class="docutils literal notranslate"><span class="pre">coremark</span></code>性能测试程序、<code class="docutils literal notranslate"><span class="pre">linux</span></code>以及自定义C程序。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">run_random</span></code> : 该工作目录下可进行随机指令序列测试。</p></li>
+</ul>
+<p>具体使用方法请参考<code class="docutils literal notranslate"><span class="pre">verilator</span></code>目录下的<code class="docutils literal notranslate"><span class="pre">README</span></code>。</p>
+</section>
+<section id="id8">
+<h4><span class="section-number">1.3.3.4. </span>综合、下板<a class="headerlink" href="#id8" title="永久链接至标题"></a></h4>
+<p>该步骤的工作目录位于<code class="docutils literal notranslate"><span class="pre">fpga</span></code>，当前支持龙芯实验箱及百芯板。目前该内容仅用于在板上启动内核。<br />
+演示可使用<code class="docutils literal notranslate"><span class="pre">myCPU</span></code>单发射五级流水。
+使用vivado打开龙芯实验箱或者百芯目录下<code class="docutils literal notranslate"><span class="pre">system_run/system_run.xpr</span></code>工程，添加处理器核代码后，开始综合。<br />
+板上内核启动方法。<code class="docutils literal notranslate"><span class="pre">flash</span></code>加载<code class="docutils literal notranslate"><span class="pre">pmon</span></code>，通过网口加载内核代码。<br />
+具体流程：<br />
+下载<code class="docutils literal notranslate"><span class="pre">pmon</span></code>源码编译出<code class="docutils literal notranslate"><span class="pre">gzrom.bin</span></code>或者直接下载，烧写至<code class="docutils literal notranslate"><span class="pre">flash</span></code>。<br />
+连接串口，配置为<code class="docutils literal notranslate"><span class="pre">115200</span> <span class="pre">8N1</span></code>。<br />
+后续步骤同龙芯杯大赛中的<code class="docutils literal notranslate"><span class="pre">FPGA_soc_test</span></code>流程。<br />
+在本地搭建<code class="docutils literal notranslate"><span class="pre">tftp</span></code>服务器，配置<code class="docutils literal notranslate"><span class="pre">IP</span></code>为<code class="docutils literal notranslate"><span class="pre">10.90.50.43</span></code>。<br />
+启动<code class="docutils literal notranslate"><span class="pre">pmon</span></code>后，配置网络<code class="docutils literal notranslate"><span class="pre">”ifconfig</span> <span class="pre">dmfe0</span> <span class="pre">10.90.50.44</span></code>。<br />
+加载内核<code class="docutils literal notranslate"><span class="pre">load</span> <span class="pre">tftp://10.90.50.43/vmlinux</span></code>。<br />
+启动内核<code class="docutils literal notranslate"><span class="pre">g</span></code>。</p>
+<p>内核<code class="docutils literal notranslate"><span class="pre">busybox</span></code>中可尝试运行<code class="docutils literal notranslate"><span class="pre">unixbench</span></code>。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">ub</span><span class="o">.</span><span class="n">sh</span>
+<span class="n">cd</span> <span class="n">pgms</span>
+<span class="o">./</span><span class="n">context1</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>内核暂不提供源码，仅提供两个二进制文件，分别用于综合和仿真。<br />
+<code class="docutils literal notranslate"><span class="pre">pmon</span></code>提供源码，可使用编译后的<code class="docutils literal notranslate"><span class="pre">gzrom.zip</span></code>，或者到<code class="docutils literal notranslate"><span class="pre">pmon_archlab</span></code>中进行重新编译。具体流程：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">zloader</span><span class="o">.</span><span class="n">ls1b</span>
+<span class="n">make</span> <span class="n">cfg</span>
+<span class="n">make</span> <span class="n">tgt</span><span class="o">=</span><span class="n">rom</span>
+</pre></div>
+</div>
+<p>当前内核及<code class="docutils literal notranslate"><span class="pre">pmon</span></code>仅适配<code class="docutils literal notranslate"><span class="pre">myCPU</span></code>处理器核。</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="la32-nemu">
+<h3><span class="section-number">1.3.4. </span>LA32-NEMU<a class="headerlink" href="#la32-nemu" title="永久链接至标题"></a></h3>
+<p>为帮助用户在仿真环境下调试内核，我们将会提供<code class="docutils literal notranslate"><span class="pre">difftest</span></code>环境，目前已完成<a class="reference external" href="https://gitee.com/wwt_panache/la32-nemu">NEMU</a>的移植。</p>
+</section>
+<hr class="docutils" />
+<section id="id9">
+<h3><span class="section-number">1.3.5. </span>工具下载链接<a class="headerlink" href="#id9" title="永久链接至标题"></a></h3>
+<p>http://114.242.206.180:24989/nextcloud/index.php/s/7xXTPkWg6Jn5KLW</p>
+</section>
+<hr class="docutils" />
+<section id="id10">
+<h3><span class="section-number">1.3.6. </span>常见问题<a class="headerlink" href="#id10" title="永久链接至标题"></a></h3>
+<section id="qemu">
+<h4><span class="section-number">1.3.6.1. </span>qemu无法运行<a class="headerlink" href="#qemu" title="永久链接至标题"></a></h4>
+<p>错误提示</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">qemu</span><span class="o">-</span><span class="n">system</span><span class="o">-</span><span class="n">loongson32</span><span class="p">:</span> <span class="n">cannot</span> <span class="nb">set</span> <span class="n">up</span> <span class="n">guest</span> <span class="n">memory</span> <span class="s1">&#39;mips_r4k.ram0&#39;</span><span class="p">:</span> <span class="n">Cannot</span> <span class="n">allocate</span> <span class="n">memory</span>
+</pre></div>
+</div>
+<p>机器内存不够，建议关闭一些应用。</p>
+</section>
+<section id="testbench">
+<h4><span class="section-number">1.3.6.2. </span>testbench无法编译<a class="headerlink" href="#testbench" title="永久链接至标题"></a></h4>
+<p>错误提示</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">g</span><span class="o">++</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">verilator</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">verilated</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span> <span class="n">No</span> <span class="n">such</span> <span class="n">file</span> <span class="ow">or</span> <span class="n">directory</span>
+<span class="n">g</span><span class="o">++</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">verilator</span><span class="o">/</span><span class="n">include</span><span class="o">/</span><span class="n">verilated_vcd_c</span><span class="o">.</span><span class="n">cpp</span><span class="p">:</span> <span class="n">No</span> <span class="n">such</span> <span class="n">file</span> <span class="ow">or</span> <span class="n">directory</span>
+</pre></div>
+</div>
+<p>根据verilator库文件所安装的位置，需要调整<code class="docutils literal notranslate"><span class="pre">sims/verilator/run/Makefile</span></code>内的<code class="docutils literal notranslate"><span class="pre">VERILATOR_HOME</span></code>变量。当机器上存在多个版本的verilator时，注意配置成相对应的库路径。</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id11">
+<h3><span class="section-number">1.3.7. </span>交流群<a class="headerlink" href="#id11" title="永久链接至标题"></a></h3>
+<p><a class="reference external" href="https://join.slack.com/t/chiplabworkspace/shared_invite/zt-v1927dwg-qqnHNTcAeko7QsUsdCRoPA">slack交流群</a></p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to chiplab’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> 上一页</a>
+        <a href="Simulation/verilator.html" class="btn btn-neutral float-right" title="2. verilator仿真环境说明" accesskey="n" rel="next">下一页 <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2022, Loongson.</p>
+  </div>
+
+  利用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 构建，使用了 
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">主题</a>
+    由 <a href="https://readthedocs.org">Read the Docs</a>开发.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
