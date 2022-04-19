@@ -55,6 +55,9 @@ NemuProxy::NemuProxy(int coreid) {
     exec = (void (*)(uint64_t))dlsym(handle, "difftest_exec");
     check_and_assert(exec);
 
+    check_end = (int(*)(void))dlsym(handle, "difftest_cosim_end");
+    check_and_assert(check_end);
+
     guided_exec = (vaddr_t(*)(void*))dlsym(handle, "difftest_guided_exec");
     check_and_assert(guided_exec);
 

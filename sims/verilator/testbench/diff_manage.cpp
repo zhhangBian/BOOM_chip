@@ -31,6 +31,14 @@ int DiffManage::do_step(vluint64_t &main_time) {
     return STATE_RUNNING;
 }
 
+int DiffManage::check_end() {
+    int end = 0;
+    for (int i = 0; i < NUM_CORES; ++i) {
+        end |= difftest[i]->get_proxy_check_end();
+    }
+    return end;
+}
+
 DiffManage::~DiffManage() {
     for(int i = 0; i < NUM_CORES; ++i) {
         delete difftest[i];

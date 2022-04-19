@@ -10,6 +10,7 @@ public:
 
     int difftest_state();
     int do_step(vluint64_t& main_time);
+    int check_end();
 
     ~DiffManage();
 };

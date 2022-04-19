@@ -17,7 +17,7 @@
 #define DEBUG_GROUP_TRACE_SIZE 16
 
 #ifdef RUN_FUNC
-#define END_PC 0x1c000110
+#define END_PC 0x1c000114
 #elif defined RUN_C
 #define END_PC 0x123
 #else
@@ -217,6 +217,9 @@ public:
     }
     inline int get_trap_code() const {
         return dut.trap.code;
+    }
+    inline int get_proxy_check_end() const {
+        return proxy->check_end();
     }
 
     Difftest(int coreid);

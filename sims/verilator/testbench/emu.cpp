@@ -248,6 +248,13 @@ int Emulator::process() {
 			#endif
 #endif
 
+    //UART OUTPUT
+    if (CONFREG_UART_DISPLAY) {
+        #ifdef OUTPUT_UART_INFO
+        printf("%c", CONFREG_UART_DATA);
+        #endif
+        fprintf(uart_out, "%c", CONFREG_UART_DATA);
+    }
     trapCode = dm->difftest_state();
     if (trapCode != STATE_RUNNING) {
         printf("trapeCode = %d\n", trapCode);

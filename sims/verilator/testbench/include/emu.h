@@ -6,6 +6,9 @@
 #include "diff_manage.h"
 #include "common.h"
 
+#define CONFREG_UART_DATA       top->confreg_uart_data
+#define CONFREG_UART_DISPLAY    top->write_uart_valid
+
 class Emulator:CpuTool {
 private:
     vluint64_t *main_time;

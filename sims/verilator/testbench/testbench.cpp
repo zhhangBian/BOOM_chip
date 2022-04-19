@@ -215,6 +215,7 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
             if(EVAL)break;
             emask |= time_limit->process(main_time);
             emask |= emu->process();
+            emask |= emu->dm->check_end();
             if(EVAL)break;
             if(emask)break;
             clock_total += 1;

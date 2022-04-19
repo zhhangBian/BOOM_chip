@@ -36,6 +36,7 @@ public:
     void (*tlbfill_index_set)(uint32_t index);
     void (*timercpy)(void* dut);
     void (*estat_sync)(uint32_t index, uint32_t mask);
+    int  (*check_end)();
 };
 
 #define check_and_assert(func)                \
