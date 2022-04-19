@@ -55,7 +55,7 @@ test_finish:
     st.w      zero, t2, 0
 1:
 //    .word 0x80000000 // nemu trap
-    li.w      v0, 0
+    li.w      a0, 0
     syscall 0x11
 
 ##avoid cpu run error
