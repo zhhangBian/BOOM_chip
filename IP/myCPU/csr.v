@@ -431,6 +431,7 @@ always @(posedge clk) begin
         csr_tlbidx[`NE] <= tlbidx_in[`NE];
     end
     else if (tlbrd_invalid_wr_en) begin
+        csr_tlbidx[`PS] <= 6'b0;
         csr_tlbidx[`NE] <= tlbidx_in[`NE];
     end
 end
@@ -445,6 +446,9 @@ always @(posedge clk) begin
     end
     else if (tlbrd_valid_wr_en) begin
         csr_tlbehi[`VPPN] <= tlbehi_in[`VPPN];
+    end
+    else if (tlbrd_invalid_wr_en) begin
+        csr_tlbehi[`VPPN] <= 19'b0;
     end
     else if (excp_tlb) begin
         csr_tlbehi[`VPPN] <= excp_tlb_vppn;
@@ -472,6 +476,14 @@ always @(posedge clk) begin
         csr_tlbelo0[`TLB_G]   <= tlbelo0_in[`TLB_G];
         csr_tlbelo0[`TLB_PPN] <= tlbelo0_in[`TLB_PPN];
     end
+    else if (tlbrd_invalid_wr_en) begin
+        csr_tlbelo0[`TLB_V]   <= 1'b0;
+        csr_tlbelo0[`TLB_D]   <= 1'b0;
+        csr_tlbelo0[`TLB_PLV] <= 2'b0;
+        csr_tlbelo0[`TLB_MAT] <= 2'b0;
+        csr_tlbelo0[`TLB_G]   <= 1'b0;
+        csr_tlbelo0[`TLB_PPN] <= 24'b0;
+    end
 end
 
 //tlbelo1
@@ -495,6 +507,14 @@ always @(posedge clk) begin
         csr_tlbelo1[`TLB_G]   <= tlbelo1_in[`TLB_G];
         csr_tlbelo1[`TLB_PPN] <= tlbelo1_in[`TLB_PPN];
     end
+    else if (tlbrd_invalid_wr_en) begin
+        csr_tlbelo1[`TLB_V]   <= 1'b0;
+        csr_tlbelo1[`TLB_D]   <= 1'b0;
+        csr_tlbelo1[`TLB_PLV] <= 2'b0;
+        csr_tlbelo1[`TLB_MAT] <= 2'b0;
+        csr_tlbelo1[`TLB_G]   <= 1'b0;
+        csr_tlbelo1[`TLB_PPN] <= 24'b0;
+    end
 end
 
 //asid
@@ -507,6 +527,9 @@ always @(posedge clk) begin
     end
     else if (tlbrd_valid_wr_en) begin
         csr_asid[`TLB_ASID] <= asid_in;
+    end
+    else if (tlbrd_invalid_wr_en) begin
+        csr_asid[`TLB_ASID] <= 10'b0;
     end
 end
 
