@@ -7,12 +7,12 @@
 	- `CPU_2CMT` : 双发射    
 
 ## Quick Start
-以下为一个简单的仿真例程，方便用户快速上手仿真过程。在进行仿真之前，用户需安装好verilator、gtkware以及qemu。
+以下为一个简单的仿真例程，方便用户快速上手仿真过程。在进行仿真之前，用户需安装好verilator、gtkware以及nemu。
 ```
 cd $CHIPLAB_HOME/sims/verilator/run_func #进入func仿真目录中
-./configure.sh --run func/func_lab3      #以仿真运行的程序func_lab3为例子生成对应的Makefile
+./configure.sh --run func/func_lab16     #以仿真运行的程序func_lab16为例子生成对应的Makefile
 make                                     #开始编译。若没有编译出错，会自动进行仿真。
-cd $CHIPLAB_HOME/sims/verilator/run_func/log/func/func_lab3_log
+cd $CHIPLAB_HOME/sims/verilator/run_func/log/func/func_lab16_log
 gtkwave simu_trace.vcd                   #查看仿真波形
 ```
 上述简单仿真过程完成之后，用户可根据自己的需要，配置相应的仿真参数。对于仿真参数的说明，请参考以下章节。
@@ -23,11 +23,9 @@ gtkwave simu_trace.vcd                   #查看仿真波形
 ```
 选择运行的`software`以及对各项功能进行配置，`--run`必选，其他可选。`func`测试用例所测试的内容记录在`software/func/*`对应文件夹下的`README`中，该文件也对`func`中的一些选项进行了说明。   
 编译参数配置更改后需要重新执行整个编译运行流程才能生效。   
-`qemu`中存在一些内容无法与核保持一致，因此测试项无法在`trace`比对功能开启的时候进行测试。完整的测试在`--disable-trace-comp`开启时才会进行，具体的测试项在`README`中说明。     
-目前的`trace`比对功能仅在`func`下支持，运行其他测试用例时需要关闭。     
 - `--run software` : 选择仿真运行的程序，一次仿真执行多个程序的功能有缺陷
-- `--disable-trace-comp` : 关闭`trace`比对功能 
-- `--disable-simu-trace` : 关闭`trace log`记录，适用于内核的长时间仿真，`simu_trace.txt`可能会占用较大的存储空间
+- `--trace-comp` : 开启使用NEMU进行的`trace`比对功能 
+- `--simu-trace` : `trace log`记录，适用于内核的长时间仿真，`simu_trace.txt`可能会占用较大的存储空间
 - `--disable-read-miss` : 关闭`read miss`警告，`C++`模拟的`ram`在核访问未初始化的内容时，会报该地址的`read miss`
 - `--disable-clk-time` : 在`simu_trace.txt`中关闭仿真时间的打印，适用于将`simu_trace.txt`进行`diff`的场景
 - `--output-pc-info` : 在当前终端输出每条指令提交的信息
@@ -71,7 +69,6 @@ make
 - `make verilator` : verilator编译verilog代码
 - `make testbench` : 编译testbench（C++）
 - `make soft_compile` : 编译software(func)
-- `make golden_trace` : 生成golden trace作为参考(func)
 - `make simulation_run_func`   : 开始func仿真
 
 如若出现混乱，可以运行
@@ -94,8 +91,8 @@ make verilator testbench simulation_run_func
     - `main.elf` : software elf文件
     - `test.s` : 反汇编文件
 - `log`
-    - `golden_trace.txt` : 通过qemu模拟器生成的参考trace
     - `simu_trace.txt` : 仿真过程输出信息的备份
+    - `mem_trace.txt`  : 仿真过程仿存信息的备份
     - `simu_trace.vcd` : 仿真波形文件
     - `uart_output.txt` : 假串口输出`log`
     - `uart_output.txt.real` : 真串口输出`log`
@@ -125,7 +122,7 @@ gtkwave simu_trace.vcd
 
 其余信号如FIX ROQ CSR均为减少以上信号重复书写所定义.如不适合myCPU可以删除,保证上述信号连接正确即可.如果随机验证没有正常进入比对指令运行结果的状态，大概率为`simu_top`信号的配置问题。
 ### 准备测试用例
-下载相关随机res文件压缩包，将解压后`content`内的文件夹放入`$(CHIPLAB_HOME)/software/random_res/`下。该目录下不可放置其他无关内容。  
+下载相关随机res文件压缩包，将解压后`random_res`内的文件夹放入`$(CHIPLAB_HOME)/software/random_res/`下。该目录下不可放置其他无关内容。  
 ### 编译参数配置
 ```
 config-random.mak

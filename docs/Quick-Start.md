@@ -42,7 +42,7 @@ chiplab项目致力于构建基于loongarch primary的soc敏捷开发平台。�
 └── toolchains   
 　　　├── lib   
 　　　├── loongarch32_gnu   
-　　　├── qemu   
+　　　├── nemu   
 　　　└── system_newlib
 
 ## 使用方法
@@ -50,7 +50,7 @@ chiplab项目致力于构建基于loongarch primary的soc敏捷开发平台。�
 仓库中不包括`toolchains`目录，需要用户获取到二进制后自己构建。对各个目录进行介绍。
 - `lib` : 存有后续会提到的依赖库。当依赖库无法正常安装时可从该目录中拷贝。 
 - `loongarch32_gnu` : `gcc`工具链。`install.tar`包解压后得到`install`文件夹，将该文件夹拷贝至该目录下即可。
-- `qemu` : 模拟器。`qemu_system_loongon32.zip`解压后的`qemu-system-loongson32`拷贝至该目录即可。
+- `nemu` : 模拟器。`la32-nemu-interpreter-so`拷贝至该目录即可。
 - `system_newlib` : `newlib` C库，用于编译裸机C程序。内容包括`libc.a libg.a libm.a libpmon.a pmon.ld start.o`，`newlib.tar`解压后，将这些文件拷贝至该目录下即可。
 
 ### 依赖安装
@@ -76,7 +76,7 @@ sudo make install
 ```   
 sudo apt-get install gtkwave
 ```
-- qemu模拟器、gcc  
+- nemu模拟器、gcc  
 ```
 sudo apt-get install libisl-dev libmpfr-dev libgtk-3-dev
 ```
@@ -167,7 +167,7 @@ module core_top(
 - `run_func` : 该工作目录下可运行`func`测试用例、`dhrystone`、`coremark`性能测试程序、`linux`以及自定义C程序。
 - `run_random` : 该工作目录下可进行随机指令序列测试。 
 
-具体使用方法请参考`verilator`目录下的`README`。
+具体使用方法请参考[verilator仿真环境说明](https://chiplab.readthedocs.io/en/latest/Simulation/verilator.html)。
      
 #### 综合、下板
 该步骤的工作目录位于`fpga`，当前支持龙芯实验箱及百芯板。目前该内容仅用于在板上启动内核。    
@@ -210,11 +210,6 @@ http://114.242.206.180:24989/nextcloud/index.php/s/7xXTPkWg6Jn5KLW
 ---
 
 ### 常见问题
-#### qemu无法运行
-错误提示
-```
-qemu-system-loongson32: cannot set up guest memory 'mips_r4k.ram0': Cannot allocate memory
-```
 机器内存不够，建议关闭一些应用。
 #### testbench无法编译
 错误提示
