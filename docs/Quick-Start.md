@@ -1,6 +1,6 @@
 # Chiplab用户手册 
 ## 前言
-chiplab项目致力于构建基于loongarch primary的soc敏捷开发平台。该项目还处于初始的状态，如发现问题，希望能够将issues发送至chenzeshuai@loongson.cn。
+chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。该项目还处于初始的状态，如发现问题，希望能够将issues发送至chenzeshuai@loongson.cn。
 ## 目录结构
 .   
 ├── chip  
