@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include "testbench.h"
 
 CpuTestbench::CpuTestbench(int argc, char **argv, char **env, vluint64_t *main_time) : CpuTool(nullptr) {
@@ -80,6 +81,8 @@ void CpuTestbench::display_exit_cause(vluint64_t& main_time,int emask) {
     }
 }
 
+long long inst_total = 0;
+
 void CpuTestbench::simulate(vluint64_t& main_time) {
     if(!simu_quiet)fprintf(stderr,"Verilator Simulation Start.\n");
     int emask = status_call_finish;
@@ -88,6 +91,13 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
     long long clock_total = 0;
     int p_config;
     static const int reset_valid = 0;
+
+    /* calculate the time of simulation */
+    struct timeval start;
+    struct timeval end;
+    double timer;
+    gettimeofday(&start, NULL);
+
 
 #define EVAL ((clock=!clock),main_time+=1,this->eval(main_time))
 
@@ -215,13 +225,25 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
             if(EVAL)break;
             emask |= time_limit->process(main_time);
             emask |= emu->process();
+    #ifdef TRACE_COMP
             emask |= emu->dm->check_end();
+    #endif
             if(EVAL)break;
             if(emask)break;
             clock_total += 1;
         }
     }
     printf("total clock is %lld\n", clock_total);
+    gettimeofday(&end, NULL);
+    timer = (double)(1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec) / 1000000;
+
+    printf("\n==============================================================\n");
+    printf("total clock \t\tis %lld\n", clock_total);
+    printf("total instruction \tis %lld\n", inst_total);
+    printf("instruction per cycle\tis %lf\n", (double) inst_total / clock_total);
+    printf("simulation time \tis %lf s\n", timer);
+    printf("==============================================================\n");
+
     EVAL;
 #undef EVAL
     display_exit_cause(main_time,emask);

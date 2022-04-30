@@ -9,18 +9,12 @@ extern char* chiplab_home;
 extern char* difftest_ref_so;
 
 NemuProxy::NemuProxy(int coreid) {
-#ifdef DEBUG
-    char *current_path = NULL;
-    if (getcwd(current_path, 1024)) {
-        printf("current path is %s\n", current_path);
-    }
-#endif
-
+#ifdef TRACE_COMP
     if (difftest_ref_so == NULL) {
         printf("--diff is not given, "
-                "try to use $(CHIPLAB_HOME)/toolchains/nemu/la32-nemu-interpreter-so by "
+                "try to use $(CHIPLAB_HOME)/toolchains/nemu/la32r-nemu-interpreter-so by "
                 "default\n");
-        const char* so = "/toolchains/nemu/la32-nemu-interpreter-so";
+        const char* so = "/toolchains/nemu/la32r-nemu-interpreter-so";
         char* buf = (char*)malloc(strlen(chiplab_home) + strlen(so) + 1);
         strcpy(buf, chiplab_home);
         strcat(buf, so);
@@ -86,6 +80,7 @@ NemuProxy::NemuProxy(int coreid) {
 #else
     printf("The current platform is not supported.\n");
     exit(1);
+#endif
 #endif
 }
 

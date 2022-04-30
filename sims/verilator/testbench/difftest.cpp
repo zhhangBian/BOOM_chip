@@ -27,33 +27,39 @@ static uint32_t estat_mask;
 static uint32_t estat_new;
 
 static int dead_clock = 0;
+extern long long inst_total;
 
 int Difftest::step(vluint64_t &main_time) {
     progress = false;
     idx_commit = 0;
 
-    while (idx_commit < DIFFTEST_COMMIT_WIDTH && dut.commit[idx_commit].valid && dut.commit[idx_commit].wen) {
-        dead_clock = 0;
-    #ifndef TRACE_COMP
-        dut.commit[idx_commit].valid = 0;
-    #endif
-    #ifdef OUTPUT_PC_INFO
-        #ifdef PRINT_CLK_TIME
-        printf("[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
-        #else
-        printf("mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
-        #endif
-    #endif
+    if (!dut.excp.excp_valid) {
+        while (idx_commit < DIFFTEST_COMMIT_WIDTH && dut.commit[idx_commit].valid) {
+            inst_total += 1;
+#ifndef TRACE_COMP
+            dut.commit[idx_commit].valid = 0;
+#endif
+            if (dut.commit[idx_commit].wen) {
+                dead_clock = 0;
+#ifdef OUTPUT_PC_INFO
+#ifdef PRINT_CLK_TIME
+                printf("[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+#else
+                printf("mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+#endif
+#endif
 
-    #ifdef SIMU_TRACE
-        #ifdef PRINT_CLK_TIME
-        fprintf(trace_out, "[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
-        #else
-        fprintf(trace_out, "mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
-        #endif
-		fflush(NULL);
-    #endif
-        idx_commit++;
+#ifdef SIMU_TRACE
+#ifdef PRINT_CLK_TIME
+                fprintf(trace_out, "[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+#else
+                fprintf(trace_out, "mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+#endif
+                fflush(NULL);
+#endif
+            }
+            idx_commit++;
+        }
     }
 
 #ifdef DEAD_CLOCK_EN
