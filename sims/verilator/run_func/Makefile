@@ -312,6 +312,12 @@ else
 endif
 
 
+clean_soft:
+	for soft in ${soft_list}; \
+	do \
+	rm -rf ./log/$${soft}_log;	\
+	rm -rf ./obj/$${soft}_obj;	\
+	done
 
 clean:
 	rm -f output & rm -rf obj_dir &	\
