@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2. verilator仿真环境说明 &mdash; CHIPLAB  文档</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/translations.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="prev" title="1. Chiplab用户手册" href="../Quick-Start.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> CHIPLAB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="在文档中搜索" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../Quick-Start.html">1. Chiplab用户手册</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">2. verilator仿真环境说明</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#soc">2.1. SOC参数配置</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start">2.2. Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#func">2.3. func环境</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">2.3.1. 编译参数配置</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">2.3.2. 运行参数配置</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">2.3.3. 编译运行</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">2.3.4. func验证</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#random">2.4. random环境</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#simu-top">2.4.1. 修改simu_top</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">2.4.2. 准备测试用例</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">2.4.3. 编译参数配置</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">2.4.4. 运行参数配置</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">2.4.5. 编译运行</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id9">2.4.5.1. 随机验证运行时的参数说明</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id10">2.4.6. 随机验证的使用说明</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">2.4.7. 随机验证调试帮助</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">CHIPLAB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><span class="section-number">2. </span>verilator仿真环境说明</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/Simulation/verilator.md.txt" rel="nofollow"> 查看页面源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="verilator">
+<h1><span class="section-number">2. </span>verilator仿真环境说明<a class="headerlink" href="#verilator" title="永久链接至标题"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">func</span></code>和<code class="docutils literal notranslate"><span class="pre">random</span></code>运行环境分别位于<code class="docutils literal notranslate"><span class="pre">run_func</span></code>和<code class="docutils literal notranslate"><span class="pre">run_random</span></code>，进入目录进行相应的工作。</p>
+<section id="soc">
+<h2><span class="section-number">2.1. </span>SOC参数配置<a class="headerlink" href="#soc" title="永久链接至标题"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">config-generator.mak</span></code></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">AXI64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AXI128</span></code> : <code class="docutils literal notranslate"><span class="pre">AXI</span></code>选项都置为<code class="docutils literal notranslate"><span class="pre">n</span></code>表示<code class="docutils literal notranslate"><span class="pre">AXI32</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CPU_2CMT</span></code> : 双发射</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="quick-start">
+<h2><span class="section-number">2.2. </span>Quick Start<a class="headerlink" href="#quick-start" title="永久链接至标题"></a></h2>
+<p>以下为一个简单的仿真例程，方便用户快速上手仿真过程。在进行仿真之前，用户需安装好verilator、gtkware以及qemu。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>cd $CHIPLAB_HOME/sims/verilator/run_func #进入func仿真目录中
+./configure.sh --run func/func_lab3      #以仿真运行的程序func_lab3为例子生成对应的Makefile
+make                                     #开始编译。若没有编译出错，会自动进行仿真。
+cd $CHIPLAB_HOME/sims/verilator/run_func/log/func/func_lab3_log
+gtkwave simu_trace.vcd                   #查看仿真波形
+</pre></div>
+</div>
+<p>上述简单仿真过程完成之后，用户可根据自己的需要，配置相应的仿真参数。对于仿真参数的说明，请参考以下章节。</p>
+</section>
+<section id="func">
+<h2><span class="section-number">2.3. </span>func环境<a class="headerlink" href="#func" title="永久链接至标题"></a></h2>
+<section id="id1">
+<h3><span class="section-number">2.3.1. </span>编译参数配置<a class="headerlink" href="#id1" title="永久链接至标题"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">configure</span><span class="o">.</span><span class="n">sh</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>选择运行的<code class="docutils literal notranslate"><span class="pre">software</span></code>以及对各项功能进行配置，<code class="docutils literal notranslate"><span class="pre">--run</span></code>必选，其他可选。<code class="docutils literal notranslate"><span class="pre">func</span></code>测试用例所测试的内容记录在<code class="docutils literal notranslate"><span class="pre">software/func/*</span></code>对应文件夹下的<code class="docutils literal notranslate"><span class="pre">README</span></code>中，该文件也对<code class="docutils literal notranslate"><span class="pre">func</span></code>中的一些选项进行了说明。<br />
+编译参数配置更改后需要重新执行整个编译运行流程才能生效。<br />
+<code class="docutils literal notranslate"><span class="pre">qemu</span></code>中存在一些内容无法与核保持一致，因此测试项无法在<code class="docutils literal notranslate"><span class="pre">trace</span></code>比对功能开启的时候进行测试。完整的测试在<code class="docutils literal notranslate"><span class="pre">--disable-trace-comp</span></code>开启时才会进行，具体的测试项在<code class="docutils literal notranslate"><span class="pre">README</span></code>中说明。<br />
+目前的<code class="docutils literal notranslate"><span class="pre">trace</span></code>比对功能仅在<code class="docutils literal notranslate"><span class="pre">func</span></code>下支持，运行其他测试用例时需要关闭。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--run</span> <span class="pre">software</span></code> : 选择仿真运行的程序，一次仿真执行多个程序的功能有缺陷</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--disable-trace-comp</span></code> : 关闭<code class="docutils literal notranslate"><span class="pre">trace</span></code>比对功能</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--disable-simu-trace</span></code> : 关闭<code class="docutils literal notranslate"><span class="pre">trace</span> <span class="pre">log</span></code>记录，适用于内核的长时间仿真，<code class="docutils literal notranslate"><span class="pre">simu_trace.txt</span></code>可能会占用较大的存储空间</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--disable-read-miss</span></code> : 关闭<code class="docutils literal notranslate"><span class="pre">read</span> <span class="pre">miss</span></code>警告，<code class="docutils literal notranslate"><span class="pre">C++</span></code>模拟的<code class="docutils literal notranslate"><span class="pre">ram</span></code>在核访问未初始化的内容时，会报该地址的<code class="docutils literal notranslate"><span class="pre">read</span> <span class="pre">miss</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--disable-clk-time</span></code> : 在<code class="docutils literal notranslate"><span class="pre">simu_trace.txt</span></code>中关闭仿真时间的打印，适用于将<code class="docutils literal notranslate"><span class="pre">simu_trace.txt</span></code>进行<code class="docutils literal notranslate"><span class="pre">diff</span></code>的场景</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--output-pc-info</span></code> : 在当前终端输出每条指令提交的信息</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--output-uart-info</span></code> : 在当前终端输出假串口以及真串口的输出</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--threads</span></code> : 开启多个线程进行仿真，多线程开启不一定会获得更高的性能</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--reset-val</span></code> : <code class="docutils literal notranslate"><span class="pre">reset</span></code>信号置起时，<code class="docutils literal notranslate"><span class="pre">rtl</span></code>未初始化的寄存器，<code class="docutils literal notranslate"><span class="pre">verilator</span></code>不会呈现出<code class="docutils literal notranslate"><span class="pre">x</span></code>，而是会自行初始化。赋值<code class="docutils literal notranslate"><span class="pre">0</span></code>初始化为<code class="docutils literal notranslate"><span class="pre">0</span></code>；赋值<code class="docutils literal notranslate"><span class="pre">1</span></code>初始化为<code class="docutils literal notranslate"><span class="pre">1</span></code>；赋值<code class="docutils literal notranslate"><span class="pre">2</span></code>初始化为随机值。早期设计阶段，可以固定为某个值，而当设计比较稳定，可以设置为随机值，进行比较完备的验证</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--reset-random-seed</span></code> : 当<code class="docutils literal notranslate"><span class="pre">reset-val</span></code>设为<code class="docutils literal notranslate"><span class="pre">2</span></code>时，该选项选择对应的随机种子</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--dump-vcd</span></code> : 生成<code class="docutils literal notranslate"><span class="pre">vcd</span></code>格式的波形文件，该格式未进行任何的压缩，会占用较大的存储空间，且<code class="docutils literal notranslate"><span class="pre">gtkwave</span></code>打开较慢</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--dump-fst</span></code> : 生成<code class="docutils literal notranslate"><span class="pre">fst</span></code>格式的波形文件，该格式会进行一定的压缩，<code class="docutils literal notranslate"><span class="pre">gtkwave</span></code>打开较快，但会导致仿真速度下降</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--slice-waveform</span></code> : 对波形文件进行切分，存储在多个文件中，用于解决波形堆积在一个文件，导致打开极慢的问题</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--waveform-slice-size</span></code> : 波形文件切分的单位，以仿真时间衡量</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--slice-simu-trace</span></code> : 对<code class="docutils literal notranslate"><span class="pre">simu_trace.txt</span></code>进行切分，同样解决<code class="docutils literal notranslate"><span class="pre">trace</span></code>堆积在一个文件，<code class="docutils literal notranslate"><span class="pre">vim</span></code>打开及文本处理都极慢的问题</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--trace-slice-size</span></code> : <code class="docutils literal notranslate"><span class="pre">simu_trace.txt</span></code>切分的单位</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--tail-waveform</span></code> : 仅保留末尾部分的波形文件，适用于运行内核时，希望保留出错位置的信息</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--waveform-tail-size</span></code> : 波形所保留的末尾部分的大小，以仿真时间衡量</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--tail-simu-trace</span></code> : 仅保留末尾部分的<code class="docutils literal notranslate"><span class="pre">trace</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--trace-tail-size</span></code> : <code class="docutils literal notranslate"><span class="pre">trace</span></code>所保留的末尾部分的大小</p></li>
+</ul>
+</section>
+<section id="id2">
+<h3><span class="section-number">2.3.2. </span>运行参数配置<a class="headerlink" href="#id2" title="永久链接至标题"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Makefile_run</span>
+</pre></div>
+</div>
+<p>运行参数在该文件中进行配置，参数更改后仅需重新开始仿真即可生效，即<code class="docutils literal notranslate"><span class="pre">make</span></code>中的最后一个流程。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_DELAY</span></code> : 波形起始时间</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_TRACE</span></code> : 是否生成波形</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TIME_LIMIT</span></code> : 仿真时间限制 (设零无限制)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BUS_DELAY</span></code> : 总线是否引入随机延迟</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BUS_DELAY_RANDOM_SEED</span></code> : 总线延迟随机种子</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SAVE_BP_TIME</span></code> : 断点保存仿真时间，断点产生后仿真仍继续进行（设零不进行断点保存）</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RAM_SAVE_BP_FILE</span></code> : 断点保存内存信息文件</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TOP_SAVE_BP_FIEL</span></code> : 断点保存<code class="docutils literal notranslate"><span class="pre">RTL</span></code>状态文件</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RESTORE_BP_TIME</span></code> : 断点恢复仿真时间（设零不进行断点恢复）</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RAM_RESTORE_BP_FILE</span></code> : 断点恢复内存信息文件</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TOP_RESTORE_BP_FIEL</span></code> : 断点恢复<code class="docutils literal notranslate"><span class="pre">RTL</span></code>状态文件</p></li>
+</ul>
+</section>
+<section id="id3">
+<h3><span class="section-number">2.3.3. </span>编译运行<a class="headerlink" href="#id3" title="永久链接至标题"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span>
+</pre></div>
+</div>
+<p>即可开始仿真的整个流程，包括：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">verilator</span></code> : verilator编译verilog代码</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">testbench</span></code> : 编译testbench（C++）</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">soft_compile</span></code> : 编译software(func)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">golden_trace</span></code> : 生成golden trace作为参考(func)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">simulation_run_func</span></code>   : 开始func仿真</p></li>
+</ul>
+<p>如若出现混乱，可以运行</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">clean</span>
+</pre></div>
+</div>
+<p>清理<code class="docutils literal notranslate"><span class="pre">make</span></code>生成的内容，还可运行</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">clean_all</span>
+</pre></div>
+</div>
+<p>清理<code class="docutils literal notranslate"><span class="pre">make</span></code>及<code class="docutils literal notranslate"><span class="pre">configure.sh</span></code>生成的内容。<br />
+目前<code class="docutils literal notranslate"><span class="pre">Makefile</span></code>比较简陋，对于<code class="docutils literal notranslate"><span class="pre">software</span></code>无法进行是否修改过的判断，仅通过是否构建出对应<code class="docutils literal notranslate"><span class="pre">obj/*</span></code>文件进行判断，如果仅希望重新编译<code class="docutils literal notranslate"><span class="pre">software</span></code>，可删除对应的<code class="docutils literal notranslate"><span class="pre">obj/*</span></code>文件夹，然后<code class="docutils literal notranslate"><span class="pre">make</span></code>。注意不是删除<code class="docutils literal notranslate"><span class="pre">obj</span></code>目录。</p>
+</section>
+<section id="id4">
+<h3><span class="section-number">2.3.4. </span>func验证<a class="headerlink" href="#id4" title="永久链接至标题"></a></h3>
+<p>实验过程中可以根据当前的进度，选择性的执行相应的流程。流程间存在依赖。一般来说对<code class="docutils literal notranslate"><span class="pre">myCPU</span></code>的<code class="docutils literal notranslate"><span class="pre">rtl</span></code>内容进行改动后，可以仅运行</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">verilator</span> <span class="n">testbench</span> <span class="n">simulation_run_func</span>
+</pre></div>
+</div>
+<p>仿真过程会生成两个比较关键的文件夹，分别是<code class="docutils literal notranslate"><span class="pre">obj</span></code>和<code class="docutils literal notranslate"><span class="pre">log</span></code>，内容包括：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">obj</span></code></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">main.elf</span></code> : software elf文件</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test.s</span></code> : 反汇编文件</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">log</span></code></p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">golden_trace.txt</span></code> : 通过qemu模拟器生成的参考trace</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simu_trace.txt</span></code> : 仿真过程输出信息的备份</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simu_trace.vcd</span></code> : 仿真波形文件</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uart_output.txt</span></code> : 假串口输出<code class="docutils literal notranslate"><span class="pre">log</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uart_output.txt.real</span></code> : 真串口输出<code class="docutils literal notranslate"><span class="pre">log</span></code></p></li>
+</ul>
+</li>
+</ul>
+<p>以上文件都可用于调试自己的处理器核设计，波形文件可以通过<code class="docutils literal notranslate"><span class="pre">gtkwave</span></code>打开。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gtkwave</span> <span class="n">simu_trace</span><span class="o">.</span><span class="n">vcd</span>
+
+</pre></div>
+</div>
+<p>如果仿真过程中被<code class="docutils literal notranslate"><span class="pre">ctrl-c</span></code>强制结束，仅<code class="docutils literal notranslate"><span class="pre">simu_trace.txt</span></code>会保存在<code class="docutils literal notranslate"><span class="pre">tmp</span></code>目录下，波形文件、串口输出的<code class="docutils literal notranslate"><span class="pre">log</span></code>会丢失。为避免该情况，可估算运行时间，并配置<code class="docutils literal notranslate"><span class="pre">Makefile_run</span></code>中的<code class="docutils literal notranslate"><span class="pre">TIME_LIMIT</span></code>选项。</p>
+</section>
+</section>
+<section id="random">
+<h2><span class="section-number">2.4. </span>random环境<a class="headerlink" href="#random" title="永久链接至标题"></a></h2>
+<section id="simu-top">
+<h3><span class="section-number">2.4.1. </span>修改simu_top<a class="headerlink" href="#simu-top" title="永久链接至标题"></a></h3>
+<p>对<code class="docutils literal notranslate"><span class="pre">$(CHIPLAB_HOME)/sims/verilator/testbench/simu_top.v</span></code>中的define进行修改,使其适配myCPU.<br />
+需要适配的信号说明如下:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CORE0</span></code> :               myCPU顶层</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GR_RTL</span></code> :              myCPU的标量定点通用寄存器堆</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CR_BADVADDR</span></code> :         myCPU中的badvaddr csr寄存器</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ROQ</span></code> :                 myCPU中提交寄存器修改的一级.五级流水中对应wb_stage</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CMTBUS_VALID0</span></code> :       当前提交流级有效.分支指令,无写回指令等也需要，<code class="docutils literal notranslate"><span class="pre">eret</span></code>指令或例外需置零.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CMTBUS_CMTNUM0</span></code> :      当前提交级的一次提交完成了几条指令.如无指令融合和指令拆分,一般始终为<code class="docutils literal notranslate"><span class="pre">CMTBUS_VALID0</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CMTBUS_VALID1</span></code> :       类似cmtbus_valid0,为适配双发射所使用.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CMTBUS_CMTNUM1</span></code> :      类似cmtbus_cmtnum0,为适配双发射所使用.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXBUS_EX</span></code> :            提交级触发例外</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXBUS_ERET</span></code> :          提交级触发了ERET</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXBUS_EXCODE</span></code> :        提交级触发例外的excode</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXBUS_EPC</span></code> :           提交级触发例外的EPC</p></li>
+</ul>
+<p>其余信号如FIX ROQ CSR均为减少以上信号重复书写所定义.如不适合myCPU可以删除,保证上述信号连接正确即可.如果随机验证没有正常进入比对指令运行结果的状态，大概率为<code class="docutils literal notranslate"><span class="pre">simu_top</span></code>信号的配置问题。</p>
+</section>
+<section id="id5">
+<h3><span class="section-number">2.4.2. </span>准备测试用例<a class="headerlink" href="#id5" title="永久链接至标题"></a></h3>
+<p>下载相关随机res文件压缩包，将解压后<code class="docutils literal notranslate"><span class="pre">content</span></code>内的文件夹放入<code class="docutils literal notranslate"><span class="pre">$(CHIPLAB_HOME)/software/random_res/</span></code>下。该目录下不可放置其他无关内容。</p>
+</section>
+<section id="id6">
+<h3><span class="section-number">2.4.3. </span>编译参数配置<a class="headerlink" href="#id6" title="永久链接至标题"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">config</span><span class="o">-</span><span class="n">random</span><span class="o">.</span><span class="n">mak</span>
+</pre></div>
+</div>
+<p>部分选项与<code class="docutils literal notranslate"><span class="pre">run_func</span></code>环境下<code class="docutils literal notranslate"><span class="pre">./configure.sh</span></code>中的选项具有相同的含义，不同的内容有</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CACHE_SEED</span></code> : 为对<code class="docutils literal notranslate"><span class="pre">cache</span></code>进行完备的测试，随机环境下，<code class="docutils literal notranslate"><span class="pre">tlb</span></code>的<code class="docutils literal notranslate"><span class="pre">cache</span></code>属性也进行随机的配置，该选项配置随机种子。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RAND32</span></code> : 配置随机测试位数。</p></li>
+</ul>
+</section>
+<section id="id7">
+<h3><span class="section-number">2.4.4. </span>运行参数配置<a class="headerlink" href="#id7" title="永久链接至标题"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Makefile_run</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_DELAY</span></code> : 波形起始时间</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_TRACE</span></code> : 是否生成波形</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TIME_LIMIT</span></code> : 仿真时间限制 (设零无限制)</p></li>
+</ul>
+</section>
+<section id="id8">
+<h3><span class="section-number">2.4.5. </span>编译运行<a class="headerlink" href="#id8" title="永久链接至标题"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span>
+</pre></div>
+</div>
+<p>即可开始随机验证。
+所有随机序列测试成功或失败的信息存放在<code class="docutils literal notranslate"><span class="pre">sims/verilator/run_random/log/*-result.txt</span></code>中<br />
+每个随机序列具体的测试信息存放在<code class="docutils literal notranslate"><span class="pre">$(CHIPLAB_HOME)/sims/verilator/run_random/log/$(TESTCASE)</span></code>下.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">run.log</span></code> :             当前case执行随机的输出结果.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simu_trace.vcd</span></code> :      当前case所生成波形
+以上文件都可用于调试自己的处理器核设计，波形文件可以通过<code class="docutils literal notranslate"><span class="pre">gtkwave</span></code>打开。</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gtkwave</span> <span class="n">simu_trace</span><span class="o">.</span><span class="n">vcd</span>
+</pre></div>
+</div>
+<section id="id9">
+<h4><span class="section-number">2.4.5.1. </span>随机验证运行时的参数说明<a class="headerlink" href="#id9" title="永久链接至标题"></a></h4>
+<p>可以在<code class="docutils literal notranslate"><span class="pre">$(CHIPLAB_HOME)/sims/verilator/run_random/Makefile_run</span></code>中对相应参数作为修改.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_TRACE</span></code> :          是否生成波形.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_DELAY</span></code> :          从具体时刻开始抓取波形</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TIME_LIMIT</span></code> :          仿真最长时刻</p></li>
+</ul>
+</section>
+</section>
+<section id="id10">
+<h3><span class="section-number">2.4.6. </span>随机验证的使用说明<a class="headerlink" href="#id10" title="永久链接至标题"></a></h3>
+<p>若需要跑具体某个随机测试用例,进入<code class="docutils literal notranslate"><span class="pre">$(CHIPLAB_HOME)/sims/verilator/run_random/run_random/</span></code>,执行:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>make simulation_run_random -C $(TESTCASE) -f ../../Makefile_run CASENAME=$(TESTCASE)
+</pre></div>
+</div>
+<p>或执行:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>make ../../../../software/random_res/$(TESTCASE)
+</pre></div>
+</div>
+<p>若此前没有执行过make random,请在<code class="docutils literal notranslate"><span class="pre">$(CHIPLAB_HOME)/sims/verilator/run_random/run_random/$(TESTCASE)/</span></code>下先执行:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">prepare</span>
+</pre></div>
+</div>
+<p>所有随机指令序列的测试结果记录在<code class="docutils literal notranslate"><span class="pre">log/result.txt</span></code>中。<br />
+debug时请参考<code class="docutils literal notranslate"><span class="pre">$(TESTCASE)/comments.res</span></code>以及<code class="docutils literal notranslate"><span class="pre">$(TESTCASE)/logs/run.log</span></code>。</p>
+</section>
+<section id="id11">
+<h3><span class="section-number">2.4.7. </span>随机验证调试帮助<a class="headerlink" href="#id11" title="永久链接至标题"></a></h3>
+<p>随机启动代码位于<code class="docutils literal notranslate"><span class="pre">software/random_boot</span></code>的<code class="docutils literal notranslate"><span class="pre">rand_boot.S</span></code>中。<br />
+随机测试用例文件夹中存有<code class="docutils literal notranslate"><span class="pre">*.res</span></code>文件，用于生成随机验证环境，这些文件也可用于调试。</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">comment.res</span></code> : 随机指令序列。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inst.vlog</span></code> : 随机指令的二进制内容，及其存放的物理地址。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">page.res</span></code> : 填充页表项的虚地址。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pfn.res</span></code> : 填充页表项的物理地址。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pc.res</span></code> : 取指虚地址。</p></li>
+</ul>
+<p>查看波形时，可观察顶层<code class="docutils literal notranslate"><span class="pre">simu_top.v</span></code>的几个<code class="docutils literal notranslate"><span class="pre">ram*</span></code>信号，判断AXI总线发出的请求及传输的数据是否正确。</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../Quick-Start.html" class="btn btn-neutral float-left" title="1. Chiplab用户手册" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> 上一页</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2022, Loongson.</p>
+  </div>
+
+  利用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 构建，使用了 
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">主题</a>
+    由 <a href="https://readthedocs.org">Read the Docs</a>开发.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
