@@ -77,7 +77,6 @@ typedef struct {
 } arch_greg_state_t;
 
 typedef struct __attribute__((packed)) {
-    uint32_t this_pc;
     uint32_t crmd;
     uint32_t prmd;
     uint32_t euen;
@@ -86,9 +85,10 @@ typedef struct __attribute__((packed)) {
     uint32_t tlbidx, tlbehi, tlbelo0, tlbelo1;
     uint32_t asid, pgdl, pgdh;
     uint32_t save0, save1, save2, save3;
-    uint32_t tid, tcfg, tval, ticlr;
+    uint32_t tid, tcfg, tval; // ticlr;
     uint32_t llbctl, tlbrentry, dmw0, dmw1;
     uint32_t estat;
+    uint32_t this_pc;
 } arch_csr_state_t;
 
 typedef struct {

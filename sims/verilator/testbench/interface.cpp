@@ -108,7 +108,7 @@ INTERFACE_CSRREG_STATE {
     packet->tid = tid;
     packet->tcfg = tcfg;
     packet->tval = tval;
-    packet->ticlr = ticlr;
+//    packet->ticlr = ticlr;
     packet->llbctl = llbctl;
     packet->tlbrentry = tlbrentry;
     packet->dmw0 = dmw0;

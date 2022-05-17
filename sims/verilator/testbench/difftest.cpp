@@ -5,15 +5,24 @@ extern FILE* trace_out;
 extern FILE* uart_out;
 
 // not compare estat
-static const int DIFFTEST_NR_REG = (sizeof(arch_greg_state_t) + sizeof(arch_csr_state_t)) / sizeof(uint32_t) - 1;
+static const int DIFFTEST_NR_GREG = sizeof(arch_greg_state_t) / sizeof(uint32_t);
+static const int DIFFTEST_NR_CSRREG = sizeof(arch_csr_state_t) / sizeof(uint32_t);
+static const int DIFFTEST_NR_REG = DIFFTEST_NR_GREG + DIFFTEST_NR_CSRREG;
 
-static const char* reg_name[DIFFTEST_NR_REG + 1] = {
-        "r0",     "ra",     "tp",      "sp",      "a0",      "a1",     "a2",        "a3",        "a4",      "a5",
-        "a6",     "a7",     "t0",      "t1",      "t2",      "t3",     "t4",        "t5",        "t6",      "t7",
-        "t8",     " x",     "fp",      "s0",      "s1",      "s2",     "s3",        "s4",        "s5",      "s6",
-        "s7",     "s8",     "this_pc", "crmd",    "prmd",    "euen",   "ecfg",      "era",       "badv",    "eentry",
-        "tlbidx", "tlbehi", "tlbelo0", "tlbelo1", "asid",    "pgdl",   "pgdh",      "save0",     "save1",   "save2",
-        "save3",  "tid",    "tcfg",    "tval",    "ticlr",   "llbctl", "tlbrentry", "dmw0",      "dmw1",    "estat"
+static const char* reg_name[DIFFTEST_NR_REG] = {
+        "r0",      "ra",     "tp",      "sp",      "a0",      "a1",     "a2",        "a3",        "a4",      "a5",
+        "a6",      "a7",     "t0",      "t1",      "t2",      "t3",     "t4",        "t5",        "t6",      "t7",
+        "t8",      " x",     "fp",      "s0",      "s1",      "s2",     "s3",        "s4",        "s5",      "s6",
+        "s7",      "s8",
+        "crmd",    "prmd",   "euen",    "ecfg",    "era",     "badv",   "eentry",    "tlbidx",    "tlbehi",  "tlbelo0",
+        "tlbelo1", "asid",   "pgdl",    "pgdh",    "save0",   "save1",  "save2",     "save3",     "tid",     "tcfg",
+        "tval",    "llbctl", "tlbrentry", "dmw0",  "dmw1",    "estat",   "this_pc"
+};
+
+static const char compare_mask[DIFFTEST_NR_CSRREG] = {
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+    1,  1,  1,  1,  1,  0,  1
 };
 
 #ifdef RAND_TEST
@@ -182,6 +191,10 @@ int Difftest::step(vluint64_t &main_time) {
     }
 
     ref.csr.tval = dut.csr.tval;
+    for(int i = 0; i < DIFFTEST_NR_CSRREG; i++) {
+        if (!compare_mask[i])
+            dut_regs_ptr[DIFFTEST_NR_GREG + i] = ref_regs_ptr[DIFFTEST_NR_GREG + i] = 0;
+    }
 
     /* compare */
     if (memcmp(dut_regs_ptr, ref_regs_ptr, DIFFTEST_NR_REG * sizeof(uint32_t))) {   // trace error print

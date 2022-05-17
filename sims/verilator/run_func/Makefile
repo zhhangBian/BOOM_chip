@@ -233,7 +233,7 @@ testbench:${TESTBENCH_SRC}/*.cpp
 	@echo "COMPILING testbench..."
 	@echo "============================================================================================================="
 	@echo "============================================================================================================="
-	g++ -O3 -pthread -DCACHE_SEED=0 -DVL_THREADED -DRESET_VAL=${RESET_VAL} -DRESET_SEED=${RESET_SEED} ${CFLAGS} ${INCLUDE} ${VERILATED_SRC} ${VCD_SRC} ${FST_SRC} ${SAVE_SRC} $? ${ALL_LIB} -g -o output -lz -ldl
+	g++ -O3 -pthread -DCACHE_SEED=0 -DVL_THREADED -DRESET_VAL=${RESET_VAL} -DRESET_SEED=${RESET_SEED} ${CFLAGS} ${INCLUDE} ${VERILATED_SRC} ${VCD_SRC} ${FST_SRC} ${SAVE_SRC} $? ${ALL_LIB} -o output -lz -ldl
 
 soft_compile:
 	@echo "============================================================================================================="
