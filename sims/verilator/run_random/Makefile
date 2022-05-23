@@ -149,6 +149,10 @@ ifeq ('${SIMU_TRACE}', 'y')
 CFLAGS += -DSIMU_TRACE 
 endif 
 
+ifeq ('${MEM_TRACE}', 'y')
+CFLAGS += -DMEM_TRACE 
+endif 
+
 VERILATOR_INCLUDE += -y ${SIMU_TOP} 
 ALL_VERILATOR_SRC += ${SIMU_TOP}/*.v
 
@@ -180,9 +184,9 @@ simulation_run_random:
 	@echo "RUN simulation..."
 	@echo "============================================================================================================="
 	@echo "============================================================================================================="
-	make all -C ../../../software/random_boot/ ./Makefile
-	make prepare -C ./run_random -f ./Makefile
-	make all -C ./run_random -f ./Makefile
+	make all -C ../../../software/random_boot/ ./Makefile || exit "$$?"
+	make prepare -C ./run_random -f ./Makefile || exit "$$?"
+	make all -C ./run_random -f ./Makefile || exit "$$?"
 	mv ./log/result.txt ./log/${RUN_TIME}-result.txt
 
 

@@ -225,7 +225,7 @@ verilator:${VERILATOR_SRC}
 	mkdir -p log
 	mkdir -p ${OBJ_DIR}
 	verilator ${VERILATOR_INCLUDE} ${WAVEOPTION} --savable --threads ${THREAD} -O3 -Wno-fatal -DSIMU -DSIMULATION=1 -Wall --trace -cc ${VFLAGS} ${SIMU_TOP_NAME}.v ${DIFFTEST}.v ${VERILATOR_SRC} 2>&1 | tee log/compile.log
-	make -C ${OBJ_DIR} -f "V${SIMU_TOP_NAME}.mk"
+	make -C ${OBJ_DIR} -f "V${SIMU_TOP_NAME}.mk" || exit "$$?"
 
 testbench:${TESTBENCH_SRC}/*.cpp 
 	@echo "============================================================================================================="
@@ -243,7 +243,7 @@ soft_compile:
 	@echo "============================================================================================================="
 	@for soft in ${soft_compile_list}; \
 	do 	\
-	make -C ${CHIPLAB_HOME}/software/$${soft} script; 	\
+	make -C ${CHIPLAB_HOME}/software/$${soft} script || exit "$$?";\
 	rm -rf ./obj/$${soft}_obj;	\
 	mkdir -p ./obj/$${soft}_obj;  \
 	mv ${CHIPLAB_HOME}/software/$${soft}/obj ./obj/$${soft}_obj;	\
@@ -285,7 +285,7 @@ ifeq ('${TRACE_COMP}', 'y')
 	cp ./obj/$${soft}_obj/obj/rom.vlog ./tmp;	\
 	touch ./tmp/ram.dat;\
 	cat ./tmp/rom.vlog > ./tmp/ram.dat;	\
-	make simulation_run_func -C ./tmp -f ../Makefile_run;	\
+	make simulation_run_func -C ./tmp -f ../Makefile_run || exit "$$?";	\
 	mv ./tmp/simu_trace.txt* ./log/$${soft}_log/;	\
 	mv ./tmp/uart_output.txt ./log/$${soft}_log/;	\
 	mv ./tmp/uart_output.txt.real ./log/$${soft}_log/;	\
@@ -300,7 +300,7 @@ else
 	cp ./obj/$${soft}_obj/obj/rom.vlog ./tmp;	\
 	touch ./tmp/ram.dat;\
 	cat ./tmp/rom.vlog > ./tmp/ram.dat;	\
-	make simulation_run_func -C ./tmp -f ../Makefile_run;	\
+	make simulation_run_func -C ./tmp -f ../Makefile_run || exit "$$?";	\
 	mkdir -p ./log/$${soft}_log;	\
 	mv ./tmp/simu_trace.txt* ./log/$${soft}_log/;	\
 	mv ./tmp/uart_output.txt ./log/$${soft}_log/;	\
