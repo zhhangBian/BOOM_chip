@@ -4,6 +4,5 @@ cmake-build-debug
 CMakeLists.txt
 toolchains/*
 !toolchains/README
-!toolchains/nemu
 software/random_res
 sims/verilator/run_func/single.log
