@@ -14,6 +14,8 @@ Welcome to chiplab's documentation!
 
    Simulation/verilator
 
+   Simulation/difftest
+
 
 
 Indices and tables
