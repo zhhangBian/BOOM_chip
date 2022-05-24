@@ -45,11 +45,11 @@ soft_list=$(subst ${comma},${space},${RUN_SOFTWARE})
 
 all:env_test func 
 func:compile 
-	+make soft 
-	+make run
+	make soft 
+	make run
 compile:link 
-	+make -j8 verilator
-	+make testbench
+	$(MAKE) -j8 verilator
+	$(MAKE) -j8 testbench
 soft:soft_compile 
 	#+make golden_trace
 run:simulation_run_func
@@ -225,7 +225,7 @@ verilator:${VERILATOR_SRC}
 	mkdir -p log
 	mkdir -p ${OBJ_DIR}
 	verilator ${VERILATOR_INCLUDE} ${WAVEOPTION} --savable --threads ${THREAD} -O3 -Wno-fatal -DSIMU -DSIMULATION=1 -Wall --trace -cc ${VFLAGS} ${SIMU_TOP_NAME}.v ${DIFFTEST}.v ${VERILATOR_SRC} 2>&1 | tee log/compile.log
-	make -C ${OBJ_DIR} -f "V${SIMU_TOP_NAME}.mk" || exit "$$?"
+	$(MAKE) -C ${OBJ_DIR} -f "V${SIMU_TOP_NAME}.mk" || exit "$$?"
 
 testbench:${TESTBENCH_SRC}/*.cpp 
 	@echo "============================================================================================================="
