@@ -167,7 +167,7 @@ module core_top(
 - `run_func` : 该工作目录下可运行`func`测试用例、`dhrystone`、`coremark`性能测试程序、`linux`以及自定义C程序。
 - `run_random` : 该工作目录下可进行随机指令序列测试。 
 
-具体使用方法请参考[verilator仿真环境说明](https://chiplab.readthedocs.io/en/latest/Simulation/verilator.html)。
+具体使用方法请参考[verilator仿真环境说明](https://chiplab.readthedocs.io/zh/latest/Simulation/verilator.html)。
      
 #### 综合、下板
 该步骤的工作目录位于`fpga`，当前支持龙芯实验箱及百芯板。目前该内容仅用于在板上启动内核。    
@@ -202,7 +202,7 @@ make tgt=rom
 ---
 ### LA32-NEMU
 为帮助用户在仿真环境下调试内核，我们将会提供`difftest`环境，目前已完成[NEMU](https://gitee.com/wwt_panache/la32-nemu)的移植。
-使用方法请参考[difftest说明](https://chiplab.readthedocs.io/en/latest/Simulation/difftest.html)。
+使用方法请参考[difftest说明](https://chiplab.readthedocs.io/zh/latest/Simulation/difftest.html)。
 
 ---
 ### 工具下载链接
