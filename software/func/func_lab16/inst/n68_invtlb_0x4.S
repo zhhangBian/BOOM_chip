@@ -9,8 +9,7 @@ LEAF(n68_invtlb_0x4_test)
     csrrd  t6, csr_tlbelo0 
     csrrd  t7, csr_tlbelo1 
     csrrd  t8, csr_tlbidx 
-    li.w     t0, 0x80000000 
-    or     t8, t8, t0 
+    li.w     t8, 0x80000000
     srli.w t8, t8, 0x5
 
     li.w    s4, 0x000000aa
@@ -25,15 +24,15 @@ LEAF(n68_invtlb_0x4_test)
     tlbrd
     csrrd t1, csr_tlbehi
 #li    t2, 0x0 
-    bne   t1, t5, inst_error
+    bne   t1, zero, inst_error
     csrrd t1, csr_tlbelo0
 #li    t2, 0x0
-    bne   t1, t6, inst_error
+    bne   t1, zero, inst_error
     csrrd t1, csr_tlbelo1
 #li    t2, 0x0
-    bne   t1, t7, inst_error
+    bne   t1, zero, inst_error
     csrrd t1, csr_tlbidx
-    srli.w  t1, t1, 0x5
+    srli.w t1, t1, 0x5
 #li    t2, 0x04000000
     bne   t1, t8, inst_error
     addi.w t0, t0, 0x1  

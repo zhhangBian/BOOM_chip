@@ -23,16 +23,13 @@ LEAF(n61_tlbrd_tlbwr_test)
     csrwr t0, csr_tlbidx
     tlbrd
     csrrd t1, csr_tlbehi
-    li.w    t2, 0x12000
-    bne   t1, t2, inst_error
+    bne   t1, zero, inst_error
     csrrd t1, csr_tlbelo0
-    li.w    t2, 0x34ab00
-    bne   t1, t2, inst_error
+    bne   t1, zero, inst_error
     csrrd t1, csr_tlbelo1
-    li.w    t2, 0xffab00
-    bne   t1, t2, inst_error
+    bne   t1, zero, inst_error
     csrrd t1, csr_tlbidx
-    li.w    t2, 0x8c000000
+    li.w    t2, 0x80000000
     bne   t1, t2, inst_error
 
 ###recover the TLB item

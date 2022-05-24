@@ -13,7 +13,7 @@
 #define cacop_enable 1
 
 #ifdef ENABLE_TRACE 
-#define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*9 + lab14*12 + lab16*0)
+#define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*9 + lab14*13 + lab16*0)
 #else
 #define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*13 + lab14*13 + lab16*7)
 #endif
@@ -55,7 +55,7 @@ test_finish:
     st.w      zero, t2, 0
 1:
 //    .word 0x80000000 // nemu trap
-    li.w      a0, 0
+    nop
     syscall 0x11
 
 ##avoid cpu run error
@@ -915,6 +915,7 @@ test_end:
 	  st.w    zero, a0, 0
     st.w    t1, a1, 0
     st.w    t1, a2, 0
+    li.w    a0, 0x1
     b  2f
     nop
 1:
@@ -924,6 +925,7 @@ test_end:
     NOP4
     st.w    t1, a0, 0
     st.w    t1, a1, 0
+    li.w    a0, 0
 
 2:
 	//LI (t1, 0xff)
