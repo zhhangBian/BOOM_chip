@@ -1,6 +1,4 @@
-#PRECC=/home/loongson/syk/toolchain/cross-mips-loongarch-linux-gnu/bin/loongarch64-linux-gnu-
-PRECC=../../toolchains/loongarch32_gnu/install/bin/loongarch32-linux-gnu-
-#PRECC=/home/loongarch_rootfs/HISTORY_loongarch_toolchains/la_new_abi/loongarch64-linux-gnu-2021-02-09/bin/loongarch64-linux-gnu-
+PRECC=../../toolchains/loongarch32r-linux-gnusf-*/bin/loongarch32r-linux-gnusf-
 
 CC=$(PRECC)gcc
 LD=$(PRECC)ld

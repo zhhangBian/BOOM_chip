@@ -5,7 +5,7 @@
 	*) echo 'Filename must end in ".c"' >&2; exit 1;;
 	esac
     
-    //CC=../../../toolchains/loongarch32_gnu/install/bin/loongarch32-unknown-elf-gcc
+    //CC=../../../toolchains/loongarch32r-linux-gnusf*/bin/loongarch32r-linux-gnusf-gcc
     
 	echo "${CC=cc} -c ${CFLAGS} $0 -o dry1.o"
 	      ${CC}    -c ${CFLAGS} $0 -o dry1.o || exit 1
