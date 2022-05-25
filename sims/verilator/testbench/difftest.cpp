@@ -41,6 +41,7 @@ extern long long inst_total;
 int Difftest::step(vluint64_t &main_time) {
     progress = false;
     idx_commit = 0;
+    int index = 0;
 
     if (!dut.excp.excp_valid) {
         while (idx_commit < DIFFTEST_COMMIT_WIDTH && dut.commit[idx_commit].valid) {
@@ -69,6 +70,7 @@ int Difftest::step(vluint64_t &main_time) {
             }
             idx_commit++;
         }
+        if (idx_commit) idx_commit--;
     }
 
 #ifdef DEAD_CLOCK_EN
@@ -80,7 +82,7 @@ int Difftest::step(vluint64_t &main_time) {
 #endif
 
 #ifndef TRACE_COMP
-    if (dut.commit[0].pc == END_PC || dut.excp.exceptionPC == END_PC) {
+    if (dut.commit[idx_commit].pc == END_PC || dut.excp.exceptionPC == END_PC) {
         sim_over = true;
     }
     if (sim_over) {
@@ -92,8 +94,6 @@ int Difftest::step(vluint64_t &main_time) {
     }
     return STATE_RUNNING;
 #else
-    /* the index of instructions per commit */
-    idx_commit = 0;
     /* pull down estat bit-by-bit */
     estat_flag = 0x00000004;
     estat_new = dut.csr.estat & 0x00001ffc;
@@ -108,14 +108,16 @@ int Difftest::step(vluint64_t &main_time) {
     }
     estat_last = dut.csr.estat;
 
-    dut.csr.this_pc = dut.commit[0].pc;
+    dut.csr.this_pc = dut.commit[idx_commit].pc;
 
     /* exec the first instruction */
     do_first_instr_commit();
 
     /* sync estat to nemu */
-    if (dut.commit[0].valid && dut.commit[0].csr_rstat) {
-        proxy->estat_sync(dut.commit[0].csr_data, 0xffffffff);
+    for (index = 0; index <= idx_commit; index++) {
+        if (dut.commit[index].valid && dut.commit[index].csr_rstat) {
+            proxy->estat_sync(dut.commit[index].csr_data, 0xffffffff);
+        }
     }
 
     /* handle exception */
@@ -135,10 +137,11 @@ int Difftest::step(vluint64_t &main_time) {
         diff_flag = false;
     #endif
     } else {    // nemu exec instruction
-        while (idx_commit < DIFFTEST_COMMIT_WIDTH && dut.commit[idx_commit].valid) {
-            do_instr_commit(idx_commit);
-            dut.commit[idx_commit].valid = 0;
-            idx_commit++;
+        for (index = 0; index <= idx_commit; index++) {
+            if (index < DIFFTEST_COMMIT_WIDTH && dut.commit[index].valid) {
+                do_instr_commit(index);
+                dut.commit[index].valid = 0;
+            }
         }
     }
 
@@ -153,7 +156,7 @@ int Difftest::step(vluint64_t &main_time) {
 #endif
 
     /* check simulation end */
-    if (dut.commit[0].pc == END_PC || dut.excp.exceptionPC == END_PC) {
+    if (dut.commit[idx_commit].pc == END_PC || dut.excp.exceptionPC == END_PC) {
         sim_over = true;
     }
     if (sim_over) {
@@ -170,18 +173,22 @@ int Difftest::step(vluint64_t &main_time) {
     }
 
     /* store difftest. valid = {4'b0, sc(llbit=1), stw, sth, stb} */
-    if (dut.store[0].valid) {
-        if (proxy->store_commit(dut.store[0].paddr, dut.store[0].data)) {
-            printf("dut different at pc = 0x%08x, paddr = 0x%lx, vaddr = 0x%lx, data = 0x%lx\n", dut.commit[0].pc, dut.store[0].paddr, dut.store[0].vaddr, dut.store[0].data);
-            fflush(NULL);
-            display();
-            return STATE_ABORT;
+    for (index = 0; index <= idx_commit; index++) {
+        if (dut.store[index].valid) {
+            if (proxy->store_commit(dut.store[index].paddr, dut.store[index].data)) {
+                printf("dut different at pc = 0x%08x, paddr = 0x%lx, vaddr = 0x%lx, data = 0x%lx\n", dut.commit[index].pc, dut.store[index].paddr, dut.store[index].vaddr, dut.store[index].data);
+                fflush(NULL);
+                display();
+                return STATE_ABORT;
+            }
         }
     }
 
     /* load address of peripherals */
-    if (dut.load[0].valid && (dut.load[0].paddr & 0x000000000fffffff)) {
-        proxy->regcpy(dut_regs_ptr, DIFFTEST_TO_REF, DIFF_TO_REF_GR);
+    for (index = 0; index <= idx_commit; index++) {
+        if (dut.load[index].valid && (dut.load[index].paddr & 0x000000000fffffff)) {
+            proxy->regcpy(dut_regs_ptr, DIFFTEST_TO_REF, DIFF_TO_REF_GR);
+        }
     }
 
     /* copy nemu result to ref_regs_ptr */
