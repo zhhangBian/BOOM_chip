@@ -4,13 +4,13 @@ GCC_BIN=../../toolchains/loongarch32r-linux-gnusf*/bin/
 
 make compile PORT_DIR=barebones \
 XLFLAGS="-I./ -I./barebones/ \
--nostdlib -mlong-calls -static -nostdinc -fno-builtin \
+-nostdlib -static -nostdinc -fno-builtin \
 -L../../toolchains/system_newlib/ -Wl,-T../../toolchains/system_newlib/pmon.ld -lc -lm -lg -lpmon -lgcc" \
 XCFLAGS="-static -Ofast -funroll-all-loops -Ibarebones -I. -DPERFORMANCE_RUN=1 -DITERATIONS=1 -c" 
 
 make link PORT_DIR=barebones \
 XLFLAGS="-I./ -I./barebones/ \
--nostdlib -mlong-calls -static -nostdinc -fno-builtin \
+-nostdlib -static -nostdinc -fno-builtin \
 -L../../toolchains/system_newlib/ -Wl,-T../../toolchains/system_newlib/pmon.ld -lc -lm -lg -lpmon -lgcc" \
 XCFLAGS="-static -Ofast -funroll-all-loops -Ibarebones -I. -DPERFORMANCE_RUN=1 -DITERATIONS=1 -c"  
 

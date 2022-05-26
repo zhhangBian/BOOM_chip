@@ -1,7 +1,7 @@
 #!/bin/bash
 
 GCC_BIN=../../toolchains/loongarch32r-linux-gnusf*/bin/
-CFLAGS="-nostdlib -mlong-calls -static -nostdinc -fno-builtin"
+CFLAGS="-nostdlib -static -nostdinc -fno-builtin"
 LFLAGS="-L../../toolchains/system_newlib/ -Wl,-T../../toolchains/system_newlib/pmon.ld -lc -lm -lg -lpmon -lgcc"
 
 ${GCC_BIN}/loongarch32r-linux-gnusf-gcc -c dry.c -o dry1.o
