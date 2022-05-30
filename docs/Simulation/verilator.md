@@ -12,8 +12,16 @@
 cd $CHIPLAB_HOME/sims/verilator/run_func #进入func仿真目录中
 ./configure.sh --run func/func_lab16     #以仿真运行的程序func_lab16为例子生成对应的Makefile
 make                                     #开始编译。若没有编译出错，会自动进行仿真。
+```
+当需要输出波形时，需要修改Makefile_run中以下参数
+```
+DUMP_TRACE=1
+```
+重新运行以下命令
+```
+make run
 cd $CHIPLAB_HOME/sims/verilator/run_func/log/func/func_lab16_log
-gtkwave simu_trace.vcd                   #查看仿真波形
+gtkwave simu_trace.fst                   #查看仿真波形
 ```
 上述简单仿真过程完成之后，用户可根据自己的需要，配置相应的仿真参数。对于仿真参数的说明，请参考以下章节。
 ## func环境
@@ -93,13 +101,13 @@ make verilator testbench simulation_run_func
 - `log`
     - `simu_trace.txt` : 仿真过程输出信息的备份
     - `mem_trace.txt`  : 仿真过程仿存信息的备份
-    - `simu_trace.vcd` : 仿真波形文件
+    - `simu_trace.fst` : 仿真波形文件
     - `uart_output.txt` : 假串口输出`log`
     - `uart_output.txt.real` : 真串口输出`log`
 
 以上文件都可用于调试自己的处理器核设计，波形文件可以通过`gtkwave`打开。
 ```
-gtkwave simu_trace.vcd
+gtkwave simu_trace.fst
 
 ```     
 如果仿真过程中被`ctrl-c`强制结束，仅`simu_trace.txt`会保存在`tmp`目录下，波形文件、串口输出的`log`会丢失。为避免该情况，可估算运行时间，并配置`Makefile_run`中的`TIME_LIMIT`选项。
@@ -147,11 +155,11 @@ make
 所有随机序列测试成功或失败的信息存放在`sims/verilator/run_random/log/*-result.txt`中   
 每个随机序列具体的测试信息存放在`$(CHIPLAB_HOME)/sims/verilator/run_random/log/$(TESTCASE)`下.         
 - `run.log` :             当前case执行随机的输出结果.
-- `simu_trace.vcd` :      当前case所生成波形
+- `simu_trace.fst` :      当前case所生成波形
 以上文件都可用于调试自己的处理器核设计，波形文件可以通过`gtkwave`打开。       
 
 ```
-gtkwave simu_trace.vcd
+gtkwave simu_trace.fst
 ```     
 #### 随机验证运行时的参数说明
 可以在`$(CHIPLAB_HOME)/sims/verilator/run_random/Makefile_run`中对相应参数作为修改.

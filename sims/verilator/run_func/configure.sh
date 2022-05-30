@@ -9,7 +9,7 @@ echo "  --run software        	set software list(use ',' select multiple softwar
                         	Available software: func/func_lab3 func/func_lab4 
                         	func/func_lab6 func/func_lab7 func/func_lab8 func/func_lab9 
                         	func/func_lab14 func/func_lab16 func/func_advance 
-                                my_program dhrystone coremark linux
+                                my_program dhrystone coremark linux rtthread
 
      " 
 echo "  --disable-trace-comp  	disable trace compare in simulation(default: enable)
@@ -41,9 +41,9 @@ echo "  --reset-val value     	initialize variables that are not otherwise initi
 echo "  --reset-random-seed value	set random seed when reset in random mode  
 
      "
-echo "  --dump-vcd            	vcd waveform(default: enable)
+echo "  --dump-vcd            	vcd waveform
      "
-echo "  --dump-fst            	fst waveform
+echo "  --dump-fst            	fst waveform(default: enable)
 
      "  
 echo "  --slice-waveform      	slice waveform with waveform-slice-size ns(default: disable)
@@ -74,8 +74,8 @@ READ_MISS_CHECK=y
 RESET_VAL=0 
 RESET_SEED=1997
 PRINT_CLK_TIME=y 
-DUMP_VCD=y 
-DUMP_FST=n 
+DUMP_VCD=n
+DUMP_FST=y
 SLICE_WAVEFORM=n 
 WAVEFORM_SLICE_SIZE=10000 
 SLICE_SIMU_TRACE=n
@@ -299,6 +299,13 @@ do
             mkdir -p ./log/
             ;;
         linux) 
+            RUN_FUNC=n
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        rtthread)
             RUN_FUNC=n
             RUN_C=y
             DEAD_CLOCK_EN=n
