@@ -5,6 +5,7 @@
 LEAF(n47_syscall_ex_test)
    
   addi.w  s0, s0, 1 
+  li.w    t4, 0x2f
   li.w      t0, 0xd0000 
   li.w      s2, 0x1 
   st.w    s2, t0, 0 
@@ -58,7 +59,7 @@ syscall_pc2:
   la.local  s4, syscall_pc3 
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  div.w   t7, t1, s0 
+  div.w   t7, t1, t4 
 syscall_pc3:
   syscall 0
   beq     t8, t7, inst_error 
@@ -69,7 +70,7 @@ syscall_pc3:
   la.local  s4, syscall_pc4 
 syscall_pc4:
   syscall 0
-  div.w   t0, t0, s0 
+  div.w   t0, t0, t4 
   bne     s2, s7, inst_error 
 
 ###5
@@ -77,7 +78,7 @@ syscall_pc4:
   la.local  s4, syscall_pc5 
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  mul.w   t7, s0, t7
+  mul.w   t7, t4, t7
 syscall_pc5:
   syscall 0
   beq     t8, t7, inst_error 
@@ -88,7 +89,7 @@ syscall_pc5:
   la.local  s4, syscall_pc6 
 syscall_pc6:
   syscall 0
-  mul.w   t0, t0, s0 
+  mul.w   t0, t0, t4 
   bne     s2, s7, inst_error 
 
 ###7
@@ -106,9 +107,9 @@ syscall_pc7:
   csrxchg t0, t1, csr_crmd 
 ###score +++
   addi.w  s3, s3, 1
-###output (s0<<24)|s3 
+###output (t4<<24)|s3 
 inst_error:
-  slli.w  t1, s0, 24 
+  slli.w  t1, t4, 24 
   or      t0, t1, s3 
   st.w    t0, s1, 0 
   jirl    zero, ra, 0 
