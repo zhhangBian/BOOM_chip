@@ -1,6 +1,6 @@
 # Chiplab用户手册 
 ## 前言
-chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。该项目还处于初始的状态，如发现问题，希望能够将issues发送至chenzeshuai@loongson.cn。
+chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。该项目还处于初始的状态，如发现问题请在issues提出。
 ## 目录结构
 .   
 ├── chip  
@@ -39,58 +39,24 @@ chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。
 │　　├── random_boot   
 │　　├── random_res   
 │　　└── generic   
-└── toolchains   
-　　　├── lib   
-　　　├── loongarch32_gnu   
+└── toolchains    
+　　　├── loongarch32r-linux-gnusf-\*  
 　　　├── nemu   
 　　　└── system_newlib
 
 ## 使用方法
-### toolchains目录构建
-仓库中不包括`toolchains`目录，需要用户获取到二进制后自己构建。对各个目录进行介绍。
-- `lib` : 存有后续会提到的依赖库。当依赖库无法正常安装时可从该目录中拷贝。 
-- `loongarch32_gnu` : `gcc`工具链。`install.tar`包解压后得到`install`文件夹，将该文件夹拷贝至该目录下即可。
+### toolchains预下载
+详情请参考`toolchains/README.md`，对各个目录进行介绍。
+- `loongarch32r-linux-gnusf-*` : `gcc`工具链。
 - `nemu` : 模拟器。`la32-nemu-interpreter-so`拷贝至该目录即可。
 - `system_newlib` : `newlib` C库，用于编译裸机C程序。内容包括`libc.a libg.a libm.a libpmon.a pmon.ld start.o`，`newlib.tar`解压后，将这些文件拷贝至该目录下即可。
 
 ### 依赖安装
-以ubuntu为例
-- verilator 仿真工具   
-```   
-# Prerequisites:    
-#sudo apt-get install git make autoconf g++ flex bison    
-#sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)    
-#sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)    
-git clone https://gitee.com/mirrors/Verilator.git
-git checkout v4.216
-# Every time you need to build:
-unsetenv VERILATOR_ROOT  # For csh; ignore error if on bash
-unset VERILATOR_ROOT  # For bash
-cd verilator
-autoconf        # Create ./configure script
-./configure
-make
-sudo make install
-```
-- gtkwave 图形化显示波形
-```   
-sudo apt-get install gtkwave
-```
-- nemu模拟器、gcc  
-```
-sudo apt-get install libisl-dev libmpfr-dev libgtk-3-dev
-```
-```
-#ubuntu 20.04 需安装 libnettle6
-wget https://ftp.gnu.org/gnu/nettle/nettle-3.2.tar.gz
-tar -xvf nettle-3.2.tar.gz
-cd nettle-3.2
-./configure && make -j
-make install
-```
-- vivado （综合下板需要）  
+以Ubuntu (Windows 10+ 请基于WSL**2**)为例:
 
-如若libisl和libmpfr库安装存在问题，可直接使用`toolchains/lib`中的库文件。
+```
+sudo apt install verilator gtkwave #verilator version 4.108+ (loongarch64 4.222+)    
+```
 
 ### 实验步骤
 

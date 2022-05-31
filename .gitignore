@@ -3,6 +3,6 @@
 cmake-build-debug
 CMakeLists.txt
 toolchains/*
-!toolchains/README
+!toolchains/README.md
 software/random_res
 sims/verilator/run_func/single.log
