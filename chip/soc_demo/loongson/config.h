@@ -30,13 +30,14 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------------------
 ------------------------------------------------------------------------------*/
+`define FREQ 32'd33000000
 
 `define Lconfbus      10
 `define Lconfret       9
 `define Lconfbusreg   64
 `define Lconfbusaddr  16
 
-`define ORDER_REG_ADDR          16'h1160
+//`define ORDER_REG_ADDR          16'h1160
 
 `define Lawcmd 4
 `define Lawdirqid 4

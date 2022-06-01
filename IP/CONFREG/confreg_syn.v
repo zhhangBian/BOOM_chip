@@ -30,16 +30,16 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------------------
 ------------------------------------------------------------------------------*/
-
-`define ORDER_REG_ADDR 16'h1160   //32'hbfd0_1160
-`define LED_ADDR       16'hf000   //32'hbfd0_f000 
-`define LED_RG0_ADDR   16'hf004   //32'hbfd0_f004 
-`define LED_RG1_ADDR   16'hf008   //32'hbfd0_f008 
-`define NUM_ADDR       16'hf010   //32'hbfd0_f010 
-`define SWITCH_ADDR    16'hf020   //32'hbfd0_f020 
-`define BTN_KEY_ADDR   16'hf024   //32'hbfd0_f024
-`define BTN_STEP_ADDR  16'hf028   //32'hbfd0_f028
-`define TIMER_ADDR     16'he000   //32'hbfd0_e000 
+`define ORDER_REG_ADDR 16'h1160   //32'h1fd0_1160
+`define LED_ADDR       16'hf000   //32'h1fd0_f000 
+`define LED_RG0_ADDR   16'hf004   //32'h1fd0_f004 
+`define LED_RG1_ADDR   16'hf008   //32'h1fd0_f008 
+`define NUM_ADDR       16'hf010   //32'h1fd0_f010 
+`define SWITCH_ADDR    16'hf020   //32'h1fd0_f020 
+`define BTN_KEY_ADDR   16'hf024   //32'h1fd0_f024
+`define BTN_STEP_ADDR  16'hf028   //32'h1fd0_f028
+`define FREQ_ADDR      16'hf030   //32'h1fd0_f030
+`define TIMER_ADDR     16'he000   //32'h1fd0_e000 
 module confreg(
     aclk,
     aresetn,
@@ -281,7 +281,8 @@ wire [31:0] rdata_d = buf_addr[15:2] == 14'd0 ? cr00 :
                       buf_addr[15:0] == `SWITCH_ADDR    ? switch_data    :
                       buf_addr[15:0] == `BTN_KEY_ADDR   ? btn_key_data   :
                       buf_addr[15:0] == `BTN_STEP_ADDR  ? btn_step_data  :
-                      buf_addr[15:0] == `TIMER_ADDR     ? timer          : 32'd0;
+                      buf_addr[15:0] == `TIMER_ADDR     ? timer          : 
+                      buf_addr[15:0] == `FREQ_ADDR      ? `FREQ          : 32'd0;
 
 always@(posedge aclk)
     if(~aresetn) begin
