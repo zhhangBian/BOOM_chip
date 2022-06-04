@@ -19,7 +19,7 @@ int CpuTool::comp_pc_trace = 0;
 int CpuTool::comp_rf_trace = 0;
 
 int CpuTool::dump_delay = 0;
-int CpuTool::dump_trace = 0;
+int CpuTool::dump_waveform = 0;
 
 int CpuTool::rf_trace_no_repeat = 0;
 
@@ -93,7 +93,7 @@ void CpuTool::parse_args(int argc, char **argv, char **env) {
         PARSE_FLAG(comp_rf_trace,"--comp-rf-trace")
 
         PARSE_INT (dump_delay,"--dump-delay")
-        PARSE_INT (dump_trace,"--dump-trace")
+        PARSE_INT (dump_waveform,"--dump-waveform")
 
         PARSE_FLAG(rf_trace_no_repeat,"--rf-trace-no-repeat")
 

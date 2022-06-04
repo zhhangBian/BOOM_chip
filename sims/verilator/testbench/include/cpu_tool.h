@@ -48,7 +48,7 @@ public:
     static int comp_pc_trace;
     static int comp_rf_trace;
     static int dump_delay;
-    static int dump_trace;
+    static int dump_waveform;
     const static char* ram_file;
     const static char* data_vlog_file;
     const static char* rand_path;

@@ -21,7 +21,7 @@ endif
 
 #configure options
 # Change the options below for your testbench
-#RAND32=y
+#LA32=y
 #multithread
 #THREAD=1
 #move to config-random.mak
@@ -105,8 +105,8 @@ CFLAGS += -DRAND_TEST
 VFLAGS += -DRAND_TEST 
 endif 
 
-ifeq ('${RAND32}', 'y')
-CFLAGS += -DRAND32 
+ifeq ('${LA32}', 'y')
+CFLAGS += -DLA32 
 endif 
 
 ifeq ('${CPU_2CMT}', 'y')

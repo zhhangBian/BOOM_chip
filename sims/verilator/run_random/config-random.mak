@@ -1,4 +1,4 @@
-RAND32=y
+LA32=y
 THREAD=1
 RESET_VAL=0
 #0 reset to zero

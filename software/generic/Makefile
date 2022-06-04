@@ -1,4 +1,4 @@
-include ../../../sims/verilator/run_func/config-software.mak
+include ../../../sims/verilator/run_prog/config-software.mak
 
 #all: haha libinst.a raw
 all: raw libinst.a haha

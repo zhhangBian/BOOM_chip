@@ -5,4 +5,4 @@ CMakeLists.txt
 toolchains/*
 !toolchains/README.md
 software/random_res
-sims/verilator/run_func/single.log
+sims/verilator/run_prog/single.log

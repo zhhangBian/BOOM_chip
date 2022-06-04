@@ -21,7 +21,7 @@ CpuRam::CpuRam(Vtop *top, Rand64 *rand64, vluint64_t main_time, struct UART_STA 
     this->rand64 = rand64;
     if (restore_bp_time != 0) {
         breakpoint_restore(main_time, ram_restore_bp_file, uart_status);
-        //breakpoint_save(main_time, "/media/desi/E266FD5F66FD34BF/loongson/work/chiplab_alpha/chiplab/sims/verilator/run_func/test.file", uart_status);
+        //breakpoint_save(main_time, "/media/desi/E266FD5F66FD34BF/loongson/work/chiplab_alpha/chiplab/sims/verilator/run_prog/test.file", uart_status);
         //exit(0);
         if (restore_bp_time != main_time) {
             printf("Warning: restore_bp_time is not equal with %s's main_time\n", ram_restore_bp_file);
@@ -377,7 +377,7 @@ int CpuRam::special_read() {
         unsigned long long tlb_hi;
         unsigned long long tlb_lo0;
         unsigned long long tlb_lo1;
-        #ifdef RAND32
+        #ifdef LA32
         offset = (read_addr & 0x1ff) >> 3;
         #else
         offset = (read_addr & 0x1ff) >> 4;
@@ -390,7 +390,7 @@ int CpuRam::special_read() {
         tlb_lo0   = (rand64->tlb->pfn0<<8) + (rand64->tlb->cca0<<4) + (rand64->tlb->we0<<1)  + rand64->tlb->v0;
         tlb_lo1   = (rand64->tlb->pfn1<<8) + (rand64->tlb->cca1<<4) + (rand64->tlb->we1<<1)  + rand64->tlb->v1;
         if (base == (REG_INIT_ADDR&~0x1ff)) {
-            #ifdef RAND32
+            #ifdef LA32
             process_read32_same(rand64->gr_ref[offset],top->ram_rdata);
             printf("Read 32 same\n");
             printf("speical read addr = %016llx\n",read_addr);

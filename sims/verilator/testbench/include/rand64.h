@@ -17,7 +17,7 @@
 #define EX_SYSCALL 0x0b
 #define MASK(page_size) 	(0xffffffffffffffff<<page_size)
 
-#ifdef RAND32
+#ifdef LA32
 // #define RAND_BUS_GR_RTL         0
 // #define RAND_BUS_CPU_EX         1024
 // #define RAND_BUS_ERET           1056

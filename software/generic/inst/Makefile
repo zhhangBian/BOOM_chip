@@ -1,4 +1,4 @@
-include ../../../../sims/verilator/run_func/config-software.mak
+include ../../../../sims/verilator/run_prog/config-software.mak
 
 obj_path = ../obj
 

@@ -52,7 +52,7 @@ compile:link
 	$(MAKE) -j8 testbench
 soft:soft_compile 
 	#+make golden_trace
-run:simulation_run_func
+run:simulation_run_prog
 
 link:
 	ln -sf ../../../chip/config-generator.mak ./
@@ -271,7 +271,7 @@ ifeq ('${TRACE_COMP}', 'y')
 	done 
 endif 
 
-simulation_run_func:
+simulation_run_prog:
 	@echo "============================================================================================================="
 	@echo "============================================================================================================="
 	@echo "RUN simulation..."
@@ -285,7 +285,7 @@ ifeq ('${TRACE_COMP}', 'y')
 	cp ./obj/$${soft}_obj/obj/rom.vlog ./tmp;	\
 	touch ./tmp/ram.dat;\
 	cat ./tmp/rom.vlog > ./tmp/ram.dat;	\
-	make simulation_run_func -C ./tmp -f ../Makefile_run || exit "$$?";	\
+	make simulation_run_prog -C ./tmp -f ../Makefile_run || exit "$$?";	\
 	mv ./tmp/simu_trace.txt* ./log/$${soft}_log/;	\
 	mv ./tmp/uart_output.txt ./log/$${soft}_log/;	\
 	mv ./tmp/uart_output.txt.real ./log/$${soft}_log/;	\
@@ -300,7 +300,7 @@ else
 	cp ./obj/$${soft}_obj/obj/rom.vlog ./tmp;	\
 	touch ./tmp/ram.dat;\
 	cat ./tmp/rom.vlog > ./tmp/ram.dat;	\
-	make simulation_run_func -C ./tmp -f ../Makefile_run || exit "$$?";	\
+	make simulation_run_prog -C ./tmp -f ../Makefile_run || exit "$$?";	\
 	mkdir -p ./log/$${soft}_log;	\
 	mv ./tmp/simu_trace.txt* ./log/$${soft}_log/;	\
 	mv ./tmp/uart_output.txt ./log/$${soft}_log/;	\

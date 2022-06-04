@@ -111,7 +111,7 @@ public:
         int cmt_last_split = top->rand_test_bus[RAND_BUS_CMT_LAST_SPLIT];
         int cpu_ex_next = rand64->cpu_ex;
         int tlb_ex_next = rand64->tlb_ex;
-        #ifdef RAND32
+        #ifdef LA32
         long long bad_vaddr = (long long)top->rand_test_bus[RAND_BUS_BADVADDR];
         #else 
         long long bad_vaddr = (long long)top->rand_test_bus[RAND_BUS_BADVADDR] | ((long long)top->rand_test_bus[RAND_BUS_BADVADDR+1]<<32);
@@ -121,7 +121,7 @@ public:
         // get gr value from rtl
         gr_rtl[0] = 0;
         for (int i=1;i<32;i++) {
-            #ifdef RAND32
+            #ifdef LA32
             gr_rtl[i] = (long long)top->rand_test_bus[i+RAND_BUS_GR_RTL];
             #else
             gr_rtl[i] = (long long)top->rand_test_bus[2*i+RAND_BUS_GR_RTL] + ((long long)top->rand_test_bus[2*i+1]<<32+RAND_BUS_GR_RTL);

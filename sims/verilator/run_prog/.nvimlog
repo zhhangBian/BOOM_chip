@@ -1,0 +1,7 @@
+WARN  2022-06-03T17:17:49.137 1377  log_path_init:96: Failed to create directory /home/desi/.cache for writing logs: Unknown system error 1
+WARN  2022-06-03T17:19:15.536 1466  log_path_init:96: Failed to create directory /home/desi/.cache for writing logs: Unknown system error 1
+WARN  2022-06-03T17:19:37.678 1517  log_path_init:96: Failed to create directory /home/desi/.cache for writing logs: Unknown system error 1
+WARN  2022-06-03T17:26:17.550 2548  log_path_init:96: Failed to create directory /home/desi/.cache for writing logs: Unknown system error 1
+WARN  2022-06-03T17:26:39.823 2590  log_path_init:96: Failed to create directory /home/desi/.cache for writing logs: Unknown system error 1
+WARN  2022-06-03T17:26:50.658 2647  log_path_init:96: Failed to create directory /home/desi/.cache for writing logs: Unknown system error 1
+WARN  2022-06-03T17:27:01.032 2705  log_path_init:96: Failed to create directory /home/desi/.cache for writing logs: Unknown system error 1

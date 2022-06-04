@@ -105,7 +105,7 @@ public:
 			}
             #endif
             m_trace->dump(main_time);
-        } else if (main_time >= dump_delay && dump_trace) {
+        } else if (main_time >= dump_delay && dump_waveform) {
             #ifdef SLICE_WAVEFORM 
             	#ifdef TAIL_WAVEFORM
                 	dump_next_start = dump_delay+WAVEFORM_SLICE_SIZE;

@@ -16,7 +16,9 @@ Welcome to chiplab's documentation!
 
    Simulation/difftest
 
+   FPAG_run_linux/linux_run
 
+   FPAG_run_linux/flash
 
 Indices and tables
 ==================

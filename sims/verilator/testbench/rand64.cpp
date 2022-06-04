@@ -27,7 +27,7 @@ Rand64::Rand64(const char *path, const char *result_flag_path) {
     for (int i = 0; i < 32; i++) {
         gr_ref[i] = 0;
     }
-#ifdef RAND32
+#ifdef LA32
     printf("This is Rand32 test\n");
 #else
     printf("This is Rand64 test\n");
@@ -105,7 +105,7 @@ int Rand64::print() {
 
 void Rand64::print_ref() {
     for (int i = 0; i < 32; i++) {
-#ifdef RAND32
+#ifdef LA32
         printf("gr_ref[%02d] = %08llx\n",i,gr_ref[i]&0xffffffffll);
 #else
         printf("gr_ref[%02d] = %016llx\n", i, gr_ref[i]);
@@ -117,7 +117,7 @@ void Rand64::print_ref() {
 
 void Rand64::print_ref(long long *gr_rtl) {
     for (int i = 0; i < 32; i++) {
-#ifdef RAND32
+#ifdef LA32
         printf("gr_ref[%02d] = %08llx%010sgr_rtl[%02d] = %08llx\n",i,gr_ref[i]&0xffffffffll,"",i,gr_rtl[i]&0xffffffffll);
 #else
         printf("gr_ref[%02d] = %016llx%010sgr_rtl[%02d] = %016llx\n", i, gr_ref[i], "", i, gr_rtl[i]);
@@ -128,7 +128,7 @@ void Rand64::print_ref(long long *gr_rtl) {
 
 int Rand64::compare(long long *gr_rtl) {
     for (int i = 1; i < 32; i++) {
-#ifdef RAND32
+#ifdef LA32
         if ((int)gr_rtl[i]!=(int)gr_ref[i]) {
 #else
         if (gr_rtl[i] != gr_ref[i]) {
