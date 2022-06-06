@@ -6,7 +6,7 @@
 - my_program：用户自定义裸机C程序。
 - linux：内核，仿真环境下可通过终端与用户交互。   
 
-`run_random`用于运行随机指令序列。序列中存在数量庞大，随机排列的指令，能够覆盖部分边角情况。初始化完成后，序列中的指令可连续执行，由生成器保证序列可连续执行不会中断以及提供页表项完成虚实地址映射。	
+`run_random`用于运行随机指令序列。序列中存在数量庞大，随机排列的指令，能够覆盖部分边角情况。初始化完成后，序列中的指令可连续执行，由生成器保证序列可连续执行不会中断以及提供页表项完成虚实地址映射。	    
 仿真环境下运行程序都可通过difftest框架，实现处理器运行结果同nemu模拟器运行结果的实时比对，nemu作为金标准。能够帮助用户发现出错的第一现场，便于调试。
 
 ## SoC参数配置
@@ -38,7 +38,7 @@ gtkwave simu_trace.fst                   #查看仿真波形
 ## LA32-NEMU
 为帮助用户在仿真环境下调试内核，我们将会提供`difftest`环境，目前已完成[NEMU](https://gitee.com/wwt_panache/la32-nemu)的移植。
 使用方法请参考[difftest说明](https://chiplab.readthedocs.io/zh/latest/Simulation/difftest.html)。
-## func环境
+## prog环境
 ### 编译参数配置
 ```
 ./configure.sh --help
