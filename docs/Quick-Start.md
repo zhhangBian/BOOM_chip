@@ -3,44 +3,44 @@
 chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。如发现问题请在issues提出。
 ## 目录结构
 .   
-├── chip&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SoC顶层。					
-│　　└── soc_demo&emsp;&emsp;&emsp;&emsp;&emsp;SoC顶层代码实例。   
-│　　　　　├── loongson&emsp;&emsp;&ensp;龙芯实验箱SoC顶层代码。   
-│　　　　　├── Baixin&emsp;&emsp;&emsp;&emsp;百芯开发板SoC顶层代码。   
-│　　　　　└── sim&emsp;&emsp;&emsp;&emsp;&emsp;仿真SoC顶层代码   
-├── fpga&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;综合工程。   
-│　　└── loongson&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;龙芯实验箱综合工程。   
-│　　└── Baixin&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;百芯开发板综合工程。   
-├── IP&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SoC IP。   
-│　　├── AMBA&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;总线 IP。    
-│　　├── APB_DEV&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;APB协议通信设备。    
-│　　　　　├── URT&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;UART设备控制器。   
-│　　　　　└── NAND&emsp;&emsp;&emsp;&emsp;&ensp;NAND设备控制器。   
+├── chip&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;SoC顶层。    
+│　　└── soc_demo&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;SoC顶层代码实例。   
+│　　　　　├── loongson&emsp;&emsp;&emsp;&ensp;龙芯实验箱SoC顶层代码。   
+│　　　　　├── Baixin&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;百芯开发板SoC顶层代码。   
+│　　　　　└── sim&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;仿真SoC顶层代码   
+├── fpga&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;综合工程。   
+│　　└── loongson&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;龙芯实验箱综合工程。   
+│　　└── Baixin&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;百芯开发板综合工程。   
+├── IP&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SoC IP。   
+│　　├── AMBA&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;总线 IP。    
+│　　├── APB_DEV&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;APB协议通信设备。    
+│　　　　　├── URT&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;UART设备控制器。   
+│　　　　　└── NAND&emsp;&emsp;&emsp;&emsp;&emsp;NAND设备控制器。   
 │　　├── AXI_DELAY_RAND&emsp;&emsp;随机延迟注入。    
 │　　├── AXI_SRAM_BRIDGE&emsp;&ensp;AXI协议 -> SRAM接口转换。    
-│　　├── BRIDGE&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;1x2桥接模块。    
-│　　├── DMA&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;DMA逻辑，用于设备作为master访问内存。    
-│　　├── SPI&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SPI Flash设备控制器。    
-│　　├── MAC&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;MAC设备控制器。    
-│　　├── CONFREG&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;用于访问开发板上数码管、拨码开关等外设以及特殊寄存器。   
-│　　├── myCPU&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;处理器核逻辑。  
-│　　└── xilinx_ip&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vivado平台所创建的IP。   
-├── sims&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;运行仿真以及存放testbench源码。   
-│　　└── verilator&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;以verilator仿真工具为基础。   
+│　　├── BRIDGE&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;1x2桥接模块。    
+│　　├── DMA&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;DMA逻辑，用于设备作为master访问内存。    
+│　　├── SPI&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SPI Flash设备控制器。    
+│　　├── MAC&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;MAC设备控制器。    
+│　　├── CONFREG&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;用于访问开发板上数码管、拨码开关等外设以及特殊寄存器。   
+│　　├── myCPU&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;处理器核逻辑。  
+│　　└── xilinx_ip&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vivado平台所创建的IP。   
+├── sims&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;运行仿真以及存放testbench源码。   
+│　　└── verilator&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;以verilator仿真工具为基础。   
 │　　　　　├── run_prog&emsp;&emsp;&emsp;&emsp;测试程序运行目录，包括func、性能测试程序、内核等。   
 │　　　　　├── run_random&emsp;&emsp;&ensp;随机指令序列运行目录。   
 │　　　　　└── testbench&emsp;&emsp;&emsp;&ensp;testbech源码，提供仿真运行、在线比对、设备模拟等功能。   
-├── software&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;测试用例。   
-│　　├── coremark&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;coremark性能测试程序。   
-│　　├── dhrystone&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;dhrystone性能测试程序。  
-│　　├── func&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;功能测试点，验证处理器核设计是否与指令手册一致。   
-│　　├── linux&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;提供内核启动的支持。   
+├── software&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;测试用例。   
+│　　├── coremark&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;coremark性能测试程序。   
+│　　├── dhrystone&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;dhrystone性能测试程序。  
+│　　├── func&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;功能测试点，验证处理器核设计是否与指令手册一致。   
+│　　├── linux&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;提供内核启动的支持。   
 │　　├── random_boot&emsp;&emsp;&emsp;&emsp;&emsp;为随机指令序列的运行提供支持。   
-│　　├── random_res&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;存放随机指令序列。   
-│　　└── generic&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;通用的编译脚本。   
-└── toolchains&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;chiplab运行所需工具。    
+│　　├── random_res&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;存放随机指令序列。   
+│　　└── generic&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;通用的编译脚本。   
+└── toolchains&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;chiplab运行所需工具。    
 　　　├── loongarch32r-linux-gnusf-\*&emsp;&emsp;&emsp;gcc工具链。  
-　　　├── nemu&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;nemu模拟器，用于在线实时比对。   
+　　　├── nemu&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;nemu模拟器，用于在线实时比对。   
 　　　└── system_newlib&emsp;&emsp;&emsp;&emsp;newlib C库，用于编译C程序。
 
 ## 使用方法
