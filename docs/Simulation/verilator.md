@@ -35,8 +35,8 @@ cd $CHIPLAB_HOME/sims/verilator/run_prog/log/func/func_lab16_log
 gtkwave simu_trace.fst                   #查看仿真波形
 ```
 上述简单仿真过程完成之后，用户可根据自己的需要，配置相应的仿真参数。对于仿真参数的说明，请参考以下章节。
-## LA32-NEMU
-为帮助用户在仿真环境下调试内核，我们将会提供`difftest`环境，目前已完成[NEMU](https://gitee.com/wwt_panache/la32-nemu)的移植。
+## LA32R-NEMU
+为帮助用户在仿真环境下调试内核，我们提供了`difftest`环境，
 使用方法请参考[difftest说明](https://chiplab.readthedocs.io/zh/latest/Simulation/difftest.html)。
 ## prog环境
 ### 编译参数配置
