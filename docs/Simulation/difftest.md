@@ -2,9 +2,9 @@
 
 DIFFTEST 框架基于ysyx提供的oscpu开发框架修改：https://github.com/OpenXiangShan/difftest.
 
-DIFFTEST的比对对象是两个核，一个是用户设计的核，一个是参考核。 比对原理是设计核在每执行一条指令的同时使参考核执行相同的指令，之后比对所有的通用寄存器和csr寄存器(除estat寄存器)的值，如果完全相同则认为设计核执行正确。 同时， DIFFTEST比对机制也实现了对于store指令的比对，一旦store指令中的物理地址和存储数据与参考核不同，也会立即暂停仿真，以此来尽早定位错误。
+DIFFTEST的比对对象是两个核，一个是用户设计的核，一个是参考核。 比对原理是设计核在每提交一条指令的同时使参考核执行相同的指令，之后比对所有的通用寄存器和csr寄存器的值，如果完全相同则认为设计核执行正确。 同时， DIFFTEST比对机制也实现了对于store指令的比对，一旦store指令中的物理地址和存储数据与参考核不同，也会立即暂停仿真，以此来尽早定位错误。
 
-DIFFTEST使用的参考核为经过移植的la32-nemu, 在本仓库中只提供编译成功后的动态链接文件(`toolchains/nemu/la32r-nemu-interpreter-so`)，相关的说明和源代码请见代码仓库：[NEMU](https://gitee.com/wwt_panache/la32-nemu)
+DIFFTEST使用的参考核为经过移植的la32r-nemu, 在本仓库中只需要使用动态链接文件(`toolchains/nemu/la32r-nemu-interpreter-so`)即可进行difftest，相关的说明和源代码请见代码仓库：[NEMU](https://gitee.com/wwt_panache/la32r-nemu)，编译好的la32r-nemu的动态链接文件也可以在该仓库的发行版中下载。
 
 ## DPIC 接口说明
 
@@ -68,6 +68,8 @@ DPIC涉及到的文件及相关内容介绍见下：
     - `storeVAddr`      : store指令对应的虚拟地址
     - `storeData`       : store指令对应的数据
 
+如果使用者不想开启store指令信息比对，手动在`sims/verilator/testbench/difftest.cpp : 175`中注释掉相关代码再编译运行即可。
+
 5. `DifftestLoadEvent` load指令信息
 
     - `clock`           : 全局时钟
@@ -87,4 +89,4 @@ DPIC涉及到的文件及相关内容介绍见下：
 
 ## 其他说明
 
-目前该框架会比对所有的通用寄存器和csr寄存器(除estat寄存器)的值，如果用户希望只比对某些通用寄存器的值，可通过修改`sims/verilator/testbench/difftest.cpp`中`DIFFTEST_NR_REG`和`step()`函数`memcmp`部分进行自定义。
+目前该框架会比对所有的通用寄存器和csr寄存器的值，如果用户希望只比对某些csr寄存器的值，可通过修改`sims/verilator/testbench/difftest.cpp`中的`compare_mask`数组来开关对应csr寄存器的比对使能，`1`即为开启比对，`0`即为关闭比对。`compare_mask`数组中每一项对应的csr寄存器与`reg_name`数组中的csr寄存器一一对应。被关闭比对的csr寄存器在比对时值会变成0。其中，我们强烈建议关闭`estat`寄存器的比对。
