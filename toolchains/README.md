@@ -1,6 +1,6 @@
 1. [GCC交叉编译器](https://gitee.com/loongson-edu/la32r-toolchains/releases)
 
-根据架构下载相映**loongarch32r-linux-gnusf-*.tar.gz**，并在本目录下解压。解压后的文件夹存在多余层级，`toolchains`目录下仅保留一级`loongarch32r-linux-gnusf-*`，目录下直接存放`bin/include/lib...`等文件夹。
+根据架构下载相映**loongarch32r-linux-gnusf-*.tar.gz**，并在本目录下解压。
 
 2. [NEMU](https://gitee.com/wwt_panache/la32r-nemu/releases)
 

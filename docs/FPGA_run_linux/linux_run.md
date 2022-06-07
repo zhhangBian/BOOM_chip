@@ -1,6 +1,6 @@
 # PMON 运行并 load 内核启动的方法
 内核启动需要依次完成以下步骤：
-- 烧写 PMON 文件（gzrom.bin）到可插拔 SPI flash 上。
+- 烧写 PMON 文件（[gzrom.bin](http://114.242.206.180:24989/nextcloud/index.php/s/q7K6Ty6tSSFwnHc)）到可插拔 SPI flash 上。
 - 下载 bit 流文件。
 - 运行 PMON。
 - 搭建 tftp 服务器 Load 内核(vmlinux)。

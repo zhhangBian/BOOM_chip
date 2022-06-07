@@ -11,14 +11,10 @@ Welcome to chiplab's documentation!
    :numbered:
 
    Quick-Start
-
    Simulation/verilator
-
    Simulation/difftest
-
-   FPAG_run_linux/linux_run
-
-   FPAG_run_linux/flash
+   FPGA_run_linux/linux_run
+   FPGA_run_linux/flash
 
 Indices and tables
 ==================
