@@ -1,0 +1,830 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2022, Loongson
+# This file is distributed under the same license as the CHIPLAB package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CHIPLAB \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-06-08 15:47+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.6.0\n"
+
+#: ../../Simulation/difftest.md:1
+msgid "DIFFTEST 使用说明"
+msgstr ""
+
+#: ../../Simulation/difftest.md:3
+msgid "DIFFTEST 框架基于ysyx提供的oscpu开发框架修改：https://github.com/OpenXiangShan/difftest."
+msgstr ""
+
+#: ../../Simulation/difftest.md:5
+msgid ""
+"DIFFTEST的比对对象是两个核，一个是用户设计的核，一个是参考核。 "
+"比对原理是设计核在每提交一条指令的同时使参考核执行相同的指令，之后比对所有的通用寄存器和csr寄存器的值，如果完全相同则认为设计核执行正确。 "
+"同时， "
+"DIFFTEST比对机制也实现了对于store指令的比对，一旦store指令中的物理地址和存储数据与参考核不同，也会立即暂停仿真，以此来尽早定位错误。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:7
+msgid ""
+"DIFFTEST使用的参考核为经过移植的la32r-nemu, 在本仓库中只需要使用动态链接文件(`toolchains/nemu/la32r-"
+"nemu-interpreter-"
+"so`)即可进行difftest，相关的说明和源代码请见代码仓库：[NEMU](https://gitee.com/wwt_panache"
+"/la32r-nemu)，编译好的la32r-nemu的动态链接文件也可以在该仓库的发行版中下载。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:9
+msgid "DPIC 接口说明"
+msgstr ""
+
+#: ../../Simulation/difftest.md:11
+msgid "DPIC涉及到的文件及相关内容介绍见下："
+msgstr ""
+
+#: ../../Simulation/difftest.md:13
+msgid ""
+"`difftest.v`中定义了所有dpic相关的 verilog module 信息，这些 module 中会调用c函数用来传输信号。这些 "
+"module 会被设计核实例化用来传输信号。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:14
+msgid "`mycpu_top.v`中实例化了`difftest.v`中定义的 module。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:15
+msgid "`interface.h`是c函数的实现，c函数将设计核的信号赋值给difftest中的变量。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:17
+msgid "数据流传递方向可简单地认为是`mycpu_top.v`->`difftest.v`->`interface.h`->`difftest.cpp`"
+msgstr ""
+
+#: ../../Simulation/difftest.md:19
+msgid ""
+"使用者需要将`mycpu_top.v`中相关 verilog module "
+"例化信号接到自己核中相应的信号上，下面简单地介绍一下各个信号的作用，**为了满足在指令提交的时刻该指令产生的影响恰好生效，部分信号需要 delay"
+" 一拍再传递**， 详细使用案例可参考本仓库中`IP/myCPU/mycpu_top.v`。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:21
+msgid "`DifftestInstrCommit` 指令提交信息"
+msgstr ""
+
+#: ../../Simulation/difftest.md:23 ../../Simulation/difftest.md:42
+#: ../../Simulation/difftest.md:53 ../../Simulation/difftest.md:63
+#: ../../Simulation/difftest.md:75
+msgid "`clock`           : 全局时钟"
+msgstr ""
+
+#: ../../Simulation/difftest.md:24 ../../Simulation/difftest.md:43
+#: ../../Simulation/difftest.md:54 ../../Simulation/difftest.md:64
+#: ../../Simulation/difftest.md:76
+msgid "`coreid`          : 核id，目前只支持单核，直接传入0即可"
+msgstr ""
+
+#: ../../Simulation/difftest.md:25 ../../Simulation/difftest.md:65
+#: ../../Simulation/difftest.md:77
+msgid ""
+"`index`           : "
+"指令提交索引，该index用来区别多发射，从0开始计数。建议：多发射设计每个时钟周期只提交一条指令以方便定位错误。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:26
+msgid "`valid`           : 提交有效信号，该信号拉高时，指令提交"
+msgstr ""
+
+#: ../../Simulation/difftest.md:27
+msgid "`pc`              : 当前提交指令的pc"
+msgstr ""
+
+#: ../../Simulation/difftest.md:28
+msgid "`instr`           : 当前提交指令的指令码"
+msgstr ""
+
+#: ../../Simulation/difftest.md:29
+msgid "`skip`            : 跳过当前指令的比对，目前没有实现，直接传入0即可"
+msgstr ""
+
+#: ../../Simulation/difftest.md:30
+msgid "`is_TLBFILL`      : tlbfill指令使能，当前指令为tlbfill指令时，该信号拉高"
+msgstr ""
+
+#: ../../Simulation/difftest.md:31
+msgid "`TLBFILL_index`   : tlbfill指令对应的tlb表项索引"
+msgstr ""
+
+#: ../../Simulation/difftest.md:32
+msgid "`is_CNTinst`      : 与计时器相关的指令，提交指令为rdcntv{l/h}.w 或 rdcntid 时该位拉高"
+msgstr ""
+
+#: ../../Simulation/difftest.md:33
+msgid "`timer_64_value`  : 当前指令读出的64位计数器值(StableCounter)"
+msgstr ""
+
+#: ../../Simulation/difftest.md:34
+msgid "`wen`             : 提交指令通用寄存器写使能"
+msgstr ""
+
+#: ../../Simulation/difftest.md:35
+msgid "`wdest`           : 提交指令写通用寄存器索引"
+msgstr ""
+
+#: ../../Simulation/difftest.md:36
+msgid "`wdata`           : 提交指令写通用寄存器数据"
+msgstr ""
+
+#: ../../Simulation/difftest.md:37
+msgid "`csr_rstat`       : 当提交指令为csrrd、csrwr、csrxchg，同时该指令对应的csr寄存器为estat寄存器时该位拉高"
+msgstr ""
+
+#: ../../Simulation/difftest.md:38
+msgid "`csr_data`        : 当`csr_rstat == 1`时，当前指令读取到的csr寄存器(estat)的值"
+msgstr ""
+
+#: ../../Simulation/difftest.md:40
+msgid "`DifftestExcpEvent` 指令中的异常信息"
+msgstr ""
+
+#: ../../Simulation/difftest.md:44
+msgid "`excp_valid`      : 当前指令如果有例外(包括外部中断)要处理，该位为1"
+msgstr ""
+
+#: ../../Simulation/difftest.md:45
+msgid "`eret`            : 当前指令为`eret`指令时，该位为1"
+msgstr ""
+
+#: ../../Simulation/difftest.md:46
+msgid "`intrNo`          : csr寄存器中csr_estat[12:2]"
+msgstr ""
+
+#: ../../Simulation/difftest.md:47
+msgid "`cause`           : estat.ecode"
+msgstr ""
+
+#: ../../Simulation/difftest.md:48
+msgid "`exceptionPC`     : 出现例外的指令pc"
+msgstr ""
+
+#: ../../Simulation/difftest.md:49
+msgid "`exceptionInst`   : 出现例外的指令码"
+msgstr ""
+
+#: ../../Simulation/difftest.md:51
+msgid "`DifftestTrapEvent` 该模块目前并未使用，直接将其中的valid信号接0"
+msgstr ""
+
+#: ../../Simulation/difftest.md:55
+msgid "`valid`           : 0"
+msgstr ""
+
+#: ../../Simulation/difftest.md:56
+msgid "`code`            :"
+msgstr ""
+
+#: ../../Simulation/difftest.md:57
+msgid "`pc`              :"
+msgstr ""
+
+#: ../../Simulation/difftest.md:58
+msgid "`cycleCnt`        :"
+msgstr ""
+
+#: ../../Simulation/difftest.md:59
+msgid "`instrCnt`        :"
+msgstr ""
+
+#: ../../Simulation/difftest.md:61
+msgid "`DifftestStoreEvent` store指令信息"
+msgstr ""
+
+#: ../../Simulation/difftest.md:66
+msgid ""
+"`valid`           : store有效信号， 接法可参照 {4'b0, llbit && sc_w, st_w, st_h, "
+"st_b}"
+msgstr ""
+
+#: ../../Simulation/difftest.md:67
+msgid "`storePAddr`      : store指令对应的物理地址"
+msgstr ""
+
+#: ../../Simulation/difftest.md:68
+msgid "`storeVAddr`      : store指令对应的虚拟地址"
+msgstr ""
+
+#: ../../Simulation/difftest.md:69
+msgid "`storeData`       : store指令对应的数据"
+msgstr ""
+
+#: ../../Simulation/difftest.md:71
+msgid ""
+"如果使用者不想开启store指令信息比对，手动在`sims/verilator/testbench/difftest.cpp : "
+"175`中注释掉相关代码再编译运行即可。"
+msgstr ""
+
+#: ../../Simulation/difftest.md:73
+msgid "`DifftestLoadEvent` load指令信息"
+msgstr ""
+
+#: ../../Simulation/difftest.md:78
+msgid ""
+"`valid`           : load有效信号， 接法可参照 {2'b0, ll_w, ld_w, ld_hu, ld_h, "
+"ld_bu, ld_b}"
+msgstr ""
+
+#: ../../Simulation/difftest.md:79
+msgid "`paddr`           : load指令对应的物理地址"
+msgstr ""
+
+#: ../../Simulation/difftest.md:80
+msgid "`vaddr`           : load指令对应的虚拟地址"
+msgstr ""
+
+#: ../../Simulation/difftest.md:82
+msgid "`DifftestCSRRegState` csr寄存器信息"
+msgstr ""
+
+#: ../../Simulation/difftest.md:84
+msgid "csr寄存器堆的值"
+msgstr ""
+
+#: ../../Simulation/difftest.md:86
+msgid "`DifftestGRegState` 通用寄存器信息"
+msgstr ""
+
+#: ../../Simulation/difftest.md:88
+msgid "通用寄存器堆堆值"
+msgstr ""
+
+#: ../../Simulation/difftest.md:90
+msgid "其他说明"
+msgstr ""
+
+#: ../../Simulation/difftest.md:92
+msgid "目前该框架会比对所有的通用寄存器和csr寄存器的值，如果用户希望只比对某些csr寄存器的值，可通过修改`sims/verilator/testbench/difftest.cpp`中的`compare_mask`数组来开关对应csr寄存器的比对使能，`1`即为开启比对，`0`即为关闭比对。`compare_mask`数组中每一项对应的csr寄存器与`reg_name`数组中的csr寄存器一一对应。被关闭比对的csr寄存器在比对时值会变成0。其中，我们强烈建议关闭`estat`寄存器的比对。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:1
+msgid "verilator仿真环境说明"
+msgstr ""
+
+#: ../../Simulation/verilator.md:2
+msgid "运行环境包括`run_prog`和`run_random`。     `run_prog`用于运行以下测试程序："
+msgstr ""
+
+#: ../../Simulation/verilator.md:4
+msgid "func：共81个功能测试点，验证处理器核设计是否与指令手册一致。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:5
+msgid "coremark/dhrystone：性能测试程序。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:6
+msgid "my_program：用户自定义裸机C程序。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:7
+msgid "linux：内核，仿真环境下可通过终端与用户交互。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:9
+msgid ""
+"`run_random`用于运行随机指令序列。序列中存在数量庞大，随机排列的指令，能够覆盖部分边角情况。初始化完成后，序列中的指令可连续执行，由生成器保证序列可连续执行不会中断以及提供页表项完成虚实地址映射。"
+"\t     "
+"仿真环境下运行程序都可通过difftest框架，实现处理器运行结果同nemu模拟器运行结果的实时比对，nemu作为金标准。能够帮助用户发现出错的第一现场，便于调试。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:12
+msgid "SoC参数配置"
+msgstr ""
+
+#: ../../Simulation/verilator.md:13
+msgid "chip目录在未来会赋予SoC顶层代码自动生成的能力，体现敏捷开发的思想。但目前仍处于初始的状态，仅提供少数宏定义，对SoC中的部分参数进行简单调整，以适配处理器核的配置。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:14
+msgid "`chip/config-generator.mak`"
+msgstr ""
+
+#: ../../Simulation/verilator.md:15
+msgid "`AXI64` : 设置为`y`表示SoC中AXI协议数据位宽为64btis"
+msgstr ""
+
+#: ../../Simulation/verilator.md:16
+msgid ""
+"`AXI128` : "
+"设置为`y`表示SoC中AXI协议数据位宽为128btis，`AXI64`和`AXI128`至多配置一个`y`，都置为`n`表示`AXI32`，AXI协议数据位宽为32bits"
+msgstr ""
+
+#: ../../Simulation/verilator.md:17
+msgid "`CPU_2CMT` : 设置为`y`，表示处理器核每周期可至多提交2条指令，设置为`n`，表示处理器核每周期提交1条指令。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:18
+msgid "其他参数 : 用于指示所使用的IP模块，以及IP所处的位置。在当前SoC固定无法修改的情况下，这部分参数不需要调整。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:20
+msgid "Quick Start"
+msgstr ""
+
+#: ../../Simulation/verilator.md:21
+msgid "以下为一个简单的仿真例程，方便用户快速上手仿真过程。在进行仿真之前，用户需安装好verilator、gtkware以及nemu。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:27
+msgid "当需要输出波形时，需要修改Makefile_run中以下参数"
+msgstr ""
+
+#: ../../Simulation/verilator.md:31
+msgid "重新运行以下命令"
+msgstr ""
+
+#: ../../Simulation/verilator.md:37
+msgid "上述简单仿真过程完成之后，用户可根据自己的需要，配置相应的仿真参数。对于仿真参数的说明，请参考以下章节。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:38
+msgid "LA32R-NEMU"
+msgstr ""
+
+#: ../../Simulation/verilator.md:39
+msgid ""
+"为帮助用户在仿真环境下调试内核，我们提供了`difftest`环境， "
+"使用方法请参考[difftest说明](https://chiplab.readthedocs.io/zh/latest/Simulation/difftest.html)。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:41
+msgid "prog环境"
+msgstr ""
+
+#: ../../Simulation/verilator.md:42 ../../Simulation/verilator.md:154
+msgid "编译参数配置"
+msgstr ""
+
+#: ../../Simulation/verilator.md:46
+msgid ""
+"选择运行的`software`以及对各项功能进行配置，`--run`必选，其他可选。`func`测试用例所测试的内容记录在`software/func/*`对应文件夹下的`README`中，该文件也对`func`中的一些选项进行了说明。"
+"    编译参数配置更改后需要重新执行整个编译运行流程才能生效。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:48
+msgid ""
+"`--run software` : 选择仿真运行的程序。目前只支持单次仿真选择一个测试程序。测试程序清单可通过./configure.sh "
+"--help查看"
+msgstr ""
+
+#: ../../Simulation/verilator.md:49
+msgid "`--disable-trace-comp` : 关闭使用NEMU进行的`trace`比对功能，默认开启"
+msgstr ""
+
+#: ../../Simulation/verilator.md:50
+msgid ""
+"`--disable-simu-trace` : 关闭`trace "
+"log`记录，适用于内核的长时间仿真，`simu_trace.txt`可能会占用较大的存储空间，默认开启"
+msgstr ""
+
+#: ../../Simulation/verilator.md:51
+msgid ""
+"`--enable-mem-trace` : "
+"打开访存信息记录，在`mem_trace.txt`保存取指、数据访问`load/store`的地址、数据信息。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:52
+msgid ""
+"`--disable-read-miss` : 关闭`read "
+"miss`警告，`C++`模拟的`ram`在核访问未初始化的内容时，会报该地址的`read miss`，默认开启"
+msgstr ""
+
+#: ../../Simulation/verilator.md:53
+msgid ""
+"`--disable-clk-time` : "
+"在`simu_trace.txt`中关闭仿真时间的打印，适用于将`simu_trace.txt`进行`diff`的场景，默认开启"
+msgstr ""
+
+#: ../../Simulation/verilator.md:54
+msgid "`--output-pc-info` : 在当前终端输出每条指令提交的信息，默认开启"
+msgstr ""
+
+#: ../../Simulation/verilator.md:55
+msgid "`--output-uart-info` : 在当前终端输出假串口以及真串口的输出，默认关闭"
+msgstr ""
+
+#: ../../Simulation/verilator.md:56
+msgid "`--output-nothing` : 在当前终端不输出任何信息，默认关闭"
+msgstr ""
+
+#: ../../Simulation/verilator.md:57
+msgid "`--threads` : 开启多个线程进行仿真，但当前testbench暂时无法很好的适配多线程的运行环境，不建议开启"
+msgstr ""
+
+#: ../../Simulation/verilator.md:58
+msgid ""
+"`--reset-val` : "
+"`reset`信号置起时，`rtl`未初始化的寄存器，`verilator`不会呈现出`x`，而是会自行初始化。赋值`0`初始化为`0`；赋值`1`初始化为`1`；赋值`2`初始化为随机值。早期设计阶段，可以固定为某个值，而当设计比较稳定，可以设置为随机值，进行比较完备的验证"
+msgstr ""
+
+#: ../../Simulation/verilator.md:59
+msgid "`--reset-random-seed` : 当`reset-val`设为`2`时，该选项选择对应的随机种子"
+msgstr ""
+
+#: ../../Simulation/verilator.md:60
+msgid "`--dump-vcd` : 生成`vcd`格式的波形文件，该格式未进行任何的压缩，会占用较大的存储空间，且`gtkwave`打开较慢，默认关闭"
+msgstr ""
+
+#: ../../Simulation/verilator.md:61
+msgid "`--dump-fst` : 生成`fst`格式的波形文件，该格式会进行一定的压缩，`gtkwave`打开较快，但会导致仿真速度下降，默认开启"
+msgstr ""
+
+#: ../../Simulation/verilator.md:62
+msgid "`--slice-waveform` : 对波形文件进行切分，存储在多个文件中，用于解决波形堆积在一个文件，导致打开极慢的问题"
+msgstr ""
+
+#: ../../Simulation/verilator.md:63
+msgid "`--waveform-slice-size` : 波形文件切分的单位，以仿真时间衡量"
+msgstr ""
+
+#: ../../Simulation/verilator.md:64
+msgid ""
+"`--slice-simu-trace` : "
+"对`simu_trace.txt`进行切分，同样解决`trace`堆积在一个文件，`vim`打开及文本处理都极慢的问题"
+msgstr ""
+
+#: ../../Simulation/verilator.md:65
+msgid "`--trace-slice-size` : `simu_trace.txt`切分的单位"
+msgstr ""
+
+#: ../../Simulation/verilator.md:66
+msgid "`--tail-waveform` : 仅保留末尾部分的波形文件，适用于运行内核时，希望保留出错位置的信息"
+msgstr ""
+
+#: ../../Simulation/verilator.md:67
+msgid "`--waveform-tail-size` : 波形所保留的末尾部分的大小，以仿真时间衡量"
+msgstr ""
+
+#: ../../Simulation/verilator.md:68
+msgid "`--tail-simu-trace` : 仅保留末尾部分的`trace`"
+msgstr ""
+
+#: ../../Simulation/verilator.md:69
+msgid "`--trace-tail-size` : `trace`所保留的末尾部分的大小"
+msgstr ""
+
+#: ../../Simulation/verilator.md:71 ../../Simulation/verilator.md:162
+msgid "运行参数配置"
+msgstr ""
+
+#: ../../Simulation/verilator.md:75
+msgid "运行参数在该文件中进行配置，参数更改后仅需重新开始仿真即可生效，即`make`中的最后一个流程。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:76 ../../Simulation/verilator.md:166
+msgid "`DUMP_DELAY` : 波形起始时间"
+msgstr ""
+
+#: ../../Simulation/verilator.md:77 ../../Simulation/verilator.md:167
+msgid "`DUMP_WAVEFORM` : 是否生成波形"
+msgstr ""
+
+#: ../../Simulation/verilator.md:78 ../../Simulation/verilator.md:168
+msgid "`TIME_LIMIT` : 仿真时间限制 (设零无限制)"
+msgstr ""
+
+#: ../../Simulation/verilator.md:79
+msgid "`BUS_DELAY` : 总线是否引入随机延迟"
+msgstr ""
+
+#: ../../Simulation/verilator.md:80
+msgid "`BUS_DELAY_RANDOM_SEED` : 总线延迟随机种子"
+msgstr ""
+
+#: ../../Simulation/verilator.md:81
+msgid "`SAVE_BP_TIME` : 断点保存仿真时间，断点产生后仿真仍继续进行（设零不进行断点保存）"
+msgstr ""
+
+#: ../../Simulation/verilator.md:82
+msgid "`RAM_SAVE_BP_FILE` : 断点保存内存信息文件"
+msgstr ""
+
+#: ../../Simulation/verilator.md:83
+msgid "`TOP_SAVE_BP_FIEL` : 断点保存`RTL`状态文件"
+msgstr ""
+
+#: ../../Simulation/verilator.md:84
+msgid "`RESTORE_BP_TIME` : 断点恢复仿真时间（设零不进行断点恢复）"
+msgstr ""
+
+#: ../../Simulation/verilator.md:85
+msgid "`RAM_RESTORE_BP_FILE` : 断点恢复内存信息文件"
+msgstr ""
+
+#: ../../Simulation/verilator.md:86
+msgid "`TOP_RESTORE_BP_FIEL` : 断点恢复`RTL`状态文件"
+msgstr ""
+
+#: ../../Simulation/verilator.md:88 ../../Simulation/verilator.md:170
+msgid "编译运行"
+msgstr ""
+
+#: ../../Simulation/verilator.md:92
+msgid "即可开始仿真的整个流程，包括："
+msgstr ""
+
+#: ../../Simulation/verilator.md:93
+msgid "`make verilator` : verilator编译verilog代码"
+msgstr ""
+
+#: ../../Simulation/verilator.md:94
+msgid "`make testbench` : 编译testbench（C++）"
+msgstr ""
+
+#: ../../Simulation/verilator.md:95
+msgid "`make soft_compile` : 编译software(func)"
+msgstr ""
+
+#: ../../Simulation/verilator.md:96
+msgid "`make simulation_run_prog`   : 开始func仿真"
+msgstr ""
+
+#: ../../Simulation/verilator.md:98
+msgid "如若出现混乱，可以运行"
+msgstr ""
+
+#: ../../Simulation/verilator.md:102
+msgid "清理`make`生成的内容，还可运行"
+msgstr ""
+
+#: ../../Simulation/verilator.md:106
+msgid ""
+"清理`make`及`configure.sh`生成的内容。    "
+"目前`Makefile`比较简陋，对于`software`无法进行是否修改过的判断，仅通过是否构建出对应`obj/*`文件进行判断，如果仅希望重新编译`software`，可删除对应的`obj/*`文件夹，然后`make`。注意不是删除`obj`目录。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:108
+msgid "func验证"
+msgstr ""
+
+#: ../../Simulation/verilator.md:109
+msgid "实验过程中可以根据当前的进度，选择性的执行相应的流程。流程间存在依赖。一般来说对`myCPU`的`rtl`内容进行改动后，可以仅运行"
+msgstr ""
+
+#: ../../Simulation/verilator.md:113
+msgid "仿真过程会生成两个比较关键的文件夹，分别是`obj`和`log`，内容包括："
+msgstr ""
+
+#: ../../Simulation/verilator.md:114
+msgid "`obj`"
+msgstr ""
+
+#: ../../Simulation/verilator.md:115
+msgid "`main.elf` : software elf文件"
+msgstr ""
+
+#: ../../Simulation/verilator.md:116
+msgid "`test.s` : 反汇编文件"
+msgstr ""
+
+#: ../../Simulation/verilator.md:117
+msgid "`log`"
+msgstr ""
+
+#: ../../Simulation/verilator.md:118
+msgid "`simu_trace.txt` : 仿真过程输出信息的备份"
+msgstr ""
+
+#: ../../Simulation/verilator.md:119
+msgid "`mem_trace.txt`  : 仿真过程访存信息的备份"
+msgstr ""
+
+#: ../../Simulation/verilator.md:120
+msgid "`simu_trace.fst` : 仿真波形文件"
+msgstr ""
+
+#: ../../Simulation/verilator.md:121
+msgid "`uart_output.txt` : 假串口输出`log`"
+msgstr ""
+
+#: ../../Simulation/verilator.md:122
+msgid "`uart_output.txt.real` : 真串口输出`log`"
+msgstr ""
+
+#: ../../Simulation/verilator.md:124
+msgid "以上文件都可用于调试自己的处理器核设计，波形文件可以通过`gtkwave`打开。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:129
+msgid "如果仿真过程中被`ctrl-c`强制结束，仅`simu_trace.txt`会保存在`tmp`目录下，波形文件、串口输出的`log`会丢失。为避免该情况，可估算运行时间，并配置`Makefile_run`中的`TIME_LIMIT`选项。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:130
+msgid "random环境"
+msgstr ""
+
+#: ../../Simulation/verilator.md:131
+msgid "修改simu_top"
+msgstr ""
+
+#: ../../Simulation/verilator.md:132
+msgid ""
+"对`$(CHIPLAB_HOME)/sims/verilator/testbench/simu_top.v`中的define进行修改,使其适配myCPU."
+"      需要适配的信号说明如下:"
+msgstr ""
+
+#: ../../Simulation/verilator.md:134
+msgid "`CORE0` :               myCPU顶层"
+msgstr ""
+
+#: ../../Simulation/verilator.md:135
+msgid "`GR_RTL` :              myCPU的标量定点通用寄存器堆"
+msgstr ""
+
+#: ../../Simulation/verilator.md:136
+msgid "`CR_BADVADDR` :         myCPU中的badvaddr csr寄存器"
+msgstr ""
+
+#: ../../Simulation/verilator.md:137
+msgid "`ROQ` :                 myCPU中提交寄存器修改的一级.五级流水中对应wb_stage"
+msgstr ""
+
+#: ../../Simulation/verilator.md:138
+msgid "`CMTBUS_VALID0` :       当前提交流级有效.分支指令,无写回指令等也需要，`eret`指令或例外需置零."
+msgstr ""
+
+#: ../../Simulation/verilator.md:139
+msgid ""
+"`CMTBUS_CMTNUM0` :      "
+"当前提交级的一次提交完成了几条指令.如无指令融合和指令拆分,一般始终为`CMTBUS_VALID0`."
+msgstr ""
+
+#: ../../Simulation/verilator.md:140
+msgid "`CMTBUS_VALID1` :       类似cmtbus_valid0,为适配双发射处理器核所使用."
+msgstr ""
+
+#: ../../Simulation/verilator.md:141
+msgid "`CMTBUS_CMTNUM1` :      类似cmtbus_cmtnum0,为适配双发射处理器核所使用."
+msgstr ""
+
+#: ../../Simulation/verilator.md:142
+msgid "`EXBUS_EX` :            提交级触发例外"
+msgstr ""
+
+#: ../../Simulation/verilator.md:143
+msgid "`EXBUS_ERET` :          提交级触发了ERET"
+msgstr ""
+
+#: ../../Simulation/verilator.md:144
+msgid "`EXBUS_EXCODE` :        提交级触发例外的excode"
+msgstr ""
+
+#: ../../Simulation/verilator.md:145
+msgid "`EXBUS_EPC` :           提交级触发例外的EPC"
+msgstr ""
+
+#: ../../Simulation/verilator.md:147
+msgid ""
+"其余信号如FIX ROQ "
+"CSR均为减少以上信号重复书写所定义.如不适合myCPU可以删除,保证上述信号连接正确即可.如果随机验证没有正常进入比对指令运行结果的状态，大概率为`simu_top`信号的配置问题。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:148
+msgid "准备测试用例"
+msgstr ""
+
+#: ../../Simulation/verilator.md:149
+msgid ""
+"下载相关随机res文件压缩包，[下载地址](http://114.242.206.180:24989/nextcloud/index.php/s/qRGrWZK6c2KtAJ9)。"
+"\t `random_res_*.tar.bz2`其中的数字表示拥有几组随机指令序列，一组随机指令序列拥有30万条指令\t "
+"压缩包中的随机指令序列包括`RES_cluster_*`和`RES_jump_*`表示不同的生成倾向。`jump`类倾向于同一类指令重复，而`cluster`类为多类型指令混合。"
+"\t\t "
+"解压后将`random_res_*`内的文件夹`RES_cluster_*`或者`RES_jump_*`拷贝至`$(CHIPLAB_HOME)/software/random_res/`下。"
+"\t\t "
+"该文件夹由用户自行创建，对于`random_res`下的所有文件，`run_random`都会对其进行处理，因此建议放入适量的随机指令序列，同时该目录下不可放置其他无关内容。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:158
+msgid "部分选项与`run_prog`环境下`./configure.sh`中的选项具有相同的含义，不同的内容有"
+msgstr ""
+
+#: ../../Simulation/verilator.md:159
+msgid "`CACHE_SEED` : 为对`cache`进行完备的测试，随机环境下，`tlb`的存储访问类型（MAT）也进行随机的配置，该选项配置随机种子。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:160
+msgid "`LA32` : `y`配置为32位架构，`n`配置为64位架构。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:174
+msgid ""
+"即可开始随机验证，运行`software/random_res`目录下所存的所有随机指令序列。     "
+"所有随机序列测试成功或失败的信息存放在`sims/verilator/run_random/log/*-result.txt`中    "
+"每个随机序列具体的测试信息存放在`$(CHIPLAB_HOME)/sims/verilator/run_random/log/$(TESTCASE)`下."
+msgstr ""
+
+#: ../../Simulation/verilator.md:177
+msgid "`run.log` :             当前case执行随机的输出结果."
+msgstr ""
+
+#: ../../Simulation/verilator.md:178
+msgid ""
+"`simu_trace.fst` :      当前case所生成波形 "
+"以上文件都可用于调试自己的处理器核设计，波形文件可以通过`gtkwave`打开。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:185
+msgid "单个随机指令序列运行方法"
+msgstr ""
+
+#: ../../Simulation/verilator.md:186
+msgid "若需要跑具体某个随机测试用例,进入`$(CHIPLAB_HOME)/sims/verilator/run_random/run_random/`,执行:"
+msgstr ""
+
+#: ../../Simulation/verilator.md:190
+msgid "或执行:"
+msgstr ""
+
+#: ../../Simulation/verilator.md:194
+msgid ""
+"若此前没有执行过make "
+"random,请在`$(CHIPLAB_HOME)/sims/verilator/run_random/run_random/$(TESTCASE)/`下先执行:"
+msgstr ""
+
+#: ../../Simulation/verilator.md:198
+msgid ""
+"所有随机指令序列的测试结果记录在`log/result.txt`中。         "
+"debug时请参考`$(TESTCASE)/comments.res`以及`$(TESTCASE)/logs/run.log`。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:201
+msgid "随机验证调试帮助"
+msgstr ""
+
+#: ../../Simulation/verilator.md:202
+msgid ""
+"随机启动代码位于`software/random_boot`的`rand_boot.S`中。对处理器状态进行初始化，`eret`指令之后开始执行随机指令序列，并且开始比对。"
+"     随机指令序列仅允许触发`tlb refill`例外，`tlb "
+"refill`例外的处理程序位于`rand_boot.S`中。当触发`tlb "
+"refill`例外时，由`testbench`获取出错虚地址，并查询随机指令序列中提供的页表项，填写到固定地址，再由例外处理程序填充到处理器核的`tlb`中。"
+"     随机指令序列使用大小页。\t     "
+"随机测试用例文件夹中存有`*.res`文件，用于构成随机验证环境。同时，随机指令序列也给出了正确的执行路径以及执行结果。当运行出错时，一方面可以同作为金标准的`nemu`进行对比分析，另一方面也可以从`*.res`文件获取正确的运行结果并进行分析。以下对较为关键的`*.res`文件进行介绍。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:206
+msgid ""
+"`comment.res` : "
+"随机指令序列中的汇编指令。`instruction.res/address.res/pc.res/result_type.res/value1.res`五个文件每行与该文件每行的指令对应。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:207
+msgid "`instruction.res` : 随机指令的二进制。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:208
+msgid "`address.res` : 随机指令修改的通用寄存器号。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:209
+msgid "`value1.res` : 随机指令修改的通用寄存器的值。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:210
+msgid "`pc.res` : 随机指令的虚地址。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:211
+msgid "`result_type.res` :  为`1`表示随机指令修改通用寄存器，为`0`则表示不修改。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:212
+msgid "`page.res` : 页表项的虚地址。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:213
+msgid "`pfn.res` : 页表项的物理地址。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:214
+msgid "`cca.res` : 页表项的存储访问类型。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:215
+msgid ""
+"`page_size.res` : "
+"页表项的页大小。`page.res/pfn.res/cca.res/page_size.res`四个文件每行描述一个页表项，当处理器核在处理`tlb`出错时，可查询四个文件观察页表填充是否正确。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:216
+msgid "`init.res.res` : 通用寄存器初始值。"
+msgstr ""
+
+#: ../../Simulation/verilator.md:218
+msgid "查看波形时，可观察顶层`simu_top.v`的几个`ram*`信号，判断AXI总线发出的请求及传输的数据是否正确。"
+msgstr ""
+

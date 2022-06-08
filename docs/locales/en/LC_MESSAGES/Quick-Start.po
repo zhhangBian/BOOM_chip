@@ -1,0 +1,213 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2022, Loongson
+# This file is distributed under the same license as the CHIPLAB package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CHIPLAB \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-06-08 15:47+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.6.0\n"
+
+#: ../../Quick-Start.md:1
+msgid "Chiplab用户手册"
+msgstr "Chiplab User Manual"
+
+#: ../../Quick-Start.md:2
+msgid "前言"
+msgstr ""
+
+#: ../../Quick-Start.md:3
+msgid "chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。如发现问题请在issues提出。"
+msgstr ""
+
+#: ../../Quick-Start.md:4
+msgid "目录结构"
+msgstr ""
+
+#: ../../Quick-Start.md:5
+msgid ""
+".    ├── "
+"chip&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;SoC顶层。"
+"     │　　└── soc_demo&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;SoC顶层代码实例。"
+"    │　　　　　├── loongson&emsp;&emsp;&emsp;&ensp;龙芯实验箱SoC顶层代码。    │　　　　　├── "
+"Baixin&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;百芯开发板SoC顶层代码。    │　　　　　└── "
+"sim&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;仿真SoC顶层代码    ├── "
+"fpga&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;综合工程。"
+"    │　　└── "
+"loongson&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;龙芯实验箱综合工程。    │　　"
+"└── "
+"Baixin&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;百芯开发板综合工程。"
+"    ├── "
+"IP&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SoC"
+" IP。    │　　├── "
+"AMBA&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;总线 IP。     │　　"
+"├── APB_DEV&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;APB协议通信设备。     │"
+"　　　　　├── URT&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;UART设备控制器。    │"
+"　　　　　└── NAND&emsp;&emsp;&emsp;&emsp;&emsp;NAND设备控制器。    │　　├── "
+"AXI_DELAY_RAND&emsp;&emsp;随机延迟注入。     │　　├── "
+"AXI_SRAM_BRIDGE&emsp;&ensp;AXI协议 -> SRAM接口转换。     │　　├── "
+"BRIDGE&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;1x2桥接模块。     │　　├──"
+" "
+"DMA&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;DMA逻辑，用于设备作为master访问内存。"
+"     │　　├── "
+"SPI&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SPI "
+"Flash设备控制器。     │　　├── "
+"MAC&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;MAC设备控制器。"
+"     │　　├── "
+"CONFREG&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;用于访问开发板上数码管、拨码开关等外设以及特殊寄存器。"
+"    │　　├── myCPU&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;处理器核逻辑。"
+"   │　　└── "
+"xilinx_ip&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vivado平台所创建的IP。"
+"    ├── "
+"sims&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;运行仿真以及存放testbench源码。"
+"    │　　└── "
+"verilator&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;以verilator仿真工具为基础。"
+"    │　　　　　├── run_prog&emsp;&emsp;&emsp;&emsp;测试程序运行目录，包括func、性能测试程序、内核等。"
+"    │　　　　　├── run_random&emsp;&emsp;&ensp;随机指令序列运行目录。    │　　　　　└── "
+"testbench&emsp;&emsp;&emsp;&ensp;testbech源码，提供仿真运行、在线比对、设备模拟等功能。    ├── "
+"software&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;测试用例。"
+"    │　　├── "
+"coremark&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;coremark性能测试程序。"
+"    │　　├── "
+"dhrystone&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;dhrystone性能测试程序。"
+"   │　　├── "
+"func&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;功能测试点，验证处理器核设计是否与指令手册一致。"
+"    │　　├── "
+"linux&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;提供内核启动的支持。"
+"    │　　├── random_boot&emsp;&emsp;&emsp;&emsp;&emsp;为随机指令序列的运行提供支持。    │"
+"　　├── random_res&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;存放随机指令序列。    │　　└── "
+"generic&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;通用的编译脚本。    └── "
+"toolchains&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;chiplab运行所需工具。"
+"     　　　├── loongarch32r-linux-gnusf-\\*&emsp;&emsp;&emsp;gcc工具链。   　　　"
+"├── "
+"nemu&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;nemu模拟器，用于在线实时比对。"
+"    　　　└── system_newlib&emsp;&emsp;&emsp;&emsp;newlib C库，用于编译C程序。"
+msgstr ""
+
+#: ../../Quick-Start.md:46
+msgid "使用方法"
+msgstr ""
+
+#: ../../Quick-Start.md:47
+msgid "toolchains工具下载"
+msgstr ""
+
+#: ../../Quick-Start.md:48
+msgid "toolchains这个目录是存在的，只不过里面是空的，需要用户自行下载，详情请参考`toolchains/README.md`。"
+msgstr ""
+
+#: ../../Quick-Start.md:50
+msgid "项目所需第三方工具安装"
+msgstr ""
+
+#: ../../Quick-Start.md:51
+msgid "以Ubuntu (Windows 10+ 请基于WSL**2**)为例:"
+msgstr ""
+
+#: ../../Quick-Start.md:57
+msgid "实验步骤"
+msgstr ""
+
+#: ../../Quick-Start.md:59
+msgid "参数设置"
+msgstr ""
+
+#: ../../Quick-Start.md:60
+msgid "设置CHIPLAB_HOME系统变量"
+msgstr ""
+
+#: ../../Quick-Start.md:65
+msgid "替换myCPU"
+msgstr ""
+
+#: ../../Quick-Start.md:66
+msgid "`IP/myCPU`中存放的是处理器核代码，对外的接口和核顶层模块名称固定。该环境默认处理器核已实现`AXI`总线。"
+msgstr ""
+
+#: ../../Quick-Start.md:128
+msgid "仿真"
+msgstr ""
+
+#: ../../Quick-Start.md:129
+msgid "仿真的工作目录位于`sims/verilator/run_*`，当前仅支持`verilator`。"
+msgstr ""
+
+#: ../../Quick-Start.md:130
+msgid ""
+"`run_prog` : "
+"该工作目录下可运行`func`测试用例、`dhrystone`、`coremark`性能测试程序、`linux`以及自定义C程序。"
+msgstr ""
+
+#: ../../Quick-Start.md:131
+msgid "`run_random` : 该工作目录下可进行随机指令序列测试。"
+msgstr ""
+
+#: ../../Quick-Start.md:133
+msgid "具体使用方法请参考[verilator仿真环境说明](https://chiplab.readthedocs.io/zh/latest/Simulation/verilator.html)。"
+msgstr ""
+
+#: ../../Quick-Start.md:135
+msgid "综合"
+msgstr ""
+
+#: ../../Quick-Start.md:136
+msgid ""
+"该步骤的工作目录位于`fpga`，当前支持龙芯实验箱及百芯开发板。   "
+"使用vivado打开`loongson/system_run/system_run.xpr`或者`Baixin/system_run/system_run.xpr`工程文件，添加处理器核代码后，可直接开始综合。"
+"     处理器核输入时钟频率默认为33MHz，可对`clk_pll_33`xilinx "
+"IP的输出时钟频率进行调整，修改处理器核的输入时钟频率。此外，还需将`chip/soc_demo/loongson/config.h`或者`chip/soc_demo/Baixin/config.h`文件中的`FREQ`宏定义修改为对应频率。"
+msgstr ""
+
+#: ../../Quick-Start.md:139
+msgid "板上启动内核"
+msgstr ""
+
+#: ../../Quick-Start.md:140
+msgid ""
+"板上内核启动步骤包括：`flash`加载`pmon`，通过网口加载内核。    内核由[龙芯教育/la32r-"
+"Linux](https://gitee.com/loongson-edu/la32r-Linux)仓库提供源码。     "
+"pmon直接提供二进制文件。  "
+"[(下载地址)](http://114.242.206.180:24989/nextcloud/index.php/s/Ez3sNJBzCeoQ2Ct)"
+"     具体流程请参考[pmon运行并load内核启动的方法](./FPGA_run_linux/linux_run.md)"
+"            内核中可尝试运行`unixbench`。"
+msgstr ""
+
+#: ../../Quick-Start.md:150
+msgid "内核与处理器核部分硬件参数绑定，比如频率、Cache等。内核编译时需确保参数设置与处理器核设计统一。"
+msgstr ""
+
+#: ../../Quick-Start.md:154
+msgid "常见问题"
+msgstr ""
+
+#: ../../Quick-Start.md:155
+msgid "testbench无法编译"
+msgstr ""
+
+#: ../../Quick-Start.md:156
+msgid "错误提示"
+msgstr ""
+
+#: ../../Quick-Start.md:161
+msgid "根据verilator库文件所安装的位置，需要调整`sims/verilator/run/Makefile`内的`VERILATOR_HOME`变量。当机器上存在多个版本的verilator时，注意配置成相对应的库路径。"
+msgstr ""
+
+#: ../../Quick-Start.md:164
+msgid "交流群"
+msgstr ""
+
+#: ../../Quick-Start.md:165
+msgid ""
+"[slack交流群](https://join.slack.com/t/chiplabworkspace/shared_invite/zt-"
+"v1927dwg-qqnHNTcAeko7QsUsdCRoPA)"
+msgstr ""
+
