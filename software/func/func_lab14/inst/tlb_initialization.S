@@ -5,14 +5,14 @@
 LEAF(tlb_initialization)
     
 #    addi.w s0, s0 ,1
-#    li     s2, 0x0
+#    li.w     s2, 0x0
 
-    li    t0, 0x0c000000            #index
-    li    t2, 8<<13
-    li 	  t3, 1<<13
+    li.w    t0, 0x0c000000            #index
+    li.w    t2, 8<<13
+    li.w 	  t3, 1<<13
     add.w t1, t2, t3                #VPN
 
-    li    t2, 0x000000aa 
+    li.w    t2, 0x000000aa 
     csrwr t2, csr_asid
 
 ###TLB item 1 
@@ -36,7 +36,7 @@ LEAF(tlb_initialization)
 ###TLB item 10
     FILL_TLB(0x0334ab00, 0x03ffab00)
 
-    li    t2, 0x000000ab
+    li.w    t2, 0x000000ab
     csrwr t2, csr_asid
 
 ###TLB item 11
@@ -60,7 +60,7 @@ LEAF(tlb_initialization)
 ###TLB item 20
     FILL_TLB(0x0d34ab00, 0x0dffab00)
 	
-    li    t2, 0x000000ac
+    li.w    t2, 0x000000ac
     csrwr t2, csr_asid
 
 ###TLB item 21
@@ -84,7 +84,7 @@ LEAF(tlb_initialization)
 ###TLB item 30
     FILL_TLB(0x034ab800, 0x0ffab800)
 	
-    li    t2, 0x000000ad
+    li.w    t2, 0x000000ad
     csrwr t2, csr_asid
 
 ###TLB item 31 G=1

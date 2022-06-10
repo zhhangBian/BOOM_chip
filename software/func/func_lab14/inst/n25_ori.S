@@ -5,7 +5,7 @@
 LEAF(n25_ori_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w  s2, 0x00
 ###test inst
     TEST_ORI(0x0d48918a, 0x00000fe6, 0x0d489fee)
     TEST_ORI(0x891d17a0, 0x00000034, 0x891d17b4)

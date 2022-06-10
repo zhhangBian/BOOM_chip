@@ -2,11 +2,11 @@
 #include "regdef.h"
 
 LEAF(n71_invtlb_inv_op_test) 
-    li     t0, 0x1c008000 
+    li.w     t0, 0x1c008000 
     csrwr  t0, csr_eentry
 
-    li     t0, 0xd0000
-    li     t1, 0x3 
+    li.w     t0, 0xd0000
+    li.w     t1, 0x3 
     st.w   t1, t0, 0
 
     addi.w s0, s0 ,1

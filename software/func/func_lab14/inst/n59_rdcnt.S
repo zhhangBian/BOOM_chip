@@ -5,8 +5,8 @@
 LEAF(n59_rdcnt_test)
     
     addi.w      s0, s0 ,1
-    li          s2, 0x0 
-    li          s7, 0x1111ffff 
+    li.w          s2, 0x0 
+    li.w          s7, 0x1111ffff 
     move        t1, s7
     csrwr       t1, csr_tid
 
@@ -18,7 +18,7 @@ LEAF(n59_rdcnt_test)
     rdcntvh.w   t2
     rdcntid     t0 
     bne         t0, s7, inst_error 
-    li          s7, 0xffff1111 
+    li.w          s7, 0xffff1111 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t3
@@ -32,10 +32,10 @@ LEAF(n59_rdcnt_test)
     bltu        t1, t2, inst_error 
 
 ###2 
-    li          s7, 0xffffffff 
+    li.w          s7, 0xffffffff 
     move        t1, s7
     csrwr       t1, csr_tid
-    li          t7, 0xd0004 
+    li.w          t7, 0xd0004 
     st.w        t7, t7, 4 
     st.w        s4, t7, 4
     rdcntvl.w   t1
@@ -52,7 +52,7 @@ LEAF(n59_rdcnt_test)
     ld.w        t5, t7, 4 
     bne         t5, s4, inst_error
     bne         t0, s7, inst_error 
-    li          s7, 0xffff0000 
+    li.w          s7, 0xffff0000 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t3
@@ -66,24 +66,24 @@ LEAF(n59_rdcnt_test)
     bltu        t1, t2, inst_error  
 
 ###3
-    li          s7, 0xffff 
+    li.w          s7, 0xffff 
     move        t1, s7
     csrwr       t1, csr_tid
-    li          t7, 0xf 
-    li          t8, 0xf
+    li.w          t7, 0xf 
+    li.w          t8, 0xf
     div.w       t7, t1, s0 
     rdcntvl.w   t1
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
-    li          t7, 0xf 
-    li          t8, 0xf
+    li.w          t7, 0xf 
+    li.w          t8, 0xf
     div.w       t7, t1, s0 
     rdcntvh.w   t2
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
-    li          s7, 0x0 
+    li.w          s7, 0x0 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t3
@@ -97,7 +97,7 @@ LEAF(n59_rdcnt_test)
     bltu        t1, t2, inst_error  
 
 ###4
-    li          s7, 0xff 
+    li.w          s7, 0xff 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t1
@@ -108,7 +108,7 @@ LEAF(n59_rdcnt_test)
     rdcntid     t0 
     div.w       t7, t0, s0 
     bne         t0, s7, inst_error 
-    li          s7, 0xffff11 
+    li.w          s7, 0xffff11 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t3
@@ -122,24 +122,24 @@ LEAF(n59_rdcnt_test)
     bltu        t1, t2, inst_error 
 
 ###5
-    li          s7, 0xf 
+    li.w          s7, 0xf 
     move        t1, s7
     csrwr       t1, csr_tid
-    li          t7, 0xf 
-    li          t8, 0xf
+    li.w          t7, 0xf 
+    li.w          t8, 0xf
     mul.w       t7, s0, t7
     rdcntvl.w   t1
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
-    li          t7, 0xf 
-    li          t8, 0xf
+    li.w          t7, 0xf 
+    li.w          t8, 0xf
     mul.w       t7, s0, t7
     rdcntvh.w   t2
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
-    li          s7, 0xf11 
+    li.w          s7, 0xf11 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t3
@@ -153,7 +153,7 @@ LEAF(n59_rdcnt_test)
     bltu        t1, t2, inst_error 
 
 ###6
-    li          s7, 0xfffff 
+    li.w          s7, 0xfffff 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t1
@@ -164,7 +164,7 @@ LEAF(n59_rdcnt_test)
     rdcntid     t0 
     mul.w       t7, t0, s0 
     bne         t0, s7, inst_error 
-    li          s7, 0x11fff 
+    li.w          s7, 0x11fff 
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t3
@@ -178,7 +178,7 @@ LEAF(n59_rdcnt_test)
     bltu        t1, t2, inst_error 
     
 ###7
-    li          s7, 0x23232 
+    li.w          s7, 0x23232 
     move        t1, s7
     csrwr       t1, csr_tid
     csrwr       t7, csr_era 
@@ -191,7 +191,7 @@ LEAF(n59_rdcnt_test)
     rdcntid     t0 
     csrwr       t8, csr_era
     bne         t0, s7, inst_error 
-    li          s7, 0xabab
+    li.w          s7, 0xabab
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t3

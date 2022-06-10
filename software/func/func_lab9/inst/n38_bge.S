@@ -5,7 +5,7 @@
 LEAF(n38_bge_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_BGE(0x4ec26512, 0x2c545359, 0xe8136eb3, 0x869af5c2, 0xe8136eb3, 0x869af5c2)
     TEST_BGE(0xe0e8e956, 0x3ba1a250, 0x603ac06c, 0x44cfcab4, 0x00000000, 0x00000000)

@@ -5,7 +5,7 @@
 LEAF(n31_div_wu_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_DIV_WU(0x4e775a80, 0xb26795ec, 0x00000000)
     TEST_DIV_WU(0x4e888700, 0xf0d84fce, 0x00000000)

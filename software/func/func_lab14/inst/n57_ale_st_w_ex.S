@@ -5,18 +5,18 @@
 LEAF(n57_ale_st_w_ex_test)
    
   addi.w  s0, s0, 1 
-  li      t0, 0xd0000 
-  li      s2, 0x6 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0x6 
   st.w    s2, t0, 0 
   //clear ti
-  li      t0, 0x1 
+  li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
   //init usr mode
-  li      t0, 0x3
-  li      t1, 0x7 
+  li.w      t0, 0x3
+  li.w      t1, 0x7 
   csrxchg t0, t1, csr_crmd 
   lu12i.w s7, 0x60 
-  li      t5, 0x3 //used for verify prmd 
+  li.w      t5, 0x3 //used for verify prmd 
 
 ##inst test
 ###1 
@@ -25,19 +25,28 @@ LEAF(n57_ale_st_w_ex_test)
 1: 
   st.w    a1, a0, 0x774
   bne     s2, s7, inst_error 
-  ld.w    t2, a0, 0x773 
-  bne     t2, t3, inst_error
+  ld.w    t2, a0, 0x773  
+  bne     t2, t3, inst_error 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0xf 
+  st.w    s2, t0, 0 
+  syscall 0     //return to kernel mode
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
   csrrd   t0, csr_crmd 
-  li      t1, 0x7 
+  li.w      t1, 0x7 
   and     t0, t0, t1 
-  li      t1, 0x3 
+  li.w      t1, 0x0 
   bne     t1, t0, inst_error  
 
+  li.w      t5, 0x0 //used for verify prmd 
+  li.w      t0, 0xd0000 
+  li.w      s2, 0x6 
+  st.w    s2, t0, 0
+
 ###2
-  li      t7, 0xd0000
-  li      s2, 0x06 
+  li.w      t7, 0xd0000
+  li.w      s2, 0x06 
   TEST_ST_W_ALE(0xc052b3f0, 0xd23d4, 0x00006a2, 0x00006a0, 0xc052b3f0)
   la.local  s4, 1f
   st.w    t7, t7, 4
@@ -53,19 +62,19 @@ LEAF(n57_ale_st_w_ex_test)
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
   csrrd   t0, csr_crmd 
-  li      t1, 0x7 
+  li.w      t1, 0x7 
   and     t0, t0, t1 
-  li      t1, 0x3 
+  li.w      t1, 0x0 
   bne     t1, t0, inst_error 
-  li      s2, 0x6 
+  li.w      s2, 0x6 
   st.w    s2, t7, 0  
 
 ###3
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_ST_W_ALE(0x994c0280, 0xd8850, 0x000048b, 0x0000488, 0xa10febaf)
   la.local  s4, 1f 
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   div.w   t7, t1, s0 
 1: 
   st.w    a1, a0, 0x48b 
@@ -75,14 +84,9 @@ LEAF(n57_ale_st_w_ex_test)
   bne     t2, t3, inst_error
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error 
 
 ###4
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_ST_W_ALE(0xeb54b87c, 0xda256, 0x000000c3, 0x000000c2, 0xeb54b87c)
   la.local  s4, 1f 
 1: 
@@ -93,18 +97,13 @@ LEAF(n57_ale_st_w_ex_test)
   bne     t2, t3, inst_error
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error  
 
 ###5
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_ST_W_ALE(0xebdc8860, 0xd206c, -0x33e, -0x340, 0x80032066)
   la.local  s4, 1f 
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   mul.w   t7, s0, t7
 1: 
   st.w    a1, a0, -0x33e 
@@ -114,14 +113,9 @@ LEAF(n57_ale_st_w_ex_test)
   bne     t2, t3, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error 
 
 ###6
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_ST_W_ALE(0x0c41f5e8, 0xd82d8, -0x777, -0x778, 0x634858c8)
   la.local  s4, 1f 
 1: 
@@ -132,14 +126,9 @@ LEAF(n57_ale_st_w_ex_test)
   bne     t2, t3, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error  
 
 ###7
-  li      s2, 0x06 
+  li.w      s2, 0x06 
   TEST_ST_W_ALE(0xcb09da60, 0xd1750, -0x6d9, -0x6dc, 0x80031751)
   la.local  s4, 1f 
   csrwr   s2, csr_era
@@ -151,14 +140,9 @@ LEAF(n57_ale_st_w_ex_test)
   bne     t2, t3, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error  
 
-  li      t0, 0x0 
-  li      t1, 0x3 
+  li.w      t0, 0x0 
+  li.w      t1, 0x3 
   csrxchg t0, t1, csr_crmd 
 ###score +++
   addi.w  s3, s3, 1

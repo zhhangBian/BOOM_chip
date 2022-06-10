@@ -5,36 +5,45 @@
 LEAF(n52_adef_ex_test)
    
   addi.w  s0, s0, 1 
-  li      t0, 0x800d0000 
-  li      s2, 0x5
+  li.w      t0, 0x800d0000 
+  li.w      s2, 0x5
   st.w    s2, t0, 0 
   //clear ti
-  li      t0, 0x1 
+  li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
   //init usr mode
-  li      t0, 0x3
-  li      t1, 0x7 
+  li.w      t0, 0x3
+  li.w      t1, 0x7 
   csrxchg t0, t1, csr_crmd 
   lu12i.w s7, 0x50 
-  li      t5, 0x3 //used for verify prmd  
+  li.w      t5, 0x3 //used for verify prmd  
 
 ##inst test
 ###1 
   TEST_ADEF(0x227f9789) 
   jirl    s5, s4, 0 
   add.w   zero, zero, zero
-  bne     s2, s7, inst_error 
+  bne     s2, s7, inst_error  
+  li.w      t0, 0x800d0000 
+  li.w      s2, 0xf 
+  st.w    s2, t0, 0 
+  syscall 0    //return to kernel mode
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
   csrrd   t0, csr_crmd 
-  li      t1, 0x7 
+  li.w      t1, 0x7 
   and     t0, t0, t1 
-  li      t1, 0x3
+  li.w      t1, 0x0
   bne     t1, t0, inst_error  
 
+  li.w      t5, 0x0   //used for verify prmd 
+  li.w      t0, 0x800d0000 
+  li.w      s2, 0x5 
+  st.w    s2, t0, 0  
+
 ###2
-  li      t7, 0xd0000
-  li      s2, 0x05 
+  li.w      t7, 0x800d0000
+  li.w      s2, 0x05 
   TEST_ADEF(0x3101bbed)
   csrwr   s6, csr_era
   la.local  s5, 1f
@@ -47,35 +56,25 @@ LEAF(n52_adef_ex_test)
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error 
-  li      s2, 0x5 
+  li.w      s2, 0x5 
   st.w    s2, t7, 0 
 
 ###3
-  li      s2, 0x05
+  li.w      s2, 0x05
   TEST_ADEF(0x44790977)
   csrwr   s6, csr_era 
   la.local  s5, 1f
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   div.w   t7, t1, s0 
 1:  ertn
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error  
 
 ###4
-  li      s2, 0x05
+  li.w      s2, 0x05
   TEST_ADEF(0x92b0a2c3)
   jirl    s5, s4, 0 
   add.w   zero, zero, zero
@@ -83,33 +82,23 @@ LEAF(n52_adef_ex_test)
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error 
 
 ###5
-  li      s2, 0x05
+  li.w      s2, 0x05
   TEST_ADEF(0xaf9edafa)
   csrwr   s6, csr_era 
   la.local  s5, 1f
-  li      t7, 0xf 
-  li      t8, 0xf
+  li.w      t7, 0xf 
+  li.w      t8, 0xf
   mul.w   t7, s0, t7
 1:  ertn
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error  
 
 ###6 
-  li      s2, 0x05
+  li.w      s2, 0x05
   TEST_ADEF(0xb088f329)
   jirl    s5, s4, 0 
   add.w   zero, zero, zero
@@ -117,14 +106,9 @@ LEAF(n52_adef_ex_test)
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error  
 
 ###7
-  li      s2, 0x05
+  li.w      s2, 0x05
   TEST_ADEF(0x827f97ab)
   csrwr   s6, csr_era 
   la.local  s5, 1f
@@ -133,33 +117,18 @@ LEAF(n52_adef_ex_test)
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
-  csrrd   t0, csr_crmd 
-  li      t1, 0x7 
-  and     t0, t0, t1 
-  li      t1, 0x3 
-  bne     t1, t0, inst_error 
 
 ###should not generate adef excp 
 ## 8
   add.w   t2, ra, zero
+  li.w      t0, 0x9 
+  csrwr   t0, csr_dmw0
 
-  li      t0, 0xd0010
-  li      t1, 0x4c000020
-  st.w    t1, t0, 0
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  jirl    ra, t0, 0
+  li.w      t0, 0x3
+  csrxchg t0, t0, csr_crmd  //usr mode
 
-## 9
-  li      t0, 0xa0000000
-  li      t1, 0x4c000020  //write in "jirl zero, ra, 0" inst
+  li.w      t0, 0xd0010
+  li.w      t1, 0x4c000020
   st.w    t1, t0, 0 
   nop
   nop
@@ -172,10 +141,33 @@ LEAF(n52_adef_ex_test)
   nop
   jirl    ra, t0, 0
 
-  add.w   ra, t2, zero 
+## 9
+  li.w      t0, 0xa0000000
+  li.w      t1, 0x4c000020  //write in "jirl zero, ra, 0" inst
+  st.w    t1, t0, 0 
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  jirl    ra, t0, 0
 
-  li      t0, 0x0 
-  li      t1, 0x3 
+  li.w      t0, 0x800d0000 
+  li.w      s2, 0xf 
+  st.w    s2, t0, 0 
+  syscall 0      //return to kernel mode
+
+  li.w      t0, 0x19 
+  csrwr   t0, csr_dmw0
+ 
+  add.w   ra, t2, zero
+
+  li.w      t0, 0x0 
+  li.w      t1, 0x3 
   csrxchg t0, t1, csr_crmd 
 ###score +++
   addi.w  s3, s3, 1

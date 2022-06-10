@@ -5,7 +5,7 @@
 LEAF(n23_sltui_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_SLTUI(0xc254e3d8, 0x00000469, 0x0)
     TEST_SLTUI(0x7a56334c, 0x000002f5, 0x0)

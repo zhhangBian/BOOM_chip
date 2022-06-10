@@ -63,7 +63,6 @@
 #define csr_ticlr     0x44
 #define csr_llbctl    0x60
 #define csr_tlbrentry 0x88
-#define csr_ctag      0x98
 #define csr_dmw0      0x180
 #define csr_dmw1      0x181
 

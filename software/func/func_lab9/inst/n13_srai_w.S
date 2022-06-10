@@ -5,7 +5,7 @@
 LEAF(n13_srai_w_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w  s2, 0x00
 ###test inst
     TEST_SRAI_W(0x7e0083f0, 0x00000009, 0x003f0041)
     TEST_SRAI_W(0x13e680c0, 0x00000018, 0x00000013)

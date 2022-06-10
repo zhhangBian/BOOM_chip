@@ -5,79 +5,79 @@
 LEAF(n60_atomic_ins_test)
     
     addi.w      s0, s0 ,1
-    li          s2, 0x0 
-    li          t0, 0x2 
-    li          t1, 0x2 
+    li.w          s2, 0x0 
+    li.w          t0, 0x2 
+    li.w          t1, 0x2 
     csrxchg     t1, t0, csr_llbctl    //clear LLbit
-    li          t8, 0x800d0004 
+    li.w          t8, 0xd0004 
 
 ##inst test  
 ###1
-    li          t7, 0xffff1234
+    li.w          t7, 0xffff1234
     st.w        t7, t8, 0
     ll.w        t1, t8, 0 
     bne         t7, t1, inst_error 
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
     bne         t2, t3, inst_error 
 
-    li          t7, 0x1234ffff 
+    li.w          t7, 0x1234ffff 
     move        t1, t7
     sc.w        t1, t8, 0 
-    li          t0, 0x1 
+    li.w          t0, 0x1 
     bne         t1, t0, inst_error  
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
-    li          t3, 0x0 
+    li.w          t3, 0x0 
     bne         t2, t3, inst_error 
 
     ld.w        t1, t8, 0 
     bne         t7, t1, inst_error 
 
 ###2
-    li          t7, 0xf1234
+    li.w          t7, 0xf1234
     st.w        t7, t8, 0
     ll.w        t1, t8, 0 
     bne         t7, t1, inst_error 
 
-    li          t0, 0x2 
-    li          t1, 0x2 
+    li.w          t0, 0x2 
+    li.w          t1, 0x2 
     csrxchg     t1, t0, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t1, t1, t3 
     bne         t1, t3, inst_error 
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
-    li          t3, 0x0 
+    li.w          t3, 0x0 
     bne         t2, t3, inst_error 
 
-    li          t1, 0x4ffff 
+    li.w          t1, 0x4ffff 
     sc.w        t1, t8, 0 
-    li          t0, 0x0 
+    li.w          t0, 0x0 
     bne         t1, t0, inst_error 
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
-    li          t3, 0x0 
+    li.w          t3, 0x0 
     bne         t2, t3, inst_error 
 
     ld.w        t1, t8, 0 
     bne         t7, t1, inst_error 
 
 ###3 
-    li          t7, 0xff1212 
-    li          t0, 0x4 
-    li          t1, 0x4 
+    li.w          t7, 0xff1212 
+    li.w          t0, 0x4 
+    li.w          t1, 0x4 
     csrxchg     t1, t0, csr_llbctl  
     csrrd       t1, csr_crmd 
-    li          t0, 0x7 
+    li.w          t0, 0x7 
     csrxchg     t1, t0, csr_prmd 
     la.local    t0, 1f 
     csrwr       t0, csr_era 
@@ -87,28 +87,28 @@ LEAF(n60_atomic_ins_test)
     bne         t7, t1, inst_error 
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
     bne         t2, t3, inst_error 
 
     ertn
 1:
     csrrd       t2, csr_llbctl 
-    li          t3, 0x5 
+    li.w          t3, 0x5 
     and         t2, t2, t3 
-    li          t3, 0x1
+    li.w          t3, 0x1
     bne         t2, t3, inst_error 
 
-    li          t7, 0x1212ff 
+    li.w          t7, 0x1212ff 
     move        t1, t7
     sc.w        t1, t8, 0 
-    li          t0, 0x1 
+    li.w          t0, 0x1 
     bne         t1, t0, inst_error  
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
-    li          t3, 0x0 
+    li.w          t3, 0x0 
     bne         t2, t3, inst_error 
 
     ld.w        t1, t8, 0 
@@ -116,9 +116,9 @@ LEAF(n60_atomic_ins_test)
 
 
 ###4
-    li          t7, 0xffabab 
+    li.w          t7, 0xffabab 
     csrrd       t1, csr_crmd 
-    li          t0, 0x7 
+    li.w          t0, 0x7 
     csrxchg     t1, t0, csr_prmd 
     la.local    t0, 1f 
     csrwr       t0, csr_era 
@@ -128,27 +128,27 @@ LEAF(n60_atomic_ins_test)
     bne         t7, t1, inst_error 
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
     bne         t2, t3, inst_error 
 
     ertn
 1:
     csrrd       t2, csr_llbctl 
-    li          t3, 0x5 
+    li.w          t3, 0x5 
     and         t2, t2, t3 
-    li          t3, 0x0
+    li.w          t3, 0x0
     bne         t2, t3, inst_error 
 
-    li          t1, 0xababff 
+    li.w          t1, 0xababff 
     sc.w        t1, t8, 0 
-    li          t0, 0x0 
+    li.w          t0, 0x0 
     bne         t1, t0, inst_error  
 
     csrrd       t2, csr_llbctl 
-    li          t3, 0x1 
+    li.w          t3, 0x1 
     and         t2, t2, t3 
-    li          t3, 0x0 
+    li.w          t3, 0x0 
     bne         t2, t3, inst_error 
 
     ld.w        t1, t8, 0 

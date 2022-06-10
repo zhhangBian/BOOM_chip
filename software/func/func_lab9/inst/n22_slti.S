@@ -5,7 +5,7 @@
 LEAF(n22_slti_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w  s2, 0x00
 ###test inst
     TEST_SLTI(0xd9d129b5, 0x00000988, 0x1)
     TEST_SLTI(0xbc13c90c, 0x000005e9, 0x1)

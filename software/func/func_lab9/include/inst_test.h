@@ -1,6 +1,118 @@
 // file name: inst_test.h
 #include "cpu_cde.h"
 
+#define FILL_TLB_ITEM_r \
+    addi.w t4, t3, 0x0; \
+    addi.w t5, t0, 0x0; \
+    addi.w t6, t1, 0x0; \
+    addi.w t7, t2, 0x0; \
+    csrwr t4, csr_tlbidx ; \
+    li.w    t4, 0xffffe000 ; \
+    and   t5, t5, t4     ; \
+    csrwr t5, csr_tlbehi ; \
+    csrwr t6, csr_tlbelo0 ; \
+    csrwr t7, csr_tlbelo1 ; \
+    tlbwr ; \
+    addi.w t3, t3, 0x1 ;\
+    li.w     t4, 0x1<<13 ;\
+    li.w     t5, 0x2<<8  ;\
+    add.w  t0, t0, t4  ;\
+    add.w  t1, t1, t5  ;\
+    add.w  t2, t2, t5  ;\
+
+#define FILL_TLB_ITEM(in_tlbidx, in_tlbehi, in_tlbelo0, in_tlbelo1) \
+    li.w t0, in_tlbidx ; \
+    li.w t1, in_tlbehi ; \
+    li.w t2, in_tlbelo0 ; \
+    li.w t3, in_tlbelo1 ; \
+    csrwr t0, csr_tlbidx ; \
+    csrwr t1, csr_tlbehi ; \
+    csrwr t2, csr_tlbelo0 ; \
+    csrwr t3, csr_tlbelo1 ; \
+    tlbwr ; \
+
+#define FILL_TLB(ppn1, ppn2) \
+    li.w t4, ppn1 ; \
+    li.w t5, ppn2 ; \
+    addi.w t2, t0, 0x0 ; \
+    addi.w t3, t1, 0x0 ; \
+    csrwr t2, csr_tlbidx ; \
+    csrwr t3, csr_tlbehi ; \
+    csrwr t4, csr_tlbelo0 ; \
+    csrwr t5, csr_tlbelo1 ; \
+    tlbwr ; \
+    addi.w t0, t0, 0x1 ; \
+	li.w     t5, 1<<13 ; \
+    add.w t1, t1, t5 
+
+#define TEST_TLBP(in_asid, in_vpn, ref) \
+    li.w    t1, in_asid; \
+    csrwr t1, csr_asid; \
+    li.w    t2, 8<<13; \
+    li.w    t3, in_vpn<<13; \
+    add.w t1, t3, t2; \
+    csrwr t1, csr_tlbehi; \
+    tlbsrch; \
+    csrrd t2, csr_tlbidx; \
+    li.w    t1, ref; \
+    bne   t2, t1, inst_error
+
+
+#define FILL_TLB_4MB(ppn1, ppn2) \
+    li.w t4, ppn1 ; \
+    li.w t5, ppn2 ; \
+    addi.w t2, t0, 0x0 ; \
+    addi.w t3, t1, 0x0 ; \
+    csrwr t2, csr_tlbidx ; \
+    csrwr t3, csr_tlbehi ; \
+    csrwr t4, csr_tlbelo0 ; \
+    csrwr t5, csr_tlbelo1 ; \
+    tlbwr ; \
+    addi.w t0, t0, 0x1 ; \
+	li.w     t5, 1<<23 ; \
+    add.w t1, t1, t5 
+
+#define TEST_TLBP_4MB(in_asid, in_vpn, ref) \
+    li.w    t1, in_asid; \
+    csrwr t1, csr_asid; \
+    li.w    t2, 8<<23; \
+    li.w    t3, in_vpn<<23; \
+    add.w t1, t3, t2; \
+    csrwr t1, csr_tlbehi; \
+    tlbsrch; \
+    csrrd t2, csr_tlbidx; \
+    li.w    t1, ref; \
+    bne   t2, t1, inst_error
+
+
+#define TEST_TLBP_NOMATCHING(in_asid, in_vpn) \
+    csrwr zero, csr_tlbidx; \
+    li.w    t1, in_asid; \
+    csrwr t1, csr_asid; \
+    li.w    t2, 8<<13; \
+    li.w    t3, in_vpn<<13; \
+    add.w t1, t3, t2; \
+    csrwr t1, csr_tlbehi; \
+    tlbsrch; \
+    csrrd t2, csr_tlbidx; \
+	srli.w t2, t2, 31; \
+    li.w    t1, 0x1; \
+    bne   t2, t1, inst_error
+
+#define TEST_TLBP_NOMATCHING_4MB(in_asid, in_vpn) \
+    csrwr zero, csr_tlbidx; \
+    li.w    t1, in_asid; \
+    csrwr t1, csr_asid; \
+    li.w    t2, 8<<23; \
+    li.w    t3, in_vpn<<23; \
+    add.w t1, t3, t2; \
+    csrwr t1, csr_tlbehi; \
+    tlbsrch; \
+    csrrd t2, csr_tlbidx; \
+	srli.w t2, t2, 31; \
+    li.w    t1, 0x1; \
+    bne   t2, t1, inst_error
+
 #define TEST_LU12I_W(in_a, ref_base) \
     lu12i.w   a0, ref_base&0x80000?ref_base-0x100000:ref_base; \
     lu12i.w   t0, in_a&0x80000?in_a-0x100000:in_a;  \
@@ -551,135 +663,135 @@
     bne v0, v1, inst_error
 
 #define TEST_DIV_W(in_a, in_b, ref) \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     div.w t3, t0, t1; \
-    li t4, ref; \
+    li.w t4, ref; \
     bne t4, t3, inst_error 
 
 #define TEST_DIV_WU(in_a, in_b, ref) \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     div.wu t3, t0, t1; \
-    li t4, ref; \
+    li.w t4, ref; \
     bne t4, t3, inst_error  
 
 #define TEST_MUL_W(in_a, in_b, ref) \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     mul.w t3, t0, t1; \
-    li t4, ref; \
+    li.w t4, ref; \
     bne t3, t4, inst_error 
 
 #define TEST_MULH_W(in_a, in_b, ref) \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     mulh.w t3, t0, t1; \
-    li t4, ref; \
+    li.w t4, ref; \
     bne t3, t4, inst_error  
 
 #define TEST_MULH_WU(in_a, in_b, ref) \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     mulh.wu t3, t0, t1; \
-    li t4, ref; \
+    li.w t4, ref; \
     bne t3, t4, inst_error  
 
 #define TEST_MOD_W(in_a, in_b, ref) \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     mod.w t3, t0, t1; \
-    li t4, ref; \
+    li.w t4, ref; \
     bne t4, t3, inst_error 
 
 #define TEST_MOD_WU(in_a, in_b, ref) \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     mod.wu t3, t0, t1; \
-    li t4, ref; \
+    li.w t4, ref; \
     bne t4, t3, inst_error 
 
 #define TEST_BLT(in_a, in_b, back_flag, front_flag, b_flag_ref, f_flag_ref) \
-    li t3, 0x0; \
-    li t4, 0x0; \
+    li.w t3, 0x0; \
+    li.w t4, 0x0; \
     b 2000f; \
 1000:; \
-    li t3, back_flag; \
+    li.w t3, back_flag; \
     blt t0, t1, 3000f; \
     b 4000f; \
 2000:; \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     blt t0, t1, 1000b; \
     b 4000f; \
 3000:; \
-    li t4, front_flag; \
+    li.w t4, front_flag; \
 4000:; \
-    li s5, b_flag_ref; \
-    li s6, f_flag_ref; \
+    li.w s5, b_flag_ref; \
+    li.w s6, f_flag_ref; \
     bne t3, s5, inst_error; \
     bne t4, s6, inst_error
 
 #define TEST_BGE(in_a, in_b, back_flag, front_flag, b_flag_ref, f_flag_ref) \
-    li t3, 0x0; \
-    li t4, 0x0; \
+    li.w t3, 0x0; \
+    li.w t4, 0x0; \
     b 2000f; \
 1000:; \
-    li t3, back_flag; \
+    li.w t3, back_flag; \
     bge t0, t1, 3000f; \
     b 4000f; \
 2000:; \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     bge t0, t1, 1000b; \
     b 4000f; \
 3000:; \
-    li t4, front_flag; \
+    li.w t4, front_flag; \
 4000:; \
-    li s5, b_flag_ref; \
-    li s6, f_flag_ref; \
+    li.w s5, b_flag_ref; \
+    li.w s6, f_flag_ref; \
     bne t3, s5, inst_error; \
     bne t4, s6, inst_error 
 
 #define TEST_BLTU(in_a, in_b, back_flag, front_flag, b_flag_ref, f_flag_ref) \
-    li t3, 0x0; \
-    li t4, 0x0; \
+    li.w t3, 0x0; \
+    li.w t4, 0x0; \
     b 2000f; \
 1000:; \
-    li t3, back_flag; \
+    li.w t3, back_flag; \
     bltu t0, t1, 3000f; \
     b 4000f; \
 2000:; \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     bltu t0, t1, 1000b; \
     b 4000f; \
 3000:; \
-    li t4, front_flag; \
+    li.w t4, front_flag; \
 4000:; \
-    li s5, b_flag_ref; \
-    li s6, f_flag_ref; \
+    li.w s5, b_flag_ref; \
+    li.w s6, f_flag_ref; \
     bne t3, s5, inst_error; \
     bne t4, s6, inst_error 
 
 #define TEST_BGEU(in_a, in_b, back_flag, front_flag, b_flag_ref, f_flag_ref) \
-    li t3, 0x0; \
-    li t4, 0x0; \
+    li.w t3, 0x0; \
+    li.w t4, 0x0; \
     b 2000f; \
 1000:; \
-    li t3, back_flag; \
+    li.w t3, back_flag; \
     bgeu t0, t1, 3000f; \
     b 4000f; \
 2000:; \
-    li t0, in_a; \
-    li t1, in_b; \
+    li.w t0, in_a; \
+    li.w t1, in_b; \
     bgeu t0, t1, 1000b; \
     b 4000f; \
 3000:; \
-    li t4, front_flag; \
+    li.w t4, front_flag; \
 4000:; \
-    li s5, b_flag_ref; \
-    li s6, f_flag_ref; \
+    li.w s5, b_flag_ref; \
+    li.w s6, f_flag_ref; \
     bne t3, s5, inst_error; \
     bne t4, s6, inst_error 
 
@@ -781,12 +893,12 @@
     .word inst
 
 #define TEST_TI_EX(time_val) \
-    li      t0, 0x4;    \
-    li      t1, 0x4;    \
+    li.w      t0, 0x4;    \
+    li.w      t1, 0x4;    \
     csrxchg t0, t1, csr_crmd;  \
-    li      t0, 0x1fff; \
+    li.w      t0, 0x1fff; \
     csrwr   t0, csr_ectl; \
-    li      t0, time_val; \
+    li.w      t0, time_val; \
     ori     t0, t0, 0x1;  \
     csrwr   t0, csr_tcfg; \
 1:;                       \
@@ -794,12 +906,12 @@
     csrwr   zero, csr_tcfg
 
 #define TEST_TI_EX_CYC(time_val) \
-    li      t0, 0x4;    \
-    li      t1, 0x4;    \
+    li.w      t0, 0x4;    \
+    li.w      t1, 0x4;    \
     csrxchg t0, t1, csr_crmd;  \
-    li      t0, 0x1fff; \
+    li.w      t0, 0x1fff; \
     csrwr   t0, csr_ectl; \
-    li      t0, time_val; \
+    li.w      t0, time_val; \
     ori     t0, t0, 0x3;  \
     csrwr   t0, csr_tcfg; \
 1:;                       \
@@ -810,71 +922,71 @@
     csrwr   zero, csr_tcfg 
 
 #define TEST_TI_EX_WAIT(time_val) \
-    li      t0, 0x4;    \
-    li      t1, 0x4;    \
+    li.w      t0, 0x4;    \
+    li.w      t1, 0x4;    \
     csrxchg t0, t1, csr_crmd;  \
-    li      t0, 0x1fff; \
+    li.w      t0, 0x1fff; \
     csrwr   t0, csr_ectl; \
-    li      t0, time_val; \
+    li.w      t0, time_val; \
     ori     t0, t0, 0x1;  \
     csrwr   t0, csr_tcfg; \
     idle    0;            \
 1:;                       \
     nop;                  \
-    csrwr   zero, csr_tcfg 
+    csrwr   zero, csr_tcfg
 
 #define TEST_SOFT_INT_EX(estat_val) \
-    li      t0, 0x4;    \
-    li      t1, 0x4;    \
+    li.w      t0, 0x4;    \
+    li.w      t1, 0x4;    \
     csrxchg t0, t1, csr_crmd;  \
-    li      t0, 0x1fff; \
+    li.w      t0, 0x1fff; \
     csrwr   t0, csr_ectl; \
-    li      t0, estat_val; \
+    li.w      t0, estat_val; \
     csrwr   t0, csr_estat; \
 1:                         \
     b 1b                  
 
 #define TEST_ADEF(addr) \
-    li      s4, addr;   \
-    li      a3, addr;   \
-    li      s6, addr 
+    li.w      s4, addr;   \
+    li.w      a3, addr;   \
+    li.w      s6, addr 
 
 #define TEST_LD_W_ALE(data, base_addr, offset, offset_align, ref) \
-    li      t2, ref;    \
-    li      t3, ref;    \
-    li      a0, base_addr; \
-    li      a1, data;   \
+    li.w      t2, ref;    \
+    li.w      t3, ref;    \
+    li.w      a0, base_addr; \
+    li.w      a1, data;   \
     addi.w  a3, a0, offset; \
     st.w    a1, a0, offset_align 
 
 #define TEST_LD_H_ALE(data, base_addr, offset, offset_align, ref) \
-    li      t2, ref;    \
-    li      t3, ref;    \
-    li      a0, base_addr; \
-    li      a1, data;   \
+    li.w      t2, ref;    \
+    li.w      t3, ref;    \
+    li.w      a0, base_addr; \
+    li.w      a1, data;   \
     addi.w  a3, a0, offset; \
     st.w    a1, a0, offset_align 
 
 #define TEST_LD_HU_ALE(data, base_addr, offset, offset_align, ref) \
-    li      t2, ref;    \
-    li      t3, ref;    \
-    li      a0, base_addr; \
-    li      a1, data;   \
+    li.w      t2, ref;    \
+    li.w      t3, ref;    \
+    li.w      a0, base_addr; \
+    li.w      a1, data;   \
     addi.w  a3, a0, offset; \
     st.w    a1, a0, offset_align  
 
 #define TEST_ST_H_ALE(data, base_addr, offset, offset_align, ref) \
-    li      t2, ref;    \
-    li      t3, ref;    \
-    li      a0, base_addr; \
-    li      a1, data;   \
+    li.w      t2, ref;    \
+    li.w      t3, ref;    \
+    li.w      a0, base_addr; \
+    li.w      a1, data;   \
     addi.w  a3, a0, offset; \
     st.w    t2, a0, offset_align 
 
 #define TEST_ST_W_ALE(data, base_addr, offset, offset_align, ref) \
-    li      t2, ref;    \
-    li      t3, ref;    \
-    li      a0, base_addr; \
-    li      a1, data;   \
+    li.w      t2, ref;    \
+    li.w      t3, ref;    \
+    li.w      a0, base_addr; \
+    li.w      a1, data;   \
     addi.w  a3, a0, offset; \
     st.w    t2, a0, offset_align 
