@@ -182,15 +182,19 @@ void CpuRam::write32(vluint64_t a, vluint64_t m, unsigned d) {
 int CpuRam::process(vluint64_t main_time) {
 
 #ifdef RAND_TEST
-    if (process_rand(main_time)) {
-            return 1;
-        }
-        if(read_valid){
-            if (!special_read()) {
-                process_read(main_time,read_addr,top->ram_rdata);
+        
+ 
+    if (top->ram_wen && (top->ram_waddr == 0x1c002010)) {
+        if (process_rand(main_time,(int)top->ram_wdata)) {
+                return 1;
             }
-            read_valid = 0;
+    }
+    if(read_valid){
+        if (!special_read()) {
+            process_read(main_time,read_addr,top->ram_rdata);
         }
+        read_valid = 0;
+    }
 #else
     if (read_valid) {
         process_read(main_time, read_addr, top->ram_rdata);

@@ -103,104 +103,20 @@ public:
 	int breakpoint_restore(vluint64_t main_time,  const char* brk_file_name, struct UART_STA *uart_status);
 
     #ifdef RAND_TEST
-    int process_rand(vluint64_t main_time) {
-        int cpu_ex = top->rand_test_bus[RAND_BUS_CPU_EX];
-        int eret   = top->rand_test_bus[RAND_BUS_ERET];
-        int excode = top->rand_test_bus[RAND_BUS_EXCODE];
-        int commit_num     = top->rand_test_bus[RAND_BUS_COMMIT_NUM];
-        int cmt_last_split = top->rand_test_bus[RAND_BUS_CMT_LAST_SPLIT];
-        int cpu_ex_next = rand64->cpu_ex;
-        int tlb_ex_next = rand64->tlb_ex;
-        #ifdef LA32
-        long long bad_vaddr = (long long)top->rand_test_bus[RAND_BUS_BADVADDR];
-        #else 
-        long long bad_vaddr = (long long)top->rand_test_bus[RAND_BUS_BADVADDR] | ((long long)top->rand_test_bus[RAND_BUS_BADVADDR+1]<<32);
-        #endif
-        long long gr_rtl[32];
-
-        // get gr value from rtl
-        gr_rtl[0] = 0;
-        for (int i=1;i<32;i++) {
-            #ifdef LA32
-            gr_rtl[i] = (long long)top->rand_test_bus[i+RAND_BUS_GR_RTL];
-            #else
-            gr_rtl[i] = (long long)top->rand_test_bus[2*i+RAND_BUS_GR_RTL] + ((long long)top->rand_test_bus[2*i+1]<<32+RAND_BUS_GR_RTL);
-            #endif
-            //printf("gr rt[%02d] = %08llx\n",i,gr_rtl[i]);
-        }
-        
-        if (rand64->tlb_ex) {
-            printf("=========================================================\n");
-            printf("rand64 c++ version tlb refill start\n");
-            printf("Looking for this address: %llx\n",bad_vaddr);
-            if (rand64->tlb_refill_once(bad_vaddr)) {
-                printf("Error when tlb refill\n");
-                fprintf(rand64->result_flag, "RUN FAIL!\n");
-                return 1;
-            }
-            int local_num = rand64->tlb->v0 + rand64->tlb->v1;
-            printf("Found %d entry\n",local_num);
-            tlb_ex_next = 0;
-            printf("=========================================================\n");
-        }
-        // skip check if under cpu_ex or the last commit is splitted
-        // Note. multiple issue core might commit several value with a new ex occured in one clock.
-        if (!rand64->cpu_ex&&!rand64->last_split) {
-            if(rand64->compare(gr_rtl)) {
-                printf("REGSTER NOT MATCH!!!\n");
-                fprintf(rand64->result_flag, "RUN FAIL!\n");
-                rand64->print_ref(gr_rtl);
-                return 1;
-            }
-        }
-
-        if (eret) {
-            cpu_ex_next = 0;
-            tlb_ex_next = 0;
-            printf("\nBegin compare\n\n");
-        } else if (cpu_ex) {
-            printf("CPU EX\n");
-            printf("Main time = %d\n",main_time);
-            cpu_ex_next = 1;
-            if (excode == EX_SYSCALL) {
-                printf("SYSCALL DETECTED\n");
-                printf("Rand TEST END\n");
-                fprintf(rand64->result_flag, "RUN PASS!\n");
-                return 1;
-            } else if (excode == EX_TLBR) {
-                printf("TLB EX\n");
-                tlb_ex_next = 1;
-            }
-            else {
-                printf("CPU unexpect EX\n");
-                printf("Random Test End\n");
-                fprintf(rand64->result_flag, "RUN FAIL!\n");
-                return 1;
-            }
-        }
-
-        if (!rand64->cpu_ex&&!eret) {
-            rand64->update(commit_num, main_time);
-        }
-
-        rand64->cpu_ex = cpu_ex_next;
-        rand64->tlb_ex = tlb_ex_next;
-        rand64->last_split = cmt_last_split;
-             
-        if(commit_num == 0){
-            dead_clk++; 
-        }
-        else{
-            dead_clk = 0;
-        }
-
-        if(dead_clk > 10000){
-            printf("CPU status no change for 10000 clocks, simulation must exist error!!!!\n");
-            printf("Random Test End\n");
+    int process_rand(vluint64_t main_time, int bad_vaddr) {
+        printf("=========================================================\n");
+        printf("rand64 c++ version tlb refill start\n");
+        printf("Looking for this address: %llx\n",bad_vaddr);
+        if (rand64->tlb_refill_once(bad_vaddr)) {
+            printf("Error when tlb refill\n");
             fprintf(rand64->result_flag, "RUN FAIL!\n");
             return 1;
         }
-    
+        int local_num = rand64->tlb->v0 + rand64->tlb->v1;
+        printf("Found %d entry\n",local_num);
+        printf("=========================================================\n");
+        // skip check if under cpu_ex or the last commit is splitted
+        // Note. multiple issue core might commit several value with a new ex occured in one clock.
         return 0;
     }
     #endif

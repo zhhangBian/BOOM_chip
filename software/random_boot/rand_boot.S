@@ -1,6 +1,6 @@
 	.text
    	.global		reset_exception
-#define EBASE_ADDR      0x0
+#define EBASE_ADDR      0x9c004000
 #define TLBR_BASE_ADDR  0x1c001000
 #define TLB_READ_ADDR   0x1c002000
 #define REG_INIT_ADDR   0x9c003000
@@ -113,7 +113,10 @@ tlb_refill:
     # in this test. Testbench will prepare the tlb related data.
     csrwr   $r1, 0x30
     csrwr   $r2, 0x31
-    li.w     $r1, TLB_READ_ADDR
+    li.w    $r1, TLB_READ_ADDR
+    csrrd   $r2, 0x7
+    st.w    $r2, $r1, 0x10
+    dbar    0
     ld.w    $r2, $r1, 0
     csrwr   $r2, 0x10
     ld.w    $r2, $r1, 1<<3
@@ -128,5 +131,23 @@ tlb_refill:
     csrrd   $r2, 0x31
     csrrd   $r1, 0x30
     ertn
-
+    .org 0x4000
+    csrwr   $r1, 0x30
+    csrwr   $r2, 0x31
+    csrrd   $r1, 0x5
+    srli.w  $r1, $r1, 16
+    li.w    $r2, 0xb
+    beq     $r1, $r2, random_pass
+    li.w    $r4, 0x1
+    beq     $r0, $r0, random_finish
+random_pass:
+    li.w    $r4, 0x0
+    li.w    $r1, 0x9c005000
+    csrwr   $r1, 0x6
+    ertn
+    beq     $r0, $r0, random_finish
+    .org 0x5000
+random_finish:
+    syscall 0x11
+    idle    0
 

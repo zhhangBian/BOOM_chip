@@ -133,9 +133,6 @@ int Difftest::step(vluint64_t &main_time) {
                 proxy->raise_intr(dut.excp.interrupt);
             }
         }
-    #ifdef RAND_TEST
-        diff_flag = false;
-    #endif
     } else {    // nemu exec instruction
         for (index = 0; index <= idx_commit; index++) {
             if (index < DIFFTEST_COMMIT_WIDTH && dut.commit[index].valid) {
