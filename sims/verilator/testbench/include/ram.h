@@ -109,7 +109,6 @@ public:
         printf("Looking for this address: %llx\n",bad_vaddr);
         if (rand64->tlb_refill_once(bad_vaddr)) {
             printf("Error when tlb refill\n");
-            fprintf(rand64->result_flag, "RUN FAIL!\n");
             return 1;
         }
         int local_num = rand64->tlb->v0 + rand64->tlb->v1;

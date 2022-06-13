@@ -13,8 +13,7 @@ simulation_run_random:ram.dat
 	@echo "Run test" $(CASENAME)
 	mkdir -p logs 
 	mkdir -p ../../log
-	echo $(CASENAME) >> ../../log/result.txt
-	../../output ${RUN_FLAG} --dump-delay $(DUMP_DELAY) --dump-waveform $(DUMP_WAVEFORM) --time-limit $(TIME_LIMIT) --save-bp-time 0 --restore-bp-time 0 --rand-path ./ --result-flag-path ../../log/result.txt --ram ram.dat > logs/run.log 
+	../../output ${RUN_FLAG} --dump-delay $(DUMP_DELAY) --dump-waveform $(DUMP_WAVEFORM) --time-limit $(TIME_LIMIT) --save-bp-time 0 --restore-bp-time 0 --rand-path ./ --end-pc=9c005000 --ram ram.dat > logs/run.log
 	mkdir -p ../../log/$(CASENAME)/
 	cp logs/* ../../log/$(CASENAME)/
 

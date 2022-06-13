@@ -1,10 +1,8 @@
 #include "rand64.h"
 
-Rand64::Rand64(const char *path, const char *result_flag_path) {
+Rand64::Rand64(const char *path) {
 #ifdef RAND_TEST
     strcpy(testpath, path);
-    strcpy(flagpath, result_flag_path);
-    result_flag = fopen(flagpath, "a+");
     printf("Start load random res\n");
     result_type = new BinaryType(path, "result_type");
     vpn = new BinaryType(path, "page");
@@ -72,7 +70,6 @@ int Rand64::tlb_init() {
         
         if (error) {
             printf("TLB INIT Might be wrong\n"); 
-            fprintf(result_flag, "RUN FAIL!\n");
             return 1;
         } else {
             error |= vpn->read_next();
@@ -135,7 +132,6 @@ int Rand64::compare(long long *gr_rtl) {
 #endif
             printf("gr_ref[%02d] = %016llx%010sgr_rtl[%02d] = %016llx\n", i, gr_ref[i], "", i, gr_rtl[i]);
             printf("Compare Fail\n");
-            fprintf(result_flag, "RUN FAIL!\n");
             return 1;
         }
     }
@@ -151,7 +147,6 @@ int Rand64::update(int commit_num, vluint64_t main_time) {
     for (int i = 0; i < commit_num; i++) {
         if (read_next_compare()) {
             printf("Update Fail\n");
-            fprintf(result_flag, "RUN FAIL!\n");
             return 1;
         }
         update_once(main_time);
@@ -189,5 +184,5 @@ int Rand64::tlb_refill_once(long long bad_vaddr) {
 
 
 Rand64::~Rand64() {
-    fclose(result_flag);
+    return;
 }

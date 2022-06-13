@@ -317,7 +317,6 @@ class Rand64 {
 public:
     char testpath[128];
     char flagpath[128];
-    FILE* result_flag;
     long long gr_ref[32];
     BinaryType* result_type;
     BinaryType* vpn;
@@ -337,7 +336,7 @@ public:
     int         last_split;
     int         tlb_entry_num;
    
-    Rand64(const char* path, const char* result_flag_path);
+    Rand64(const char* path);
     ~Rand64();
 
     int init_all();

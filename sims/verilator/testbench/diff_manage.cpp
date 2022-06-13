@@ -36,6 +36,12 @@ int DiffManage::check_end() {
     for (int i = 0; i < NUM_CORES; ++i) {
         end |= difftest[i]->get_proxy_check_end();
     }
+    if (end) {
+        printf("END by Syscall\n");
+    #ifdef RAND_TEST
+        printf("Random_PASS\n");
+    #endif
+    }
     return end;
 }
 

@@ -20,6 +20,8 @@
 #define END_PC 0x1c000114
 #elif defined RUN_C
 #define END_PC 0x123
+#elif defined RAND_TEST
+#define END_PC 0x9c005000
 #else
 #define END_PC 0x123
 #endif

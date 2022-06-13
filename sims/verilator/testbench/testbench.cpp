@@ -4,7 +4,7 @@
 CpuTestbench::CpuTestbench(int argc, char **argv, char **env, vluint64_t *main_time) : CpuTool(nullptr) {
     m_trace = NULL;
     this->parse_args(argc, argv, env);
-    rand64 = new Rand64(rand_path, result_flag_path);
+    rand64 = new Rand64(rand_path);
     top = new Vtop;
     struct UART_STA uart_status;
     if (restore_bp_time != 0) {

@@ -51,7 +51,7 @@ comma=,
 empty= 
 space=${empty} 
 
-all:random
+all:random check_result
 random:link
 	+make -j verilator
 	+make testbench
@@ -187,9 +187,11 @@ simulation_run_random:
 	make all -C ../../../software/random_boot/ ./Makefile || exit "$$?"
 	make prepare -C ./run_random -f ./Makefile || exit "$$?"
 	make all -C ./run_random -f ./Makefile || exit "$$?"
-	mv ./log/result.txt ./log/${RUN_TIME}-result.txt
-
-
+check_result:
+	@echo "Check random result"
+	grep -Hs PASS  log/*/run.log > log/pass.log || true
+	grep -Hs wrong log/*/run.log > log/fail.log || true
+	mkdir -p log/$(RUN_TIME)/ && mv log/*.log log/$(RUN_TIME)
 clean:
 	rm -f output & rm -rf obj_dir &	\
 	make clean -C ./run_random -f ./Makefile

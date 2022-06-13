@@ -1,52 +1,3 @@
- `ifdef RAND_TEST
-     `define RAND_TEST_BUS_WD 32*CPU_WIDTH + 5*32 + 2*CPU_WIDTH
-
-     //Below is a sample for 2 commit
-
-     `define CORE0           simu_top.soc.cpu
-     `define FIX             `CORE0.cpu.cpu
-     `define EXBUS           `CORE0.wb_stage
-     `define EXBUS_EX        `EXBUS.excp_flush
-     `define EXBUS_ERET      `EXBUS.ertn_flush     // (1bit) Please notify rand_tester when ERET is excuted
-     `define EXBUS_EXCODE    `EXBUS.csr_ecode
-     `define EXBUS_EPC       `EXBUS.csr_era
-     `define GR_RTL          `CORE0.id_stage.u_regfile.rf
-     `define CSR             `CORE0.u_csr
-     `define CR_BADVADDR     `CSR.csr_badv
-     `define ROQ             `CORE0.wb_stage
-     `define CMTBUS_VALID0   `ROQ.real_valid 
-     `define CMTBUS_CMTNUM0  {3'b0, !(`EXBUS.ws_excp || `EXBUS.ertn_flush)&&`CMTBUS_VALID0}              // (2bit) the number (range from 0 to 3) which ref result counter would increase by, for ordinary instruction (neither splitted nor merged), this value is 1
-     `ifdef CPU_2CMT
-     `define CMTBUS_VALID1   `ROQ.port1_submit
-     `define CMTBUS_CMTNUM1  {2'b0,`ROQ.port1_submit_num}
-     `endif
-    
-
- //   `ifdef RAND_TEST
- //   `define RAND_TEST_BUS_WD 32*CPU_WIDTH + 5*32 + 2*CPU_WIDTH
- 
- //   //Below is a sample for 2 commit
-      
- //   `define CORE0           simu_top.soc.cpu
- //   `define FIX             `CORE0.cpu.cpu
- //   `define EXBUS           `CORE0.cpu.cpu.wb_stage
- //   `define EXBUS_EX        `EXBUS.wb_exception
- //   `define EXBUS_ERET      `EXBUS.wb_eret     // (1bit) Please notify rand_tester when ERET is excuted
- //   `define EXBUS_EXCODE    `EXBUS.wb_exccode
- //   `define EXBUS_EPC       `EXBUS.wb_epc
- //   `define GR_RTL          `FIX.registers.regs
- //   `define CSR             `CORE0.cpu.cpu.csr
- //   `define CR_BADVADDR     `CSR.badv
- //   `define ROQ             `CORE0.cpu.cpu.wb_stage
- //   `define CMTBUS_VALID0   `ROQ.port0_submit 
- //   `define CMTBUS_CMTNUM0  {2'b0,`ROQ.port0_submit_num}    // (2bit) the number (range from 0 to 3) which ref result counter would increase by, for ordinary instruction (neither splitted nor merged), this value is 1
- //   `ifdef CPU_2CMT
- //   `define CMTBUS_VALID1   `ROQ.port1_submit
- //   `define CMTBUS_CMTNUM1  {2'b0,`ROQ.port1_submit_num}
- //   `endif
-
-   
-`endif
 module simu_top
 #(
     `ifdef AXI128
@@ -97,11 +48,6 @@ module simu_top
     output [CPU_WIDTH-1     :0] debug1_wb_rf_wdata
     `endif
     
-    `ifdef RAND_TEST
-    ,
-    output [`RAND_TEST_BUS_WD-1:0] rand_test_bus
-    `endif
-
     ,
 
     output [31:0] num_data,
@@ -195,51 +141,4 @@ assign uart_ctr_bus = {
 						{31'b0, simu_top.soc.APB_DEV.uart0.PENABLE	 }
 					   };
 
-`ifdef RAND_TEST
-wire        cmtbus_valid0;
-wire [3:0]  cmtbus_cmtnum0;
-
-wire [3:0] commit_num;
-wire       cmt_last_split;
-
-assign cmtbus_valid0 = `CMTBUS_VALID0;
-assign cmtbus_cmtnum0 = `CMTBUS_CMTNUM0;
-
-`ifdef CPU_2CMT
-wire        cmtbus_valid1;
-wire [3:0]  cmtbus_cmtnum1;
-assign cmtbus_valid1 = `CMTBUS_VALID1;
-assign cmtbus_cmtnum1 = `CMTBUS_CMTNUM1;
-assign commit_num = cmtbus_cmtnum0 + cmtbus_cmtnum1;
-assign cmt_last_split = cmtbus_valid1 ? (cmtbus_cmtnum1 == 0) :
-                        cmtbus_valid0 ? (cmtbus_cmtnum0 == 0) :
-                        1'b0;
-
-`else
-assign commit_num = cmtbus_cmtnum0;
-assign cmt_last_split = cmtbus_valid0 ? (cmtbus_cmtnum0 == 0) :
-                        1'b0;
-
-`endif
-assign rand_test_bus ={
-                        {28'b0,commit_num},
-                        {31'b0,cmt_last_split},
-                        {`CR_BADVADDR},
-                        {`EXBUS_EPC},
-                        {26'b0,`EXBUS_EXCODE},
-                        {31'b0,`EXBUS_ERET},
-                        {31'b0,`EXBUS_EX},
-                        `GR_RTL[31],`GR_RTL[30],`GR_RTL[29],`GR_RTL[28],
-                        `GR_RTL[27],`GR_RTL[26],`GR_RTL[25],`GR_RTL[24],
-                        `GR_RTL[23],`GR_RTL[22],`GR_RTL[21],`GR_RTL[20],
-                        `GR_RTL[19],`GR_RTL[18],`GR_RTL[17],`GR_RTL[16],
-                        `GR_RTL[15],`GR_RTL[14],`GR_RTL[13],`GR_RTL[12],
-                        `GR_RTL[11],`GR_RTL[10],`GR_RTL[ 9],`GR_RTL[ 8],
-                        `GR_RTL[ 7],`GR_RTL[ 6],`GR_RTL[ 5],`GR_RTL[ 4],
-                        `GR_RTL[ 3],`GR_RTL[ 2],`GR_RTL[ 1],`GR_RTL[ 0]
-                         };
-
-
-
-`endif
 endmodule
