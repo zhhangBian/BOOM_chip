@@ -37,7 +37,7 @@ gtkwave simu_trace.fst                   #查看仿真波形
 上述简单仿真过程完成之后，用户可根据自己的需要，配置相应的仿真参数。对于仿真参数的说明，请参考以下章节。
 ## LA32R-NEMU
 为帮助用户在仿真环境下调试内核，我们提供了`difftest`环境，
-使用方法请参考[difftest说明](https://chiplab.readthedocs.io/zh/latest/Simulation/difftest.html)。
+使用方法请参考[DIFFTEST说明](https://chiplab.readthedocs.io/zh/latest/Simulation/difftest.html)。
 ## prog环境
 ### 编译参数配置
 ```
@@ -128,23 +128,13 @@ gtkwave simu_trace.fst
 ```     
 如果仿真过程中被`ctrl-c`强制结束，仅`simu_trace.txt`会保存在`tmp`目录下，波形文件、串口输出的`log`会丢失。为避免该情况，可估算运行时间，并配置`Makefile_run`中的`TIME_LIMIT`选项。
 ## random环境
-### 修改simu_top
-对`$(CHIPLAB_HOME)/sims/verilator/testbench/simu_top.v`中的define进行修改,使其适配myCPU.     
-需要适配的信号说明如下:    
-- `CORE0` :               myCPU顶层
-- `GR_RTL` :              myCPU的标量定点通用寄存器堆
-- `CR_BADVADDR` :         myCPU中的badvaddr csr寄存器
-- `ROQ` :                 myCPU中提交寄存器修改的一级.五级流水中对应wb_stage
-- `CMTBUS_VALID0` :       当前提交流级有效.分支指令,无写回指令等也需要，`eret`指令或例外需置零.
-- `CMTBUS_CMTNUM0` :      当前提交级的一次提交完成了几条指令.如无指令融合和指令拆分,一般始终为`CMTBUS_VALID0`.
-- `CMTBUS_VALID1` :       类似cmtbus_valid0,为适配双发射处理器核所使用.
-- `CMTBUS_CMTNUM1` :      类似cmtbus_cmtnum0,为适配双发射处理器核所使用.
-- `EXBUS_EX` :            提交级触发例外
-- `EXBUS_ERET` :          提交级触发了ERET
-- `EXBUS_EXCODE` :        提交级触发例外的excode
-- `EXBUS_EPC` :           提交级触发例外的EPC
-
-其余信号如FIX ROQ CSR均为减少以上信号重复书写所定义.如不适合myCPU可以删除,保证上述信号连接正确即可.如果随机验证没有正常进入比对指令运行结果的状态，大概率为`simu_top`信号的配置问题。
+### 连接DIFFTEST相关信号
+为帮助用户在仿真环境下调试处理器，我们提供了'difftest'环境.
+使用方法请参考[DIFFTEST使用说明](https://chiplab.readthedocs.io/zh/latest/Simulation/difftest.html)，完成DIFFTEST相关信号的适配。
+若不进行适配，请关闭DIFFTEST比对功能后，再进行随机指令序列测试。修改`$(CHIPLAB_HOME)/sims/verilator/run_random/config-random.mak`
+```
+TRACE_COMP=n
+```
 ### 准备测试用例
 下载相关随机res文件压缩包，[下载地址](http://114.242.206.180:24989/nextcloud/index.php/s/qRGrWZK6c2KtAJ9)。	
 `random_res_*.tar.bz2`其中的数字表示拥有几组随机指令序列，一组随机指令序列拥有30万条指令	
