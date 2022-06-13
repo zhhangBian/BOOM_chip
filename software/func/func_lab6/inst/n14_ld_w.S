@@ -5,7 +5,7 @@
 LEAF(n14_ld_w_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_LD_W(0xc822c7e8, 0x800d34c0,  0x6a8,  0x6a8, 0xc822c7e8)
     TEST_LD_W(0x71737c10, 0x800df660,  0x0e4,  0x0e4, 0x71737c10)

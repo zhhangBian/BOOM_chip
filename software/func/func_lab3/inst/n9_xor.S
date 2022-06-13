@@ -4,7 +4,7 @@
 
 LEAF(n9_xor_test)
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w   s2, 0x00
 ###test inst
     TEST_XOR(0x1773df80, 0xb5af51d2, 0xa2dc8e52)
     TEST_XOR(0xe6223550, 0x909c98da, 0x76bead8a)

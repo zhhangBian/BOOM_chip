@@ -5,7 +5,7 @@
 LEAF(n41_ld_b_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_LD_B(0xc83b0be0, 0x800d6760, 0x00007a1, 0x00007a0, 0x0000000b)
     TEST_LD_B(0x1eec280c, 0x800d4598, 0x000080c, 0x000080c, 0x0000000c)

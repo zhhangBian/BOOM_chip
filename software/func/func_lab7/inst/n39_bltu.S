@@ -5,7 +5,7 @@
 LEAF(n39_bltu_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_BLTU(0xae057640, 0xa3f3f054, 0x087ad72a, 0xf9772780, 0x00000000, 0x00000000)
     TEST_BLTU(0xa1331f07, 0xce878855, 0x5f6eebfc, 0xfbf37fbc, 0x5f6eebfc, 0xfbf37fbc)

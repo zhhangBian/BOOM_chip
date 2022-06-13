@@ -5,7 +5,7 @@
 LEAF(n8_or_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_OR(0x50e41484, 0xad35ea94, 0xfdf5fe94)
     TEST_OR(0xbbbfafe4, 0xc8e94400, 0xfbffefe4)

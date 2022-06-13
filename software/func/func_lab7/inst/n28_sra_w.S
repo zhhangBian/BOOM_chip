@@ -5,7 +5,7 @@
 LEAF(n28_sra_w_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w  s2, 0x00
 ###test inst
     TEST_SRA_W(0x3e594300, 0x00000003, 0x07cb2860)
     TEST_SRA_W(0x171e0116, 0x00000004, 0x0171e011)

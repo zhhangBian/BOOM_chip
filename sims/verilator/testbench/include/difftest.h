@@ -17,7 +17,7 @@
 #define DEBUG_GROUP_TRACE_SIZE 16
 
 #ifdef RUN_FUNC
-#define END_PC 0x1c000114
+#define END_PC 0x1c000130
 #elif defined RUN_C
 #define END_PC 0x123
 #elif defined RAND_TEST

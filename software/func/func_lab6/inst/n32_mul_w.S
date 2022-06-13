@@ -5,7 +5,7 @@
 LEAF(n32_mul_w_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_MUL_W(0x45b90738, 0xd70d64f0, 0x0a20a480)
     TEST_MUL_W(0x99a451b0, 0xbe3d9998, 0x8552b080)

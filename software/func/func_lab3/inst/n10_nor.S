@@ -4,7 +4,7 @@
 
 LEAF(n10_nor_test)
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w   s2, 0x00
 ###test inst
     TEST_NOR(0xad9cc00e, 0x38b7ec24, 0x424013d1)
     TEST_NOR(0x668d5db0, 0xa0945bf0, 0x1962a00f)

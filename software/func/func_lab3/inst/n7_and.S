@@ -4,7 +4,7 @@
 
 LEAF(n7_and_test)
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w   s2, 0x00
 ###test inst
     TEST_AND(0x5c95951a, 0xca00c414, 0x48008410)
     TEST_AND(0x9ba8ba70, 0xe99fce38, 0x89888a30)

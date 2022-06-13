@@ -5,7 +5,7 @@
 LEAF(n26_xori_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w  s2, 0x00
 ###test inst
     TEST_XORI(0x4406a500, 0x000004bf, 0x4406a1bf)
     TEST_XORI(0xb5f52460, 0x00000abe, 0xb5f52ede)

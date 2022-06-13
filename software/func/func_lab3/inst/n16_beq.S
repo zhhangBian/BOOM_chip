@@ -4,7 +4,7 @@
 
 LEAF(n16_beq_test)
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w   s2, 0x0
 ###test inst
     TEST_BEQ(0x52919078, 0x81468400, 0x0fb16a80, 0xdf225ddc, 0x00000000, 0x00000000)
     TEST_BEQ(0x90db14d8, 0xa81a7400, 0x2fdac790, 0xe4a202d3, 0x00000000, 0x00000000)

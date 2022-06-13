@@ -19,7 +19,7 @@
 	.globl	__main
 _start:
 start:
-    li     t0, 0xffffffff
+    li.w     t0, 0xffffffff
     addi.w t0, zero, -1
 	b	locate
 
@@ -42,6 +42,10 @@ test_finish:
     addi.w    t0, t0, 1
     LI        (t2, UART_ADDR)
     st.w      zero, t2, 0
+//    .word 0x80000000 // nemu trap
+    nop
+    b   1f
+.org 0x130
 1:
     syscall 0x11
 
@@ -56,10 +60,38 @@ test_finish:
  */
 .org 0x8000   //0x1c008000
 1:  
-    li    t0, 0x800d0000
+    li.w  t0, 0x800d0000
     ld.w  t1, t0, 0 
-    li    t0, 0x1 
-    beq   t1, t0, syscall_ex 
+    li.w  t0, 0x1 
+    beq   t1, t0, syscall_ex  #syscall  
+    li.w  t0, 0x2 
+    beq   t1, t0, brk_ex      #break 
+    li.w  t0, 0x3 
+    beq   t1, t0, ine_ex      #reserved inst 
+    li.w  t0, 0x4 
+    beq   t1, t0, int_ex      #interrupt 
+    li.w  t0, 0x5 
+    beq   t1, t0, adef_ex     #adef 
+    li.w  t0, 0x6 
+    beq   t1, t0, ale_ex      #ale 
+    li.w    t0, 0x7 
+    beq   t1, t0, pme_ex      #pme
+    li.w    t0, 0x8
+    beq   t1, t0, ld_page_invalid
+    li.w    t0, 0x9
+    beq   t1, t0, st_page_invalid
+    li.w    t0, 0xa
+    beq   t1, t0, tlb_prl_error
+    li.w    t0, 0xb
+    beq   t1, t0, tlb_page_modified_error
+    li.w    t0, 0xc
+    beq   t1, t0, fetch_page_invalid
+    li.w    t0, 0xd
+    beq   t1, t0, tlb_adem_error
+    li.w    t0, 0xe
+    beq   t1, t0, tlb_adef_error
+    li.w    t0, 0xf 
+    beq   t1, t0, syscall_bak_kernel_mode
 	b     test_end
 
 
@@ -68,26 +100,386 @@ syscall_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w     t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x000b0000 
+    li.w     t1, 0x000b0000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w     t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w     t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w     t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x10 
-    b        ex_finish
+    b        ex_finish  
 
-ex_finish:
+brk_ex: 
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w     t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w     t1, 0x000c0000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    li.w     t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    lu12i.w  s2, 0x20 
+    b        ex_finish  
+
+ine_ex:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w     t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w     t1, 0x000d0000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    li.w     t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    lu12i.w  s2, 0x30 
+    b        ex_finish 
+
+int_ex:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w     t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w     t1, 0x00000000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    li.w     t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    li.w     t1, 0x1 
+    csrwr    t1, csr_ticlr 
+    bne      t1, zero, ex_finish 
+    li.w     t1, 0x0 
+    li.w     t0, 0x3 
+    csrxchg  t1, t0, csr_estat 
+    csrrd    t1, csr_estat
+    li.w     t0, 0x1fff 
+    and      t0, t0, t1 
+    bne      t0, zero, ex_finish 
+    lu12i.w  s2, 0x40 
+    b        ex_finish 
+
+adef_ex:
+    add.w    s2, zero, zero
+    csrwr    s5, csr_era
+    bne      s4, s5, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w     t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w     t1, 0x00080000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    li.w     t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    lu12i.w  s2, 0x50 
+    b        ex_finish  
+
+ale_ex:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w     t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w     t1, 0x00090000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    li.w     t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w     t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    lu12i.w  s2, 0x60 
+    b        ex_finish  
+    
+pme_ex:
+    add.w    s2, zero, zero 
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00040000
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish 
+    srli.w   s8, s8, 13 
+    slli.w   s8, s8, 13
+    csrrd    t0, csr_tlbehi
+    bne      t0, s8, ex_finish
+    lu12i.w  s2, 0x70 
+    b        ex_finish  
+
+ld_page_invalid:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00010000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish
+    csrrd    t0, csr_tlbehi
+    bne      t0, s8, ex_finish
+    lu12i.w  s2, 0x1
+    b        ex_finish  
+    
+st_page_invalid:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00020000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish
+    csrrd    t0, csr_tlbehi
+    bne      t0, s8, ex_finish
+    lu12i.w  s2, 0x2
+    b        ex_finish  
+    
+tlb_prl_error:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00070000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish
+    csrrd    t0, csr_tlbehi
+    bne      t0, s8, ex_finish
+    lu12i.w  s2, 0x7
+    b        ex_finish  
+    
+tlb_page_modified_error:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00040000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t5, t0, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish
+    csrrd    t0, csr_tlbehi
+    bne      t0, s8, ex_finish
+    lu12i.w  s2, 0x4
+    b        ex_finish  
+     
+fetch_page_invalid:
+    add.w    s2, zero, zero
+    li.w       t0, 0xffffffff
+    csrrd    t0, csr_era 
+    bne      s8, t0, ex_finish 
+    addi.w   t0, s4, 0x0
+    csrwr    t0, csr_era
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00030000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t5, t0, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish
+    csrrd    t0, csr_tlbehi
+    bne      t0, s8, ex_finish
+    lu12i.w  s2, 0x3
+    b        ex_finish  
+
+tlb_adem_error:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00480000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish 
+#ifndef ENABLE_TRACE
+    csrrd    t0, csr_tlbehi
+    bne      t0, zero, ex_finish 
+#endif
+    lu12i.w  s2, 0x81
+    b        ex_finish  
+     
+tlb_adef_error:
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s8, t0, ex_finish 
+    addi.w   t0, s4, 0x0
+    csrwr    t0, csr_era
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x00080000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t5, t0, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish 
+#ifndef ENABLE_TRACE
+    csrrd    t0, csr_tlbehi
+    bne      t0, zero, ex_finish 
+#endif
+    lu12i.w  s2, 0x80
+    b        ex_finish  
+
+syscall_bak_kernel_mode:
+    li.w       t0, 0x3 
+    csrxchg  zero, t0, csr_prmd 
     csrrd    t1, csr_era 
     addi.w   t1, t1, 0x4 
     csrwr    t1, csr_era 
+    ertn
+
+.org TLBREBASE   //TLBREBASE
+    add.w    s2, zero, zero
+    csrrd    t0, csr_era 
+    bne      s4, t0, ex_finish 
+    csrrd    t0, csr_estat 
+    li.w       t1, 0x7fff0000 
+    and      t0, t0, t1 
+    li.w       t1, 0x003f0000 
+    bne      t1, t0, ex_finish 
+    csrrd    t0, csr_crmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    li.w       t1, 0x0 
+    bne      t1, t0, ex_finish
+    csrrd    t0, csr_prmd 
+    li.w       t1, 0x7 
+    and      t0, t0, t1 
+    bne      t0, t5, ex_finish 
+    csrrd    t0, csr_badv
+    bne      t0, s8, ex_finish
+    csrrd    t0, csr_tlbehi
+    bne      t0, s8, ex_finish
+    lu12i.w  s2, 0xe
+    b        ex_finish  
+ 
+ex_finish:
+    add.w    zero, zero, zero
+    csrrd    t1, csr_era 
+    addi.w   t1, t1, 0x4 
+    csrwr    t1, csr_era 
+    addi.w   t1, s2, 0x0
     bne      s2, zero, ex_ret
     lu12i.w  s2, 0xffff 
 ex_ret:
@@ -274,7 +666,7 @@ lab8_csr_init:
     csrwr     zero, csr_era 
     csrwr     zero, csr_eentry 
 
-    li t0, 0x1c008000 
+    li.w  t0, 0x1c008000 
     csrwr t0, csr_eentry
     bl n47_syscall_ex_test       #syscall
     bl idle_1s
@@ -296,6 +688,7 @@ test_end:
 	  st.w    zero, a0, 0
     st.w    t1, a1, 0
     st.w    t1, a2, 0
+    li.w    a0, 0x1
     b  2f
     nop
 1:
@@ -305,6 +698,7 @@ test_end:
     NOP4
     st.w    t1, a0, 0
     st.w    t1, a1, 0
+    li.w    a0, 0
 
 2:
 	//LI (t1, 0xff)
@@ -314,6 +708,9 @@ test_end:
 	bl test_finish
 
 idle_1s:
+    #ifdef RUN_SIMU
+    jirl    zero, ra, 0
+    #endif
     LI (t0,SW_INTER_ADDR)
     LI (t1, 0xaaaa)
 

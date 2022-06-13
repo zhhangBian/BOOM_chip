@@ -4,7 +4,7 @@
 
 LEAF(n4_sub_w_test)
     addi.w s0, s0 ,1
-    li     s2, 0x00
+    li.w   s2, 0x00
 ###test inst
     TEST_SUB_W(0xd6fc0584, 0x5f9765a8, 0x77649fdc)
     TEST_SUB_W(0xbf9c95c2, 0x3368890e, 0x8c340cb4)

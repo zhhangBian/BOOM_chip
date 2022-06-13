@@ -5,7 +5,7 @@
 LEAF(n3_addi_w_test)
     
     addi.w s0, s0 ,1
-    li     s2, 0x0
+    li.w     s2, 0x0
 ###test inst
     TEST_ADDI_W(0xfb263d10, 0x00000c96, 0xfb2639a6)
     TEST_ADDI_W(0x7ec10538, 0x00000996, 0x7ec0fece)

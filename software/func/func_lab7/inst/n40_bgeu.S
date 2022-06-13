@@ -5,7 +5,7 @@
 LEAF(n40_bgeu_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_BGEU(0x3e290b61, 0x9d7d8a83, 0x26b8700b, 0xdbfe64e5, 0x00000000, 0x00000000)
     TEST_BGEU(0xfd5f4009, 0x7fac959f, 0xe3ac4197, 0x6c00bfbd, 0xe3ac4197, 0x6c00bfbd)

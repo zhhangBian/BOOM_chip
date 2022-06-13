@@ -18,7 +18,7 @@
 	.globl	__main
 _start:
 start:
-    li     t0, 0xffffffff
+    li.w     t0, 0xffffffff
     addi.w t0, zero, -1
 	b	locate
 	nop
@@ -43,6 +43,8 @@ test_finish:
     addi.w    t0, t0, 1
     LI        (t2, UART_ADDR)
     st.w      zero, t2, 0
+    b   1f
+.org 0x130
 1:
     syscall 0x11
     nop
@@ -252,6 +254,7 @@ test_end:
 	  st.w    zero, a0, 0
     st.w    t1, a1, 0
     st.w    t1, a2, 0
+    li.w    a0, 0x1
     b  2f
     nop
 1:
@@ -261,6 +264,7 @@ test_end:
     NOP4
     st.w    t1, a0, 0
     st.w    t1, a1, 0
+    li.w    a0, 0
 
 2:
 	//LI (t1, 0xff)
@@ -270,6 +274,9 @@ test_end:
 	bl test_finish
 
 idle_1s:
+    #ifdef RUN_SIMU
+    jirl    zero, ra, 0
+    #endif
     LI (t0,SW_INTER_ADDR)
     LI (t1, 0xaaaa)
 

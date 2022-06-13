@@ -5,7 +5,7 @@
 LEAF(n24_andi_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w  s2, 0x00
 ###test inst
     TEST_ANDI(0x4c23cdd4, 0x00000e89, 0x00000c80)
     TEST_ANDI(0xa1286600, 0x000008aa, 0x00000000)

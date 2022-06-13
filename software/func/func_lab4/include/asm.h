@@ -25,6 +25,11 @@
 # error __loongarch_xlen must equal 32 or 64
 #endif
 
+#define TLBREBASE 0xf000
+
+#define WAY    2
+#define OFFSET 4
+#define INDEX  8
 
 /* Declare leaf routine.  */
 #define	LEAF(symbol)			\

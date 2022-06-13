@@ -4,7 +4,7 @@
 
 LEAF(n17_bne_test)
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w   s2, 0x0
 ###test inst
     TEST_BNE(0xbcaabd27, 0x82a77a9d, 0x235fde00, 0xdd597dde, 0x235fde00, 0xdd597dde)
     TEST_BNE(0xdb386042, 0x4f6d035f, 0x94668000, 0xe3939568, 0x94668000, 0xe3939568)

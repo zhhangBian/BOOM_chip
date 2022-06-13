@@ -14,7 +14,7 @@ ifeq ('${TRACE_COMP}', 'y')
 	${GCC_BIN}/loongarch32r-linux-gnusf-gcc \
 		-Iinclude -nostdinc -nostdlib -D_KERNEL  -fno-builtin -D__loongarch32\
 		-DMEMSTART=0x10000000 -DMEMSIZE=0x04000 -DCPU_COUNT_PER_US=1000     \
-		-DENABLE_TRACE -S start.S > obj/start.s 
+		-DENABLE_TRACE -DRUN_SIMU -S start.S > obj/start.s 
 else
 	${GCC_BIN}/loongarch32r-linux-gnusf-gcc \
 		-Iinclude -nostdinc -nostdlib -D_KERNEL -fno-builtin -D__loongarch32\

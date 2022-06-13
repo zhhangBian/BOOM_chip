@@ -5,7 +5,7 @@
 LEAF(n34_mulh_wu_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x0
+    li.w  s2, 0x0
 ###test inst
     TEST_MULH_WU(0x99c9a500, 0x6c1a1b60, 0x40f0c088)
     TEST_MULH_WU(0xee026dc0, 0xd85e0aec, 0xc9297ba5)

@@ -4,7 +4,7 @@
 
 LEAF(n6_sltu_test)
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w   s2, 0x00
 ###test inst
     TEST_SLTU(0x158f2b29, 0x421c0a42, 0x00000001)
     TEST_SLTU(0x60343bf8, 0xdd17b30a, 0x00000001)

@@ -5,7 +5,7 @@
 LEAF(n12_srli_w_test)
     
     addi.w s0, s0 ,1
-    li  s2, 0x00
+    li.w  s2, 0x00
 ###test inst
     TEST_SRLI_W(0x8e8ffce0, 0x00000002, 0x23a3ff38)
     TEST_SRLI_W(0x49291230, 0x0000000f, 0x00009252)
