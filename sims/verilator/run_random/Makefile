@@ -53,9 +53,9 @@ space=${empty}
 
 all:random check_result
 random:link
-	+make -j verilator
-	+make testbench
-	+make simulation_run_random
+	$(MAKE) -j verilator
+	$(MAKE) testbench
+	$(MAKE) simulation_run_random
 
 link:config-generator.mak
 config-generator.mak:
@@ -168,7 +168,7 @@ verilator:${VERILATOR_SRC}
 	@echo "============================================================================================================="
 	@echo "============================================================================================================="
 	verilator ${VERILATOR_INCLUDE} ${WAVEOPTION} --threads ${THREAD} -O3 -Wno-fatal -DSIMU -DSIMULATION=1 -Wall --trace -cc ${VFLAGS} ${SIMU_TOP_NAME}.v ${DIFFTEST}.v ${VERILATOR_SRC}
-	+make -C ${OBJ_DIR} -f "V${SIMU_TOP_NAME}.mk"
+	$(MAKE) -C ${OBJ_DIR} -f "V${SIMU_TOP_NAME}.mk"
 
 testbench:${TESTBENCH_SRC}/*.cpp 
 	@echo "============================================================================================================="

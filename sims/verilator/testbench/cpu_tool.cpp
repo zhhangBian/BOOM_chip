@@ -18,7 +18,7 @@ int CpuTool::dump_rf_trace = 0;
 int CpuTool::comp_pc_trace = 0;
 int CpuTool::comp_rf_trace = 0;
 
-int CpuTool::dump_delay = 0;
+int64_t CpuTool::dump_delay = 0;
 int CpuTool::dump_waveform = 0;
 
 int CpuTool::rf_trace_no_repeat = 0;

@@ -183,7 +183,7 @@ int Difftest::step(vluint64_t &main_time) {
 
     /* load address of peripherals */
     for (index = 0; index <= idx_commit; index++) {
-        if (dut.load[index].valid && (dut.load[index].paddr & 0x000000000fffffff)) {
+        if (dut.load[index].valid && (dut.load[index].paddr & 0x00000000f8000000)) {
             proxy->regcpy(dut_regs_ptr, DIFFTEST_TO_REF, DIFF_TO_REF_GR);
         }
     }
