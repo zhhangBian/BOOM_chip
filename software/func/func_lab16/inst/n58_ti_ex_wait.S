@@ -5,9 +5,8 @@
 LEAF(n58_ti_ex_idle_test)
    
   addi.w  s0, s0, 1 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x4 
-  st.w    s2, t0, 0 
+  li.w    t4, 0x3a
+  LI_EXIMM(t0,s2,IMM_INT)
   //clear ti
   li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
@@ -31,10 +30,9 @@ LEAF(n58_ti_ex_idle_test)
   bne     t1, t0, inst_error 
 
 ###2
-  li.w      t7, 0xd0000
+  li.w      t7, (DATABASE+0xd0000)
   li.w      s2, 0x04
   la.local  s4, 1f
-  st.w    t7, t7, 4
   st.w    s4, t7, 4 
   TEST_TI_EX_WAIT(0x74) 
   st.w    s4, t7, 0 
@@ -54,7 +52,7 @@ LEAF(n58_ti_ex_idle_test)
   la.local  s4, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  div.w   t7, t1, s0 
+  div.w   t7, t1, t4 
   TEST_TI_EX_WAIT(0x10) 
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
@@ -68,7 +66,7 @@ LEAF(n58_ti_ex_idle_test)
   li.w      s2, 0x04
   la.local  s4, 1f
   TEST_TI_EX_WAIT(0x0) 
-  div.w   t0, t0, s0 
+  div.w   t0, t0, t4 
   bne     s2, s7, inst_error 
 
 ###5
@@ -76,7 +74,7 @@ LEAF(n58_ti_ex_idle_test)
   la.local  s4, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  mul.w   t7, s0, t7
+  mul.w   t7, t4, t7
   TEST_TI_EX_WAIT(0x4) 
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
@@ -85,7 +83,7 @@ LEAF(n58_ti_ex_idle_test)
   li.w      s2, 0x04
   la.local  s4, 1f
   TEST_TI_EX_WAIT(0x8) 
-  mul.w   t0, t0, s0 
+  mul.w   t0, t0, t4 
   bne     s2, s7, inst_error 
 
 ###7

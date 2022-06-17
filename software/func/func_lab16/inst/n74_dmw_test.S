@@ -57,7 +57,7 @@ LEAF(n74_dmw_test)
     csrwr t2, csr_tlbelo1 
     tlbwr  
 
-    li.w     t0, 0xd0000 
+    li.w     t0, (DATABASE+0xd0000)
     li.w     t1, 0xffffe000 
     and    t4, t0, t1 
     srli.w t4, t4, 0x4 
@@ -88,9 +88,6 @@ LEAF(n74_dmw_test)
     tlbwr  
 
     // config the TLB entry for ld
-    #ifdef ENABLE_TRACE
-    csrwr    zero, csr_tlbehi 
-    #endif
     FILL_TLB_ITEM(0x0c000001, 0xe0000000, 0x900004d, 0x60000000)
     csrwr    zero, csr_tlbehi
 
@@ -125,9 +122,7 @@ LEAF(n74_dmw_test)
     ld.w    t6, t0, 0x0
 
     bne s2, zero, inst_error
-    li.w      t0, 0xd0000 
-    li.w      s2, 0xf 
-    st.w    s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0   //return to kernel mode 
     li.w      s2, 0x0
 

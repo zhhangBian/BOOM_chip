@@ -5,9 +5,8 @@
 LEAF(n56_ale_st_h_ex_test)
    
   addi.w  s0, s0, 1 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x6 
-  st.w    s2, t0, 0 
+  li.w    t4, 0x38
+  LI_EXIMM(t0,s2,IMM_ALE)
   //clear ti
   li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
@@ -27,9 +26,7 @@ LEAF(n56_ale_st_h_ex_test)
   bne     s2, s7, inst_error 
   ld.w    t2, a0, -0x7ce 
   bne     t2, t3, inst_error 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0xf 
-  st.w    s2, t0, 0 
+  LI_EXIMM(t0,s2,IMM_KERNEL)
   syscall 0   //return to kernel mode 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error
@@ -40,12 +37,10 @@ LEAF(n56_ale_st_h_ex_test)
   bne     t1, t0, inst_error   
 
   li.w      t5, 0   //used for verify prmd 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x6 
-  st.w    s2, t0, 0
+  LI_EXIMM(t0,s2,IMM_ALE)
 
 ###2
-  li.w      t7, 0xd0000
+  li.w      t7, (DATABASE+0xd0000)
   li.w      s2, 0x06 
   TEST_ST_H_ALE(0x6e9ce24e, 0xd2c08, 0x000009b, 0x0000098, 0x6e9ce24e)
   la.local  s4, 1f
@@ -75,7 +70,7 @@ LEAF(n56_ale_st_h_ex_test)
   la.local  s4, 1f 
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  div.w   t7, t1, s0 
+  div.w   t7, t1, t4 
 1: 
   st.h    a1, a0, 0x1d3 
   beq     t8, t7, inst_error 
@@ -91,7 +86,7 @@ LEAF(n56_ale_st_h_ex_test)
   la.local  s4, 1f 
 1: 
   st.h    a1, a0, -0x70f 
-  div.w   t0, t0, s0 
+  div.w   t0, t0, t4 
   bne     s2, s7, inst_error 
   ld.w    t2, a0, -0x710 
   bne     t2, t3, inst_error
@@ -104,7 +99,7 @@ LEAF(n56_ale_st_h_ex_test)
   la.local  s4, 1f 
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  mul.w   t7, s0, t7
+  mul.w   t7, t4, t7
 1: 
   st.h    a1, a0, -0x49d 
   beq     t8, t7, inst_error 
@@ -120,7 +115,7 @@ LEAF(n56_ale_st_h_ex_test)
   la.local  s4, 1f 
 1: 
   st.h    a1, a0, 0x6f2 
-  mul.w   t0, t0, s0 
+  mul.w   t0, t0, t4 
   bne     s2, s7, inst_error 
   ld.w    t2, a0, 0x6f1 
   bne     t2, t3, inst_error 

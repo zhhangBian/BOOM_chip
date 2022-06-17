@@ -1,3 +1,4 @@
+#include "lab_config.h"
 //soc confreg
 #define CONFREG_NULL            0xbfaf8ffc
 
@@ -102,11 +103,54 @@
                                
 #define write_confreg_cr(num,data) *((volatile int *)(CONFREG_CR0+4*num)) = data
 #define read_confreg_cr(num,data) data=*((volatile int *)(CONFREG_CR0+4*num))
+#if NOP_INSERT
+#define nop  addi.w zero, zero, 0
+#define NOP  addi.w zero, zero, 0
+#else
 #define nop
 #define NOP
+#endif
 #define NOP4 NOP;NOP;NOP;NOP
 #define LI(reg, imm) \
     lu12i.w reg , (((imm>>12)+((imm&0x00000800)>>11))&0x000fffff)&0x80000?(((imm>>12)+((imm&0x00000800)>>11))&0x000fffff)-0x100000:(((imm>>12)+((imm&0x00000800)>>11))&0x000fffff); \
     NOP4; \
     addi.w reg, reg, (imm & 0x00000fff)&0x800?(imm & 0x00000fff)-0x1000:(imm & 0x00000fff)
+#define LI_EXIMM(reg1,reg2,imm) \
+    li.w    reg1, (DATABASE+0xd0000); \
+    li.w    reg2, imm; \
+    st.w    reg2, reg1, 0
 
+#define DAMODE(temp_reg1,temp_reg2)\
+    csrrd   temp_reg1, 0x0;\
+    li.w    temp_reg2, 0xffffffef;\
+    and     temp_reg1, temp_reg1, temp_reg2;\
+    li.w    temp_reg2, 0x8;\
+    or      temp_reg1, temp_reg1, temp_reg2
+
+#define PGMODE(temp_reg1,temp_reg2)\
+    csrrd   temp_reg1, 0x0;\
+    li.w    temp_reg2, 0xfffffff7;\
+    and     temp_reg1, temp_reg1, temp_reg2;\
+    li.w    temp_reg2, 0x10;\
+    or      temp_reg1, temp_reg1, temp_reg2
+
+#define GET_EXIMM(reg1) \
+    li.w    reg1, (DATABASE+0xd0000); \
+    ld.w    reg1, reg1, 0
+
+#define IMM_SYSCALL  0x1
+#define IMM_BREAK    0x2
+#define IMM_INE      0x3
+#define IMM_INT      0x4
+#define IMM_ADEF     0x5
+#define IMM_ALE      0x6
+#define IMM_PME      0x7
+#define IMM_LDINV    0x8
+#define IMM_STINV    0x9
+#define IMM_TLBPRV   0xa
+#define IMM_TLBM     0xb
+#define IMM_FETCHINV 0xc
+#define IMM_TLBADEM  0xd
+#define IMM_TLBADEF  0xe
+#define IMM_KERNEL   0xf
+#define IMM_NONE     0x10

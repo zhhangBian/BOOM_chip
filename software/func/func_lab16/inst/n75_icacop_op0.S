@@ -8,6 +8,9 @@ LEAF(n75_icacop_op0)
 
     la.local  t7, start
 start:
+# clear DMW
+    csrwr     zero, csr_dmw0 
+    csrwr     zero, csr_dmw1  
 # set up the DMW, let the MAT=01(Coherent Cached)
     li.w        t1, 0xe0000000
     and       t1, t7, t1

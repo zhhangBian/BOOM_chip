@@ -5,9 +5,8 @@
 LEAF(n52_adef_ex_test)
    
   addi.w  s0, s0, 1 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x5
-  st.w    s2, t0, 0 
+  li.w    t4, 0x34
+  LI_EXIMM(t0,s2,IMM_ADEF)
   //clear ti
   li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
@@ -24,9 +23,7 @@ LEAF(n52_adef_ex_test)
   jirl    s5, s4, 0 
   add.w   zero, zero, zero
   bne     s2, s7, inst_error  
-  li.w      t0, 0xd0000 
-  li.w      s2, 0xf 
-  st.w    s2, t0, 0 
+  LI_EXIMM(t0,s2,IMM_KERNEL)
   syscall 0    //return to kernel mode
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
@@ -37,12 +34,10 @@ LEAF(n52_adef_ex_test)
   bne     t1, t0, inst_error  
 
   li.w      t5, 0x0   //used for verify prmd 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x5 
-  st.w    s2, t0, 0  
+  LI_EXIMM(t0,s2,IMM_ADEF)
 
 ###2
-  li.w      t7, 0xd0000
+  li.w      t7, (DATABASE+0xd0000)
   li.w      s2, 0x05 
   TEST_ADEF(0x3101bbed)
   csrwr   s6, csr_era
@@ -66,7 +61,7 @@ LEAF(n52_adef_ex_test)
   la.local  s5, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  div.w   t7, t1, s0 
+  div.w   t7, t1, t4 
 1:  ertn
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
@@ -78,7 +73,7 @@ LEAF(n52_adef_ex_test)
   TEST_ADEF(0x92b0a2c3)
   jirl    s5, s4, 0 
   add.w   zero, zero, zero
-  div.w   t0, t0, s0 
+  div.w   t0, t0, t4 
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
@@ -90,7 +85,7 @@ LEAF(n52_adef_ex_test)
   la.local  s5, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  mul.w   t7, s0, t7
+  mul.w   t7, t4, t7
 1:  ertn
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
@@ -102,7 +97,7 @@ LEAF(n52_adef_ex_test)
   TEST_ADEF(0xb088f329)
   jirl    s5, s4, 0 
   add.w   zero, zero, zero
-  mul.w   t0, t0, s0 
+  mul.w   t0, t0, t4 
   bne     s2, s7, inst_error 
   csrrd   t0, csr_badv 
   bne     a3, t0, inst_error  
@@ -156,9 +151,7 @@ LEAF(n52_adef_ex_test)
   nop
   jirl    ra, t0, 0
 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0xf 
-  st.w    s2, t0, 0 
+  LI_EXIMM(t0,s2,IMM_KERNEL)
   syscall 0      //return to kernel mode
 
   li.w      t0, 0x19 

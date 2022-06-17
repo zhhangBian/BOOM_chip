@@ -26,6 +26,7 @@
 #endif
 
 #define TLBREBASE 0xf000
+#define DATABASE  0x100000
 
 #define WAY    2
 #define OFFSET 4

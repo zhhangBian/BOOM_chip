@@ -8,6 +8,9 @@ LEAF(n76_dcacop_op0)
 
     la.local  t7, start
 start:
+# clear DMW
+    csrwr     zero, csr_dmw0 
+    csrwr     zero, csr_dmw1  
 
     li.w      t0, 0xd0100000
     li.w      t1, 0xffffffff

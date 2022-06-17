@@ -17,6 +17,9 @@ LEAF(n80_dcacop_op2)
  
     la.local  t7, start
 start: 
+# clear DMW
+    csrwr     zero, csr_dmw0 
+    csrwr     zero, csr_dmw1  
 
     li.w      t0, 0xd0100000
     li.w      t1, 0xffff
@@ -105,7 +108,7 @@ tlb_refill_error:
     bne   t5, t0, inst_error
 
 # test if cacop can triger tlb page invalid error or not
-    li.w    t0, 0xd0000 
+    li.w    t0, (DATABASE+0xd0000)
     li.w    t1, 0x8 
     st.w  t1, t0, 0
 

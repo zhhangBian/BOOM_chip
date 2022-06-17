@@ -19,11 +19,11 @@ ifeq ('${TRACE_COMP}', 'y')
 #	${GCC_BIN}/loongarch32r-linux-gnusf-gcc \
 		-I../include -nostdinc -nostdlib -D_KERNEL -fno-builtin -D__loongarch32\
 		-DMEMSTART=0x10000000 -DMEMSIZE=0x04000 -DCPU_COUNT_PER_US=1000 -DGUEST \
-		-DENABLE_TRACE -save-temps $< -o $@ && rm *.o 
+		-save-temps $< -o $@ && rm *.o 
 	${GCC_BIN}/loongarch32r-linux-gnusf-gcc \
 		-I../include -nostdinc -nostdlib -D_KERNEL -fno-builtin -D__loongarch32\
 		-DMEMSTART=0x10000000 -DMEMSIZE=0x04000 -DCPU_COUNT_PER_US=1000 -DGUEST \
-		-DENABLE_TRACE -save-temps $? && rm *.o 
+		-save-temps $? && rm *.o
 else 
 #	${GCC_BIN}/loongarch32r-linux-gnusf-gcc \
 		-I../include -nostdinc -nostdlib -D_KERNEL -fno-builtin -D__loongarch32\
@@ -32,7 +32,7 @@ else
 	${GCC_BIN}/loongarch32r-linux-gnusf-gcc \
 		-I../include -nostdinc -nostdlib -D_KERNEL -fno-builtin -D__loongarch32\
 		-DMEMSTART=0x10000000 -DMEMSIZE=0x04000 -DCPU_COUNT_PER_US=1000 -DGUEST \
-		-save-temps $? && rm *.o 
+		-save-temps $? && rm *.o
 endif
 
 clean:

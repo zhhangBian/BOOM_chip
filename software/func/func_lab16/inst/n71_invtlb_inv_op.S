@@ -1,13 +1,12 @@
 #include "asm.h"
 #include "regdef.h"
+#include "inst_test.h"
 
 LEAF(n71_invtlb_inv_op_test) 
     li.w     t0, 0x1c008000 
     csrwr  t0, csr_eentry
 
-    li.w     t0, 0xd0000
-    li.w     t1, 0x3 
-    st.w   t1, t0, 0
+    LI_EXIMM(t0,t1,IMM_INE)
 
     addi.w s0, s0 ,1
     addi.w s2, zero, 0x0

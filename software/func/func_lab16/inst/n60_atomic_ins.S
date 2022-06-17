@@ -9,7 +9,7 @@ LEAF(n60_atomic_ins_test)
     li.w          t0, 0x2 
     li.w          t1, 0x2 
     csrxchg     t1, t0, csr_llbctl    //clear LLbit
-    li.w          t8, 0xd0004 
+    li.w          t8, (DATABASE+0xd0004) 
 
 ##inst test  
 ###1

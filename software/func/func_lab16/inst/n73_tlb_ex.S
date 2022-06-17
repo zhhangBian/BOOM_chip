@@ -1,6 +1,7 @@
 #include "asm.h"
 #include "regdef.h"
 #include "inst_test.h"
+//#define DATABASE 0x3000000
 
 LEAF(n73_tlb_ex_test)
     addi.w s0, s0, 0x1
@@ -80,9 +81,7 @@ LEAF(n73_tlb_ex_test)
 1:
     ld.w  t2, s8, 0x0
     bne   s2, s7, inst_error 
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf 
-    st.w  s2, t0, 0    
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0   //return to kernel mode
 
 ### TLB page invalid error in ld
@@ -92,9 +91,7 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li.w    t0, 0xd0000
-    li.w    s2, 0x8
-    st.w  s2, t0, 0
+    LI_EXIMM(t0,s2,IMM_LDINV)
 
     ###fill in a present but invalid TLB item
     FILL_TLB_ITEM(0x0c000000, 0x20fff<<13, 0x000f004c, 0x000a004c) 
@@ -113,9 +110,7 @@ LEAF(n73_tlb_ex_test)
 2:
     ld.w  t0, s8, 0x0
     bne   s2, s7, inst_error 
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf 
-    st.w  s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0    //return to kernel mode
 
 ### TLB page invalid error in st
@@ -125,9 +120,7 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li.w    t0, 0xd0000
-    li.w    s2, 0x9
-    st.w  s2, t0, 0
+    LI_EXIMM(t0,s2,IMM_STINV)
 
     ###fill in a present but invalid TLB item
     FILL_TLB_ITEM(0x0c000000, 0x200ab<<13, 0x000c004c, 0x000d004c) 
@@ -146,9 +139,7 @@ LEAF(n73_tlb_ex_test)
 3:
     st.w  t0, s8, 0x0
     bne   s2, s7, inst_error 
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf 
-    st.w  s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0   //return to kernel mode 
 
 ### TLB PME 
@@ -157,9 +148,7 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f 
     csrxchg t0, t1, csr_crmd  
 
-    li.w      t0, 0xd0000 
-    li.w      s2, 0x7 
-    st.w    s2, t0, 0  
+    LI_EXIMM(t0,s2,IMM_PME)
     
     li.w      t0, 0xd0010 
     li.w      s2, 0xff 
@@ -197,9 +186,7 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li.w    t0, 0xd0000
-    li.w    s2, 0xa
-    st.w  s2, t0, 0
+    LI_EXIMM(t0,s2,IMM_TLBPRV)
 
     ###fill in a present and valid item but prl = 0
     FILL_TLB_ITEM(0x0c000000, 0x200ab<<13, 0x000c0001, 0x000d0001) 
@@ -218,9 +205,7 @@ LEAF(n73_tlb_ex_test)
 4:
     st.w  t0, s8, 0x0 
     bne   s2, s7, inst_error  
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf  
-    st.w  s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0   //return to kernel mode
 
 ### TLB page modified error
@@ -230,9 +215,7 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li.w    t0, 0xd0000
-    li.w    s2, 0xb
-    st.w  s2, t0, 0
+    LI_EXIMM(t0,s2,IMM_TLBM)
 
     ###fill in a present and valid item but V=0
     FILL_TLB_ITEM(0x0c000000, 0x200ab<<13, 0x000c000d, 0x000d000d) 
@@ -251,9 +234,7 @@ LEAF(n73_tlb_ex_test)
 5:
     st.w  t0, s8, 0x0
     bne   s2, s7, inst_error 
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf 
-    st.w  s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0  // return to kernel mode
 
 ### TLB page invalid error in inst fetch
@@ -263,9 +244,7 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li.w    t0, 0xd0000
-    li.w    s2, 0xc
-    st.w  s2, t0, 0
+    LI_EXIMM(t0,s2,IMM_FETCHINV)
 
     ###fill in a present but invalid item
     FILL_TLB_ITEM(0x0c000000, 0x200ff<<13, 0x000c004c, 0x000d004c) 
@@ -283,9 +262,7 @@ LEAF(n73_tlb_ex_test)
 6:
     jirl  zero, s8, 0x0
     bne   s2, s7, inst_error
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf 
-    st.w  s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0  // return to kernel mode
 
 ### TLB address error in memory access: adem
@@ -295,14 +272,9 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li.w    t0, 0xd0000
-    li.w    s2, 0xd
-    st.w  s2, t0, 0
+    LI_EXIMM(t0,s2,IMM_TLBADEM)
 
     ###fill in a present and valid entry 
-    #ifdef ENABLE_TRACE
-    csrwr    zero, csr_tlbehi 
-    #endif
     FILL_TLB_ITEM(0x0c000000,0x800fc000, 0x000f004d, 0x000a004d) 
     csrwr    zero, csr_tlbehi
 
@@ -318,9 +290,7 @@ LEAF(n73_tlb_ex_test)
 7:
     ld.w  t0, s8, 0x0
     bne   s2, s7, inst_error 
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf 
-    st.w  s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0  // return to kernel mode
 
 
@@ -331,14 +301,9 @@ LEAF(n73_tlb_ex_test)
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-    li.w    t0, 0xd0000
-    li.w    s2, 0xe
-    st.w  s2, t0, 0
+    LI_EXIMM(t0,s2,IMM_TLBADEF)
 
     ###fill in a present but invalid item 
-    #ifdef ENABLE_TRACE
-    csrwr    zero, csr_tlbehi 
-    #endif
     FILL_TLB_ITEM(0x0c000000,0x800fc000, 0x000f004d, 0x000a004d) 
     csrwr    zero, csr_tlbehi
 
@@ -354,9 +319,7 @@ LEAF(n73_tlb_ex_test)
 8:
     jirl  zero, s8, 0x0
     bne   s2, s7, inst_error
-    li.w    t0, 0xd0000 
-    li.w    s2, 0xf 
-    st.w  s2, t0, 0 
+    LI_EXIMM(t0,s2,IMM_KERNEL)
     syscall 0  // return to kernel mode
 
 ###func end here and recover the DA=1

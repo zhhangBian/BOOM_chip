@@ -6,9 +6,7 @@ LEAF(n47_syscall_ex_test)
    
   addi.w  s0, s0, 1 
   li.w    t4, 0x2f
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x1 
-  st.w    s2, t0, 0 
+  LI_EXIMM(t0,s2,IMM_SYSCALL)
   //clear ti
   li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
@@ -25,9 +23,7 @@ LEAF(n47_syscall_ex_test)
 syscall_pc1:
   syscall 0
   bne     s2, s7, inst_error  
-  li.w      t0, 0xd0000 
-  li.w      s2, 0xf 
-  st.w    s2, t0, 0 
+  LI_EXIMM(t0,s2,IMM_KERNEL)
   syscall 0     //return to kernel mode
   csrrd   t0, csr_crmd 
   li.w      t1, 0x7 
@@ -36,15 +32,12 @@ syscall_pc1:
   bne     t1, t0, inst_error 
 
   li.w      t5, 0x0 //used for verify prmd 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x1 
-  st.w    s2, t0, 0
+  LI_EXIMM(t0,s2,IMM_SYSCALL)
 ###2
-  li.w      t7, 0xd0000
   li.w      s2, 0x01 
   la.local  s4, syscall_pc2
-  st.w    t7, t7, 4
-  st.w    s4, t7, 4 
+  li.w      t7, (DATABASE+0xd0000)
+  st.w      s4, t7, 4
 syscall_pc2:
   syscall 0
   st.w    s4, t7, 0 
@@ -109,7 +102,7 @@ syscall_pc7:
   addi.w  s3, s3, 1
 ###output (t4<<24)|s3 
 inst_error:
-  slli.w  t1, t4, 24 
+  slli.w  t1, s0, 24 
   or      t0, t1, s3 
   st.w    t0, s1, 0 
   jirl    zero, ra, 0 

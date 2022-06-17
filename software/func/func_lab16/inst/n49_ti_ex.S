@@ -5,9 +5,8 @@
 LEAF(n49_ti_ex_test)
    
   addi.w  s0, s0, 1 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0x4 
-  st.w    s2, t0, 0 
+  li.w    t4, 0x31
+  LI_EXIMM(t0,s2,IMM_INT)
   //clear ti
   li.w      t0, 0x1 
   csrwr   t0, csr_ticlr 
@@ -29,7 +28,6 @@ LEAF(n49_ti_ex_test)
   li.w      t1, 0x4 
   bne     t1, t0, inst_error  
 
-#ifndef ENABLE_TRACE
   la.local  s4, 1f 
   TEST_TI_EX_CYC(0xe20)
   bne     s2, s7, inst_error
@@ -38,13 +36,11 @@ LEAF(n49_ti_ex_test)
   and     t0, t0, t1 
   li.w      t1, 0x4 
   bne     t1, t0, inst_error  
-#endif
 
 ###2
-  li.w      t7, 0xd0000
+  li.w      t7, (DATABASE+0xd0000)
   li.w      s2, 0x04
   la.local  s4, 1f
-  st.w    t7, t7, 4
   st.w    s4, t7, 4 
   TEST_TI_EX(0x74) 
   st.w    s4, t7, 0 
@@ -54,7 +50,6 @@ LEAF(n49_ti_ex_test)
   li.w      s2, 0x4 
   st.w    s2, t7, 0
 
-#ifndef ENABLE_TRACE
   li.w      s2, 0x04
   la.local  s4, 1f
   st.w    t7, t7, 4
@@ -66,79 +61,70 @@ LEAF(n49_ti_ex_test)
   bne     s2, s7, inst_error 
   li.w      s2, 0x4 
   st.w    s2, t7, 0 
-#endif 
 
 ###3
   li.w      s2, 0x04
   la.local  s4, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  div.w   t7, t1, s0 
+  div.w   t7, t1, t4 
   TEST_TI_EX(0x10) 
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
 
-#ifndef ENABLE_TRACE
   li.w      s2, 0x04
   la.local  s4, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  div.w   t7, t1, s0 
+  div.w   t7, t1, t4 
   TEST_TI_EX_CYC(0xe50) 
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
-#endif
 
 ###4
   li.w      s2, 0x04
   la.local  s4, 1f
   TEST_TI_EX(0x0) 
-  div.w   t0, t0, s0 
+  div.w   t0, t0, t4 
   bne     s2, s7, inst_error 
 
-#ifndef ENABLE_TRACE
   li.w      s2, 0x04
   la.local  s4, 1f
   TEST_TI_EX_CYC(0xe55) 
-  div.w   t0, t0, s0 
+  div.w   t0, t0, t4 
   bne     s2, s7, inst_error 
-#endif
 
 ###5
   li.w      s2, 0x04
   la.local  s4, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  mul.w   t7, s0, t7
+  mul.w   t7, t4, t7
   TEST_TI_EX(0x4) 
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
 
-#ifndef ENABLE_TRACE
   li.w      s2, 0x04
   la.local  s4, 1f
   li.w      t7, 0xf 
   li.w      t8, 0xf
-  mul.w   t7, s0, t7
+  mul.w   t7, t4, t7
   TEST_TI_EX_CYC(0xe60) 
   beq     t8, t7, inst_error 
   bne     s2, s7, inst_error 
-#endif
 
 ###6
   li.w      s2, 0x04
   la.local  s4, 1f
   TEST_TI_EX(0x8) 
-  mul.w   t0, t0, s0 
+  mul.w   t0, t0, t4 
   bne     s2, s7, inst_error 
 
-#ifndef ENABLE_TRACE
   li.w      s2, 0x04
   la.local  s4, 1f
   TEST_TI_EX_CYC(0xe70) 
-  mul.w   t0, t0, s0 
+  mul.w   t0, t0, t4 
   bne     s2, s7, inst_error 
-#endif
 
 ###7
   li.w      s2, 0x04
@@ -148,23 +134,19 @@ LEAF(n49_ti_ex_test)
   csrwr   t0, csr_era
   bne     s2, s7, inst_error 
 
-#ifndef ENABLE_TRACE
   li.w      s2, 0x04
   la.local  s4, 1f
   csrwr   s2, csr_era
   TEST_TI_EX_CYC(0xe80) 
   csrwr   t0, csr_era
   bne     s2, s7, inst_error 
-#endif
 
 ###8 LIE disable 
   li.w      t0, 0x0 
   li.w      t1, 0x3 
   csrxchg t0, t1, csr_crmd 
 
-  li.w      t0, 0xd0000 
-  li.w      s2, 0xa   //error excep num 
-  st.w    s2, t0, 0 
+  LI_EXIMM(t0,s2,IMM_NONE)
   li.w      t0, 0x4 
   li.w      t1, 0x7 
   csrxchg t0, t1, csr_crmd 

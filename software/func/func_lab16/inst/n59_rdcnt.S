@@ -5,6 +5,7 @@
 LEAF(n59_rdcnt_test)
     
     addi.w      s0, s0 ,1
+    li.w        t6, 0x3b
     li.w          s2, 0x0 
     li.w          s7, 0x1111ffff 
     move        t1, s7
@@ -35,8 +36,7 @@ LEAF(n59_rdcnt_test)
     li.w          s7, 0xffffffff 
     move        t1, s7
     csrwr       t1, csr_tid
-    li.w          t7, 0xd0004 
-    st.w        t7, t7, 4 
+    li.w          t7, (DATABASE+0xd0004) 
     st.w        s4, t7, 4
     rdcntvl.w   t1
     rdcntid     t0 
@@ -71,14 +71,14 @@ LEAF(n59_rdcnt_test)
     csrwr       t1, csr_tid
     li.w          t7, 0xf 
     li.w          t8, 0xf
-    div.w       t7, t1, s0 
+    div.w       t7, t1, t6 
     rdcntvl.w   t1
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
     li.w          t7, 0xf 
     li.w          t8, 0xf
-    div.w       t7, t1, s0 
+    div.w       t7, t1, t6 
     rdcntvh.w   t2
     rdcntid     t0 
     beq         t8, t7, inst_error 
@@ -102,11 +102,11 @@ LEAF(n59_rdcnt_test)
     csrwr       t1, csr_tid
     rdcntvl.w   t1
     rdcntid     t0 
-    div.w       t7, t0, s0 
+    div.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     rdcntvh.w   t2
     rdcntid     t0 
-    div.w       t7, t0, s0 
+    div.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     li.w          s7, 0xffff11 
     move        t1, s7
@@ -127,14 +127,14 @@ LEAF(n59_rdcnt_test)
     csrwr       t1, csr_tid
     li.w          t7, 0xf 
     li.w          t8, 0xf
-    mul.w       t7, s0, t7
+    mul.w       t7, t6, t7
     rdcntvl.w   t1
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
     li.w          t7, 0xf 
     li.w          t8, 0xf
-    mul.w       t7, s0, t7
+    mul.w       t7, t6, t7
     rdcntvh.w   t2
     rdcntid     t0 
     beq         t8, t7, inst_error 
@@ -158,11 +158,11 @@ LEAF(n59_rdcnt_test)
     csrwr       t1, csr_tid
     rdcntvl.w   t1
     rdcntid     t0 
-    mul.w       t7, t0, s0 
+    mul.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     rdcntvh.w   t2
     rdcntid     t0 
-    mul.w       t7, t0, s0 
+    mul.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     li.w          s7, 0x11fff 
     move        t1, s7

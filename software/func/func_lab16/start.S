@@ -1,21 +1,23 @@
 #include "asm.h"
 #include "regdef.h"
 #include "cpu_cde.h"
+#include "lab_config.h"
 
-#define lab3  1
-#define lab6  1 
-#define lab7  1 
-#define lab8  1 
-#define lab9  1 
-#define lab14 1
-#define lab16 0
+#define TEST_NUM (TEST1*20 + TEST2*16 + TEST3*10 + TEST4*1 + TEST5*13 + TEST6*14 + TEST7*7)
 
+
+#if TEST4
+#define CSR_INIT
+#endif
+#if TEST5
+#define CSR_INIT
+#endif
+#if TEST6
+#define CSR_INIT
+#endif
+#if TEST7
+#define CSR_INIT
 #define cacop_enable 1
-
-#ifdef ENABLE_TRACE 
-#define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*9 + lab14*13 + lab16*0)
-#else
-#define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*13 + lab14*13 + lab16*7)
 #endif
 
 ##s0, number
@@ -30,8 +32,10 @@ _start:
 start:
     li.w     t0, 0xffffffff
     addi.w t0, zero, -1
+#ifdef CSR_INIT
     ori    $r1,$r0,0x28
     csrwr  $r1,0x0
+#endif
 	b	locate
 
 ##avoid "j locate" not taken
@@ -71,37 +75,39 @@ test_finish:
  */
 .org 0x8000   //0x1c008000
 1:  
-    li.w    t0, 0xd0000
-    ld.w  t1, t0, 0 
-    li.w    t0, 0x1 
+    #ifdef TEST6
+    DAMODE(t0,t1)
+    #endif
+    GET_EXIMM(t1)
+    li.w    t0, IMM_SYSCALL 
     beq   t1, t0, syscall_ex  #syscall  
-    li.w    t0, 0x2 
+    li.w    t0, IMM_BREAK 
     beq   t1, t0, brk_ex      #break 
-    li.w    t0, 0x3 
+    li.w    t0, IMM_INE 
     beq   t1, t0, ine_ex      #reserved inst 
-    li.w    t0, 0x4 
+    li.w    t0, IMM_INT 
     beq   t1, t0, int_ex      #interrupt 
-    li.w    t0, 0x5 
+    li.w    t0, IMM_ADEF 
     beq   t1, t0, adef_ex     #adef 
-    li.w    t0, 0x6 
+    li.w    t0, IMM_ALE 
     beq   t1, t0, ale_ex      #ale 
-    li.w    t0, 0x7 
+    li.w    t0, IMM_PME 
     beq   t1, t0, pme_ex      #pme
-    li.w    t0, 0x8
+    li.w    t0, IMM_LDINV
     beq   t1, t0, ld_page_invalid
-    li.w    t0, 0x9
+    li.w    t0, IMM_STINV
     beq   t1, t0, st_page_invalid
-    li.w    t0, 0xa
+    li.w    t0, IMM_TLBPRV
     beq   t1, t0, tlb_prl_error
-    li.w    t0, 0xb
+    li.w    t0, IMM_TLBM
     beq   t1, t0, tlb_page_modified_error
-    li.w    t0, 0xc
+    li.w    t0, IMM_FETCHINV
     beq   t1, t0, fetch_page_invalid
-    li.w    t0, 0xd
+    li.w    t0, IMM_TLBADEM
     beq   t1, t0, tlb_adem_error
-    li.w    t0, 0xe
+    li.w    t0, IMM_TLBADEF
     beq   t1, t0, tlb_adef_error
-    li.w    t0, 0xf 
+    li.w    t0, IMM_KERNEL 
     beq   t1, t0, syscall_bak_kernel_mode
 	b     test_end
 
@@ -154,7 +160,7 @@ ine_ex:
     csrrd    t0, csr_estat 
     li.w       t1, 0x7fff0000 
     and      t0, t0, t1 
-    li.w       t1, 0x000d0000 
+    li.w       t1, 0xd0000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
     li.w       t1, 0x7 
@@ -415,10 +421,8 @@ tlb_adem_error:
     bne      t0, t5, ex_finish 
     csrrd    t0, csr_badv
     bne      t0, s8, ex_finish 
-#ifndef ENABLE_TRACE
     csrrd    t0, csr_tlbehi
     bne      t0, zero, ex_finish 
-#endif
     lu12i.w  s2, 0x81
     b        ex_finish  
      
@@ -444,10 +448,8 @@ tlb_adef_error:
     bne      t5, t0, ex_finish 
     csrrd    t0, csr_badv
     bne      t0, s8, ex_finish 
-#ifndef ENABLE_TRACE
     csrrd    t0, csr_tlbehi
     bne      t0, zero, ex_finish 
-#endif
     lu12i.w  s2, 0x80
     b        ex_finish  
 
@@ -527,8 +529,8 @@ inst_test:
     csrxchg   t0, t1, csr_crmd 
 #endif
 ############################
-###lab3 test
-#if lab3
+###TEST1 test
+#if TEST1
     bl n1_lu12i_w_test    #lu12i.w
     bl idle_1s
     
@@ -592,8 +594,8 @@ inst_test:
 #endif
 ############################
 ############################
-###lab6 test
-#if lab6
+###TEST2 test
+#if TEST2
     bl n21_pcaddu12i_test   #pcaddu12i
     bl idle_1s
     
@@ -645,8 +647,8 @@ inst_test:
 #endif
 ############################
 ############################
-###lab7 test
-#if lab7
+###TEST3 test
+#if TEST3
     bl n37_blt_test          #blt
     bl idle_1s
     
@@ -680,8 +682,8 @@ inst_test:
 #endif
 ############################
 ############################
-###lab8 test
-#if lab8 
+###TEST4 test
+#if TEST4 
 lab8_csr_init:
     csrwr     zero, csr_prmd 
     csrwr     zero, csr_era 
@@ -695,8 +697,8 @@ lab8_csr_init:
 #endif 
 ############################
 ############################
-###lab9 test 
-#if lab9 
+###TEST5 test 
+#if TEST5 
 lab9_csr_init:
     csrwr     zero, csr_prmd 
     csrwr     zero, csr_era 
@@ -717,15 +719,11 @@ lab9_csr_init:
     bl n49_ti_ex_test          #timer int ex 
     bl idle_1s 
 
-#ifndef ENABLE_TRACE
     bl n50_ine_ex_test         #ine ex 
     bl idle_1s  
-#endif
 
-#ifndef ENABLE_TRACE
     bl n51_soft_int_ex_test    #soft int ex 
     bl idle_1s 
-#endif
 
     bl n52_adef_ex_test         #adef ex 
     bl idle_1s  
@@ -748,18 +746,14 @@ lab9_csr_init:
     bl n58_ti_ex_idle_test      #timer int ex with idle 
     bl idle_1s  
 
-#ifndef ENABLE_TRACE
     bl n59_rdcnt_test          #rdcntvl.w and rdcntvh.w test 
     bl idle_1s 
-#endif
 
-#ifndef ENABLE_TRACE
     bl n60_atomic_ins_test      #ll.w and sc.w test 
     bl idle_1s 
 #endif
-#endif
 
-#if lab14
+#if TEST6
 lab14_csr_init:
     csrwr     zero, csr_prmd 
     csrwr     zero, csr_era 
@@ -800,11 +794,9 @@ lab14_csr_init:
     bl n61_tlbrd_tlbwr_test
     bl idle_1s
 
-#ifndef ENABLE_TRACE
     bl tlb_initialization
     bl n62_tlbfill_test
     bl idle_1s 
-#endif
 
     bl tlb_initialization
     bl n63_tlbsrch_test
@@ -852,7 +844,7 @@ lab14_csr_init:
     bl idle_1s
 #endif 
 
-#if lab16 
+#if TEST7 
 lab16_csr_init: 
     csrwr     zero, csr_prmd 
     csrwr     zero, csr_era 
@@ -877,7 +869,6 @@ cacop_disable:
     csrwr     zero, csr_dmw0 
     csrwr     zero, csr_dmw1  
 
-#ifndef ENABLE_TRACE  
     bl n75_icacop_op0
     bl idle_1s
 
@@ -897,7 +888,6 @@ cacop_disable:
     bl idle_1s
 
     bl n81_cache_writeback
-#endif
     bl idle_1s
 #endif 
 
@@ -937,7 +927,7 @@ test_end:
 	bl test_finish
 
 idle_1s:
-    #ifdef RUN_SIMU
+    #if RUN_SIMU
     jirl    zero, ra, 0
     #endif
     LI (t0,SW_INTER_ADDR)

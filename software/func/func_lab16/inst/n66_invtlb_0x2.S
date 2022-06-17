@@ -14,7 +14,6 @@ LEAF(n66_invtlb_0x2_test)
 
     invtlb 0x2, zero, zero
 
-#ifndef ENABLE_TRACE
 	li.w     t1, 0x0c00001e
 	li.w     t2, 0x0c000020
     add.w t0, zero, t1
@@ -53,7 +52,6 @@ LEAF(n66_invtlb_0x2_test)
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b
-#endif
 
 ###detect exception
     bne s2, zero, inst_error
