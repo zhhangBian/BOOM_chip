@@ -6,12 +6,6 @@
 #define TEST_NUM (TEST1*20 + TEST2*16 + TEST3*10 + TEST4*1 + TEST5*13 + TEST6*14 + TEST7*7)
 
 
-#if TEST5
-#define CSR_INIT
-#endif
-#if TEST6
-#define CSR_INIT
-#endif
 #if TEST7
 #define CSR_INIT
 #endif
