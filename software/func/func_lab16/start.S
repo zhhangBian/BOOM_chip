@@ -6,9 +6,6 @@
 #define TEST_NUM (TEST1*20 + TEST2*16 + TEST3*10 + TEST4*1 + TEST5*13 + TEST6*14 + TEST7*7)
 
 
-#if TEST4
-#define CSR_INIT
-#endif
 #if TEST5
 #define CSR_INIT
 #endif
@@ -17,7 +14,6 @@
 #endif
 #if TEST7
 #define CSR_INIT
-#define cacop_enable 1
 #endif
 
 ##s0, number
@@ -75,9 +71,6 @@ test_finish:
  */
 .org 0x8000   //0x1c008000
 1:  
-    #ifdef TEST6
-    DAMODE(t0,t1)
-    #endif
     GET_EXIMM(t1)
     li.w    t0, IMM_SYSCALL 
     beq   t1, t0, syscall_ex  #syscall  
@@ -517,17 +510,6 @@ locate:
     lu12i.w   s0, 0
     NOP4
 inst_test: 
-#if cacop_enable 
-    csrwr     zero, csr_dmw0 
-    csrwr     zero, csr_dmw1
-    li.w        t0, 0x19
-    csrwr     t0, csr_dmw0     //data and inst cacop 
-    li.w        t0, 0xAA000009 
-    csrwr     t0, csr_dmw1     //io addr 
-    li.w        t0, 0x10  
-    li.w        t1, 0x18 
-    csrxchg   t0, t1, csr_crmd 
-#endif
 ############################
 ###TEST1 test
 #if TEST1
@@ -771,21 +753,6 @@ lab14_csr_init:
     csrwr     zero, csr_asid
     csrwr     zero, csr_tlbrentry
 
-#if cacop_enable 
-    li.w        t0, 0x8 
-    li.w        t1, 0x18 
-    csrxchg   t0, t1, csr_crmd
-    csrwr     zero, csr_dmw0 
-    csrwr     zero, csr_dmw1
-    li.w        t0, 0x19
-    csrwr     t0, csr_dmw0     //data and inst cacop 
-    li.w        t0, 0xAA000009 
-    csrwr     t0, csr_dmw1     //io addr 
-    li.w        t0, 0x10  
-    li.w        t1, 0x18 
-    csrxchg   t0, t1, csr_crmd 
-#endif 
-
     li.w      t0, 0x0 
     li.w      t1, 0x3 
     csrxchg t0, t1, csr_crmd 
@@ -928,6 +895,9 @@ test_end:
 
 idle_1s:
     #if RUN_SIMU
+    #if NOP_INSERT
+    NOP4
+    #endif
     jirl    zero, ra, 0
     #endif
     LI (t0,SW_INTER_ADDR)

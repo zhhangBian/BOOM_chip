@@ -1,1 +1,1 @@
-../../../generic/inst/Makefile
+../../func_lab16/inst/Makefile

@@ -121,18 +121,14 @@
     st.w    reg2, reg1, 0
 
 #define DAMODE(temp_reg1,temp_reg2)\
-    csrrd   temp_reg1, 0x0;\
-    li.w    temp_reg2, 0xffffffef;\
-    and     temp_reg1, temp_reg1, temp_reg2;\
-    li.w    temp_reg2, 0x8;\
-    or      temp_reg1, temp_reg1, temp_reg2
+    li.w    temp_reg1, 0x18;\
+    li.w    temp_reg2, 0x08;\
+    csrxchg temp_reg2, temp_reg1, 0x0
 
 #define PGMODE(temp_reg1,temp_reg2)\
-    csrrd   temp_reg1, 0x0;\
-    li.w    temp_reg2, 0xfffffff7;\
-    and     temp_reg1, temp_reg1, temp_reg2;\
-    li.w    temp_reg2, 0x10;\
-    or      temp_reg1, temp_reg1, temp_reg2
+    li.w    temp_reg1, 0x18;\
+    li.w    temp_reg2, 0xk0;\
+    csrxchg temp_reg2, temp_reg1, 0x0
 
 #define GET_EXIMM(reg1) \
     li.w    reg1, (DATABASE+0xd0000); \

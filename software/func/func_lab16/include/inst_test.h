@@ -282,6 +282,11 @@
     nop
 
 /* 14 */
+#if NOP_INSERT
+#define BL_INST_NUM 0x28
+#else
+#define BL_INST_NUM 3*4
+#endif
 #define TEST_BL(back_flag, front_flag, b_flag_ref, f_flag_ref) \
     add.w s7, zero, $r1; \
     LI (t4, back_flag); \
@@ -322,7 +327,7 @@
     LI (t4, f_flag_ref); \
     bne v0, t5, inst_error; \
     nop; \
-    addi.w a2, a2, 3*4; \
+    addi.w a2, a2, BL_INST_NUM; \
     bne v1, t4, inst_error; \
     nop; \
     NOP4; \
@@ -371,6 +376,13 @@
   
 
 /* 15 */
+#if NOP_INSERT
+#define JIRL_INST_NUM0 7*4
+#define JIRL_INST_NUM1 22*4
+#else
+#define JIRL_INST_NUM0 3*4
+#define JIRL_INST_NUM1 9*4
+#endif
 #define TEST_JIRL(back_flag, front_flag, b_flag_ref, f_flag_ref) \
     add.w s7, zero, $r1; \
     LI (t4, back_flag); \
@@ -383,8 +395,8 @@
     nop;    \
     nop;    \
     nop;    \
-    addi.w t0, $r1, 3*4; \
-    addi.w t1, $r1, 9*4; \
+    addi.w t0, $r1, JIRL_INST_NUM0; \
+    addi.w t1, $r1, JIRL_INST_NUM1; \
     b 2000f; \
     nop; \
 1000:; \
