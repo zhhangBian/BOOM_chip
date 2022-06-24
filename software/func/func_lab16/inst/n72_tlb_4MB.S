@@ -8,9 +8,9 @@ LEAF(n72_tlb_4MB)
 
     invtlb 0x0, zero, zero
 
-    li.w    t0, 0x15000000            #index with 4MB PS
-    li.w    t2, 8<<23
-    li.w    t3, 1<<23
+    li.w  t0, 0x15000000            #index with 4MB PS
+    li.w  t2, 8<<23
+    li.w  t3, 1<<23
     add.w t1, t2, t3                #VPN
 
     li.w    t2, 0x000000aa
@@ -25,16 +25,21 @@ LEAF(n72_tlb_4MB)
 ###TLB item 4 G=1
     FILL_TLB_4MB(0x00003640, 0x00007240)
 
+    csrwr  zero, csr_tlbehi
+    csrwr  zero, csr_tlbelo0
+    csrwr  zero, csr_tlbelo1 
+    csrwr  zero, csr_tlbidx
+
 ###tlb hit: G=0
-    TEST_TLBP_4MB(0x000000aa, 0x1, 0x15000000)
-    TEST_TLBP_4MB(0x000000aa, 0x2, 0x15000001)
-    TEST_TLBP_4MB(0x000000aa, 0x3, 0x15000002)
+    TEST_TLBSRCH_4MB(0x000000aa, 0x1, 0x00000000)
+    TEST_TLBSRCH_4MB(0x000000aa, 0x2, 0x00000001)
+    TEST_TLBSRCH_4MB(0x000000aa, 0x3, 0x00000002)
 ###tlb hit: G=1
-    TEST_TLBP_4MB(0x000000bb, 0x4, 0x15000003)
+    TEST_TLBSRCH_4MB(0x000000bb, 0x4, 0x00000003)
 ###tlb miss: no matching asid
-    TEST_TLBP_NOMATCHING_4MB(0x000003f0, 0x2)
+    TEST_TLBSRCH_NOMATCHING_4MB(0x000003f0, 0x2)
 ###tlb miss: no matching VPN
-    TEST_TLBP_NOMATCHING_4MB(0x000000aa, 0x7f)
+    TEST_TLBSRCH_NOMATCHING_4MB(0x000000aa, 0x7f)
 
 ###detect exception
     bne s2, zero, inst_error

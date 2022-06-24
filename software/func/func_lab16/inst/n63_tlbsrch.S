@@ -7,13 +7,13 @@ LEAF(n63_tlbsrch_test)
 	li.w     s2, 0x0
 
 ###tlb hit: G=0
-    TEST_TLBP(0x000000aa, 0x2, 0x0c000001)
+    TEST_TLBSRCH(0x000000aa, 0x2, 0x00000001)
 ###tlb hit: G=1
-    TEST_TLBP(0x000000ff, 0x20, 0x0c00001f)
+    TEST_TLBSRCH(0x000000ff, 0x10, 0x0000000f)
 ###tlb miss: no matching asid
-    TEST_TLBP_NOMATCHING(0x000003f0, 0x2)
+    TEST_TLBSRCH_NOMATCHING(0x000003f0, 0x2)
 ###tlb miss: no matching VPN
-    TEST_TLBP_NOMATCHING(0x000000aa, 0xff)
+    TEST_TLBSRCH_NOMATCHING(0x000000aa, 0xff)
 
 ###detect exception
     bne s2, zero, inst_error

@@ -19,7 +19,7 @@ LEAF(n62_tlbfill_test)
     tlbfill
     tlbfill
    
-    li.w     t6, 0x20
+    li.w     t6, TLB_ENTRY
     li.w     t5, 0x0
     li.w     t4, 0x0
     li.w     t0, 0x0c000000

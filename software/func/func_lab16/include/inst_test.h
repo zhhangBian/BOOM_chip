@@ -1,6 +1,9 @@
 // file name: inst_test.h
 #include "cpu_cde.h"
 
+#define TLB_ENTRY 16
+#define TLB_IDX 4
+
 #define FILL_TLB_ITEM_r \
     addi.w t4, t3, 0x0; \
     addi.w t5, t0, 0x0; \
@@ -45,7 +48,7 @@
 	li.w     t5, 1<<13 ; \
     add.w t1, t1, t5 
 
-#define TEST_TLBP(in_asid, in_vpn, ref) \
+#define TEST_TLBSRCH(in_asid, in_vpn, ref) \
     li.w    t1, in_asid; \
     csrwr t1, csr_asid; \
     li.w    t2, 8<<13; \
@@ -72,7 +75,7 @@
 	li.w     t5, 1<<23 ; \
     add.w t1, t1, t5 
 
-#define TEST_TLBP_4MB(in_asid, in_vpn, ref) \
+#define TEST_TLBSRCH_4MB(in_asid, in_vpn, ref) \
     li.w    t1, in_asid; \
     csrwr t1, csr_asid; \
     li.w    t2, 8<<23; \
@@ -85,7 +88,7 @@
     bne   t2, t1, inst_error
 
 
-#define TEST_TLBP_NOMATCHING(in_asid, in_vpn) \
+#define TEST_TLBSRCH_NOMATCHING(in_asid, in_vpn) \
     csrwr zero, csr_tlbidx; \
     li.w    t1, in_asid; \
     csrwr t1, csr_asid; \
@@ -99,7 +102,7 @@
     li.w    t1, 0x1; \
     bne   t2, t1, inst_error
 
-#define TEST_TLBP_NOMATCHING_4MB(in_asid, in_vpn) \
+#define TEST_TLBSRCH_NOMATCHING_4MB(in_asid, in_vpn) \
     csrwr zero, csr_tlbidx; \
     li.w    t1, in_asid; \
     csrwr t1, csr_asid; \
