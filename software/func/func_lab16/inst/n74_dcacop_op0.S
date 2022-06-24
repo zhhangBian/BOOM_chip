@@ -2,7 +2,7 @@
 #include <regdef.h>
 #include <inst_test.h>
 
-LEAF(n78_dcacop_op1)
+LEAF(n74_dcacop_op0)
     addi.w    s0, s0, 0x1
     add.w     s2, zero, zero
 
@@ -11,7 +11,12 @@ start:
 # clear DMW
     csrwr     zero, csr_dmw0 
     csrwr     zero, csr_dmw1  
-# set up the DMW, let the MAT=01(Coherent Cached)
+
+    li.w      t0, 0xd0100000
+    li.w      t1, 0xffffffff
+    st.w    t1, t0, 0x0
+
+# set up the inst DMW, let the MAT=01(Coherent Cached)
     li.w        t1, 0xe0000000
     and       t1, t7, t1
     srli.w    t2, t1, 0x4
@@ -30,25 +35,34 @@ start:
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw0
-    invtlb    0x0, zero, zero 
+    invtlb    0x0, zero, zero
 
-# set up the PRMD, let DA=0, PG=1, and PRL=0
+# set up the CRMD, let DA=0, PG=1, and PRL=0
     //let DA=0 and PG=1 and prl=0
     li.w      t0, 0x10
     li.w      t1, 0x1f
     csrxchg t0, t1, csr_crmd 
 
-# the size of cacop li.wne: 16Bytes( 4 insts)
-
     li.w      t0, 0xd0100000
-    li.w      t1, 0xffffffff
-    st.w    t1, t0, 0x0
     ld.w    t1, t0, 0x0
-    li.w      t1, 0xeeeeeeee
-    st.w    t1, t0, 0x0
 
-# deal with the coherence in the old cacop in dcacop by index
+# set up the DMW, let the MAT=00(Strongly-Ordered UnCached)
+    li.w        t1, 0xe0000000
+    and       t1, t7, t1
+    srli.w    t2, t1, 0x4
+    li.w        t3, 0x1
+    or        t1, t1, t2
+    or        t1, t1, t3
+    csrwr     t1, csr_dmw0
+    invtlb    0x0, zero, zero
+    
+# bypass the dcacop and directly write to the physical memory
+    li.w        t0, 0xd0100000
+    li.w        t1, 0x00000000 
+    st.w      t1, t0, 0x0
 
+# invalid the old data in dcache
+    
     li.w        t0, 0xd0100000
 
     li.w        t1, 0xffffffff
@@ -61,19 +75,20 @@ start:
 
     and       t0, t0, t1
 
-    li.w        t1, 0x0 
-    li.w        t2, WAY 
+    li.w        t1, 0x0
+    li.w        t2, WAY
+
 invalid_cache_line: 
-    cacop     0x09, t0, 0x0 
-    addi.w    t0, t0, 0x1 
-    addi.w    t1, t1, 0x1 
+    cacop     0x01, t0, 0x0 
+    addi.w    t0, t0, 0x1
+    addi.w    t1, t1, 0x1
     bne       t1, t2, invalid_cache_line
 
-# set up the DMW, let the MAT=00(Strongly-Ordered UnCached)
+# set up the DMW, let the MAT=01(Coherent Cached)
     li.w        t1, 0xe0000000
     and       t1, t7, t1
     srli.w    t2, t1, 0x4
-    li.w        t3, 0x1
+    li.w        t3, 0x11
     or        t1, t1, t2
     or        t1, t1, t3
     csrwr     t1, csr_dmw0
@@ -81,7 +96,7 @@ invalid_cache_line:
 
     li.w        t0, 0xd0100000
     ld.w      t1, t0, 0x0
-    li.w        t2, 0xeeeeeeee
+    li.w        t2, 0x00000000
     bne       t1, t2, inst_error
 
 inst_pass:
@@ -93,10 +108,10 @@ inst_pass:
 inst_error:
     li.w        t0, 0x8 
     li.w        t1, 0x1f 
-    csrxchg   t0, t1, csr_crmd 
+    csrxchg   t0, t1, csr_crmd
 
     slli.w    t1, s0, 24
     or        t0, t1, s3
     st.w      t0, s1, 0x0
     jirl      zero, ra, 0x0
-END(n78_dcacop_op1)
+END(n74_dcacop_op0)

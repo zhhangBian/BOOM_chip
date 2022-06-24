@@ -2,7 +2,7 @@
 #include "regdef.h"
 #include "inst_test.h"
 
-LEAF(n60_atomic_ins_test)
+LEAF(n81_atomic_ins_test)
     
     addi.w      s0, s0 ,1
     li.w          s2, 0x0 
@@ -162,4 +162,4 @@ inst_error:
   or      t0, t1, s3 
   st.w    t0, s1, 0 
   jirl    zero, ra, 0 
-END(n60_atomic_ins_test)
+END(n81_atomic_ins_test)

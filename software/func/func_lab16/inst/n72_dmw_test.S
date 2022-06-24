@@ -2,7 +2,7 @@
 #include <regdef.h>
 #include <inst_test.h>
 
-LEAF(n74_dmw_test)
+LEAF(n72_dmw_test)
     addi.w s0, s0 ,0x1
 	li.w     s2, 0x0
 
@@ -144,4 +144,4 @@ inst_error:
     or t0, t3, s3 
     st.w t0, s1, 0x0
     jirl zero, ra, 0x0
-END(n74_dmw_test)
+END(n72_dmw_test)

@@ -2,7 +2,7 @@
 #include <regdef.h>
 #include <inst_test.h>
 
-LEAF(n81_cache_writeback)
+LEAF(n79_cache_writeback)
 
     la.local  t7, start
 start: 
@@ -108,4 +108,4 @@ inst_error:
     or        t0, t1, s3
     st.w      t0, s1, 0x0
     jirl      zero, ra, 0x0
-END(n81_cache_writeback)
+END(n79_cache_writeback)

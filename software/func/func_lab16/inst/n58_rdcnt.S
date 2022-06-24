@@ -2,7 +2,7 @@
 #include "regdef.h"
 #include "inst_test.h"
 
-LEAF(n59_rdcnt_test)
+LEAF(n58_rdcnt_test)
     
     addi.w      s0, s0 ,1
     li.w        t6, 0x3b
@@ -214,4 +214,4 @@ inst_error:
   or      t0, t1, s3 
   st.w    t0, s1, 0 
   jirl    zero, ra, 0 
-END(n59_rdcnt_test)
+END(n58_rdcnt_test)

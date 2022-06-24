@@ -2,7 +2,7 @@
 #include "regdef.h"
 #include "inst_test.h"
 
-LEAF(n64_invtlb_0x0_test)
+LEAF(n62_invtlb_0x0_test)
     addi.w s0, s0, 0x1
     addi.w s2, zero, 0x0
 
@@ -61,4 +61,4 @@ inst_error:
     or t0, t1, s3 
     st.w t0, s1, 0x0
     jirl zero, ra, 0x0
-END(n64_invtlb_0x0_test)
+END(n62_invtlb_0x0_test)

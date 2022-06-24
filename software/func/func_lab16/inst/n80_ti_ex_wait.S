@@ -2,7 +2,7 @@
 #include "regdef.h"
 #include "inst_test.h"
 
-LEAF(n58_ti_ex_idle_test)
+LEAF(n80_ti_ex_idle_test)
    
   addi.w  s0, s0, 1 
   li.w    t4, 0x3a
@@ -105,4 +105,4 @@ inst_error:
   or      t0, t1, s3 
   st.w    t0, s1, 0 
   jirl    zero, ra, 0 
-END(n58_ti_ex_idle_test)
+END(n80_ti_ex_idle_test)

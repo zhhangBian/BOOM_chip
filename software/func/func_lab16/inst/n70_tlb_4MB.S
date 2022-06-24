@@ -2,7 +2,7 @@
 #include "regdef.h"
 #include "inst_test.h"
 
-LEAF(n72_tlb_4MB)
+LEAF(n70_tlb_4MB)
     addi.w s0, s0 ,0x1
 	li.w     s2, 0x0
 
@@ -51,4 +51,4 @@ inst_error:
     or t0, t3, s3 
     st.w t0, s1, 0x0
     jirl zero, ra, 0x0
-END(n72_tlb_4MB)
+END(n70_tlb_4MB)

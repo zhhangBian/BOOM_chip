@@ -18,3 +18,4 @@
 #define TEST5 1
 #define TEST6 1
 #define TEST7 1
+#define TEST8 1

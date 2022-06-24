@@ -1,7 +1,7 @@
 #include "asm.h"
 #include "regdef.h"
 
-LEAF(n61_tlbrd_tlbwr_test)
+LEAF(n59_tlbrd_tlbwr_test)
 
     addi.w s0, s0 ,1
     li.w     s2, 0x0
@@ -90,4 +90,4 @@ inst_error:
     st.w t0, s1, 0x0
     jirl zero, ra, 0x0
 
-END(n61_tlbrd_tlbwr_test)
+END(n59_tlbrd_tlbwr_test)

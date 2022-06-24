@@ -3,7 +3,7 @@
 #include "cpu_cde.h"
 #include "lab_config.h"
 
-#define TEST_NUM (TEST1*20 + TEST2*16 + TEST3*10 + TEST4*1 + TEST5*13 + TEST6*14 + TEST7*7)
+#define TEST_NUM (TEST1*20 + TEST2*16 + TEST3*10 + TEST4*1 + TEST5*11 + TEST6*14 + TEST7*7 + TEST8*2)
 
 
 #if TEST7
@@ -719,14 +719,9 @@ lab9_csr_init:
     bl n57_ale_st_w_ex_test      #st.w ale ex 
     bl idle_1s 
 
-    bl n58_ti_ex_idle_test      #timer int ex with idle 
-    bl idle_1s  
+    bl n58_rdcnt_test          #rdcntvl.w and rdcntvh.w test
+    bl idle_1s
 
-    bl n59_rdcnt_test          #rdcntvl.w and rdcntvh.w test 
-    bl idle_1s 
-
-    bl n60_atomic_ins_test      #ll.w and sc.w test 
-    bl idle_1s 
 #endif
 
 #if TEST6
@@ -752,56 +747,56 @@ lab14_csr_init:
     csrxchg t0, t1, csr_crmd 
     bl tlb_initialization
 
-    bl n61_tlbrd_tlbwr_test
+    bl n59_tlbrd_tlbwr_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n62_tlbfill_test
+    bl n60_tlbfill_test
     bl idle_1s 
 
     bl tlb_initialization
-    bl n63_tlbsrch_test
+    bl n61_tlbsrch_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n64_invtlb_0x0_test
+    bl n62_invtlb_0x0_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n65_invtlb_0x1_test
+    bl n63_invtlb_0x1_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n66_invtlb_0x2_test
+    bl n64_invtlb_0x2_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n67_invtlb_0x3_test
+    bl n65_invtlb_0x3_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n68_invtlb_0x4_test
+    bl n66_invtlb_0x4_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n69_invtlb_0x5_test
+    bl n67_invtlb_0x5_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n70_invtlb_0x6_test
+    bl n68_invtlb_0x6_test
     bl idle_1s
 
     bl tlb_initialization
-    bl n71_invtlb_inv_op_test
+    bl n69_invtlb_inv_op_test
     bl idle_1s
  
-    bl n72_tlb_4MB
+    bl n70_tlb_4MB
     bl idle_1s
 
-    bl n73_tlb_ex_test
-    bl idle_1s 
+    bl n71_tlb_ex_test
+    bl idle_1s
 
-    bl n74_dmw_test
+    bl n72_dmw_test
     bl idle_1s
 #endif 
 
@@ -830,27 +825,35 @@ cacop_disable:
     csrwr     zero, csr_dmw0 
     csrwr     zero, csr_dmw1  
 
-    bl n75_icacop_op0
+    bl n73_icacop_op0
     bl idle_1s
 
-    bl n76_dcacop_op0
+    bl n74_dcacop_op0
     bl idle_1s
 
-    bl n77_icacop_op1
+    bl n75_icacop_op1
     bl idle_1s
 
-    bl n78_dcacop_op1
+    bl n76_dcacop_op1
     bl idle_1s
 
-    bl n79_icacop_op2
+    bl n77_icacop_op2
     bl idle_1s
 
-    bl n80_dcacop_op2 
+    bl n78_dcacop_op2
     bl idle_1s
 
-    bl n81_cache_writeback
+    bl n79_cache_writeback
     bl idle_1s
 #endif 
+
+#if TEST8
+    bl n80_ti_ex_idle_test      #timer int ex with idle
+    bl idle_1s
+
+    bl n81_atomic_ins_test      #ll.w and sc.w test
+    bl idle_1s
+#endif
 
 test_end:
     LI  (s0, TEST_NUM)

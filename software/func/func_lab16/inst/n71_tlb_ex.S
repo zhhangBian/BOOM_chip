@@ -1,9 +1,8 @@
 #include "asm.h"
 #include "regdef.h"
 #include "inst_test.h"
-//#define DATABASE 0x3000000
 
-LEAF(n73_tlb_ex_test)
+LEAF(n71_tlb_ex_test)
     addi.w s0, s0, 0x1
   
     invtlb    0x0, zero, zero
@@ -342,4 +341,4 @@ inst_error:
     or t0, t1, s3 
     st.w t0, s1, 0x0
     jirl zero, ra, 0x0
-END(n73_tlb_ex_test)
+END(n71_tlb_ex_test)

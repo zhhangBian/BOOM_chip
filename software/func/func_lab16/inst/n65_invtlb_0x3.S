@@ -2,8 +2,8 @@
 #include "regdef.h"
 #include "inst_test.h"
 
-LEAF(n68_invtlb_0x4_test)
-    addi.w s0, s0 ,1
+LEAF(n65_invtlb_0x3_test)
+    addi.w s0, s0, 0x1
     addi.w s2, zero, 0x0
 
     csrrd  t8, csr_tlbidx 
@@ -11,12 +11,10 @@ LEAF(n68_invtlb_0x4_test)
     or     t8, t8, t0 
     srli.w t8, t8, TLB_IDX
 
-    li.w    s4, 0x000000aa
-    invtlb 0x4, s4, zero
+    invtlb 0x3, zero, zero
 
-	li.w     t4, 0x0c000000
-    addi.w t0, t4, 0x0
-    addi.w t4, t4, 0x4
+    li.w    t0, 0x0c000000
+    li.w    t4, 0x0c00000c
 1:
     addi.w t1, t0, 0x0
     csrwr t1, csr_tlbidx
@@ -39,9 +37,8 @@ LEAF(n68_invtlb_0x4_test)
     addi.w t0, t0, 0x1  
     bne   t0, t4, 1b
 
-	li.w   t4, 0x0c000000
-    addi.w t0, t4, 0x4
-    addi.w t4, t4, 0x10
+    li.w    t0, 0x0c00000c
+    li.w    t4, 0x0c000010
 2:
     addi.w t1, t0, 0x0
     csrwr t1, csr_tlbidx
@@ -52,15 +49,17 @@ LEAF(n68_invtlb_0x4_test)
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b
-
 ###detect exception
     bne s2, zero, inst_error
-##
-#    li.w    t1, 0xa
-#    li.w    t2, 0xb
-#    invtlb 0x0, t1, t2
+
+#if 0
+	li.w    t1, 0xa
+    li.w    t2, 0xb
+    invtlb 0x0, t1, t2
 ###detect exception
-#    beq s2, zero, inst_error
+    beq s2, zero, inst_error
+#endif
+
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -69,4 +68,4 @@ inst_error:
     or t0, t1, s3 
     st.w t0, s1, 0x0
     jirl zero, ra, 0x0
-END(n68_invtlb_0x4_test)
+END(n65_invtlb_0x3_test)

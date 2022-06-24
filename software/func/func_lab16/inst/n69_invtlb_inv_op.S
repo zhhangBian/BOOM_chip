@@ -2,7 +2,7 @@
 #include "regdef.h"
 #include "inst_test.h"
 
-LEAF(n71_invtlb_inv_op_test) 
+LEAF(n69_invtlb_inv_op_test) 
     li.w     t0, 0x1c008000 
     csrwr  t0, csr_eentry
 
@@ -48,4 +48,4 @@ inst_error:
     or   t0, t1, s3 
     st.w   t0, s1, 0x0
     jirl zero, ra, 0x0
-END(n71_invtlb_inv_op_test)
+END(n69_invtlb_inv_op_test)
