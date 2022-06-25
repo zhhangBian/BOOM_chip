@@ -1,1 +1,1 @@
-../../func_lab16/inst/n21_pcaddu12i.S
+../../func_src/inst/n21_pcaddu12i.S

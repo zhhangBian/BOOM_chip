@@ -1,1 +1,1 @@
-../../func_lab16/inst/n36_mod_wu.S
+../../func_src/inst/n36_mod_wu.S

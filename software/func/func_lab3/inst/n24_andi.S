@@ -1,1 +1,1 @@
-../../func_lab16/inst/n24_andi.S
+../../func_src/inst/n24_andi.S

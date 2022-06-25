@@ -1,1 +1,1 @@
-../../func_lab16/include/regdef.h
+../../func_src/include/regdef.h

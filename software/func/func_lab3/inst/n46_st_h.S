@@ -1,1 +1,1 @@
-../../func_lab16/inst/n46_st_h.S
+../../func_src/inst/n46_st_h.S

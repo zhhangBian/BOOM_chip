@@ -1,1 +1,1 @@
-../../func_lab16/inst/n49_ti_ex.S
+../../func_src/inst/n49_ti_ex.S

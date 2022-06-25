@@ -1,1 +1,1 @@
-../../func_lab16/inst/n47_syscall_ex.S
+../../func_src/inst/n47_syscall_ex.S

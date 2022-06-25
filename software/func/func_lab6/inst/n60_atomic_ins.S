@@ -1,1 +1,0 @@
-../../func_lab16/inst/n60_atomic_ins.S

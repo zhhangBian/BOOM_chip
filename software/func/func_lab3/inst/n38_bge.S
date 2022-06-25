@@ -1,1 +1,1 @@
-../../func_lab16/inst/n38_bge.S
+../../func_src/inst/n38_bge.S

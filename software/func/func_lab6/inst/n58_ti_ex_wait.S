@@ -1,1 +1,0 @@
-../../func_lab16/inst/n58_ti_ex_wait.S

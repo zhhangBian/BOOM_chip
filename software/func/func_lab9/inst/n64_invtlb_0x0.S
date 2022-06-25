@@ -1,1 +1,0 @@
-../../func_lab16/inst/n64_invtlb_0x0.S

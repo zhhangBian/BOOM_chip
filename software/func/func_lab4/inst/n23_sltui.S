@@ -1,1 +1,1 @@
-../../func_lab16/inst/n23_sltui.S
+../../func_src/inst/n23_sltui.S

@@ -1,1 +1,1 @@
-../../func_lab16/inst/n2_add_w.S
+../../func_src/inst/n2_add_w.S

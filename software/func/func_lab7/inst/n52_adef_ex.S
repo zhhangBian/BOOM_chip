@@ -1,1 +1,1 @@
-../../func_lab16/inst/n52_adef_ex.S
+../../func_src/inst/n52_adef_ex.S

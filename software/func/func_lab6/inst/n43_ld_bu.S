@@ -1,1 +1,1 @@
-../../func_lab16/inst/n43_ld_bu.S
+../../func_src/inst/n43_ld_bu.S

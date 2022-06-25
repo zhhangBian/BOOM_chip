@@ -1,1 +1,0 @@
-../../func_lab16/inst/n66_invtlb_0x2.S

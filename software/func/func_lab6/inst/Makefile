@@ -1,1 +1,1 @@
-../../../generic/inst/Makefile
+../../func_src/inst/Makefile

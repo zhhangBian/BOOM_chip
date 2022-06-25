@@ -1,1 +1,1 @@
-../../func_lab16/inst/n48_brk_ex.S
+../../func_src/inst/n48_brk_ex.S

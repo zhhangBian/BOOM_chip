@@ -1,1 +1,1 @@
-../../generic/bin.lds
+../func_src/bin.lds

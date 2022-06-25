@@ -1,1 +1,1 @@
-../../func_lab16/include/inst_test.h
+../../func_src/include/inst_test.h

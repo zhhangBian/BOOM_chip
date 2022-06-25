@@ -1,1 +1,1 @@
-../../func_lab16/inst/n13_srai_w.S
+../../func_src/inst/n13_srai_w.S

@@ -1,1 +1,1 @@
-../../func_lab16/inst/n11_slli_w.S
+../../func_src/inst/n11_slli_w.S

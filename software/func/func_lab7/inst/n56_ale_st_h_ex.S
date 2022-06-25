@@ -1,1 +1,1 @@
-../../func_lab16/inst/n56_ale_st_h_ex.S
+../../func_src/inst/n56_ale_st_h_ex.S

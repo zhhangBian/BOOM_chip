@@ -1,1 +1,1 @@
-../../func_lab16/include/cpu_cde.h
+../../func_src/include/cpu_cde.h

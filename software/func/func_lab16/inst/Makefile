@@ -1,1 +1,0 @@
-../../../generic/inst/Makefile

@@ -1,1 +1,1 @@
-../../func_lab16/inst/n16_beq.S
+../../func_src/inst/n16_beq.S

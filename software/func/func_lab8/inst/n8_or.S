@@ -1,1 +1,1 @@
-../../func_lab16/inst/n8_or.S
+../../func_src/inst/n8_or.S

@@ -1,1 +1,1 @@
-../../func_lab16/include/asm.h
+../../func_src/include/asm.h

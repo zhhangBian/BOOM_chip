@@ -1,1 +1,0 @@
-../../func_lab16/inst/n59_rdcnt.S

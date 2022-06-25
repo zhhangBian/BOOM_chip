@@ -1,0 +1,1 @@
+../../func_src/inst/n81_atomic_ins.S

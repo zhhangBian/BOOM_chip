@@ -1,1 +1,1 @@
-../../func_lab16/inst/n31_div_wu.S
+../../func_src/inst/n31_div_wu.S

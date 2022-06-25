@@ -1,1 +1,1 @@
-../../func_lab16/inst/n22_slti.S
+../../func_src/inst/n22_slti.S

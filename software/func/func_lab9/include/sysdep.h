@@ -1,1 +1,1 @@
-../../func_lab16/include/sysdep.h
+../../func_src/include/sysdep.h

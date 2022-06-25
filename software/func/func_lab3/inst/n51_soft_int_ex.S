@@ -1,1 +1,1 @@
-../../func_lab16/inst/n51_soft_int_ex.S
+../../func_src/inst/n51_soft_int_ex.S

@@ -1,1 +1,1 @@
-../../func_lab16/inst/n26_xori.S
+../../func_src/inst/n26_xori.S

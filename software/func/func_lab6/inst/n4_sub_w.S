@@ -1,1 +1,1 @@
-../../func_lab16/inst/n4_sub_w.S
+../../func_src/inst/n4_sub_w.S

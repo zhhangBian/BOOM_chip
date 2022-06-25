@@ -1,1 +1,1 @@
-../../generic/Makefile
+../func_src/Makefile

@@ -1,1 +1,1 @@
-../../func_lab16/inst/n17_bne.S
+../../func_src/inst/n17_bne.S

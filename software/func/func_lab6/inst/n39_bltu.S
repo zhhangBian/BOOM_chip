@@ -1,1 +1,1 @@
-../../func_lab16/inst/n39_bltu.S
+../../func_src/inst/n39_bltu.S

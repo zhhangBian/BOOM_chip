@@ -1,1 +1,1 @@
-../../func_lab16/inst/n9_xor.S
+../../func_src/inst/n9_xor.S

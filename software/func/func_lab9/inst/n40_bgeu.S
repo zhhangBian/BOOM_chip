@@ -1,1 +1,1 @@
-../../func_lab16/inst/n40_bgeu.S
+../../func_src/inst/n40_bgeu.S

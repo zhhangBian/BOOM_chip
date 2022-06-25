@@ -1,1 +1,1 @@
-../../func_lab16/inst/n50_ine_ex.S
+../../func_src/inst/n50_ine_ex.S

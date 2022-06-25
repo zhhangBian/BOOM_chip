@@ -1,1 +1,1 @@
-../../func_lab16/inst/n37_blt.S
+../../func_src/inst/n37_blt.S

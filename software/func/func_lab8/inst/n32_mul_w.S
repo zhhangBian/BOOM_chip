@@ -1,1 +1,1 @@
-../../func_lab16/inst/n32_mul_w.S
+../../func_src/inst/n32_mul_w.S

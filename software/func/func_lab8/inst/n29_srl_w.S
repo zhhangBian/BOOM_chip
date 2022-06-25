@@ -1,1 +1,1 @@
-../../func_lab16/inst/n29_srl_w.S
+../../func_src/inst/n29_srl_w.S

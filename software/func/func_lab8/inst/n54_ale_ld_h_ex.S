@@ -1,1 +1,1 @@
-../../func_lab16/inst/n54_ale_ld_h_ex.S
+../../func_src/inst/n54_ale_ld_h_ex.S

@@ -1,1 +1,1 @@
-../../func_lab16/inst/n10_nor.S
+../../func_src/inst/n10_nor.S

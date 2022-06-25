@@ -1,1 +1,1 @@
-../func_lab16/start.S
+../func_src/start.S

@@ -1,1 +1,1 @@
-../../func_lab16/inst/n42_ld_h.S
+../../func_src/inst/n42_ld_h.S

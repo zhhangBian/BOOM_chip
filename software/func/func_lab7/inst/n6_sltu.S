@@ -1,1 +1,1 @@
-../../func_lab16/inst/n6_sltu.S
+../../func_src/inst/n6_sltu.S

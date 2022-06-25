@@ -1,1 +1,0 @@
-../../generic/bin.lds

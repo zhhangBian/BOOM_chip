@@ -1,1 +1,1 @@
-../../func_lab16/inst/n33_mulh_w.S
+../../func_src/inst/n33_mulh_w.S
