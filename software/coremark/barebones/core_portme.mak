@@ -21,13 +21,13 @@
 OUTFLAG= -o
 # Flag : CC
 #	Use this flag to define compiler to use
-CC 		= ../../toolchains/loongarch32r-linux-gnusf*/bin/loongarch32r-linux-gnusf-gcc
+CC 		= loongarch32r-linux-gnusf-gcc
 # Flag : LD
 #	Use this flag to define compiler tr-linux-gnusf*
-LD		= ../../toolchains/loongarch32r-linux-gnusf*/bin/loongarch32r-linux-gnusf-gcc
+LD		= loongarch32r-linux-gnusf-gcc
 # Flag : AS
 #	Use this flag to define compiler tr-linux-gnusf*
-AS		= ../../toolchains/loongarch32r-linux-gnusf*/bin/loongarch32r-linux-gnusf-as
+AS		= loongarch32r-linux-gnusf-as
 # Flag : CFLAGS
 #	Use this flag to define compiler options. Note, you can add compiler options from the command line using XCFLAGS="other flags"
 PORT_CFLAGS = -Ofast

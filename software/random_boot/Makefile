@@ -1,4 +1,4 @@
-PRECC=../../toolchains/loongarch32r-linux-gnusf-*/bin/loongarch32r-linux-gnusf-
+PRECC=loongarch32r-linux-gnusf-
 
 CC=$(PRECC)gcc
 LD=$(PRECC)ld

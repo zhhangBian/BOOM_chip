@@ -8,7 +8,7 @@ echo "  --help                	print this message
 echo "  --run software        	set software list(use ',' select multiple softwares)
                         	Available software: func/func_lab3 func/func_lab4 
                         	func/func_lab6 func/func_lab7 func/func_lab8 func/func_lab9 
-                        	func/func_lab14 func/func_lab16 func/func_advance 
+                        	func/func_lab14 func/func_lab15 func/func_lab19 func/func_advance
                                 my_program dhrystone coremark linux rtthread
 
      " 
@@ -265,7 +265,13 @@ do
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
-        func/func_lab16) 
+        func/func_lab15) 
+            RUN_FUNC=y
+            DEAD_CLOCK_EN=y
+            mkdir -p ./obj/func
+            mkdir -p ./log/func
+            ;;
+        func/func_lab19) 
             RUN_FUNC=y
             DEAD_CLOCK_EN=y
             mkdir -p ./obj/func

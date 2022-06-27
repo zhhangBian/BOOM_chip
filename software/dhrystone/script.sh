@@ -1,19 +1,18 @@
 #!/bin/bash
 
-GCC_BIN=../../toolchains/loongarch32r-linux-gnusf*/bin/
 CFLAGS="-nostdlib -static -nostdinc -fno-builtin"
 LFLAGS="-L../../toolchains/system_newlib/ -Wl,-T../../toolchains/system_newlib/pmon.ld -lc -lm -lg -lpmon -lgcc"
 
-${GCC_BIN}/loongarch32r-linux-gnusf-gcc -c dry.c -o dry1.o
-${GCC_BIN}/loongarch32r-linux-gnusf-gcc -DPASS2 ${CFLAGS} dry_no_include.c dry1.o -o main.elf ${LFLAGS}
+loongarch32r-linux-gnusf-gcc -c dry.c -o dry1.o
+loongarch32r-linux-gnusf-gcc -DPASS2 ${CFLAGS} dry_no_include.c dry1.o -o main.elf ${LFLAGS}
 #${CC} -c -DREG dry.c -o dry1.o
 #${CC} -DPASS2 -DREG ${CFLAGS} dry_no_include.c dry1.o -o dry2nr ${LFLAGS}
 #${CC} -c -O dry.c -o dry1.o 
 #${CC} -DPASS2 -O ${CFLAGS} dry_no_include.c dry1.o -o dry2o ${LFLAGS} 
 
-${GCC_BIN}/loongarch32r-linux-gnusf-objdump -alD main.elf > test.s 
-${GCC_BIN}/loongarch32r-linux-gnusf-objcopy -O binary -j .start -j .main main.elf main.bin
-${GCC_BIN}/loongarch32r-linux-gnusf-objcopy -O binary -j .rodata -j .data -j .sdata -j .init_array -j .got main.elf main.data
+loongarch32r-linux-gnusf-objdump -alD main.elf > test.s 
+loongarch32r-linux-gnusf-objcopy -O binary -j .start -j .main main.elf main.bin
+loongarch32r-linux-gnusf-objcopy -O binary -j .rodata -j .data -j .sdata -j .init_array -j .got main.elf main.data
 
 mkdir -p obj 
 mv main.elf  ./obj/

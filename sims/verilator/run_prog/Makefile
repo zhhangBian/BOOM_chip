@@ -243,7 +243,7 @@ soft_compile:
 	@echo "============================================================================================================="
 	@for soft in ${soft_compile_list}; \
 	do 	\
-	make -C ${CHIPLAB_HOME}/software/$${soft} script || exit "$$?";\
+	make -C ${CHIPLAB_HOME}/software/$${soft} || exit "$$?";\
 	rm -rf ./obj/$${soft}_obj;	\
 	mkdir -p ./obj/$${soft}_obj;  \
 	mv ${CHIPLAB_HOME}/software/$${soft}/obj ./obj/$${soft}_obj;	\
