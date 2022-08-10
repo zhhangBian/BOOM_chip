@@ -1,7 +1,7 @@
 // file name: inst_test.h
 #include "cpu_cde.h"
 
-#define TLB_ENTRY 16
+#define TLB_ENTRY 32
 #define TLB_IDX 4
 
 #define FILL_TLB_ITEM_r \
