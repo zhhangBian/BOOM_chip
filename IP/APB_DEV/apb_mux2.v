@@ -152,8 +152,9 @@ assign apb_rdata_dma      = dma_grant  ? {high_24b_rd,apb_datao }:32'h0;
 assign apb_ack_cpu        = ~dma_grant & apb_ack;
 assign apb_ready_dma      = dma_grant  & apb_ack;
 
-assign apb0_req =  (apb_addr[ADDR_APB-1:14] ==`APB_DEV0);
-assign apb1_req = (apb_addr[ADDR_APB-1:14] ==`APB_DEV1);
+assign apb0_req = (apb_addr[ADDR_APB-1:14] ==`APB_DEV0);
+//assign apb1_req = (apb_addr[ADDR_APB-1:14] ==`APB_DEV1);
+assign apb1_req = !apb0_req;
 
 assign apb0_psel = apb_psel && apb0_req ;
 assign apb1_psel = apb_psel && apb1_req;
