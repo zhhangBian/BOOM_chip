@@ -125,30 +125,30 @@ LEAF(n52_adef_ex_test)
   li.w      t0, 0xd0010
   li.w      t1, 0x4c000020
   st.w    t1, t0, 0 
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
   jirl    ra, t0, 0
 
 ## 9
   li.w      t0, 0xa0000000
   li.w      t1, 0x4c000020  //write in "jirl zero, ra, 0" inst
   st.w    t1, t0, 0 
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
+  andi    $r0, $r0, 0
   jirl    ra, t0, 0
 
   LI_EXIMM(t0,s2,IMM_KERNEL)

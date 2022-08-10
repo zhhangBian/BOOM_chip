@@ -3,7 +3,11 @@
 #include "inst_test.h"
 
 LEAF(n81_atomic_ins_test)
-    
+
+    li.w      t0, 0x80 
+    li.w      t1, 0x180 
+    csrxchg t0, t1, csr_crmd
+
     addi.w      s0, s0 ,1
     li.w          s2, 0x0 
     li.w          t0, 0x2 
@@ -154,6 +158,10 @@ LEAF(n81_atomic_ins_test)
     ld.w        t1, t8, 0 
     bne         t7, t1, inst_error  
 
+    li.w      t0, 0x0 
+    li.w      t1, 0x180 
+    csrxchg t0, t1, csr_crmd
+    
 ###score +++
   addi.w  s3, s3, 1
 ###output (s0<<24)|s3 
