@@ -64,6 +64,15 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <File Path="$PPRDIR/../../../IP/xilinx_ip/axi_clock_converter_0/axi_clock_converter_0.xcix">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/xilinx_ip/axi_clock_converter_0/axi_clock_converter_0.xcix"/>
+          <Attr Name="ImportTime" Val="0"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
       <File Path="$PPRDIR/../../../IP/xilinx_ip/axi_interconnect_0/axi_interconnect_0.xci">
         <FileInfo>
           <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/xilinx_ip/axi_interconnect_0/axi_interconnect_0.xci"/>
