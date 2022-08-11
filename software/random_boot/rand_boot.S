@@ -1,3 +1,5 @@
+#include "define.h"
+
 	.text
    	.global		reset_exception
 #define EBASE_ADDR      0x9c004000
@@ -14,6 +16,28 @@ reset_exception:
     # Set coprocessor EN
     #ori			$r1, $r0, 0x2f
 	#csrwr		$r1, 0x2			# enable all coprocessors' En
+
+    #cache init
+    li.w    $r2, CACHE_WAY
+    li.w    $r4, 0
+    1:
+    li.w    $r1, CACHE_IDX
+    li.w    $r3, 0
+    2:
+    add.w   $r3, $r3, $r4
+    cacop   0x0, $r3, 0x0  #icache 
+    cacop   0x1, $r3, 0x0  #dcache
+    cacop   0x2, $r3, 0x0  #scache
+    addi.w  $r1, $r1, -1
+    srli.w  $r3, $r3, CACHE_OFFSET
+    addi.w  $r3, $r3, 1
+    slli.w  $r3, $r3, CACHE_OFFSET
+    blt     $r0, $r1, 2b
+
+    addi.w  $r2, $r2, -1
+    addi.w  $r4, $r4, 1
+    blt     $r0, $r2, 1b
+
 
     # Set Win 0/Win 1
     # LA32
