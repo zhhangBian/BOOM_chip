@@ -15,6 +15,8 @@ LEAF(tlb_initialization)
     li.w  t2, 0x000000aa 
     csrwr t2, csr_asid
 
+    invtlb  0, zero, zero
+
 ###TLB item 1 
     FILL_TLB(0x0034ab00, 0x00ffab00) 
 ###TLB item 2
