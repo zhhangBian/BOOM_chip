@@ -5,31 +5,31 @@
 LEAF(n4_pgd_test)
 
     addi.w  s0, s0, 0x1 
-    li      s2, 0x0
+    li.w     s2, 0x0
     //clear ti
-    li      t0, 0x1 
+    li.w     t0, 0x1 
     csrwr   t0, csr_ticlr 
     //make sure prl=0
-    li      t0, 0x0
-    li      t1, 0x3
+    li.w     t0, 0x0
+    li.w     t1, 0x3
     csrxchg t0, t1, csr_crmd 
 
-    li      t0, 0x3af000
+    li.w     t0, 0x3af000
     csrwr   t0, csr_pgdl
 
-    li      t0, 0xaaa000
+    li.w     t0, 0xaaa000
     csrwr   t0, csr_pgdh
 
-    li      t0, 0x8aaa0000
+    li.w     t0, 0x8aaa0000
     csrwr   t0, csr_badv
     csrrd   t0, csr_pgd
-    li      t1, 0xaaa000
+    li.w     t1, 0xaaa000
     bne     t0, t1, inst_error
 
-    li      t0, 0x0aaa0000
+    li.w     t0, 0x0aaa0000
     csrwr   t0, csr_badv
     csrrd   t0, csr_pgd
-    li      t1, 0x3af000
+    li.w     t1, 0x3af000
     bne     t0, t1, inst_error
 
 ###detect exception

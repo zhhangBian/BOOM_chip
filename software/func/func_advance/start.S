@@ -29,7 +29,7 @@
 	.globl	__main
 _start:
 start:
-    li     t0, 0xffffffff
+    li.w    t0, 0xffffffff
     addi.w t0, zero, -1
     ori    $r1,$r0,0x28
     csrwr  $r1,0x0
@@ -69,39 +69,39 @@ test_finish:
 .org 0x8000   //0x1c008000
 1:  
     csrrd t0, csr_crmd
-    li    t0, 0xd0000
+    li.w   t0, 0xd0000
     ld.w  t1, t0, 0 
-    li    t0, 0x1 
+    li.w   t0, 0x1 
     beq   t1, t0, syscall_ex  #syscall  
-    li    t0, 0x2 
+    li.w   t0, 0x2 
     beq   t1, t0, brk_ex      #break 
-    li    t0, 0x3 
+    li.w   t0, 0x3 
     beq   t1, t0, ine_ex      #reserved inst 
-    li    t0, 0x4 
+    li.w   t0, 0x4 
     beq   t1, t0, int_ex      #interrupt 
-    li    t0, 0x5 
+    li.w   t0, 0x5 
     beq   t1, t0, adef_ex     #adef 
-    li    t0, 0x6 
+    li.w   t0, 0x6 
     beq   t1, t0, ale_ex      #ale 
-    li    t0, 0x7 
+    li.w   t0, 0x7 
     beq   t1, t0, ipe_ex      #ipe
-    li    t0, 0x8
+    li.w   t0, 0x8
     beq   t1, t0, ld_page_invalid
-    li    t0, 0x9
+    li.w   t0, 0x9
     beq   t1, t0, st_page_invalid
-    li    t0, 0xa
+    li.w   t0, 0xa
     beq   t1, t0, tlb_prl_error
-    li    t0, 0xb
+    li.w   t0, 0xb
     beq   t1, t0, tlb_page_modified_error
-    li    t0, 0xc
+    li.w   t0, 0xc
     beq   t1, t0, fetch_page_invalid
-    li    t0, 0xd
+    li.w   t0, 0xd
     beq   t1, t0, tlb_adem_error
-    li    t0, 0xe
+    li.w   t0, 0xe
     beq   t1, t0, tlb_adef_error
-    li    t0, 0xf
+    li.w   t0, 0xf
     beq   t1, t0, syscall_ex_special //syscall used for jumping from the user mode to the kernel mode
-    li    t0, 0x10
+    li.w   t0, 0x10
     beq   t1, t0, adem_ex     #adem
 	b     test_end
         
@@ -110,17 +110,17 @@ ipe_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x000e0000 
+    li.w      t1, 0x000e0000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x70 
@@ -131,19 +131,19 @@ adem_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00480000 
+    li.w      t1, 0x00480000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_badv 
     bne      t0, s5, ex_finish
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x70 
@@ -162,17 +162,17 @@ syscall_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x000b0000 
+    li.w      t1, 0x000b0000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x10 
@@ -183,17 +183,17 @@ brk_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x000c0000 
+    li.w      t1, 0x000c0000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x20 
@@ -204,17 +204,17 @@ ine_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x000d0000 
+    li.w      t1, 0x000d0000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x30 
@@ -225,27 +225,27 @@ int_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00000000 
+    li.w      t1, 0x00000000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
-    li       t1, 0x1 
+    li.w      t1, 0x1 
     csrwr    t1, csr_ticlr 
     bne      t1, zero, ex_finish 
-    li       t1, 0x0 
-    li       t0, 0x3 
+    li.w      t1, 0x0 
+    li.w      t0, 0x3 
     csrxchg  t1, t0, csr_estat 
     csrrd    t1, csr_estat
-    li       t0, 0x1fff 
+    li.w      t0, 0x1fff 
     and      t0, t0, t1 
     bne      t0, zero, ex_finish 
     lu12i.w  s2, 0x40 
@@ -256,17 +256,17 @@ adef_ex:
     csrwr    s5, csr_era
     bne      s4, s5, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00080000 
+    li.w      t1, 0x00080000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x50 
@@ -277,17 +277,17 @@ ale_ex:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00090000 
+    li.w      t1, 0x00090000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     lu12i.w  s2, 0x60 
@@ -298,17 +298,17 @@ ld_page_invalid:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00010000 
+    li.w      t1, 0x00010000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     csrrd    t0, csr_badv
@@ -323,17 +323,17 @@ st_page_invalid:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00020000 
+    li.w      t1, 0x00020000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     csrrd    t0, csr_badv
@@ -348,17 +348,17 @@ tlb_prl_error:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00070000 
+    li.w      t1, 0x00070000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     csrrd    t0, csr_badv
@@ -373,17 +373,17 @@ tlb_page_modified_error:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00040000 
+    li.w      t1, 0x00040000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t5, t0, ex_finish 
     csrrd    t0, csr_badv
@@ -395,23 +395,23 @@ tlb_page_modified_error:
      
 fetch_page_invalid:
     add.w    s2, zero, zero
-    li       t0, 0xffffffff
+    li.w      t0, 0xffffffff
     csrrd    t0, csr_era 
     bne      s8, t0, ex_finish 
     addi.w   t0, s4, 0x0
     csrwr    t0, csr_era
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00030000 
+    li.w      t1, 0x00030000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t5, t0, ex_finish 
     csrrd    t0, csr_badv
@@ -426,17 +426,17 @@ tlb_adem_error:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00480000 
+    li.w      t1, 0x00480000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     csrrd    t0, csr_badv
@@ -455,17 +455,17 @@ tlb_adef_error:
     addi.w   t0, s4, 0x0
     csrwr    t0, csr_era
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x00080000 
+    li.w      t1, 0x00080000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t5, t0, ex_finish 
     csrrd    t0, csr_badv
@@ -482,17 +482,17 @@ tlb_adef_error:
     csrrd    t0, csr_era 
     bne      s4, t0, ex_finish 
     csrrd    t0, csr_estat 
-    li       t1, 0x7fff0000 
+    li.w      t1, 0x7fff0000 
     and      t0, t0, t1 
-    li       t1, 0x003f0000 
+    li.w      t1, 0x003f0000 
     bne      t1, t0, ex_finish 
     csrrd    t0, csr_crmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
-    li       t1, 0x0 
+    li.w      t1, 0x0 
     bne      t1, t0, ex_finish
     csrrd    t0, csr_prmd 
-    li       t1, 0x7 
+    li.w      t1, 0x7 
     and      t0, t0, t1 
     bne      t0, t5, ex_finish 
     csrrd    t0, csr_badv
@@ -536,12 +536,12 @@ inst_test:
 #if cacop_enable 
     csrwr     zero, csr_dmw0 
     csrwr     zero, csr_dmw1
-    li        t0, 0x19
+    li.w       t0, 0x19
     csrwr     t0, csr_dmw0     //data and inst cacop 
-    li        t0, 0xAA000009 
+    li.w       t0, 0xAA000009 
     csrwr     t0, csr_dmw1     //io addr 
-    li        t0, 0x10  
-    li        t1, 0x18 
+    li.w       t0, 0x10  
+    li.w       t1, 0x18 
     csrxchg   t0, t1, csr_crmd 
 #endif
 ############################
@@ -714,7 +714,7 @@ lab8_csr_init:
     csrwr     zero, csr_era 
     csrwr     zero, csr_eentry 
 
-    li t0, 0x1c008000 
+    li.wt0, 0x1c008000 
     csrwr t0, csr_eentry 
 
     bl n50_syscall_ex_test       #syscall
@@ -735,7 +735,7 @@ lab9_csr_init:
     csrwr     zero, csr_save3 
     csrwr     zero, csr_tcfg
 
-    li t0, 0x1c008000 
+    li.wt0, 0x1c008000 
     csrwr t0, csr_eentry
 
     bl n51_brk_ex_test         #brk ex 
@@ -804,22 +804,22 @@ lab14_csr_init:
     csrwr     zero, csr_asid 
 
 #if cacop_enable 
-    li        t0, 0x8 
-    li        t1, 0x18 
+    li.w       t0, 0x8 
+    li.w       t1, 0x18 
     csrxchg   t0, t1, csr_crmd
     csrwr     zero, csr_dmw0 
     csrwr     zero, csr_dmw1
-    li        t0, 0x19
+    li.w       t0, 0x19
     csrwr     t0, csr_dmw0     //data and inst cacop 
-    li        t0, 0xAA000009 
+    li.w       t0, 0xAA000009 
     csrwr     t0, csr_dmw1     //io addr 
-    li        t0, 0x10  
-    li        t1, 0x18 
+    li.w       t0, 0x10  
+    li.w       t1, 0x18 
     csrxchg   t0, t1, csr_crmd 
 #endif 
 
-    li      t0, 0x0 
-    li      t1, 0x3 
+    li.w     t0, 0x0 
+    li.w     t1, 0x3 
     csrxchg t0, t1, csr_crmd 
     bl n0_tlb_initialization
 
@@ -898,8 +898,8 @@ lab16_csr_init:
     csrwr     zero, csr_asid 
 
 cacop_disable:
-    li        t0, 0x8 
-    li        t1, 0x18 
+    li.w       t0, 0x8 
+    li.w       t1, 0x18 
     csrxchg   t0, t1, csr_crmd
     csrwr     zero, csr_dmw0 
     csrwr     zero, csr_dmw1  
@@ -930,9 +930,9 @@ cacop_disable:
 
 #if advance
 
-    li    t0, 0x1c008000
+    li.w   t0, 0x1c008000
     csrwr t0, csr_eentry
-    li    t1, 0x1c000000 + TLBREBASE
+    li.w   t1, 0x1c000000 + TLBREBASE
     csrwr t1, csr_tlbrentry
 
 #ifndef ENABLE_TRACE  

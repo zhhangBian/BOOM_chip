@@ -6,111 +6,111 @@ LEAF(n7_ipe_ex_test)
 
     addi.w  s0, s0, 1 
     //clear ti
-    li      t0, 0x1 
+    li.w     t0, 0x1 
     csrwr   t0, csr_ticlr 
     //init usr mode
-    li      t0, 0xb
+    li.w     t0, 0xb
     csrwr   t0, csr_crmd
 
     lu12i.w s7, 0x70 
-    li      t5, 0x3
+    li.w     t5, 0x3
 
-    li      t0, 0xd0000 
-    li      s2, 0x7
+    li.w     t0, 0xd0000 
+    li.w     s2, 0x7
     st.w    s2, t0, 0 
  
 ###ex test
 ###1 
     la.local s4, 1f 
-    li      t8, 0xfff000
-    li      t7, 0xfff000
+    li.w     t8, 0xfff000
+    li.w     t7, 0xfff000
 1:  
     csrrd   t7, csr_era  
     bne     s2, s7, inst_error 
     bne     t8, t7, inst_error 
 
 ###2 
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
-    li      t8, 0xffffffff
-    li      t7, 0xffffffff
+    li.w     t8, 0xffffffff
+    li.w     t7, 0xffffffff
 1:  
     csrwr   t7, csr_era  
     bne     s2, s7, inst_error 
     bne     t7, t8, inst_error  
 
 ###3 
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
-    li      t8, 0xffff1111
-    li      t7, 0xffff1111
-    li      t2, 0xffffffff
+    li.w     t8, 0xffff1111
+    li.w     t7, 0xffff1111
+    li.w     t2, 0xffffffff
 1:  
     csrxchg t8, t2, csr_era  
     bne     s2, s7, inst_error 
     bne     t8, t7, inst_error  
 
 ###4
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
-    li      t0, 0x80000000
+    li.w     t0, 0x80000000
 1:  
     cacop   0x0,  t0, 0x10   
     bne     s2, s7, inst_error 
 
 ###5
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
 1:  
     tlbsrch
     bne     s2, s7, inst_error 
 
 ###6
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
 1:  
     tlbsrch
     bne     s2, s7, inst_error 
 
 ###7
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
 1:  
     tlbrd
     bne     s2, s7, inst_error 
 
 ###8
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
 1:  
     tlbfill
     bne     s2, s7, inst_error 
 
 ###9
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
 1:  
     tlbfill
     bne     s2, s7, inst_error 
 
 ###10
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
-    li      t0, 0x10 
-    li      t1, 0x80000000
+    li.w     t0, 0x10 
+    li.w     t1, 0x80000000
 1:  
     invtlb  0,  t0, t1
     bne     s2, s7, inst_error 
 
 ###11
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
 1:  
     ertn
     bne     s2, s7, inst_error 
 
 ###12
-    li      s2, 0x07
+    li.w     s2, 0x07
     la.local s4, 1f 
 1:  
     idle    0
@@ -121,8 +121,8 @@ LEAF(n7_ipe_ex_test)
 ###output (s0<<24)|s3 
 inst_error:
 ###switch to kernel mode
-    li       t0, 0xd0000
-    li       t1, 0xf
+    li.w      t0, 0xd0000
+    li.w      t1, 0xf
     st.w     t1, t0, 0x0
     syscall  0x0
  

@@ -5,30 +5,30 @@
 LEAF(n3_ibar_test)
 
     addi.w  s0, s0, 0x1 
-    li      s2, 0x0
+    li.w     s2, 0x0
     //clear ti
-    li      t0, 0x1 
+    li.w     t0, 0x1 
     csrwr   t0, csr_ticlr 
     //make sure prl=0
-    li      t0, 0x0
-    li      t1, 0x3
+    li.w     t0, 0x0
+    li.w     t1, 0x3
     csrxchg t0, t1, csr_crmd 
 
-    li      t0, 0xd0100
-    li      t1, 0xffffffff
+    li.w     t0, 0xd0100
+    li.w     t1, 0xffffffff
     st.w    t1, t0, 0x0
 
-    li      t0, 0xd0104
-    li      t1, 0xffffffff
+    li.w     t0, 0xd0104
+    li.w     t1, 0xffffffff
     st.w    t1, t0, 0x0
 
-    li      t0, 0xd0108
-    li      t1, 0xffffffff
+    li.w     t0, 0xd0108
+    li.w     t1, 0xffffffff
     st.w    t1, t0, 0x0
 
     ibar    0x0
 
-    li      t0, 0xd108
+    li.w     t0, 0xd108
     ld.w    t1, t0, 0x0
 
 ###detect exception
