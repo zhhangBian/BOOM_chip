@@ -51,7 +51,7 @@ toolchains这个目录是存在的，只不过里面是空的，需要用户自�
 以Ubuntu (Windows 10+ 请基于WSL**2**)为例:
 ```
 # 终端运行
-sudo apt install verilator gtkwave #verilator version 4.108+ (loongarch64 4.222+)    
+sudo apt install verilator gtkwave #verilator version 4.224 (loongarch64 4.222+)    
 ```
 
 ### 实验步骤
