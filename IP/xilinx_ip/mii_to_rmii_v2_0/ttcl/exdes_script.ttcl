@@ -1,0 +1,31 @@
+<: setOutputDirectory "./" :>
+<: setFileName "top_set" :>
+<: setFileExtension ".tcl" :>
+<: set family [getStringValue "C_FAMILY"] :>
+<: set wd [ file dirname [ get_property xml_file_name [ current_ipbom ] ] ] :>
+
+set addr [lindex [get_property name [get_files *addr.coe]] 0 ]
+set data [lindex [get_property name [get_files *data.coe]] 0 ]
+set mask [lindex [get_property name [get_files *mask.coe]] 0 ]
+set ctrl [lindex [get_property name [get_files *ctrl.coe]] 0 ]
+
+
+
+<: if {[string first "everest" $family] == -1} { :>
+create_ip -name clk_wiz  -vendor xilinx.com -library ip -module_name clk_wiz_0
+set_property -dict [list CONFIG.PRIM_SOURCE {Differential_clock_capable_pin} CONFIG.PRIM_IN_FREQ {200.000} CONFIG.CLKOUT2_USED {true} CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {50.000} CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {100.000}] [get_ips clk_wiz_0]
+generate_target all [get_ips clk_wiz_0]
+<: } else { :>
+create_ip -name clk_wizard -vendor xilinx.com -library ip -module_name clk_wiz_0
+set_property -dict [list CONFIG.USE_RESET {true} CONFIG.USE_LOCKED {true} CONFIG.PRIM_IN_FREQ {200.000} CONFIG.PRIM_SOURCE {Differential_clock_capable_pin} CONFIG.CLKOUT_USED {true,true,false,false,false,false,false} CONFIG.CLKOUT_PORT {clk_out1,clk_out2,clk_out3,clk_out4,clk_out5,clk_out6,clk_out7} CONFIG.CLKOUT_REQUESTED_OUT_FREQUENCY {50.000,100.000,60.000,100.000,100.000,100.000,100.000}] [get_ips clk_wiz_0]
+generate_target all [get_ips clk_wiz_0]
+<: } :>
+
+
+create_ip -name axi_traffic_gen -vendor xilinx.com -library ip -module_name axi_traffic_gen_0
+set_property -dict [list CONFIG.ATG_OPTIONS {Custom} CONFIG.C_ATG_MODE {AXI4-Lite} CONFIG.C_ATG_SYSTEM_CMD_MAX_RETRY {1024} CONFIG.C_ATG_MIF_DATA_DEPTH {256} CONFIG.C_ATG_SYSINIT_MODES {System_Test} CONFIG.C_ATG_SYSTEM_INIT_ADDR_MIF $addr CONFIG.C_ATG_SYSTEM_INIT_DATA_MIF $data CONFIG.C_ATG_SYSTEM_INIT_MASK_MIF $mask CONFIG.C_ATG_SYSTEM_INIT_CTRL_MIF $ctrl CONFIG.C_ATG_SYSTEM_TEST_MAX_CLKS {200000000}] [get_ips axi_traffic_gen_0]
+generate_target all [get_ips axi_traffic_gen_0]
+
+create_ip -name axi_ethernetlite -vendor xilinx.com -library ip -module_name axi_ethernetlite_0
+set_property -dict [list CONFIG.C_RX_PING_PONG {0} CONFIG.C_TX_PING_PONG {0} CONFIG.C_INCLUDE_GLOBAL_BUFFERS {1} CONFIG.C_INCLUDE_MDIO {0} CONFIG.C_USE_INTERNAL {1} CONFIG.C_INCLUDE_GLOBAL_BUFFERS {0}] [get_ips axi_ethernetlite_0]
+generate_target all [get_ips axi_ethernetlite_0]
