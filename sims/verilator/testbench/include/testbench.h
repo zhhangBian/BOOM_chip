@@ -5,6 +5,7 @@
 #include <verilated_vcd_c.h>
 #include <verilated_threads.h>
 #include <verilated_save.h>
+#include <chrono>
 #include "common.h"
 #include "ram.h"
 #include "time_limit.h"
@@ -57,9 +58,16 @@ public:
     /* Close a trace file */
     virtual void close(void);
 
+    std::chrono::nanoseconds total_nano_seconds = std::chrono::nanoseconds(0);
+
     /* Time passes */
     inline int eval(vluint64_t& main_time) {
+        auto start = std::chrono::steady_clock::now();
         top->eval();
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::nanoseconds elapsed_seconds = std::chrono::nanoseconds(end-start);
+        total_nano_seconds += elapsed_seconds;
+
         char waveform_name[128];
         if(m_trace != NULL) {
             #ifdef SLICE_WAVEFORM 

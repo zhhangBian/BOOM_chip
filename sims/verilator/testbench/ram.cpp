@@ -184,15 +184,38 @@ int CpuRam::process(vluint64_t main_time) {
 #ifdef RAND_TEST
         
  
-    if (top->ram_wen && (top->ram_waddr == 0x1c002010)) {
-        if (process_rand(main_time,(int)top->ram_wdata)) {
+    if (top->ram_wen && (top->ram_waddr == TLB_READ_ADDR + 0x10)) {
+        #ifdef AXI128
+        if (process_rand_tlb(main_time,*(top->ram_wdata))) {
                 return 1;
             }
+        #else
+        if (process_rand_tlb(main_time,(int)top->ram_wdata)) {
+                return 1;
+            }
+        #endif
     }
+
+    if (top->ram_wen && (top->ram_waddr == ILLEGAL_PC_ADDR)) {
+        #ifdef AXI128
+        if (process_rand_ipc(main_time,*(top->ram_wdata))) {
+                return 1;
+            }
+        #else
+        if (process_rand_ipc(main_time,(int)top->ram_wdata)) {
+                return 1;
+            }
+        #endif
+    }
+
     if(read_valid){
         if (!special_read()) {
             process_read(main_time,read_addr,top->ram_rdata);
+        }else if (rand64->ipc->error)
+        {
+            return 1;
         }
+        
         read_valid = 0;
     }
 #else
@@ -381,18 +404,12 @@ int CpuRam::special_read() {
         unsigned long long tlb_hi;
         unsigned long long tlb_lo0;
         unsigned long long tlb_lo1;
-        #ifdef LA32
-        offset = (read_addr & 0x1ff) >> 3;
-        #else
+        // #ifdef LA32
+        // offset = (read_addr & 0x1ff) >> 3;
+        // #else
         offset = (read_addr & 0x1ff) >> 4;
-        #endif
+        // #endif
         base   = read_addr & ~0x1ff;
-        tlb_index = rand64->tlb->refill_index + (rand64->tlb->tlb_size << 24);
-        //printf("tlb size = %llx\n",rand64->tlb->tlb_size);
-        //printf("tlb size = %llx\n",rand64->tlb->tlb_size<<24);
-        tlb_hi    = rand64->tlb->refill_vpn & ~0x1fff;
-        tlb_lo0   = (rand64->tlb->pfn0<<8) + (rand64->tlb->cca0<<4) + (rand64->tlb->we0<<1)  + rand64->tlb->v0;
-        tlb_lo1   = (rand64->tlb->pfn1<<8) + (rand64->tlb->cca1<<4) + (rand64->tlb->we1<<1)  + rand64->tlb->v1;
         if (base == (REG_INIT_ADDR&~0x1ff)) {
             #ifdef LA32
             process_read32_same(rand64->gr_ref[offset],top->ram_rdata);
@@ -407,8 +424,21 @@ int CpuRam::special_read() {
             //printf("base = %016llx offset = %016llx\n",base,offset);
             return 1;
         }
-        int tlb_addr_matched = 0;
+
         if (base == (TLB_READ_ADDR&~0x1ff)){
+            int tlb_addr_matched = 0;
+            // tlb_index = rand64->tlb->refill_index + (rand64->tlb->tlb_size << 24);
+            //printf("tlb size = %llx\n",rand64->tlb->tlb_size);
+            //printf("tlb size = %llx\n",rand64->tlb->tlb_size<<24);
+            tlb_hi    = rand64->tlb->refill_vpn << (rand64->tlb->size + 1);
+            tlb_lo0   = rand64->tlb->lo0;
+            tlb_lo1   = rand64->tlb->lo1;
+            tlb_index = (rand64->tlb->refill_vpn & ((1 << TLB_SETBIT) - 1)) | (rand64->tlb->size << 24);
+            if(tlb_hi != RESERVE_PAGE_ADDR){
+                tlb_index |= (rand64->tlb->refill_index % ((1 << TLB_WAYBIT) - 1) + 1) << TLB_SETBIT;
+            }else{
+                tlb_lo0 = tlb_lo0 & ~0x30LL | 2;//set mat = 0 && d = 1
+            }
             switch(offset)  {
                 case(0):
                     //process_read64_same(tlb_index,top->ram_rdata);
@@ -441,8 +471,22 @@ int CpuRam::special_read() {
                     printf("SHOULD NOT USE THIS ADDR AS NORMAL READ!!!\n");
             }
             //printf("base = %016llx offset = %016llx\n",base,offset);
+            return tlb_addr_matched;
         }
-        return tlb_addr_matched;
+
+        if (read_addr == ILLEGAL_PC_ADDR){
+            if(!rand64 -> ipc -> valid){
+                // rand64 -> ipc -> error = true;
+                printf("warning: invalid illegal pc read by core!\n");
+                return 1;
+            }
+            rand64 -> ipc -> valid = false;
+            printf("Illegal pc read by core!\n");
+            process_read32_same(rand64 -> ipc -> next_pc ,top->ram_rdata);
+            return 1;
+        }
+
+        return 0;
 #else
     return 0;
 #endif
