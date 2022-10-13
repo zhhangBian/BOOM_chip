@@ -4,6 +4,8 @@
 #include <verilated_save.h>
 #include "difftest.h"
 
+extern Difftest** difftest;
+
 class DiffManage {
 public:
     int init_difftest();

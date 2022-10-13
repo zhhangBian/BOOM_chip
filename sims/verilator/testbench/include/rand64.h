@@ -8,11 +8,15 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #define RAND_TLB_TABLE_ENTRY 16384
-#define EBASE_ADDR    0x1c001000
-#define TLB_READ_ADDR 0x1c002000
-#define REG_INIT_ADDR 0x1c003000
+#define TLB_READ_ADDR 0x00000600
+#define REG_INIT_ADDR 0x00000000
+#define ILLEGAL_PC_ADDR 0x00000800
+#define RESERVE_PAGE_ADDR 0x08000000
+#define TLB_WAYBIT 2
+#define TLB_SETBIT 2
 #define EX_TLBR    0x3f
 #define EX_SYSCALL 0x0b
 #define MASK(page_size) 	(0xffffffffffffffff<<page_size)
@@ -155,162 +159,75 @@ public:
 class Tlb {
 public:
     int tlb_entry_num;
-    std::vector<long long> vpn_table;
-    std::vector<long long> pfn_table;
-    std::vector<int      > cca      ;
-    std::vector<int      > page_size;
-    unsigned long long tlb_size;
-    unsigned long long tlb_mask;
     unsigned long long refill_vpn;
     unsigned long long refill_index;
-    unsigned long long pfn0;
-    unsigned long long pfn1;
-    unsigned int       cca0;
-    unsigned int       cca1;
-    unsigned int       we0;
-    unsigned int       we1;
-    unsigned int       v0;
-    unsigned int       v1;
+
+    std::unordered_map<long long, std::pair<long long, long long> > tlb_4k, tlb_4m;
+    int size;
+    long long lo0, lo1;
+
     Tlb(int tlb_entrys){
         tlb_entry_num = tlb_entrys;
-        refill_index = 7;
-        cca0 = 1;//todo gailv peizhi
-        cca1 = 1;
-        vpn_table.reserve(tlb_entrys);
-        pfn_table.reserve(tlb_entrys);
-        cca.reserve(tlb_entrys);
-        page_size.reserve(tlb_entrys);
+        refill_index = 0;
 
     }
     int find_entry(long long bad_vaddr){
-        int i,j;
-        int page_found;
-        unsigned long long pfn0;
-        unsigned long long pfn1;
-        unsigned int  cca0;
-        unsigned int  cca1;
-        unsigned long long       we0;
-        unsigned long long       we1;
-        int page0_odd;
-        int page_big = 0;
-        page_found = 0;
-        long long mask_temp = 0xfffffffff;
-        for (i=0;i<tlb_entry_num;i++) {
-            //if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[i] & (tlb_mask>>12))>>(tlb_size - 11)) {
-            if (page_size[i]==12) {
-                if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) == (vpn_table[i] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) {
-                    pfn0 = pfn_table[i]&0xfffffffffLL;
-                    we0  = vpn_table[i]>>36;
-                    cca0 = cca[i];
-                    refill_vpn = bad_vaddr;
-                    page_found += 1;
-                    tlb_size = page_size[i];
-                    break;
-                }
-            } else {
-                if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 12)) == (vpn_table[i] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 12)) {
-                    pfn0 = pfn_table[i]&0xfffffffffLL;
-                    we0  = vpn_table[i]>>36;
-                    cca0 = cca[i];
-                    refill_vpn = bad_vaddr;
-                    page_found += 1;
-                    tlb_size = page_size[i] - 1;
-                    page_big = 1;
-                    printf("Find a big page. Seperate to two pages\n");
-                    break;
-                    }
-                }
-        }
-        if (!page_big) {
-            for (j=i+1;j<tlb_entry_num;j++) {
-                if (page_size[j] == page_size[i]) {
-                    //if ((((bad_vaddr>>12) & (tlb_mask>>12))>>(tlb_size - 11)) == (vpn_table[j] & (tlb_mask>>12))>>(tlb_size - 11)) {
-                    if ((((bad_vaddr>>12) & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) == (vpn_table[j] & mask_temp & (MASK(page_size[i]-12)))>>(page_size[i] - 11)) {
-                        pfn1 = pfn_table[j]&0xfffffffffLL;
-                        we1  = vpn_table[j]>>36;
-                        cca1 = cca[j];
-                        page_found += 1;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (page_found == 0) {
-            printf("TLB ENTRY NOT FOUND\n");
-            return 1;
-        }
-
-        if (page_big) {
-            this->pfn0 = pfn0;
-            this->we0         = we0;
-            this->cca0        = cca0;
-            this->v0          = 1;
-
-            this->pfn1 = pfn0 + (1<<(page_size[i]-13));
-            this->we1         = we0;
-            this->cca1        = cca0;
-            this->v1          = 1;
+        refill_vpn = bad_vaddr;
+        unsigned long long vpn4k = (bad_vaddr >> 13) & 0x7ffff;
+        auto res4k = tlb_4k.find(vpn4k);
+        if(res4k != tlb_4k.end()){
+            printf("tlb 4k find:VPPN=%05x, lo0=%08x, lo1=%08x\n", res4k->first, res4k->second.first, res4k->second.second);
+            lo0 = res4k->second.first;
+            lo1 = res4k->second.second;
+            refill_vpn = vpn4k;
+            size = 12;
             refill_index += 1;
-            refill_index &= 0x7;
             return 0;
         }
-
-        //4KB page found. Need to check one or two entry.
-        page0_odd = (vpn_table[i] >> (page_size[i] - 12))& 1;
-        if (page_found == 1) {
-            if (page0_odd) {
-                this->pfn0 = 0;
-                this->we0         = 0;
-                this->cca0        = 0;
-                this->v0          = 0;
-
-                this->pfn1 = pfn0;
-                this->we1         = we0;
-                this->cca1        = cca0;
-                this->v1          = 1;
-            }
-            else {
-                this->pfn1 = 0;
-                this->we1         = 0;
-                this->cca1        = 0;
-                this->v1          = 0;
-
-                this->pfn0 = pfn0;
-                this->we0         = we0;
-                this->cca0        = cca0;
-                this->v0          = 1;
-            }
-        } else {
-            if (page0_odd) {
-                this->pfn0        = pfn1;
-                this->we0         = we1;
-                this->cca0        = cca1;
-                this->v0          = 1;
-
-                this->pfn1 = pfn0;
-                this->we1         = we0;
-                this->cca1        = cca0;
-                this->v1          = 1;
-            }
-            else {
-                this->pfn1 = pfn1;
-                this->we1         = we1;
-                this->cca1        = cca1;
-                this->v1          = 1;
-
-                this->pfn0 = pfn0;
-                this->we0         = we0;
-                this->cca0        = cca0;
-                this->v0          = 1;
-            }
+        unsigned long long vpn4m = (bad_vaddr >> 22) & 0x3ff;
+        auto res4m = tlb_4m.find(vpn4m);
+        if(res4m != tlb_4m.end()){
+            printf("tlb 4m find:VPPN=%05x, lo0=%08x, lo1=%08x\n", res4m->first, res4m->second.first, res4m->second.second);
+            lo0 = res4m->second.first;
+            lo1 = res4m->second.second;
+            refill_vpn = vpn4m;
+            size = 21;
+            refill_index += 1;
+            return 0;
         }
-    refill_index += 1;
-    refill_index &= 0x7;
-    return 0;
+        printf("TLB not found!\n");
+        return 1;
     }
 
  
+};
+
+class IllegalPC{
+public:
+    std::vector<long long> pc;
+    std::vector<long long> next;
+    size_t index;
+    long long next_pc;
+    bool valid, error;
+    IllegalPC(int count){
+        pc.reserve(count);
+        next.reserve(count);
+        error = valid = false;
+        index = 0;
+    }
+    int find_next(long long epc){
+        //since this is short, O(n) search should be acceptable
+        valid = true;
+        if(index < pc.size() && (pc[index] & 0xffffffffLL) == (epc & 0xffffffffLL)){
+                next_pc = next[index];
+                index++;
+                printf("got next pc: %llx\n",next_pc);
+                return 0;
+        }
+        printf("illegal pc not found, use PC + 4\n");
+        next_pc = epc + 4;
+        return 0;
+    }
 };
 
 class Rand64 {
@@ -323,18 +240,23 @@ public:
     BinaryType* pfn;
     BinaryType* cca;
     BinaryType* page_size;
+    BinaryType* tlb_attr;
     HexType*    pcs;
     HexType*    result_addrs;
     HexType*    value1;
     HexType*    instructions;
     HexType*    init_regs;
+    HexType*    illegal_pc;
+    HexType*    illegal_pc_next;
     StrType*    comments;
 	HexNormalType*	parameters;
     Tlb*        tlb;
+    IllegalPC*  ipc;
     int         cpu_ex;
     int         tlb_ex;
     int         last_split;
     int         tlb_entry_num;
+    int         illegal_pc_num;
    
     Rand64(const char* path);
     ~Rand64();
@@ -342,6 +264,7 @@ public:
     int init_all();
     int init_gr_ref();
     int tlb_init();
+    int illegal_pc_init();
 
     int read_next_compare();
 
@@ -355,6 +278,8 @@ public:
     void update_once(vluint64_t main_time);
 
     int tlb_refill_once(long long bad_vaddr);
+
+    int find_illegal_next_pc(long long epc);
 };
 
 #endif  // CHIPLAB_RAND64_H

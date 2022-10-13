@@ -35,62 +35,87 @@ static uint32_t estat_flag;
 static uint32_t estat_mask;
 static uint32_t estat_new;
 
+#ifdef DEAD_CLOCK_EN
+static bool dead_clock_enable = false;
 static int dead_clock = 0;
+#endif
 extern long long inst_total;
 
 int Difftest::step(vluint64_t &main_time) {
-    progress = false;
+    // progress = false;
     idx_commit = 0;
     int index = 0;
 
-    if (!dut.excp.excp_valid) {
-        while (idx_commit < DIFFTEST_COMMIT_WIDTH && dut.commit[idx_commit].valid) {
-            inst_total += 1;
-#ifndef TRACE_COMP
-            dut.commit[idx_commit].valid = 0;
+    if (sim_over) {
+        printf("==============================================================\n");
+        printf("test end!!\n");
+#ifdef SIMU_TRACE
+        fprintf(trace_out, "==============================================================\n");
+        fprintf(trace_out, "test end!!\n");
 #endif
-            if (dut.commit[idx_commit].wen) {
-                dead_clock = 0;
+        return STATE_END;
+    }
+
+    while (idx_commit < DIFFTEST_COMMIT_WIDTH && dut.commit[idx_commit].valid) {
+        inst_total += 1;
+#ifndef TRACE_COMP
+        dut.commit[idx_commit].valid = 0;
+#endif
 #ifdef OUTPUT_PC_INFO
 #ifdef PRINT_CLK_TIME
-                printf("[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        printf("[%010dns] mycpu : pc = %08x, inst = %08x, reg = %02d, val = %08x\n",
+            main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].inst, dut.commit[idx_commit].wen ? dut.commit[idx_commit].wdest : 0, dut.commit[idx_commit].wdata);
 #else
-                printf("mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        printf("mycpu : pc = %08x, inst = %08x, reg = %02d, val = %08x\n",
+            dut.commit[idx_commit].pc, dut.commit[idx_commit].inst, dut.commit[idx_commit].wen ? dut.commit[idx_commit].wdest : 0, dut.commit[idx_commit].wdata);
 #endif
 #endif
 
 #ifdef SIMU_TRACE
 #ifdef PRINT_CLK_TIME
-                fprintf(trace_out, "[%010dns] mycpu : pc = %08x,  reg = %02d, val = %08x\n", main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        fprintf(trace_out, "[%010dns] mycpu : pc = %08x, inst = %08x, reg = %02d, val = %08x\n",
+            main_time, dut.commit[idx_commit].pc, dut.commit[idx_commit].inst, dut.commit[idx_commit].wen ? dut.commit[idx_commit].wdest : 0, dut.commit[idx_commit].wdata);
 #else
-                fprintf(trace_out, "mycpu : pc = %08x,  reg = %02d, val = %08x\n", dut.commit[idx_commit].pc, dut.commit[idx_commit].wdest, dut.commit[idx_commit].wdata);
+        fprintf(trace_out, "mycpu : pc = %08x, inst = %08x, reg = %02d, val = %08x\n",
+            dut.commit[idx_commit].pc, dut.commit[idx_commit].inst, dut.commit[idx_commit].wen ? dut.commit[idx_commit].wdest : 0, dut.commit[idx_commit].wdata);
 #endif
-                fflush(NULL);
 #endif
-            }
-            idx_commit++;
-        }
-        if (idx_commit) idx_commit--;
+        // fflush(NULL);
+        idx_commit++;
     }
 
+    if(idx_commit == 0 && !dut.excp.excp_valid){
 #ifdef DEAD_CLOCK_EN
-    dead_clock++;
-    if (dead_clock > DEAD_CLOCK_SIZE) {
-        printf("CPU status no change for %d clocks, simulation must exist error!!!!\n", DEAD_CLOCK_SIZE);
-        return STATE_TIME_LIMIT;
+        dead_clock++;
+        if(!dead_clock_enable && dead_clock == DEAD_CLOCK_SIZE){
+            // printf("CPU status no change for %d cycles, but dead clock disabled\n", DEAD_CLOCK_SIZE);
+            // fprintf(trace_out,"CPU status no change for %d cycles, but dead clock disabled\n", DEAD_CLOCK_SIZE);
+        }
+        if (dead_clock_enable && dead_clock > DEAD_CLOCK_SIZE) {
+            printf("CPU status no change for %d cycles, simulation must exist error!!!!\n", DEAD_CLOCK_SIZE);
+            // fprintf(trace_out,"CPU status no change for %d cycles, simulation must exist error!!!!\n", DEAD_CLOCK_SIZE);
+            return STATE_TIME_LIMIT;
+        }
+#endif
+        return STATE_RUNNING;
     }
+#ifdef DEAD_CLOCK_EN
+    //TODO: let nemu report it's idle or not?
+    if(!dead_clock_enable && (dut.excp.excp_valid || dut.commit[idx_commit - 1].inst != 0x06488000u)){
+        // printf("CPU wakes after %d cycles, dead clock enabled\n", dead_clock);
+        // fprintf(trace_out,"CPU wakes after %d cycles, dead clock enabled\n", dead_clock);
+    }
+    if(dead_clock_enable && !dut.excp.excp_valid && dut.commit[idx_commit - 1].inst == 0x06488000u){
+        // printf("idle commited, dead clock disabled\n");
+        // fprintf(trace_out,"idle commited, dead clock disabled\n");
+    }
+    dead_clock_enable = dut.excp.excp_valid || dut.commit[idx_commit - 1].inst != 0x06488000u;
+    dead_clock = 0;
 #endif
 
 #ifndef TRACE_COMP
-    if (dut.commit[idx_commit].pc == END_PC || dut.excp.exceptionPC == END_PC) {
+    if (idx_commit > 0 && dut.commit[idx_commit - 1].pc == END_PC || dut.excp.exceptionPC == END_PC) {
         sim_over = true;
-    }
-    if (sim_over) {
-        printf("==============================================================\n");
-        printf("test end!!\n");
-        fprintf(trace_out, "==============================================================\n");
-        fprintf(trace_out, "test end!!\n");
-        return STATE_END;
     }
     return STATE_RUNNING;
 #else
@@ -108,106 +133,127 @@ int Difftest::step(vluint64_t &main_time) {
     }
     estat_last = dut.csr.estat;
 
-    dut.csr.this_pc = dut.commit[idx_commit].pc;
-
+    if(idx_commit > 0) dut.csr.this_pc = dut.commit[idx_commit - 1].pc;
     /* exec the first instruction */
     do_first_instr_commit();
 
     /* sync estat to nemu */
-    for (index = 0; index <= idx_commit; index++) {
-        if (dut.commit[index].valid && dut.commit[index].csr_rstat) {
-            proxy->estat_sync(dut.commit[index].csr_data, 0xffffffff);
+    for (index = 0; index < idx_commit; index++) {
+        if (dut.commit[index].csr_rstat) {
+            proxy->estat_sync(dut.commit[index].csr_data, 0x00001fff);
         }
     }
 
-    /* handle exception */
-    if (dut.excp.excp_valid) {
-        if (dut.excp.exception != 0) {     // not hard interrupt, nemu can detect itself
-//            printf("receive exception 0x%x at pc 0x%x\n", dut.excp.exception, dut.excp.exceptionPC);
-            proxy->exec(1);
-        } else {    // hard interrupt, dut copy intr code to nemu
-//            printf("excp pc : 0x%x\n", dut.excp.exceptionPC);
-//            printf("cpu pc : 0x%x\n", dut.csr.this_pc);
-//            printf("interrupt : 0x%x\n", dut.excp.interrupt);
-            if (dut.excp.interrupt != 0) {
-                proxy->raise_intr(dut.excp.interrupt);
-            }
-        }
-    } else {    // nemu exec instruction
-        for (index = 0; index <= idx_commit; index++) {
-            if (index < DIFFTEST_COMMIT_WIDTH && dut.commit[index].valid) {
-                do_instr_commit(index);
-                dut.commit[index].valid = 0;
-            }
-        }
+    for (index = 0; index < idx_commit; index++) {
+        do_instr_commit(index);
+        dut.commit[index].valid = 0;
     }
-
-#ifdef RAND_TEST
-    if (!diff_flag) {
-        if (dut.excp.eret) {
-            diff_flag = true;
-        }
-        proxy->regcpy(dut_regs_ptr, DIFFTEST_TO_REF, DIFF_TO_REF_ALL);
-        return STATE_RUNNING;
-    }
-#endif
 
     /* check simulation end */
-    if (dut.commit[idx_commit].pc == END_PC || dut.excp.exceptionPC == END_PC) {
+    if (idx_commit > 0 && dut.commit[idx_commit - 1].pc == END_PC || dut.excp.excp_valid && dut.excp.exceptionPC == END_PC) {
         sim_over = true;
-    }
-    if (sim_over) {
-        printf("==============================================================\n");
-        printf("test end!!\n");
-        fprintf(trace_out, "==============================================================\n");
-        fprintf(trace_out, "test end!!\n");
-        return STATE_END;
+        return STATE_RUNNING;
     }
 
-    /* Set 0 when not compare */
-    if (!progress) {
-        return STATE_RUNNING;
+    if (dut.excp.excp_valid && dut.excp.exception == 0){
+        if (dut.excp.interrupt != 0) {
+            proxy->raise_intr(dut.excp.interrupt);
+            return STATE_RUNNING;
+        }else if(dut.csr.estat & 3){
+            return STATE_RUNNING;
+        }else{
+            printf("warning: INT exception with no interrupt detected\n");
+            // fprintf(trace_out,"warning: INT exception with no interrupt detected\n");
+        }
     }
 
     /* store difftest. valid = {4'b0, sc(llbit=1), stw, sth, stb} */
-    for (index = 0; index <= idx_commit; index++) {
+    for (index = 0; index < idx_commit; index++) {
         if (dut.store[index].valid) {
             if (proxy->store_commit(dut.store[index].paddr, dut.store[index].data)) {
                 printf("dut different at pc = 0x%08x, paddr = 0x%lx, vaddr = 0x%lx, data = 0x%lx\n", dut.commit[index].pc, dut.store[index].paddr, dut.store[index].vaddr, dut.store[index].data);
-                fflush(NULL);
-                display();
+#ifdef SIMU_TRACE
+                fprintf(trace_out,"dut different at pc = 0x%08x, paddr = 0x%lx, vaddr = 0x%lx, data = 0x%lx\n", dut.commit[index].pc, dut.store[index].paddr, dut.store[index].vaddr, dut.store[index].data);
+#endif
+                // fflush(NULL);
+                // display();
                 return STATE_ABORT;
             }
         }
     }
 
     /* load address of peripherals */
-    for (index = 0; index <= idx_commit; index++) {
+    for (index = 0; index < idx_commit; index++) {
+#ifdef RAND_TEST
+        if (dut.load[index].valid && (dut.load[index].paddr & 0x00000000f8000000 || !(dut.load[index].paddr & ~0xfff))) {
+            proxy->regcpy(dut_regs_ptr, DIFFTEST_TO_REF, DIFF_TO_REF_GR);
+        }
+#else
         if (dut.load[index].valid && (dut.load[index].paddr & 0x00000000f8000000)) {
             proxy->regcpy(dut_regs_ptr, DIFFTEST_TO_REF, DIFF_TO_REF_GR);
         }
+#endif
+    }
+
+    if (dut.excp.excp_valid) {
+        if (dut.excp.exception != 0) {     // not hard interrupt, nemu can detect itself
+            // printf("receive exception 0x%x at pc 0x%x\n", dut.excp.exception, dut.excp.exceptionPC);
+            // fprintf(trace_out,"receive exception 0x%x at pc 0x%x\n", dut.excp.exception, dut.excp.exceptionPC);
+            proxy->exec(1);
+        } else {    // hard interrupt, dut copy intr code to nemu
+//               printf("excp pc : 0x%x\n", dut.excp.exceptionPC);
+//               printf("cpu pc : 0x%x\n", dut.csr.this_pc);
+//               printf("interrupt : 0x%x\n", dut.excp.interrupt);
+            if (dut.excp.interrupt != 0) {
+                proxy->raise_intr(dut.excp.interrupt);
+            }
+        }
+        // return STATE_RUNNING;
     }
 
     /* copy nemu result to ref_regs_ptr */
     proxy->regcpy(ref_regs_ptr, REF_TO_DUT, REF_TO_DIFF_ALL);
-    if (idx_commit > 0) {
-        state->record_group(dut.commit[0].pc, idx_commit);
+    if (idx_commit > 1) {//wmj TODO: what's this?
+        state->record_group(dut.commit[0].pc, idx_commit - 1);
     }
 
     ref.csr.tval = dut.csr.tval;
+    if(dut.excp.excp_valid){
+        dut.csr.this_pc = ref.csr.this_pc;
+    }
+    bool ecode_error = false;
+    if((dut.csr.estat | 0x00001fff) != (ref.csr.estat | 0x00001fff)){
+        printf("warning: ecode error, dut = %x, ref = %x\n", dut.csr.estat, ref.csr.estat);
+        #ifdef SIMU_TRACE
+        fprintf(trace_out,"warning: ecode error, dut = %x, ref = %x\n", dut.csr.estat, ref.csr.estat);
+        #endif
+        // display();
+        // return STATE_ABORT; 
+        ecode_error = true;
+    }
     for(int i = 0; i < DIFFTEST_NR_CSRREG; i++) {
         if (!compare_mask[i])
             dut_regs_ptr[DIFFTEST_NR_GREG + i] = ref_regs_ptr[DIFFTEST_NR_GREG + i] = 0;
     }
 
     /* compare */
-    if (memcmp(dut_regs_ptr, ref_regs_ptr, DIFFTEST_NR_REG * sizeof(uint32_t))) {   // trace error print
-        display();
+    if (ecode_error || memcmp(dut_regs_ptr, ref_regs_ptr, DIFFTEST_NR_REG * sizeof(uint32_t))) {   // trace error print
+        // display();
         for (int i = 0; i < DIFFTEST_NR_REG; i ++) {
             if (dut_regs_ptr[i] != ref_regs_ptr[i]) {
-                printf("i = %d\n", i);
-                printf("%7s different at pc = 0x%010x, right= 0x%016x, wrong = 0x%016x\n",
-                       reg_name[i], ref.csr.this_pc, ref_regs_ptr[i], dut_regs_ptr[i]);
+                // printf("i = %d\n", i);
+                // fprintf(trace_out,"i = %d\n", i);
+                if(i < 32){
+                    printf("%2s(r%2d) different at pc = 0x%08x, right= 0x%08x, wrong = 0x%08x\n", reg_name[i], i, ref.csr.this_pc, ref_regs_ptr[i], dut_regs_ptr[i]);
+                    #ifdef SIMU_TRACE
+                    fprintf(trace_out,"%2s(r%2d) different at pc = 0x%08x, right= 0x%08x, wrong = 0x%08x\n", reg_name[i], i, ref.csr.this_pc, ref_regs_ptr[i], dut_regs_ptr[i]);
+                    #endif
+                }else{
+                    printf("%7s different at pc = 0x%08x, right= 0x%08x, wrong = 0x%08x\n", reg_name[i], ref.csr.this_pc, ref_regs_ptr[i], dut_regs_ptr[i]);
+                    #ifdef SIMU_TRACE    
+                    fprintf(trace_out,"%7s different at pc = 0x%08x, right= 0x%08x, wrong = 0x%08x\n", reg_name[i], ref.csr.this_pc, ref_regs_ptr[i], dut_regs_ptr[i]);
+                    #endif
+                }
             }
         }
         return STATE_ABORT;
@@ -229,7 +275,7 @@ void Difftest::do_first_instr_commit() {
 }
 
 void Difftest::do_instr_commit(int i) {
-    progress = true;
+    // progress = true;
 
     /* store the writeback info to debug array */
     state->record_inst(dut.commit[i].pc, dut.commit[i].inst, dut.commit[i].wen, dut.commit[i].wdest, dut.commit[i].wdata, dut.commit[i].skip != 0);
@@ -265,6 +311,7 @@ void Difftest::do_instr_commit(int i) {
 }
 
 void Difftest::display() {
+    fflush(NULL);
     printf("\n==============  DUT Regs  ==============\n");
     for (int i = 0; i < 32; i ++) {
         printf("%s(r%2d): 0x%08x ", reg_name[i], i, dut_regs_ptr[i]);
@@ -278,11 +325,26 @@ void Difftest::display() {
     printf("INDEX: 0x%08x, TLBEHI: 0x%08x, TLBELO0: 0x%08x, TLBELO1: 0x%08x\n", dut.csr.tlbidx, dut.csr.tlbehi, dut.csr.tlbelo0, dut.csr.tlbelo1);
     printf("ASID: 0x%08x, TLBRENTRY: 0x%08x, DMW0: 0x%08x, DMW1: 0x%08x\n", dut.csr.asid, dut.csr.tlbrentry, dut.csr.dmw0, dut.csr.dmw1);
     printf("*******************************************************************************\n");
-    fflush(stdout);
-
+#ifdef SIMU_TRACE
+    fprintf(trace_out,"\n==============  DUT Regs  ==============\n");
+        for (int i = 0; i < 32; i ++) {
+        fprintf(trace_out,"%s(r%2d): 0x%08x ", reg_name[i], i, dut_regs_ptr[i]);
+        if (i % 4 == 3) fprintf(trace_out,"\n");
+    }
+    fprintf(trace_out,"pc: 0x%08x\n", dut.csr.this_pc);
+    fprintf(trace_out,"CRMD: 0x%08x,    PRMD: 0x%08x,   EUEN: 0x%08x\n", dut.csr.crmd, dut.csr.prmd, dut.csr.euen);
+    fprintf(trace_out,"ECFG: 0x%08x,   ESTAT: 0x%08x,    ERA: 0x%08x\n", dut.csr.ecfg, dut.csr.estat, dut.csr.era);
+    fprintf(trace_out,"BADV: 0x%08x,  EENTRY: 0x%08x, LLBCTL: 0x%08x\n", dut.csr.badv, dut.csr.eentry, dut.csr.llbctl);
+    fprintf(trace_out,"cpu.ll_bit: %d\n", dut.csr.llbctl & 0x1);
+    fprintf(trace_out,"INDEX: 0x%08x, TLBEHI: 0x%08x, TLBELO0: 0x%08x, TLBELO1: 0x%08x\n", dut.csr.tlbidx, dut.csr.tlbehi, dut.csr.tlbelo0, dut.csr.tlbelo1);
+    fprintf(trace_out,"ASID: 0x%08x, TLBRENTRY: 0x%08x, DMW0: 0x%08x, DMW1: 0x%08x\n", dut.csr.asid, dut.csr.tlbrentry, dut.csr.dmw0, dut.csr.dmw1);
+    fprintf(trace_out,"*******************************************************************************\n");
+#endif
     printf("\n==============  REF Regs  ==============\n");
+    fflush(NULL);
+
     proxy->isa_reg_display();
-    fflush(stdout);
+    fflush(NULL);
 }
 
 Difftest::Difftest(int coreid): coreid(coreid) {

@@ -103,7 +103,7 @@ public:
 	int breakpoint_restore(vluint64_t main_time,  const char* brk_file_name, struct UART_STA *uart_status);
 
     #ifdef RAND_TEST
-    int process_rand(vluint64_t main_time, int bad_vaddr) {
+    int process_rand_tlb(vluint64_t main_time, int bad_vaddr) {
         printf("=========================================================\n");
         printf("rand64 c++ version tlb refill start\n");
         printf("Looking for this address: %llx\n",bad_vaddr);
@@ -111,11 +111,19 @@ public:
             printf("Error when tlb refill\n");
             return 1;
         }
-        int local_num = rand64->tlb->v0 + rand64->tlb->v1;
-        printf("Found %d entry\n",local_num);
         printf("=========================================================\n");
         // skip check if under cpu_ex or the last commit is splitted
         // Note. multiple issue core might commit several value with a new ex occured in one clock.
+        return 0;
+    }
+    int process_rand_ipc(vluint64_t main_time, int epc){
+        printf("=========================================================\n");
+        printf("Searching illegal next pc for: %llx\n",epc);
+        if (rand64->find_illegal_next_pc(epc)) {
+            printf("Error when find illegal next pc\n");
+            return 1;
+        }
+        printf("=========================================================\n");
         return 0;
     }
     #endif

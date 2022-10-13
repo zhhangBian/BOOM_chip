@@ -1,5 +1,6 @@
 #include <sys/time.h>
 #include "testbench.h"
+#include <chrono>
 
 CpuTestbench::CpuTestbench(int argc, char **argv, char **env, vluint64_t *main_time) : CpuTool(nullptr) {
     m_trace = NULL;
@@ -93,10 +94,11 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
     static const int reset_valid = 0;
 
     /* calculate the time of simulation */
-    struct timeval start;
-    struct timeval end;
+    // struct timeval start;
+    // struct timeval end;
+    auto start = std::chrono::steady_clock::now();
     double timer;
-    gettimeofday(&start, NULL);
+    // gettimeofday(&start, NULL);
 
 
 #define EVAL ((clock=!clock),main_time+=1,this->eval(main_time))
@@ -226,7 +228,7 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
             emask |= time_limit->process(main_time);
             emask |= emu->process();
     #ifdef TRACE_COMP
-            emask |= emu->dm->check_end();
+            if(emu->dm->check_end()) emask |= status_test_end;
     #endif
             if(EVAL)break;
             if(emask)break;
@@ -234,14 +236,22 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
         }
     }
     printf("total clock is %lld\n", clock_total);
-    gettimeofday(&end, NULL);
-    timer = (double)(1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec) / 1000000;
+    auto end = std::chrono::steady_clock::now();
+    // gettimeofday(&end, NULL);
+    // timer = (double)(1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec) / 1000000;
+    #ifdef TRACE_COMP
+    if(emask != status_test_end) for (int i = 0; i < NUM_CORES; i++) {
+        difftest[i]->display();
+    }
+    #endif
 
     printf("\n==============================================================\n");
     printf("total clock \t\tis %lld\n", clock_total);
     printf("total instruction \tis %lld\n", inst_total);
     printf("instruction per cycle\tis %lf\n", (double) inst_total / clock_total);
-    printf("simulation time \tis %lf s\n", timer);
+    // printf("simulation time \tis %lf s\n", timer);
+    printf("simulation time \tis %lf s\n", std::chrono::nanoseconds(end-start).count() / 1000000000.0);
+    printf("verilator eval time \tis %lf s\n", total_nano_seconds.count() / 1000000000.0);
     printf("==============================================================\n");
 
     EVAL;
