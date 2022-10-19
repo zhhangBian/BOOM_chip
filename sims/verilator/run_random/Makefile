@@ -99,6 +99,7 @@ VERILATOR_SRC += ${NAND_SRC}/*.v
 
 CFLAGS += -std=c++11
 CFLAGS += -DSLICE_SIZE=${SLICE_SIZE}
+CFLAGS += -DDEAD_CLOCK_SIZE=${DEAD_CLOCK_SIZE}
 
 ifeq ('${RANDTEST}', 'y')
 CFLAGS += -DRAND_TEST 
@@ -153,6 +154,10 @@ ifeq ('${MEM_TRACE}', 'y')
 CFLAGS += -DMEM_TRACE 
 endif 
 
+ifeq ('${DEAD_CLOCK_EN}', 'y')
+CFLAGS += -DDEAD_CLOCK_EN
+endif
+
 VERILATOR_INCLUDE += -y ${SIMU_TOP} 
 ALL_VERILATOR_SRC += ${SIMU_TOP}/*.v
 
@@ -191,6 +196,7 @@ check_result:
 	@echo "Check random result"
 	grep -Hs PASS  log/*/run.log > log/pass.log || true
 	grep -Hs wrong log/*/run.log > log/fail.log || true
+	grep -L PASS log/*/run.log > log/nopass.log || true
 	mkdir -p log/$(RUN_TIME)/ && mv log/*.log log/$(RUN_TIME)
 clean:
 	rm -f output & rm -rf obj_dir &	\
