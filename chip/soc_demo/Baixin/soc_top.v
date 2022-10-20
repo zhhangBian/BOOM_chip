@@ -104,6 +104,8 @@ wire       nand_int=0;
 
 wire        aclk;
 wire        aresetn;
+wire        cpu_clk;
+wire 	    uncore_clk;
 
 wire [`LID         -1 :0] m0_awid;
 wire [`Lawaddr     -1 :0] m0_awaddr;
@@ -141,6 +143,43 @@ wire [`Lrresp      -1 :0] m0_rresp;
 wire                      m0_rlast;
 wire                      m0_rvalid;
 wire                      m0_rready;
+
+wire [`LID         -1 :0] m0_async_awid;
+wire [`Lawaddr     -1 :0] m0_async_awaddr;
+wire [`Lawlen      -1 :0] m0_async_awlen;
+wire [`Lawsize     -1 :0] m0_async_awsize;
+wire [`Lawburst    -1 :0] m0_async_awburst;
+wire [`Lawlock     -1 :0] m0_async_awlock;
+wire [`Lawcache    -1 :0] m0_async_awcache;
+wire [`Lawprot     -1 :0] m0_async_awprot;
+wire                      m0_async_awvalid;
+wire                      m0_async_awready;
+wire [`LID         -1 :0] m0_async_wid;
+wire [`Lwdata      -1 :0] m0_async_wdata;
+wire [`Lwstrb      -1 :0] m0_async_wstrb;
+wire                      m0_async_wlast;
+wire                      m0_async_wvalid;
+wire                      m0_async_wready;
+wire [`LID         -1 :0] m0_async_bid;
+wire [`Lbresp      -1 :0] m0_async_bresp;
+wire                      m0_async_bvalid;
+wire                      m0_async_bready;
+wire [`LID         -1 :0] m0_async_arid;
+wire [`Laraddr     -1 :0] m0_async_araddr;
+wire [`Larlen      -1 :0] m0_async_arlen;
+wire [`Larsize     -1 :0] m0_async_arsize;
+wire [`Larburst    -1 :0] m0_async_arburst;
+wire [`Larlock     -1 :0] m0_async_arlock;
+wire [`Larcache    -1 :0] m0_async_arcache;
+wire [`Larprot     -1 :0] m0_async_arprot;
+wire                      m0_async_arvalid;
+wire                      m0_async_arready;
+wire [`LID         -1 :0] m0_async_rid;
+wire [`Lrdata      -1 :0] m0_async_rdata;
+wire [`Lrresp      -1 :0] m0_async_rresp;
+wire                      m0_async_rlast;
+wire                      m0_async_rvalid;
+wire                      m0_async_rready;
 
 wire [`LID         -1 :0] spi_s_awid;
 wire [`Lawaddr     -1 :0] spi_s_awaddr;
@@ -523,13 +562,25 @@ wire [5:0] int_n_i;
 assign int_out = {1'b0,dma_int,nand_int,spi_inta_o,uart0_int,mac_int};
 assign int_n_i = ~int_out;
 
+reg cpu_aresetn_1;
+reg cpu_aresetn_2;
+
+wire cpu_aresetn;
+
+always @(posedge cpu_clk) begin
+    cpu_aresetn_1 <= aresetn;
+    cpu_aresetn_2 <= cpu_aresetn_1;
+end
+
+assign cpu_aresetn = cpu_aresetn_2;
+
 // cpu
 core_top cpu_mid(
-  .aclk             (aclk),
+  .aclk             (cpu_clk),
   .intrpt           ({3'b0, int_out[4:0]}),  //232 only 5bit
   //.nmi              (1'b1),
 
-  .aresetn      (aresetn      ),
+  .aresetn      (cpu_aresetn      ),
   .arid         (m0_arid[3:0] ),
   .araddr       (m0_araddr    ),
   .arlen        (m0_arlen     ),
@@ -573,48 +624,136 @@ core_top cpu_mid(
   .debug0_wb_rf_wdata   ()
 );
 
+// cpu_axi asyn
+
+axi_clock_converter_0 AXI_CLK_CONVERTER (
+    .s_axi_awid       (m0_awid[3:0]       ),	
+    .s_axi_awaddr     (m0_awaddr          ),
+    .s_axi_awlen      (m0_awlen           ),
+    .s_axi_awsize     (m0_awsize          ),
+    .s_axi_awburst    (m0_awburst         ),
+    .s_axi_awlock     (m0_awlock          ),
+    .s_axi_awcache    (m0_awcache         ),
+    .s_axi_awprot     (m0_awprot          ),
+    .s_axi_awqos      (4'b0               ),
+    .s_axi_awvalid    (m0_awvalid         ),
+    .s_axi_awready    (m0_awready         ),
+    .s_axi_wid        (m0_wid[3:0]        ),
+    .s_axi_wdata      (m0_wdata           ),
+    .s_axi_wstrb      (m0_wstrb           ),
+    .s_axi_wlast      (m0_wlast           ),
+    .s_axi_wvalid     (m0_wvalid          ),
+    .s_axi_wready     (m0_wready          ),
+    .s_axi_bid        (m0_bid[3:0]        ),
+    .s_axi_bresp      (m0_bresp           ),
+    .s_axi_bvalid     (m0_bvalid          ),
+    .s_axi_bready     (m0_bready          ),
+    .s_axi_arid       (m0_arid[3:0]       ),
+    .s_axi_araddr     (m0_araddr          ),
+    .s_axi_arlen      (m0_arlen           ),
+    .s_axi_arsize     (m0_arsize          ),
+    .s_axi_arburst    (m0_arburst         ),
+    .s_axi_arlock     (m0_arlock          ),
+    .s_axi_arcache    (m0_arcache         ),
+    .s_axi_arprot     (m0_arprot          ),
+    .s_axi_arqos      (4'b0               ),
+    .s_axi_arvalid    (m0_arvalid         ),
+    .s_axi_arready    (m0_arready         ),
+    .s_axi_rid        (m0_rid[3:0]        ),
+    .s_axi_rdata      (m0_rdata           ),
+    .s_axi_rresp      (m0_rresp           ),
+    .s_axi_rlast      (m0_rlast           ),
+    .s_axi_rvalid     (m0_rvalid          ),
+    .s_axi_rready     (m0_rready          ),
+
+    .s_axi_aclk	      (cpu_clk            ),
+    .s_axi_aresetn    (cpu_aresetn        ),
+    
+    .m_axi_awid       (m0_async_awid[3:0] ),
+    .m_axi_awaddr     (m0_async_awaddr    ),
+    .m_axi_awlen      (m0_async_awlen     ),
+    .m_axi_awsize     (m0_async_awsize    ),
+    .m_axi_awburst    (m0_async_awburst   ),
+    .m_axi_awlock     (m0_async_awlock    ),
+    .m_axi_awcache    (m0_async_awcache   ),
+    .m_axi_awprot     (m0_async_awprot    ),
+    .m_axi_awqos      (                   ),
+    .m_axi_awvalid    (m0_async_awvalid   ),
+    .m_axi_awready    (m0_async_awready   ),
+    .m_axi_wid        (m0_async_wid[3:0]  ),
+    .m_axi_wdata      (m0_async_wdata     ),
+    .m_axi_wstrb      (m0_async_wstrb     ),
+    .m_axi_wlast      (m0_async_wlast     ),
+    .m_axi_wvalid     (m0_async_wvalid    ),
+    .m_axi_wready     (m0_async_wready    ),
+    .m_axi_bid        (m0_async_bid[3:0]  ),
+    .m_axi_bresp      (m0_async_bresp     ),
+    .m_axi_bvalid     (m0_async_bvalid    ),
+    .m_axi_bready     (m0_async_bready    ),
+    .m_axi_arid       (m0_async_arid[3:0] ),
+    .m_axi_araddr     (m0_async_araddr    ),
+    .m_axi_arlen      (m0_async_arlen     ),
+    .m_axi_arsize     (m0_async_arsize    ),
+    .m_axi_arburst    (m0_async_arburst   ),
+    .m_axi_arlock     (m0_async_arlock    ),
+    .m_axi_arcache    (m0_async_arcache   ),
+    .m_axi_arprot     (m0_async_arprot    ),
+    .m_axi_arqos      (                   ),
+    .m_axi_arvalid    (m0_async_arvalid   ),
+    .m_axi_arready    (m0_async_arready   ),
+    .m_axi_rid        (m0_async_rid[3:0]  ),
+    .m_axi_rdata      (m0_async_rdata     ),
+    .m_axi_rresp      (m0_async_rresp     ),
+    .m_axi_rlast      (m0_async_rlast     ),
+    .m_axi_rvalid     (m0_async_rvalid    ),
+    .m_axi_rready     (m0_async_rready    ),
+
+    .m_axi_aclk	      (aclk               ),
+    .m_axi_aresetn    (aresetn            )
+);
+
 // AXI_MUX 
 axi_slave_mux AXI_SLAVE_MUX
 (
 .axi_s_aresetn     (aresetn        ),
 .spi_boot          (1'b1           ),  
 
-.axi_s_awid        (m0_awid        ),
-.axi_s_awaddr      (m0_awaddr      ),
-.axi_s_awlen       (m0_awlen       ),
-.axi_s_awsize      (m0_awsize      ),
-.axi_s_awburst     (m0_awburst     ),
-.axi_s_awlock      (m0_awlock      ),
-.axi_s_awcache     (m0_awcache     ),
-.axi_s_awprot      (m0_awprot      ),
-.axi_s_awvalid     (m0_awvalid     ),
-.axi_s_awready     (m0_awready     ),
-.axi_s_wready      (m0_wready      ),
-.axi_s_wid         (m0_wid         ),
-.axi_s_wdata       (m0_wdata       ),
-.axi_s_wstrb       (m0_wstrb       ),
-.axi_s_wlast       (m0_wlast       ),
-.axi_s_wvalid      (m0_wvalid      ),
-.axi_s_bid         (m0_bid         ),
-.axi_s_bresp       (m0_bresp       ),
-.axi_s_bvalid      (m0_bvalid      ),
-.axi_s_bready      (m0_bready      ),
-.axi_s_arid        (m0_arid        ),
-.axi_s_araddr      (m0_araddr      ),
-.axi_s_arlen       (m0_arlen       ),
-.axi_s_arsize      (m0_arsize      ),
-.axi_s_arburst     (m0_arburst     ),
-.axi_s_arlock      (m0_arlock      ),
-.axi_s_arcache     (m0_arcache     ),
-.axi_s_arprot      (m0_arprot      ),
-.axi_s_arvalid     (m0_arvalid     ),
-.axi_s_arready     (m0_arready     ),
-.axi_s_rready      (m0_rready      ),
-.axi_s_rid         (m0_rid         ),
-.axi_s_rdata       (m0_rdata       ),
-.axi_s_rresp       (m0_rresp       ),
-.axi_s_rlast       (m0_rlast       ),
-.axi_s_rvalid      (m0_rvalid      ),
+.axi_s_awid        (m0_async_awid        ),
+.axi_s_awaddr      (m0_async_awaddr      ),
+.axi_s_awlen       (m0_async_awlen       ),
+.axi_s_awsize      (m0_async_awsize      ),
+.axi_s_awburst     (m0_async_awburst     ),
+.axi_s_awlock      (m0_async_awlock      ),
+.axi_s_awcache     (m0_async_awcache     ),
+.axi_s_awprot      (m0_async_awprot      ),
+.axi_s_awvalid     (m0_async_awvalid     ),
+.axi_s_awready     (m0_async_awready     ),
+.axi_s_wready      (m0_async_wready      ),
+.axi_s_wid         (m0_async_wid         ),
+.axi_s_wdata       (m0_async_wdata       ),
+.axi_s_wstrb       (m0_async_wstrb       ),
+.axi_s_wlast       (m0_async_wlast       ),
+.axi_s_wvalid      (m0_async_wvalid      ),
+.axi_s_bid         (m0_async_bid         ),
+.axi_s_bresp       (m0_async_bresp       ),
+.axi_s_bvalid      (m0_async_bvalid      ),
+.axi_s_bready      (m0_async_bready      ),
+.axi_s_arid        (m0_async_arid        ),
+.axi_s_araddr      (m0_async_araddr      ),
+.axi_s_arlen       (m0_async_arlen       ),
+.axi_s_arsize      (m0_async_arsize      ),
+.axi_s_arburst     (m0_async_arburst     ),
+.axi_s_arlock      (m0_async_arlock      ),
+.axi_s_arcache     (m0_async_arcache     ),
+.axi_s_arprot      (m0_async_arprot      ),
+.axi_s_arvalid     (m0_async_arvalid     ),
+.axi_s_arready     (m0_async_arready     ),
+.axi_s_rready      (m0_async_rready      ),
+.axi_s_rid         (m0_async_rid         ),
+.axi_s_rdata       (m0_async_rdata       ),
+.axi_s_rresp       (m0_async_rresp       ),
+.axi_s_rlast       (m0_async_rlast       ),
+.axi_s_rvalid      (m0_async_rvalid      ),
 
 .s0_awid           (s0_awid         ),
 .s0_awaddr         (s0_awaddr       ),
@@ -1042,11 +1181,11 @@ wire   c1_rst0;
 wire        ddr_aresetn;
 reg         interconnect_aresetn;
 
-wire cpu_clk;
 clk_pll_33  clk_pll_33
  (
   // Clock out ports
-  .clk_out1(cpu_clk),  //33MHz
+  .clk_out1(cpu_clk),  //50MHz
+  .clk_out2(uncore_clk), //33MHz
  // Clock in ports
   .clk_in1(clk)        //100MHz
  );
@@ -1057,9 +1196,9 @@ clk_wiz_0  clk_pll_1
     .clk_in1(clk)             //100MHz
 );
 
-assign c1_sys_clk_i      = c1_clk_ref_i;
+assign c1_sys_clk_i      = clk;
 assign c1_sys_rst_i      = resetn;
-assign aclk              = cpu_clk;
+assign aclk              = uncore_clk;
 //assign aclk              = c1_clk0;
 // Reset to the AXI shim
 reg c1_calib_done_0;
