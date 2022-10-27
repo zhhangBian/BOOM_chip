@@ -856,7 +856,8 @@ end
 assign wr_addr_hit[1] = 1'b0;
 assign wr_addr_hit[2] = axi_s_awaddr[31:16]==16'h1fe0;
                         //axi_s_awaddr[31:16]==16'h1fe7 ; //APB: uart and nand
-assign wr_addr_hit[3] = axi_s_awaddr[28:16]==16'h1faf;  //CONF
+assign wr_addr_hit[3] = axi_s_awaddr[28:16]==16'h1faf || 
+			axi_s_awaddr[28:16]==16'h1fd0 ;  //CONF
 //assign wr_addr_hit[4] = axi_s_awaddr[31:16]==16'h1ff0;  //MAC
 assign wr_addr_hit[4] = 1'b0;
 assign wr_addr_hit[0] = ~|wr_addr_hit[4:1];             //DDR3
@@ -949,7 +950,8 @@ end
 assign rd_addr_hit[1] = 1'b0;
 assign rd_addr_hit[2] = (axi_s_araddr[31:16]) ==16'h1fe0;
                         //(axi_s_araddr[31:16]) ==16'h1fe0;  //APB:uart and nand
-assign rd_addr_hit[3] = (axi_s_araddr[28:16]) ==16'h1faf;  //CONF
+assign rd_addr_hit[3] = (axi_s_araddr[28:16]) == 16'h1faf ||
+			(axi_s_araddr[28:16]) == 16'h1fd0 ;  //CONF
 //assign rd_addr_hit[4] = (axi_s_araddr[31:16]) == 16'h1ff0; //MAC
 assign rd_addr_hit[4] = 1'b0;
 assign rd_addr_hit[0] = ~|rd_addr_hit[4:1];                //DDR3

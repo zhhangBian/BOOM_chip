@@ -90,7 +90,9 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define BTN_KEY_ADDR   16'hf070   //32'hbfaf_f070
 `define BTN_STEP_ADDR  16'hf080   //32'hbfaf_f080
 `define SW_INTER_ADDR  16'hf090   //32'hbfaf_f090 
-`define TIMER_ADDR     16'he000   //32'hbfaf_e000 
+`define TIMER_ADDR     16'he000   //32'hbfaf_e000
+
+`define FREQ_ADDR      16'hf030   //32'hbfd0_f030
 
 `define IO_SIMU_ADDR      16'hff00  //32'hbfaf_ff00
 `define VIRTUAL_UART_ADDR 16'hff10  //32'hbfaf_ff10
@@ -165,31 +167,41 @@ module confreg
         end
         else if (conf_ren)
         begin
-            case (conf_raddr[15:0])
-                `CR0_ADDR      : conf_rdata_reg <= cr0          ;
-                `CR1_ADDR      : conf_rdata_reg <= cr1          ;
-                `CR2_ADDR      : conf_rdata_reg <= cr2          ;
-                `CR3_ADDR      : conf_rdata_reg <= cr3          ;
-                `CR4_ADDR      : conf_rdata_reg <= cr4          ;
-                `CR5_ADDR      : conf_rdata_reg <= cr5          ;
-                `CR6_ADDR      : conf_rdata_reg <= cr6          ;
-                `CR7_ADDR      : conf_rdata_reg <= cr7          ;
-                `LED_ADDR      : conf_rdata_reg <= led_data     ;
-                `LED_RG0_ADDR  : conf_rdata_reg <= led_rg0_data ;
-                `LED_RG1_ADDR  : conf_rdata_reg <= led_rg1_data ;
-                `NUM_ADDR      : conf_rdata_reg <= num_data     ;
-                `SWITCH_ADDR   : conf_rdata_reg <= switch_data  ;
-                `BTN_KEY_ADDR  : conf_rdata_reg <= btn_key_data ;
-                `BTN_STEP_ADDR : conf_rdata_reg <= btn_step_data;
-                `SW_INTER_ADDR : conf_rdata_reg <= sw_inter_data;
-                `TIMER_ADDR    : conf_rdata_reg <= timer_r2     ;
-                `SIMU_FLAG_ADDR: conf_rdata_reg <= simu_flag    ;
-                `IO_SIMU_ADDR  : conf_rdata_reg <= io_simu      ;
-                `VIRTUAL_UART_ADDR : conf_rdata_reg <= {24'd0,virtual_uart_data} ;
-                `OPEN_TRACE_ADDR : conf_rdata_reg <= {31'd0,open_trace} ;
-                `NUM_MONITOR_ADDR: conf_rdata_reg <= {31'd0,num_monitor} ;
-                default        : conf_rdata_reg <= 32'd0;
-            endcase
+	    if (conf_raddr[28:16] == 16'h1fd0)
+	    begin
+		case (conf_raddr[15:0])
+		    `FREQ_ADDR	: conf_rdata_reg <= `FREQ ;
+		    default 	: conf_rdata_reg <= 32'd0 ;
+		endcase
+	    end
+	    else
+	    begin
+            	case (conf_raddr[15:0])
+            	    `CR0_ADDR      : conf_rdata_reg <= cr0          ;
+            	    `CR1_ADDR      : conf_rdata_reg <= cr1          ;
+            	    `CR2_ADDR      : conf_rdata_reg <= cr2          ;
+            	    `CR3_ADDR      : conf_rdata_reg <= cr3          ;
+            	    `CR4_ADDR      : conf_rdata_reg <= cr4          ;
+            	    `CR5_ADDR      : conf_rdata_reg <= cr5          ;
+            	    `CR6_ADDR      : conf_rdata_reg <= cr6          ;
+            	    `CR7_ADDR      : conf_rdata_reg <= cr7          ;
+            	    `LED_ADDR      : conf_rdata_reg <= led_data     ;
+            	    `LED_RG0_ADDR  : conf_rdata_reg <= led_rg0_data ;
+            	    `LED_RG1_ADDR  : conf_rdata_reg <= led_rg1_data ;
+            	    `NUM_ADDR      : conf_rdata_reg <= num_data     ;
+            	    `SWITCH_ADDR   : conf_rdata_reg <= switch_data  ;
+            	    `BTN_KEY_ADDR  : conf_rdata_reg <= btn_key_data ;
+            	    `BTN_STEP_ADDR : conf_rdata_reg <= btn_step_data;
+            	    `SW_INTER_ADDR : conf_rdata_reg <= sw_inter_data;
+            	    `TIMER_ADDR    : conf_rdata_reg <= timer_r2     ;
+            	    `SIMU_FLAG_ADDR: conf_rdata_reg <= simu_flag    ;
+            	    `IO_SIMU_ADDR  : conf_rdata_reg <= io_simu      ;
+            	    `VIRTUAL_UART_ADDR : conf_rdata_reg <= {24'd0,virtual_uart_data} ;
+            	    `OPEN_TRACE_ADDR : conf_rdata_reg <= {31'd0,open_trace} ;
+            	    `NUM_MONITOR_ADDR: conf_rdata_reg <= {31'd0,num_monitor} ;
+            	    default        : conf_rdata_reg <= 32'd0;
+            	endcase
+	    end
         end
     end
 
