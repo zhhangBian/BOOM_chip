@@ -57,6 +57,23 @@ LEAF(n72_dmw_test)
     csrwr t2, csr_tlbelo1 
     tlbwr  
 
+    la.local t0, 1b
+    li.w     t1, 0x1000
+    add.w    t0, t0, t1
+    li.w     t1, 0xffffe000
+    and    t4, t0, t1 
+    srli.w t4, t4, 0x4
+    li.w     t1, 0x4d
+    or     t1, t4, t1
+    li.w     t2, 0x14d
+    or     t2, t4, t2
+    li.w     t3, 0x0c000001
+    csrwr t3, csr_tlbidx 
+    csrwr t0, csr_tlbehi 
+    csrwr t1, csr_tlbelo0 
+    csrwr t2, csr_tlbelo1 
+    tlbwr  
+
     li.w     t0, (DATABASE+0xd0000)
     li.w     t1, 0xffffe000 
     and    t4, t0, t1 
@@ -88,7 +105,7 @@ LEAF(n72_dmw_test)
     tlbwr  
 
     // config the TLB entry for ld
-    FILL_TLB_ITEM(0x0c000001, 0xe0000000, 0x900004d, 0x00000000)
+    FILL_TLB_ITEM(0x0c000004, 0xe0000000, 0x900004d, 0x00000000)
     csrwr    zero, csr_tlbehi
 
     //let DA=0 and PG=1 and prl=0
