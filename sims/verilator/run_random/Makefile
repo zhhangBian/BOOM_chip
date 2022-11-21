@@ -126,6 +126,8 @@ CFLAGS += -DAXI128
 VFLAGS += -DAXI128
 endif
 
+VFLAGS += -DDIFFTEST_EN
+
 ifeq ('${DUMP_VCD}', 'y') 
 CFLAGS += -DDUMP_VCD 
 WAVEFILE = vcd 
