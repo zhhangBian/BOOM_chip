@@ -19,7 +19,7 @@
 #ifdef RUN_FUNC
 #define END_PC 0x1c000130
 #elif defined RUN_C
-#define END_PC 0x123
+#define END_PC 0x1c000548
 #elif defined RAND_TEST
 #define END_PC 0x9c005000
 #else

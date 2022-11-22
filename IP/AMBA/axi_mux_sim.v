@@ -860,7 +860,8 @@ assign wr_addr_hit[3] = axi_s_awaddr[28:16]==16'h1faf ||
 			axi_s_awaddr[28:16]==16'h1fd0 ;  //CONF
 //assign wr_addr_hit[4] = axi_s_awaddr[31:16]==16'h1ff0;  //MAC
 assign wr_addr_hit[4] = 1'b0;
-assign wr_addr_hit[0] = ~|wr_addr_hit[4:1];             //DDR3
+wire wr_addr_hit_temp = ~((axi_s_awaddr[31:16]==16'h1fe0) | (axi_s_awaddr[28:16]==16'h1faf || axi_s_awaddr[28:16]==16'h1fd0)); //~|wr_addr_hit[4:1]; 
+assign wr_addr_hit[0] = wr_addr_hit_temp;            //DDR3
 
 nb_sync_fifo_mux wr_fifo
 (
@@ -954,7 +955,8 @@ assign rd_addr_hit[3] = (axi_s_araddr[28:16]) == 16'h1faf ||
 			(axi_s_araddr[28:16]) == 16'h1fd0 ;  //CONF
 //assign rd_addr_hit[4] = (axi_s_araddr[31:16]) == 16'h1ff0; //MAC
 assign rd_addr_hit[4] = 1'b0;
-assign rd_addr_hit[0] = ~|rd_addr_hit[4:1];                //DDR3
+wire rd_addr_hit_temp = ~(((axi_s_araddr[28:16]) == 16'h1faf || (axi_s_araddr[28:16]) == 16'h1fd0) | ((axi_s_araddr[31:16]) ==16'h1fe0));//~|rd_addr_hit[4:1]; 
+assign rd_addr_hit[0] = rd_addr_hit_temp;                //DDR3
 
 integer rd_addr_dir_int;
 always @(rd_addr_hit)
