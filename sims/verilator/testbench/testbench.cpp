@@ -94,12 +94,8 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
     static const int reset_valid = 0;
 
     /* calculate the time of simulation */
-    // struct timeval start;
-    // struct timeval end;
     auto start = std::chrono::steady_clock::now();
     double timer;
-    // gettimeofday(&start, NULL);
-
 
 #define EVAL ((clock=!clock),main_time+=1,this->eval(main_time))
 
@@ -228,7 +224,10 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
             emask |= time_limit->process(main_time);
             emask |= emu->process();
     #ifdef TRACE_COMP
-            if(emu->dm->check_end()) emask |= status_test_end;
+            if(emu->dm->check_end()) {
+                emask |= status_test_end;
+                // printf("RECEIVE NEMU END HERE, emask = %x\n",emask);
+            }
     #endif
             if(EVAL)break;
             if(emask)break;
@@ -237,10 +236,8 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
     }
     printf("total clock is %lld\n", clock_total);
     auto end = std::chrono::steady_clock::now();
-    // gettimeofday(&end, NULL);
-    // timer = (double)(1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec) / 1000000;
     #ifdef TRACE_COMP
-    if(emask != status_test_end) for (int i = 0; i < NUM_CORES; i++) {
+    if(!(emask & status_test_end)) for (int i = 0; i < NUM_CORES; i++) {
         difftest[i]->display();
     }
     #endif
@@ -249,8 +246,9 @@ void CpuTestbench::simulate(vluint64_t& main_time) {
     printf("total clock \t\tis %lld\n", clock_total);
     printf("total instruction \tis %lld\n", inst_total);
     printf("instruction per cycle\tis %lf\n", (double) inst_total / clock_total);
-    // printf("simulation time \tis %lf s\n", timer);
     printf("simulation time \tis %lf s\n", std::chrono::nanoseconds(end-start).count() / 1000000000.0);
+    printf("difftest time \t\tis %lf s\n", diff_nano_seconds.count() / 1000000000.0);
+    printf("nemu_step time \t\tis %lf s\n", nemu_nano_seconds.count() / 1000000000.0);
     printf("verilator eval time \tis %lf s\n", total_nano_seconds.count() / 1000000000.0);
     printf("==============================================================\n");
 

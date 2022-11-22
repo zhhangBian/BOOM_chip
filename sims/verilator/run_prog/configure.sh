@@ -20,12 +20,12 @@ echo "  --disable-simu-trace  	disable print inst info to simu_trace.txt(default
 echo "  --enable-mem-trace            enable print mem info to mem_trace.txt(default: disable)
 	 "
 echo "  --disable-read-miss   	disable read miss check. when core read uninited mem address, 
-                        	\"read miss 0x*\" info will be output to terminal(default: enable)
+                        	\"read miss 0x*\" info will be output to terminal(default: disable)
      " 
 echo "  --disable-clk-time    	disable print [*ns] info in simu_trace.txt(default: enable)
 
      " 
-echo "  --output-pc-info      	output pc info to terminal(default, can only output one info)
+echo "  --output-pc-info      	output pc info to terminal(default: disable, can only output one info)
      "
 echo "  --output-uart-info		output uart info to terminal 
      "
@@ -69,9 +69,9 @@ THREAD=1
 TRACE_COMP=y
 RUN_FUNC=n
 RUN_C=n 
-OUTPUT_PC_INFO=y
+OUTPUT_PC_INFO=n
 OUTPUT_UART_INFO=n 
-READ_MISS_CHECK=y
+READ_MISS_CHECK=n
 RESET_VAL=0 
 RESET_SEED=1997
 PRINT_CLK_TIME=y 

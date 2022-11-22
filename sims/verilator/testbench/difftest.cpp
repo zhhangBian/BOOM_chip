@@ -1,6 +1,8 @@
 #include <sys/mman.h>
 #include "difftest.h"
 
+std::chrono::nanoseconds nemu_nano_seconds = std::chrono::nanoseconds(0);
+
 extern FILE* trace_out;
 extern FILE* uart_out;
 
@@ -87,10 +89,6 @@ int Difftest::step(vluint64_t &main_time) {
     if(idx_commit == 0 && !dut.excp.excp_valid){
 #ifdef DEAD_CLOCK_EN
         dead_clock++;
-        if(!dead_clock_enable && dead_clock == DEAD_CLOCK_SIZE){
-            // printf("CPU status no change for %d cycles, but dead clock disabled\n", DEAD_CLOCK_SIZE);
-            // fprintf(trace_out,"CPU status no change for %d cycles, but dead clock disabled\n", DEAD_CLOCK_SIZE);
-        }
         if (dead_clock_enable && dead_clock > DEAD_CLOCK_SIZE) {
             printf("CPU status no change for %d cycles, simulation must exist error!!!!\n", DEAD_CLOCK_SIZE);
             // fprintf(trace_out,"CPU status no change for %d cycles, simulation must exist error!!!!\n", DEAD_CLOCK_SIZE);
@@ -101,14 +99,6 @@ int Difftest::step(vluint64_t &main_time) {
     }
 #ifdef DEAD_CLOCK_EN
     //TODO: let nemu report it's idle or not?
-    if(!dead_clock_enable && (dut.excp.excp_valid || dut.commit[idx_commit - 1].inst != 0x06488000u)){
-        // printf("CPU wakes after %d cycles, dead clock enabled\n", dead_clock);
-        // fprintf(trace_out,"CPU wakes after %d cycles, dead clock enabled\n", dead_clock);
-    }
-    if(dead_clock_enable && !dut.excp.excp_valid && dut.commit[idx_commit - 1].inst == 0x06488000u){
-        // printf("idle commited, dead clock disabled\n");
-        // fprintf(trace_out,"idle commited, dead clock disabled\n");
-    }
     dead_clock_enable = dut.excp.excp_valid || dut.commit[idx_commit - 1].inst != 0x06488000u;
     dead_clock = 0;
 #endif
@@ -213,9 +203,6 @@ int Difftest::step(vluint64_t &main_time) {
 
     /* copy nemu result to ref_regs_ptr */
     proxy->regcpy(ref_regs_ptr, REF_TO_DUT, REF_TO_DIFF_ALL);
-    if (idx_commit > 1) {//wmj TODO: what's this?
-        state->record_group(dut.commit[0].pc, idx_commit - 1);
-    }
 
     ref.csr.tval = dut.csr.tval;
     if(dut.excp.excp_valid){
@@ -277,9 +264,6 @@ void Difftest::do_first_instr_commit() {
 void Difftest::do_instr_commit(int i) {
     // progress = true;
 
-    /* store the writeback info to debug array */
-    state->record_inst(dut.commit[i].pc, dut.commit[i].inst, dut.commit[i].wen, dut.commit[i].wdest, dut.commit[i].wdata, dut.commit[i].skip != 0);
-
     /* tlbfill */
     if (dut.commit[i].is_TLBFILL) {
         // printf("get a tlbfill inst from dut, give nemu an index: %d\n",dut.commit[i].TLBFILL_index);
@@ -302,11 +286,13 @@ void Difftest::do_instr_commit(int i) {
     }
 
     /* single step exec */
+    auto start = std::chrono::steady_clock::now();
     proxy->exec(1);
+    auto end = std::chrono::steady_clock::now();
+    nemu_nano_seconds += std::chrono::nanoseconds(end-start);
 
-    /* TODO: handle load instruction carefully for SMP */
     if (NUM_CORES > 1) {
-
+    /* TODO: handle load instruction carefully for SMP */
     }
 }
 
@@ -349,12 +335,9 @@ void Difftest::display() {
 
 Difftest::Difftest(int coreid): coreid(coreid) {
     proxy = new DIFF_PROXY(coreid);
-    state = new DiffState();
 }
 
 Difftest::~Difftest() {
     delete proxy;
     proxy = NULL;
-    delete state;
-    state = NULL;
 }

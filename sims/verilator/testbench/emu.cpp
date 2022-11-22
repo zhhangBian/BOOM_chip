@@ -14,6 +14,8 @@ static unsigned long trace_next_start = 0;
 static int prefix_end;
 static unsigned long tail_base = 0;
 
+std::chrono::nanoseconds diff_nano_seconds = std::chrono::nanoseconds(0);
+
 static vluint64_t hex2int64(const char *buf, const int width) {
     vluint64_t data = 0, h = 0;
     for (int i = 0; i < width; i += 1) {
@@ -260,7 +262,10 @@ int Emulator::process() {
         printf("trapeCode = %d\n", trapCode);
         return 0;
     }
+    auto start = std::chrono::steady_clock::now();
     trapCode = dm->do_step(*main_time);
+    auto end = std::chrono::steady_clock::now();
+    diff_nano_seconds += std::chrono::nanoseconds(end-start);
     switch (trapCode) {
         case STATE_RUNNING:
             return 0;
