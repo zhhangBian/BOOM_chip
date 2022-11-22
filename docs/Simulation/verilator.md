@@ -21,7 +21,7 @@ chip目录在未来会赋予SoC顶层代码自动生成的能力，体现敏捷�
 以下为一个简单的仿真例程，方便用户快速上手仿真过程。在进行仿真之前，用户需安装好verilator、gtkware以及nemu。
 ```
 cd $CHIPLAB_HOME/sims/verilator/run_prog #进入验证程序仿真目录中
-./configure.sh --run func/func_lab16     #以仿真运行的程序func_lab16为例子生成对应的Makefile
+./configure.sh --run func/func_lab19     #以仿真运行的程序func_lab19为例子生成对应的Makefile
 make                                     #开始编译。若没有编译出错，会自动进行仿真。
 ```
 当需要输出波形时，需要修改Makefile_run中以下参数
@@ -31,7 +31,7 @@ DUMP_WAVEFORM=1
 重新运行以下命令
 ```
 make run
-cd $CHIPLAB_HOME/sims/verilator/run_prog/log/func/func_lab16_log
+cd $CHIPLAB_HOME/sims/verilator/run_prog/log/func/func_lab19_log
 gtkwave simu_trace.fst                   #查看仿真波形
 ```
 上述简单仿真过程完成之后，用户可根据自己的需要，配置相应的仿真参数。对于仿真参数的说明，请参考以下章节。
@@ -49,12 +49,12 @@ gtkwave simu_trace.fst                   #查看仿真波形
 - `--disable-trace-comp` : 关闭使用NEMU进行的`trace`比对功能，默认开启 
 - `--disable-simu-trace` : 关闭`trace log`记录，适用于内核的长时间仿真，`simu_trace.txt`可能会占用较大的存储空间，默认开启
 - `--enable-mem-trace` : 打开访存信息记录，在`mem_trace.txt`保存取指、数据访问`load/store`的地址、数据信息。
-- `--disable-read-miss` : 关闭`read miss`警告，`C++`模拟的`ram`在核访问未初始化的内容时，会报该地址的`read miss`，默认开启
+- `--disable-read-miss` : 关闭`read miss`警告，`C++`模拟的`ram`在核访问未初始化的内容时，会报该地址的`read miss`，默认关闭
 - `--disable-clk-time` : 在`simu_trace.txt`中关闭仿真时间的打印，适用于将`simu_trace.txt`进行`diff`的场景，默认开启
-- `--output-pc-info` : 在当前终端输出每条指令提交的信息，默认开启
+- `--output-pc-info` : 在当前终端输出每条指令提交的信息，开启这一选项会拉低仿真速度，默认关闭
 - `--output-uart-info` : 在当前终端输出假串口以及真串口的输出，默认关闭
 - `--output-nothing` : 在当前终端不输出任何信息，默认关闭
-- `--threads` : 开启多个线程进行仿真，但当前testbench暂时无法很好的适配多线程的运行环境，不建议开启
+- `--threads` : 开启多个线程进行仿真。对于规模较小的设计，开启多线程仿真并不会有仿真速度提升（甚至导致速度下降），对应规模较大的设计，开启多线程仿真会有明显的仿真速度提升，请根据实际情况选择是否使用多线程仿真
 - `--reset-val` : `reset`信号置起时，`rtl`未初始化的寄存器，`verilator`不会呈现出`x`，而是会自行初始化。赋值`0`初始化为`0`；赋值`1`初始化为`1`；赋值`2`初始化为随机值。早期设计阶段，可以固定为某个值，而当设计比较稳定，可以设置为随机值，进行比较完备的验证
 - `--reset-random-seed` : 当`reset-val`设为`2`时，该选项选择对应的随机种子
 - `--dump-vcd` : 生成`vcd`格式的波形文件，该格式未进行任何的压缩，会占用较大的存储空间，且`gtkwave`打开较慢，默认关闭
@@ -104,7 +104,11 @@ make clean
 make clean_all
 ```
 清理`make`及`configure.sh`生成的内容。   
-目前`Makefile`比较简陋，对于`software`无法进行是否修改过的判断，仅通过是否构建出对应`obj/*`文件进行判断，如果仅希望重新编译`software`，可删除对应的`obj/*`文件夹，然后`make`。注意不是删除`obj`目录。    
+目前`Makefile`比较简陋，对于`software`无法进行是否修改过的判断，仅通过是否构建出对应`obj/*`文件进行判断，如果仅希望重新编译`software`，可以运行
+```
+make clean_soft
+```
+删除对应的`obj/*`文件夹，然后`make`。注意不是删除`obj`目录。    
 ### func验证
 实验过程中可以根据当前的进度，选择性的执行相应的流程。流程间存在依赖。一般来说对`myCPU`的`rtl`内容进行改动后，可以仅运行
 ```
