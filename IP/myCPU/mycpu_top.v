@@ -380,8 +380,11 @@ id_stage id_stage(
     .btb_operate_pc       (btb_operate_pc      ),
     .btb_operate_index    (btb_operate_index   ),
     //to rf: for write back
-    .ws_to_rf_bus         (ws_to_rf_bus        ),
+    .ws_to_rf_bus         (ws_to_rf_bus        )
+    `ifdef DIFFTEST_EN
+    ,
     .rf_to_diff           (regs                )
+    `endif
 );
 // EXE stage
 exe_stage exe_stage(
@@ -944,6 +947,7 @@ perf_counter perf_counter(
     .br_pre_error   (br_pre_error   )
 );
 
+`ifdef DIFFTEST_EN
 // difftest
 // from wb_stage
 wire            ws_valid_diff       ;
@@ -1187,5 +1191,5 @@ DifftestGRegState DifftestGRegState(
     .gpr_30             (regs[30]   ),
     .gpr_31             (regs[31]   )
 );
-
+`endif
 endmodule

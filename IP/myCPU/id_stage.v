@@ -59,9 +59,12 @@ module id_stage(
     output [31:0]                       btb_operate_pc    ,
     output [ 4:0]                       btb_operate_index ,
     //to rf: for write back
-    input  [`WS_TO_RF_BUS_WD -1:0]      ws_to_rf_bus      ,
+    input  [`WS_TO_RF_BUS_WD -1:0]      ws_to_rf_bus      
+    `ifdef DIFFTEST_EN
+    ,
     // difftest
     output [31:0]                       rf_to_diff [31:0]
+    `endif
 );
 
 reg         ds_valid   ;
@@ -730,8 +733,11 @@ regfile u_regfile(
     .rdata2 (rf_rdata2),
     .we     (rf_we    ),
     .waddr  (rf_waddr ),
-    .wdata  (rf_wdata ),
+    .wdata  (rf_wdata )
+    `ifdef DIFFTEST_EN
+    ,
     .rf_o   (rf_to_diff)
+    `endif
     );
 
 assign {es_dep_need_stall,

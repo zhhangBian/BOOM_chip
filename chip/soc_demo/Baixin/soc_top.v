@@ -1196,7 +1196,7 @@ clk_wiz_0  clk_pll_1
     .clk_in1(clk)             //100MHz
 );
 
-assign c1_sys_clk_i      = clk;
+assign c1_sys_clk_i      = c1_clk_ref_i;
 assign c1_sys_rst_i      = resetn;
 assign aclk              = uncore_clk;
 //assign aclk              = c1_clk0;

@@ -9,7 +9,8 @@ echo "  --run software        	set software list(use ',' select multiple softwar
                         	Available software: func/func_lab3 func/func_lab4 
                         	func/func_lab6 func/func_lab7 func/func_lab8 func/func_lab9 
                         	func/func_lab14 func/func_lab15 func/func_lab19 func/func_advance
-                                my_program dhrystone coremark linux rtthread
+                                fireye/A0 fireye/B2 fireye/C0 fireye/D1 fireye/I2
+                                my_program memset dhrystone coremark linux rtthread
 
      " 
 echo "  --disable-trace-comp  	disable trace compare in simulation(default: enable)
@@ -283,7 +284,49 @@ do
             mkdir -p ./obj/func
             mkdir -p ./log/func
             ;;
+        fireye/A0)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        fireye/B2)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        fireye/C0)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        fireye/D1)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        fireye/I2)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
         my_program)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        memset)
             RUN_FUNC=n 
             RUN_C=y
             DEAD_CLOCK_EN=n
