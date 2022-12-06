@@ -97,15 +97,13 @@ localparam write_data_ready = 3'b010;
 localparam write_all_ready = 3'b011;
 localparam write_data_transform = 3'b100;
 localparam write_data_wait = 3'b101;
-localparam write_respond_empty = 1'b0;
-localparam write_respond_ready = 1'b1;
+localparam write_wait_b = 3'b110;
 
 reg       read_requst_state;
 reg       read_respond_state;
 reg [2:0] write_requst_state;
-reg       write_respond_state;
 
-reg       write_wait_enable;
+wire      write_wait_enable;
 
 wire         rd_requst_state_is_empty;
 wire         rd_requst_can_receive;
@@ -245,6 +243,7 @@ always @(posedge clk) begin
         awvalid <= 1'b0;
         wvalid  <= 1'b0;
         wlast   <= 1'b0;
+        bready  <= 1'b0;
         
         write_buffer_num   <= 3'b0;
         write_buffer_data  <= 128'b0;
@@ -260,7 +259,6 @@ always @(posedge clk) begin
                 awvalid <= 1'b1;
                 wdata   <= data_wr_data[31:0];  //from write 128 bit buffer
                 wstrb   <= data_wr_wstrb;
-                wvalid  <= 1'b1;
 
                 write_buffer_data <= {32'b0, data_wr_data[127:32]};
 
@@ -274,57 +272,19 @@ always @(posedge clk) begin
             end
         end
         write_data_wait: begin
-            if (awready && wready) begin
-                if (wlast) begin
-                    write_requst_state <= write_request_empty;
-                    awvalid <= 1'b0;
-                    wvalid <= 1'b0;
-                    wlast <= 1'b0;
-                end
-                else begin
-                    write_requst_state <= write_data_transform;
-                    wdata   <= write_buffer_data[31:0]; 
-                    wvalid  <= 1'b1;
-                    awvalid <= 1'b0;
-
-                    write_buffer_data <= {32'b0, write_buffer_data[127:32]};
-                    write_buffer_num  <= write_buffer_num - 3'b1;
-                end
-
-            end
-            else if (awready) begin
+            if (awready) begin
                 write_requst_state <= write_data_transform;
                 awvalid <= 1'b0;
-            end
-            else if (wready) begin
-                write_requst_state <= write_data_ready;
-                wvalid <= 1'b0;
+		wvalid  <= 1'b1;
             end
         end 
-        write_data_ready: begin   //ready only one write data, stop wait for addr request.
-            if (awready) begin
-                if (wlast) begin
-                    write_requst_state <= write_request_empty;
-                    awvalid <= 1'b0;
-                    wlast <= 1'b0;
-                end
-                else begin
-                    write_requst_state <= write_data_transform;
-                    wdata   <= write_buffer_data[31:0];
-                    wvalid  <= 1'b1;
-                    awvalid <= 1'b0;
-
-                    write_buffer_data <= {32'b0, write_buffer_data[127:32]};
-                    write_buffer_num  <= write_buffer_num - 3'b1;
-                end
-            end
-        end
         write_data_transform: begin
             if (wready) begin
                 if (wlast) begin
-                    write_requst_state <= write_request_empty;
+                    write_requst_state <= write_wait_b;
                     wvalid <= 1'b0;
                     wlast <= 1'b0;
+        	    bready <= 1'b1;
                 end
                 else begin
                     if (write_buffer_last) begin
@@ -340,41 +300,18 @@ always @(posedge clk) begin
                 end
             end
         end
+	write_wait_b: begin
+		if (bvalid && bready) begin
+                    write_requst_state <= write_request_empty;
+		    bready <= 1'b0;
+		end
+	end
         default: begin
             write_requst_state <= write_request_empty;
         end
     endcase
 end
 
-always @(posedge clk) begin
-    if (reset) begin
-        write_respond_state <= write_respond_empty;
-        bready <= 1'b1;
-    end
-    else case (write_respond_state)
-        write_respond_empty: begin
-            if (bvalid && bready) begin
-                write_respond_state <= write_respond_ready;
-            end
-        end
-        write_respond_ready: begin
-            write_respond_state <= write_respond_empty;
-        end
-    endcase
-end
-
-always @(posedge clk) begin
-    if (reset) begin
-        write_wait_enable <= 1'b0;
-    end
-    else if (((write_requst_state == write_data_wait) && awready && wready && !wlast) || 
-             ((write_requst_state == write_data_wait) && wready) || 
-             ((write_requst_state == write_data_transform) && wready && !wlast)) begin
-         write_wait_enable <= 1'b1; 
-    end
-    else if ((write_respond_state == write_respond_empty) && bvalid && bready) begin
-        write_wait_enable <= 1'b0;
-    end
-end
+assign write_wait_enable = ~(write_requst_state == write_request_empty);
 
 endmodule
