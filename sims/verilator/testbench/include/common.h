@@ -16,4 +16,6 @@
 #include "Vsimu_top.h"
 typedef Vsimu_top Vtop;
 
+extern std::chrono::nanoseconds diff_nano_seconds;
+extern std::chrono::nanoseconds nemu_nano_seconds;
 #endif //CHIPLAB_COMMON_H

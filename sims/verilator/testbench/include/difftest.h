@@ -17,9 +17,9 @@
 #define DEBUG_GROUP_TRACE_SIZE 16
 
 #ifdef RUN_FUNC
-#define END_PC 0x1c000130
+#define END_PC 0x123 // 0x1c000130 is common end_pc for func
 #elif defined RUN_C
-#define END_PC 0x123
+#define END_PC 0x123 // 0x1c000548 is common end_pc for C
 #elif defined RAND_TEST
 #define END_PC 0x9c005000
 #else
