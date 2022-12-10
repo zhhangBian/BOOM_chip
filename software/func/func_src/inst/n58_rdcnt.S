@@ -11,21 +11,27 @@ LEAF(n58_rdcnt_test)
     move        t1, s7
     csrwr       t1, csr_tid
 
+#    li.w        a0, 0
+#    li.w        a1, 0
 ##inst test
 ###1 
     rdcntvl.w   t1
+#    or          a0, a0, t1
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t2
+#    or          a1, a1, t2
     rdcntid     t0 
     bne         t0, s7, inst_error 
     li.w          s7, 0xffff1111 
-    move        t1, s7
-    csrwr       t1, csr_tid
+    move        t0, s7
+    csrwr       t0, csr_tid
     rdcntvl.w   t3
+#    or          a0, a0, t3
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t4
+#    or          a1, a1, t4
     rdcntid     t0 
     bne         t0, s7, inst_error 
     sub.w       t1, t3, t1 
@@ -39,6 +45,7 @@ LEAF(n58_rdcnt_test)
     li.w          t7, (DATABASE+0xd0004) 
     st.w        s4, t7, 4
     rdcntvl.w   t1
+#    or          a0, a0, t1
     rdcntid     t0 
     st.w        s4, t7, 0 
     ld.w        t5, t7, 4 
@@ -47,18 +54,21 @@ LEAF(n58_rdcnt_test)
     st.w        t7, t7, 4 
     st.w        s4, t7, 4
     rdcntvh.w   t2
+#    or          a1, a1, t2
     rdcntid     t0 
     st.w        s4, t7, 0 
     ld.w        t5, t7, 4 
     bne         t5, s4, inst_error
     bne         t0, s7, inst_error 
     li.w          s7, 0xffff0000 
-    move        t1, s7
-    csrwr       t1, csr_tid
+    move        t0, s7
+    csrwr       t0, csr_tid
     rdcntvl.w   t3
+#    or          a0, a0, t3
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t4
+#    or          a1, a1, t4
     rdcntid     t0 
     bne         t0, s7, inst_error 
     sub.w       t1, t3, t1 
@@ -73,6 +83,7 @@ LEAF(n58_rdcnt_test)
     li.w          t8, 0xf
     div.w       t7, t1, t6 
     rdcntvl.w   t1
+#    or          a0, a0, t1
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
@@ -80,16 +91,19 @@ LEAF(n58_rdcnt_test)
     li.w          t8, 0xf
     div.w       t7, t1, t6 
     rdcntvh.w   t2
+#    or          a1, a1, t2
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
     li.w          s7, 0x0 
-    move        t1, s7
-    csrwr       t1, csr_tid
+    move        t0, s7
+    csrwr       t0, csr_tid
     rdcntvl.w   t3
+#    or          a0, a0, t3
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t4
+#    or          a1, a1, t4
     rdcntid     t0 
     bne         t0, s7, inst_error 
     sub.w       t1, t3, t1 
@@ -101,20 +115,24 @@ LEAF(n58_rdcnt_test)
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t1
+#    or          a0, a0, t1
     rdcntid     t0 
     div.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     rdcntvh.w   t2
+#    or          a1, a1, t2
     rdcntid     t0 
     div.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     li.w          s7, 0xffff11 
-    move        t1, s7
-    csrwr       t1, csr_tid
+    move        t0, s7
+    csrwr       t0, csr_tid
     rdcntvl.w   t3
+#    or          a0, a0, t3
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t4
+#    or          a1, a1, t4
     rdcntid     t0 
     bne         t0, s7, inst_error 
     sub.w       t1, t3, t1 
@@ -129,6 +147,7 @@ LEAF(n58_rdcnt_test)
     li.w          t8, 0xf
     mul.w       t7, t6, t7
     rdcntvl.w   t1
+#    or          a0, a0, t1
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
@@ -136,16 +155,19 @@ LEAF(n58_rdcnt_test)
     li.w          t8, 0xf
     mul.w       t7, t6, t7
     rdcntvh.w   t2
+#    or          a1, a1, t2
     rdcntid     t0 
     beq         t8, t7, inst_error 
     bne         t0, s7, inst_error 
     li.w          s7, 0xf11 
-    move        t1, s7
-    csrwr       t1, csr_tid
+    move        t0, s7
+    csrwr       t0, csr_tid
     rdcntvl.w   t3
+#    or          a0, a0, t3
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t4
+#    or          a1, a1, t4
     rdcntid     t0 
     bne         t0, s7, inst_error 
     sub.w       t1, t3, t1 
@@ -157,20 +179,24 @@ LEAF(n58_rdcnt_test)
     move        t1, s7
     csrwr       t1, csr_tid
     rdcntvl.w   t1
+#    or          a0, a0, t1
     rdcntid     t0 
     mul.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     rdcntvh.w   t2
+#    or          a1, a1, t2
     rdcntid     t0 
     mul.w       t7, t0, t6 
     bne         t0, s7, inst_error 
     li.w          s7, 0x11fff 
-    move        t1, s7
-    csrwr       t1, csr_tid
+    move        t0, s7
+    csrwr       t0, csr_tid
     rdcntvl.w   t3
+#    or          a0, a0, t3
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t4
+#    or          a1, a1, t4
     rdcntid     t0 
     bne         t0, s7, inst_error 
     sub.w       t1, t3, t1 
@@ -183,26 +209,39 @@ LEAF(n58_rdcnt_test)
     csrwr       t1, csr_tid
     csrwr       t7, csr_era 
     rdcntvl.w   t1
+#    or          a0, a0, t1
     rdcntid     t0 
     csrwr       t8, csr_era
     bne         t0, s7, inst_error 
     csrwr       t7, csr_era 
     rdcntvh.w   t2
+#    or          a1, a1, t2
     rdcntid     t0 
     csrwr       t8, csr_era
     bne         t0, s7, inst_error 
     li.w          s7, 0xabab
-    move        t1, s7
-    csrwr       t1, csr_tid
+    move        t0, s7
+    csrwr       t0, csr_tid
     rdcntvl.w   t3
+#    or          a0, a0, t3
     rdcntid     t0 
     bne         t0, s7, inst_error 
     rdcntvh.w   t4
+#    or          a1, a1, t4
     rdcntid     t0 
     bne         t0, s7, inst_error 
     sub.w       t1, t3, t1 
     sub.w       t2, t4, t2 
     bltu        t1, t2, inst_error 
+
+#1:
+#    rdcntvl.w   t1
+#    or          a0, a0, t1
+#    rdcntvh.w   t1
+#    or          a1, a1, t1
+#    li.w        t1, 0xffffffff
+#    bne         t1, a0, 1b
+#    bne         t1, a1, 1b
 
 ###detect exception
   bne s2, zero, inst_error
