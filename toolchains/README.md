@@ -14,7 +14,7 @@ export PATH=${CHIPLAB_HOME}/toolchains/loongarch32r-linux-gnusf-${TOOLCHAINS_DAT
 
 在当前目录`mkdir nemu`，然后下载`la32r-nemu-interpreter-so`到`nemu`目录。
 
-3. [newlib](http://114.242.206.180:24989/nextcloud/index.php/s/Cd5CqCFg8GrjzsQ)
+3. [newlib](gitee.com/chenzes/la32r-newlib/releases/tag/newlib)
 
 内容包括`libc.a libg.a libm.a libpmon.a pmon.ld start.o`，在当前目录下解压。
 
