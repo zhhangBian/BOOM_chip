@@ -140,7 +140,7 @@ gtkwave simu_trace.fst
 TRACE_COMP=n
 ```
 ### 准备测试用例
-下载相关随机res文件压缩包，[下载地址](http://114.242.206.180:24989/nextcloud/index.php/s/qRGrWZK6c2KtAJ9)。	
+下载相关随机res文件压缩包，[下载地址](https://caiyun.139.com/m/i?1F5C1o0Yf7uYL) 提取码:sHJS 。	
 `random_res_*.tar.bz2`其中的数字表示拥有几组随机指令序列，一组随机指令序列拥有30万条指令	
 压缩包中的随机指令序列包括`RES_cluster_*`和`RES_jump_*`表示不同的生成倾向。`jump`类倾向于同一类指令重复，而`cluster`类为多类型指令混合。		
 解压后将`random_res_*`内的文件夹`RES_cluster_*`或者`RES_jump_*`拷贝至`$(CHIPLAB_HOME)/software/random_res/`下。		
