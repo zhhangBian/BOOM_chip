@@ -8,13 +8,13 @@
 - flash芯片。
 - 串口线。
 - vivado。
-- 串口软件（[ECOM](http://114.242.206.180:24989/nextcloud/index.php/s/qSFSAYBfnazmEeb)或[SecureCRT](http://114.242.206.180:24989/nextcloud/index.php/s/STS3oZCMBr2ySjD)）
+- 串口软件（[ECOM](https://gitee.com/chenzes/chiplab-tools/releases/download/chiplab-tools/ECOMV280.zip)或[SecureCRT](https://gitee.com/chenzes/chiplab-tools/releases/download/chiplab-tools/SecureCRTPortable.zip)）
 
 ## 烧写步骤
 1. flash 芯片正确放置 FPGA 开发板上。
 2. FPGA 开发板与电脑连接下载线、串口线。
 3. 电脑上打开 Vivado 工具中的 Open Hardware Manager，打开串口软件。
-4. FPGA 板上电，如正常下载 bit 流文件一样下载 [programmer_by_uart.bit](http://114.242.206.180:24989/nextcloud/index.php/s/g58xZEGYiLAoiHB) 至 FPGA 上。
+4. FPGA 板上电，如正常下载 bit 流文件一样下载 [programmer_by_uart.bit](https://gitee.com/chenzes/chiplab-tools/releases/download/chiplab-tools/programmer_by_uart.bit) 至 FPGA 上。
 5. 串口软件，波特率选为 230400。
 6. 串口连接正常后根据提示，键盘输入 x 表示开始 xmodem 传输。
 7. 串口软件使用 xmodem 模式传输 binary 文件。
