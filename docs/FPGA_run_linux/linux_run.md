@@ -1,6 +1,6 @@
 # PMON 运行并 load 内核启动的方法
 内核启动需要依次完成以下步骤：
-- 烧写 PMON 文件（[gzrom.bin](http://114.242.206.180:24989/nextcloud/index.php/s/7xnAiFR9rKD8YDT)）到可插拔 SPI flash 上。
+- 烧写 PMON 文件（[gzrom.bin](https://gitee.com/chenzes/chiplab-tools/releases/download/chiplab-tools/gzrom.bin)）到可插拔 SPI flash 上。
 - 下载 bit 流文件。
 - 运行 PMON。
 - 搭建 tftp 服务器 Load 内核(vmlinux)。
@@ -33,7 +33,7 @@ minicom -s
 sudo minicom
 ```
 #### Windows下
-Windows下可以使用免安装的[SecureCRTPortable串口软件](http://114.242.206.180:24989/nextcloud/index.php/s/STS3oZCMBr2ySjD)。 先使用 USB 转串口和串口连接线将电脑和开发板相连。   
+Windows下可以使用免安装的[SecureCRTPortable串口软件](https://gitee.com/chenzes/chiplab-tools/releases/download/chiplab-tools/SecureCRTPortable.zip)。 先使用 USB 转串口和串口连接线将电脑和开发板相连。   
 双击程序打开，第一次启动界面如下：
 ![](../figures/secure_one.png)
 第一行 Protocol 下拉选择 Serial，如下：
@@ -59,7 +59,7 @@ ping 10.90.50.43
 
 ## 运行Linux
 由于运行 linux 时，最初的内核需要使用网口 load 进入内存执行，因而需要先搭建 Tftp 服务器。   
-具体方法参见[tftp下载地址](http://114.242.206.180:24989/nextcloud/index.php/s/iw5g2CJALRjL25z)。    
+具体方法参见[tftp下载地址](https://gitee.com/chenzes/chiplab-tools/releases/download/chiplab-tools/tftp.zip)。    
 目前运行 Linux 的方法是，先运行 PMON，随后通过网口 load Linux 内核进入 FPGA 上的 DDR3 内存上。在load内核前，需要通过以下命令裁剪掉内核二进制文件中的符号信息。
 ```
 loongarch32r-linux-gnusf-strip vmlinux
