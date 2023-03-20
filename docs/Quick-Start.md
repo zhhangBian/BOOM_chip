@@ -139,7 +139,7 @@ module core_top(
 #### 板上启动内核
 板上内核启动步骤包括：`flash`加载`pmon`，通过网口加载内核。   
 内核由[龙芯教育/la32r-Linux](https://gitee.com/loongson-edu/la32r-Linux)仓库提供源码。    
-pmon直接提供二进制文件。  [(下载地址)](http://114.242.206.180:24989/nextcloud/index.php/s/Ez3sNJBzCeoQ2Ct)    
+pmon直接提供二进制文件。   
 具体流程请参考[pmon运行并load内核启动的方法](./FPGA_run_linux/linux_run.md)           
 内核中可尝试运行`unixbench`。    
 ```
