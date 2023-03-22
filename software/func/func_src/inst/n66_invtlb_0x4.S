@@ -48,7 +48,7 @@ LEAF(n66_invtlb_0x4_test)
     tlbrd
     csrrd t1, csr_tlbidx
     srli.w t1, t1, TLB_IDX
-    li.w  t2, 0x00c00000
+    li.w  t2, 0x00600000
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b
