@@ -11,6 +11,9 @@ echo "  --run software        	set software list(use ',' select multiple softwar
                         	func/func_lab14 func/func_lab15 func/func_lab19 func/func_advance
                                 fireye/A0 fireye/B2 fireye/C0 fireye/D1 fireye/I2
                                 my_program memset dhrystone coremark linux rtthread
+                                c_prg/memcmp c_prg/inner_product c_prg/lookup_table
+                                c_prg/loop_induction c_prg/minmax_sequence c_prg/product_sequence
+
 
      " 
 echo "  --disable-trace-comp  	disable trace compare in simulation(default: enable)
@@ -319,10 +322,66 @@ do
             mkdir -p ./obj/
             mkdir -p ./log/
             ;;
+        c_prg/memcmp)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            OUTPUT_PC_INFO=n
+            OUTPUT_UART_INFO=y
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        c_prg/inner_product)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            OUTPUT_PC_INFO=n
+            OUTPUT_UART_INFO=y
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        c_prg/lookup_table)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            OUTPUT_PC_INFO=n
+            OUTPUT_UART_INFO=y
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;
+        c_prg/loop_induction)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            OUTPUT_PC_INFO=n
+            OUTPUT_UART_INFO=y
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;        
+        c_prg/minmax_sequence)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n
+            OUTPUT_PC_INFO=n
+            OUTPUT_UART_INFO=y
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;   
+        c_prg/product_sequence)
+            RUN_FUNC=n 
+            RUN_C=y
+            DEAD_CLOCK_EN=n            
+            OUTPUT_PC_INFO=n
+            OUTPUT_UART_INFO=y
+            mkdir -p ./obj/
+            mkdir -p ./log/
+            ;;           
         my_program)
             RUN_FUNC=n 
             RUN_C=y
             DEAD_CLOCK_EN=n
+            OUTPUT_PC_INFO=n
+            OUTPUT_UART_INFO=y
             mkdir -p ./obj/
             mkdir -p ./log/
             ;;
