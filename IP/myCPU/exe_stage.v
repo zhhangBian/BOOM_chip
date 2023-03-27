@@ -360,7 +360,7 @@ assign preld_hint = es_dest;
 assign preld_inst = es_preld && ((preld_hint == 5'd0) || (preld_hint == 5'd8))/* && !data_uncache_en*/; //preld must have bug
 assign preld_en   = preld_inst && dcache_req_or_inst_en; 
 
-assign data_fetch = (data_valid || es_cacop|| preld_en) && data_addr_ok || es_tlbsrch;
+assign data_fetch = (data_valid || es_cacop|| preld_en) && data_addr_ok || (es_tlbsrch && ms_allowin);
 
 // difftest
 wire [31:0] es_inst         ;
