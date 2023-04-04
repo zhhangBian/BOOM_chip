@@ -58,7 +58,7 @@ LEAF(n72_dmw_test)
     tlbwr  
 
     la.local t0, 1b
-    li.w     t1, 0x1000
+    li.w     t1, 0x2000
     add.w    t0, t0, t1
     li.w     t1, 0xffffe000
     and    t4, t0, t1 
