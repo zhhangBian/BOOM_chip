@@ -103,8 +103,6 @@ reg          idle_lock;
 
 wire         tlb_excp_lock_pc;
 
-wire         fs_excp_adef;
-
 assign {btb_pre_error_flush,
         btb_pre_error_flush_target  } = br_bus;
 
@@ -251,8 +249,7 @@ always @(posedge clk) begin
 end
 
 //exception
-assign pfs_excp_adef = (real_nextpc[0] || real_nextpc[1]); //user can only access low half address space, trigger only in tlb trans
-assign fs_excp_adef  = fs_pc[31] && (csr_plv == 2'd3) && inst_addr_trans_en;
+assign pfs_excp_adef = (real_nextpc[0] || real_nextpc[1]); //word align
 //tlb 
 assign fs_excp_tlbr = !inst_tlb_found && inst_addr_trans_en;
 assign fs_excp_pif  = !inst_tlb_v && inst_addr_trans_en;
@@ -263,8 +260,8 @@ assign tlb_excp_cancel_req = fs_excp_tlbr || fs_excp_pif || fs_excp_ppi;
 assign pfs_excp = pfs_excp_adef;
 assign pfs_excp_num = {pfs_excp_adef};
 
-assign excp = fs_excp || fs_excp_tlbr || fs_excp_pif || fs_excp_ppi || fs_excp_adef;
-assign excp_num = {fs_excp_ppi, fs_excp_pif, fs_excp_tlbr, fs_excp_num || fs_excp_adef};
+assign excp = fs_excp || fs_excp_tlbr || fs_excp_pif || fs_excp_ppi ;
+assign excp_num = {fs_excp_ppi, fs_excp_pif, fs_excp_tlbr, fs_excp_num};
 
 //addr trans
 assign inst_addr_trans_en = csr_pg && !csr_da && !dmw0_en && !dmw1_en;

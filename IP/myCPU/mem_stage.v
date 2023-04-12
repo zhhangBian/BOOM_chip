@@ -170,7 +170,6 @@ wire        dest_zero;
 wire [15:0] excp_num;
 wire        excp;
 
-wire        excp_adem;
 wire        excp_tlbr;
 wire        excp_pil ;
 wire        excp_pis ;
@@ -292,8 +291,8 @@ assign data_addr_trans_en = pg_mode && !dmw0_en && !dmw1_en && !cacop_op_mode_di
 assign dmw0_en = ((csr_dmw0[`PLV0] && csr_plv == 2'd0) || (csr_dmw0[`PLV3] && csr_plv == 2'd3)) && (ms_error_va[31:29] == csr_dmw0[`VSEG]);
 assign dmw1_en = ((csr_dmw1[`PLV0] && csr_plv == 2'd0) || (csr_dmw1[`PLV3] && csr_plv == 2'd3)) && (ms_error_va[31:29] == csr_dmw1[`VSEG]);
 
-assign excp = excp_tlbr || excp_pil || excp_pis || excp_ppi || excp_pme || excp_adem || ms_excp;
-assign excp_num = {excp_pil, excp_pis, excp_ppi, excp_pme, excp_tlbr, excp_adem, ms_excp_num};
+assign excp = excp_tlbr || excp_pil || excp_pis || excp_ppi || excp_pme || ms_excp;
+assign excp_num = {excp_pil, excp_pis, excp_ppi, excp_pme, excp_tlbr, 1'b0, ms_excp_num};
 
 //tlb exception //preld should not generate these excp
 assign excp_tlbr = (access_mem || ms_cacop) && !data_tlb_found && data_addr_trans_en;
@@ -302,9 +301,7 @@ assign excp_pis  = ms_store_op && !data_tlb_v && data_addr_trans_en;
 assign excp_ppi  = access_mem && data_tlb_v && (csr_plv > data_tlb_plv) && data_addr_trans_en;
 assign excp_pme  = ms_store_op && data_tlb_v && (csr_plv <= data_tlb_plv) && !data_tlb_d && data_addr_trans_en;
 
-assign excp_adem = access_mem && ms_error_va[31] && (csr_plv == 2'd3) && data_addr_trans_en;
-
-assign tlb_excp_cancel_req = excp_tlbr || excp_pil || excp_pis || excp_ppi || excp_pme || excp_adem;
+assign tlb_excp_cancel_req = excp_tlbr || excp_pil || excp_pis || excp_ppi || excp_pme;
 
 assign data_uncache_en = (da_mode && (csr_datm == 2'b0))                 || 
                          (dmw0_en && (csr_dmw0[`DMW_MAT] == 2'b0))       ||

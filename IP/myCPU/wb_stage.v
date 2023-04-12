@@ -233,7 +233,7 @@ excp_num[0]  int
         [7]  ine
         [8]  ipe
         [9]  ale
-        [10] adem
+        [10] <null>
         [11] tlbr    |
         [12] pme     |data tlb exceptions
         [13] ppi     |
@@ -259,7 +259,6 @@ assign {csr_ecode,
                          ws_excp_num[ 7] ? {`ECODE_INE , 1'b0    , 32'b0      , 9'b0          , 1'b0    , 1'b0    , 19'b0             } :
                          ws_excp_num[ 8] ? {`ECODE_IPE , 1'b0    , 32'b0      , 9'b0          , 1'b0    , 1'b0    , 19'b0             } :   //close ipe excp now
                          ws_excp_num[ 9] ? {`ECODE_ALE , ws_valid, ws_error_va, 9'b0          , 1'b0    , 1'b0    , 19'b0             } :
-                         ws_excp_num[10] ? {`ECODE_ADEM, ws_valid, ws_error_va, `ESUBCODE_ADEM, 1'b0    , 1'b0    , 19'b0             } :
                          ws_excp_num[11] ? {`ECODE_TLBR, ws_valid, ws_error_va, 9'b0          , ws_valid, ws_valid, ws_error_va[31:13]} :
                          ws_excp_num[12] ? {`ECODE_PME , ws_valid, ws_error_va, 9'b0          , 1'b0    , ws_valid, ws_error_va[31:13]} :
                          ws_excp_num[13] ? {`ECODE_PPI , ws_valid, ws_error_va, 9'b0          , 1'b0    , ws_valid, ws_error_va[31:13]} :

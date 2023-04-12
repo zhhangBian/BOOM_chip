@@ -60,7 +60,6 @@
 `define ECODE_PME  6'h4
 `define ECODE_PPI  6'h7
 `define ECODE_ADEF 6'h8
-`define ECODE_ADEM 6'h8
 `define ECODE_ALE  6'h9
 `define ECODE_SYS  6'hb
 `define ECODE_BRK  6'hc
@@ -70,4 +69,3 @@
 `define ECODE_TLBR 6'h3f
 
 `define ESUBCODE_ADEF  9'h0
-`define ESUBCODE_ADEM  9'h1
