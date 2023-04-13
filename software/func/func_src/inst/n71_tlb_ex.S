@@ -265,61 +265,61 @@ LEAF(n71_tlb_ex_test)
     syscall 0  // return to kernel mode
 
 ### TLB address error in memory access: adem
-    
-    //let DA=1 and PG=0 and prl=0
-    li.w      t0, 0x08
-    li.w      t1, 0x1f
-    csrxchg t0, t1, csr_crmd 
-
-    LI_EXIMM(t0,s2,IMM_TLBADEM)
-
-    ###fill in a present and valid entry 
-    FILL_TLB_ITEM(0x0c000000,0x800fc000, 0x000f004d, 0x000a004d) 
-    csrwr    zero, csr_tlbehi
-
-    //let DA=0 and PG=1 and prl=3
-    li.w      t0, 0x13
-    li.w      t1, 0x1f
-    csrxchg t0, t1, csr_crmd 
-
-    li.w       t5, 0x3
-    lu12i.w  s7, 0x81
-    li.w       s8, 0x800fc000
-    la.local s4, 7f
-7:
-    ld.w  t0, s8, 0x0
-    bne   s2, s7, inst_error 
-    LI_EXIMM(t0,s2,IMM_KERNEL)
-    syscall 0  // return to kernel mode
+//2023.4.3 ADE changed, no ADEM now 
+//    //let DA=1 and PG=0 and prl=0
+//    li.w      t0, 0x08
+//    li.w      t1, 0x1f
+//    csrxchg t0, t1, csr_crmd 
+//
+//    LI_EXIMM(t0,s2,IMM_TLBADEM)
+//
+//    ###fill in a present and valid entry 
+//    FILL_TLB_ITEM(0x0c000000,0x800fc000, 0x000f004d, 0x000a004d) 
+//    csrwr    zero, csr_tlbehi
+//
+//    //let DA=0 and PG=1 and prl=3
+//    li.w      t0, 0x13
+//    li.w      t1, 0x1f
+//    csrxchg t0, t1, csr_crmd 
+//
+//    li.w       t5, 0x3
+//    lu12i.w  s7, 0x81
+//    li.w       s8, 0x800fc000
+//    la.local s4, 7f
+//7:
+//    ld.w  t0, s8, 0x0
+//    bne   s2, s7, inst_error 
+//    LI_EXIMM(t0,s2,IMM_KERNEL)
+//    syscall 0  // return to kernel mode
 
 
 ### TLB address error in inst fetch: adef
- 
-    //let DA=1 and PG=0 and prl=0
-    li.w      t0, 0x08
-    li.w      t1, 0x1f
-    csrxchg t0, t1, csr_crmd 
-
-    LI_EXIMM(t0,s2,IMM_TLBADEF)
-
-    ###fill in a present but invalid item 
-    FILL_TLB_ITEM(0x0c000000,0x800fc000, 0x000f004d, 0x000a004d) 
-    csrwr    zero, csr_tlbehi
-
-    //let DA=0 and PG=1 and prl=3
-    li.w      t0, 0x13
-    li.w      t1, 0x1f
-    csrxchg t0, t1, csr_crmd 
-
-    li.w       t5, 0x3
-    lu12i.w  s7, 0x80
-    li.w       s8, 0x800fc000
-    la.local s4, 8f
-8:
-    jirl  zero, s8, 0x0
-    bne   s2, s7, inst_error
-    LI_EXIMM(t0,s2,IMM_KERNEL)
-    syscall 0  // return to kernel mode
+//2023.4.3 ADE changed, ADEF only happen when not aligned 
+//    //let DA=1 and PG=0 and prl=0
+//    li.w      t0, 0x08
+//    li.w      t1, 0x1f
+//    csrxchg t0, t1, csr_crmd 
+//
+//    LI_EXIMM(t0,s2,IMM_TLBADEF)
+//
+//    ###fill in a present but invalid item 
+//    FILL_TLB_ITEM(0x0c000000,0x800fc000, 0x000f004d, 0x000a004d) 
+//    csrwr    zero, csr_tlbehi
+//
+//    //let DA=0 and PG=1 and prl=3
+//    li.w      t0, 0x13
+//    li.w      t1, 0x1f
+//    csrxchg t0, t1, csr_crmd 
+//
+//    li.w       t5, 0x3
+//    lu12i.w  s7, 0x80
+//    li.w       s8, 0x800fc000
+//    la.local s4, 8f
+//8:
+//    jirl  zero, s8, 0x0
+//    bne   s2, s7, inst_error
+//    LI_EXIMM(t0,s2,IMM_KERNEL)
+//    syscall 0  // return to kernel mode
 
 ###func end here and recover the DA=1
 
