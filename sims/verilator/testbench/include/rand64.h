@@ -176,7 +176,7 @@ public:
         unsigned long long vpn4k = (bad_vaddr >> 13) & 0x7ffff;
         auto res4k = tlb_4k.find(vpn4k);
         if(res4k != tlb_4k.end()){
-            printf("tlb 4k find:VPPN=%05x, lo0=%08x, lo1=%08x\n", res4k->first, res4k->second.first, res4k->second.second);
+            printf("tlb 4k find:VPPN=%05llx, lo0=%08llx, lo1=%08llx\n", res4k->first, res4k->second.first, res4k->second.second);
             lo0 = res4k->second.first;
             lo1 = res4k->second.second;
             refill_vpn = vpn4k;
@@ -187,7 +187,7 @@ public:
         unsigned long long vpn4m = (bad_vaddr >> 22) & 0x3ff;
         auto res4m = tlb_4m.find(vpn4m);
         if(res4m != tlb_4m.end()){
-            printf("tlb 4m find:VPPN=%05x, lo0=%08x, lo1=%08x\n", res4m->first, res4m->second.first, res4m->second.second);
+            printf("tlb 4m find:VPPN=%05llx, lo0=%08llx, lo1=%08llx\n", res4m->first, res4m->second.first, res4m->second.second);
             lo0 = res4m->second.first;
             lo1 = res4m->second.second;
             refill_vpn = vpn4m;

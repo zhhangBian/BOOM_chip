@@ -65,6 +65,7 @@ void CpuTool::parse_args(int argc, char **argv, char **env) {
 #define PARSE_FLAG(val,label) if(strcmp(argv[i],label)==0){val = i+1>=argc || strcmp(argv[i+1],"0")!=0;}
 #define PARSE_STR(val,label) if(i+1<argc && strcmp(argv[i],label)==0){val = argv[i+1];}
 #define PARSE_INT(val,label) if(i+1<argc && strcmp(argv[i],label)==0){sscanf(argv[i+1],"%d",&val);}
+#define PARSE_INT64(val,label) if(i+1<argc && strcmp(argv[i],label)==0){sscanf(argv[i+1],"%ld",&val);}
 #define PARSE_HEX(val,label) if(i+1<argc && strcmp(argv[i],label)==0){sscanf(argv[i+1],"%x",&val);}
     for(int i=1;i<argc;i+=1){
         PARSE_FLAG(simu_quiet,"--simu-quiet" )
@@ -90,7 +91,7 @@ void CpuTool::parse_args(int argc, char **argv, char **env) {
         PARSE_FLAG(comp_pc_trace,"--comp-pc-trace")
         PARSE_FLAG(comp_rf_trace,"--comp-rf-trace")
 
-        PARSE_INT (dump_delay,"--dump-delay")
+        PARSE_INT64 (dump_delay,"--dump-delay")
         PARSE_INT (dump_waveform,"--dump-waveform")
 
         PARSE_FLAG(rf_trace_no_repeat,"--rf-trace-no-repeat")

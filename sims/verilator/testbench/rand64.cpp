@@ -108,19 +108,19 @@ int Rand64::tlb_init() {
                 if(vpn->data & 1){
                     //error when duplicate
                     error |= entry->second.second;
-                    if(entry->second.second) printf("TLB 4k duplicate, i = %d, VPN = %x, new = %x, old = %x\n",i, vpn->data, lo, entry->second.second);
+                    if(entry->second.second) printf("TLB 4k duplicate, i = %d, VPN = %llx, new = %llx, old = %llx\n",i, vpn->data, lo, entry->second.second);
                     entry->second.second = lo;
                 }else{
                     error |= entry->second.first;
-                    if(entry->second.first) printf("TLB 4k duplicate, i = %d, VPN = %x, new = %x, old = %x\n",i, vpn->data, lo, entry->second.first);
+                    if(entry->second.first) printf("TLB 4k duplicate, i = %d, VPN = %llx, new = %llx, old = %llx\n",i, vpn->data, lo, entry->second.first);
                     entry->second.first = lo;
                 }
             }else if (page_size->data == 22){
                 auto res = tlb->tlb_4m.emplace((vpn->data >> 10) & 0x3ff, std::make_pair(lo,lo + 0x20000));
                 error |= !res.second;
-                if(!res.second) printf("TLB 4m duplicate, i = %d, VPN = %x, new = %x, old = %x\n",i, vpn->data, lo, res.first->second.first);
+                if(!res.second) printf("TLB 4m duplicate, i = %d, VPN = %llx, new = %llx, old = %llx\n",i, vpn->data, lo, res.first->second.first);
             }else {
-                printf("unsupport page size %d\n", page_size->data);
+                printf("unsupport page size %lld\n", page_size->data);
                 error |= 1;
             }
         }
@@ -214,7 +214,7 @@ int Rand64::update(int commit_num, vluint64_t main_time) {
 void Rand64::update_once(vluint64_t main_time) {
     if (result_addrs->data == 0)
         return;
-    printf("[%dns] Updating ref reg, instruction is %08x, pc is 0x%016x, result_type is 0x%0x\n", main_time,
+    printf("[%ldns] Updating ref reg, instruction is %08llx, pc is 0x%016llx, result_type is 0x%0llx\n", main_time,
            instructions->data, pcs->data, result_type->data);
     printf("Inst assembly is %s\n", comments->data);
     switch (result_type->data) {

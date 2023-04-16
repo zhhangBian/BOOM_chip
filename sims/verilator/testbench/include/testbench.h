@@ -144,7 +144,7 @@ public:
                 opentrace("./logs/simu_trace.fst"); 
                 #endif 
             #endif
-            printf("Dump Start at %d ns\n",main_time,dump_delay);
+            printf("Dump Start at %ld ns\n",main_time);
             m_trace->dump(main_time);
         }
         return Verilated::gotFinish();

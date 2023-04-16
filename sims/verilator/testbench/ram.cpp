@@ -119,9 +119,9 @@ void CpuRam::jump(vluint64_t tag, vluint64_t idx) {
         mem[idx].insert(mem[idx].begin() + k, sec);
         if (mem[idx][k + 1].tag <= mem[idx][k].tag) {
             printf("tag = %ld\n", tag);
-            printf("mem[%d][%d].tag = %ld\n", idx, k + 1, mem[idx][k + 1].tag);
-            printf("mem[%d][%d].tag = %ld\n", idx, k, mem[idx][k].tag);
-            printf("mem[%d].size = %d\n", idx, mem[idx].size());
+            printf("mem[%ld][%d].tag = %ld\n", idx, k + 1, mem[idx][k + 1].tag);
+            printf("mem[%ld][%d].tag = %ld\n", idx, k, mem[idx][k].tag);
+            printf("mem[%ld].size = %ld\n", idx, mem[idx].size());
             exit(1);
         }
         assert(k == 0 || mem[idx][k].tag > mem[idx][k - 1].tag);
