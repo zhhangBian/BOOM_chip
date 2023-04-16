@@ -521,7 +521,7 @@ void CpuRam::process_read32_same(vluint64_t data, unsigned int &d) {
 
 void CpuRam::process_read128(vluint64_t main_time,vluint64_t a,unsigned* d){
     if(debug == 1) {
-        fprintf(stderr,"Read Catch! %x,%d\n",a,simu_dev);
+        fprintf(stderr,"Read Catch! %lx,%d\n",a,simu_dev);
     }
     if(simu_dev && dev.in_space(debug,a)){
         d[0] = dev.read(main_time,a);
@@ -542,7 +542,7 @@ int CpuRam::process_write128(vluint64_t main_time,vluint64_t a,vluint64_t m,unsi
 void CpuRam::process_read(vluint64_t main_time,vluint64_t a,unsigned* d){
     a = a&~0xf;
     if(debug == 1) {
-        fprintf(stderr,"Read Catch! %x,%d\n",a,simu_dev);
+        fprintf(stderr,"Read Catch! %lx,%d\n",a,simu_dev);
     }
     if(simu_dev && dev.in_space(debug,a)){
         d[0] = dev.read(main_time,a);

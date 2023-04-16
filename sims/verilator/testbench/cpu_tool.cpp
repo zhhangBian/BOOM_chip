@@ -7,11 +7,11 @@ int CpuTool::simu_wait = 0;
 int CpuTool::simu_bus_delay = 0;
 int CpuTool::simu_bus_delay_random_seed = 0x5500ff;
 
-int CpuTool::time_limit = 30000;
+int64_t CpuTool::time_limit = 30000;
 int CpuTool::time_check = 0;
 
-int CpuTool::save_bp_time = 0;
-int CpuTool::restore_bp_time = 0;
+int64_t CpuTool::save_bp_time = 0;
+int64_t CpuTool::restore_bp_time = 0;
 
 int CpuTool::dump_pc_trace = 0;
 int CpuTool::dump_rf_trace = 0;
@@ -75,14 +75,14 @@ void CpuTool::parse_args(int argc, char **argv, char **env) {
         PARSE_FLAG(simu_bus_delay ,"--simu-bus-delay")
         PARSE_INT(simu_bus_delay_random_seed, "--simu-bus-delay-random-seed")
 
-        PARSE_INT (time_limit,"--time-limit")
+        PARSE_INT64(time_limit,"--time-limit")
         PARSE_FLAG(time_check,"--time-check")
 
-        PARSE_INT(save_bp_time,"--save-bp-time")
+        PARSE_INT64(save_bp_time,"--save-bp-time")
         PARSE_STR(ram_save_bp_file,"--ram-save-bp-file")
         PARSE_STR(top_save_bp_file,"--top-save-bp-file")
         PARSE_STR(difftest_ref_so, "--diff")
-        PARSE_INT(restore_bp_time,"--restore-bp-time")
+        PARSE_INT64(restore_bp_time,"--restore-bp-time")
         PARSE_STR(ram_restore_bp_file,"--ram-restore-bp-file")
         PARSE_STR(top_restore_bp_file,"--top-restore-bp-file")
 
@@ -91,7 +91,7 @@ void CpuTool::parse_args(int argc, char **argv, char **env) {
         PARSE_FLAG(comp_pc_trace,"--comp-pc-trace")
         PARSE_FLAG(comp_rf_trace,"--comp-rf-trace")
 
-        PARSE_INT64 (dump_delay,"--dump-delay")
+        PARSE_INT64(dump_delay,"--dump-delay")
         PARSE_INT (dump_waveform,"--dump-waveform")
 
         PARSE_FLAG(rf_trace_no_repeat,"--rf-trace-no-repeat")

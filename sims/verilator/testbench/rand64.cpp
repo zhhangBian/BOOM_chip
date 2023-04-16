@@ -170,9 +170,9 @@ void Rand64::print_ref() {
 void Rand64::print_ref(long long *gr_rtl) {
     for (int i = 0; i < 32; i++) {
 #ifdef LA32
-        printf("gr_ref[%02d] = %08llx%010sgr_rtl[%02d] = %08llx\n",i,gr_ref[i]&0xffffffffll,"",i,gr_rtl[i]&0xffffffffll);
+        printf("gr_ref[%02d] = %08llx%10sgr_rtl[%02d] = %08llx\n",i,gr_ref[i]&0xffffffffll,"",i,gr_rtl[i]&0xffffffffll);
 #else
-        printf("gr_ref[%02d] = %016llx%010sgr_rtl[%02d] = %016llx\n", i, gr_ref[i], "", i, gr_rtl[i]);
+        printf("gr_ref[%02d] = %016llx%10sgr_rtl[%02d] = %016llx\n", i, gr_ref[i], "", i, gr_rtl[i]);
 #endif
     }
 
@@ -185,7 +185,7 @@ int Rand64::compare(long long *gr_rtl) {
 #else
         if (gr_rtl[i] != gr_ref[i]) {
 #endif
-            printf("gr_ref[%02d] = %016llx%010sgr_rtl[%02d] = %016llx\n", i, gr_ref[i], "", i, gr_rtl[i]);
+            printf("gr_ref[%02d] = %016llx%10sgr_rtl[%02d] = %016llx\n", i, gr_ref[i], "", i, gr_rtl[i]);
             printf("Compare Fail\n");
             return 1;
         }

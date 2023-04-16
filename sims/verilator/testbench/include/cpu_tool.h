@@ -30,8 +30,8 @@ public:
     static int simu_bus_delay;
     static int simu_bus_delay_random_seed;
 
-    static int save_bp_time;
-    static int restore_bp_time;
+    static int64_t save_bp_time;
+    static int64_t restore_bp_time;
     const static char* ram_save_bp_file;
     const static char* top_save_bp_file;
     const static char* ram_restore_bp_file;
@@ -39,7 +39,7 @@ public:
 
     static unsigned int end_pc;
 
-    static int time_limit;
+    static int64_t time_limit;
     static int time_check;
 
     static int dump_pc_trace;
