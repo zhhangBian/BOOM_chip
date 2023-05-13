@@ -108,6 +108,12 @@ set_property IOSTANDARD LVCMOS33 [get_ports UART_RX]
 set_property PACKAGE_PIN E6 [get_ports UART_TX]
 set_property IOSTANDARD LVCMOS33 [get_ports UART_TX]
 
+#debug uart
+set_property PACKAGE_PIN Y21 [get_ports UART_RX2]
+set_property IOSTANDARD LVCMOS33 [get_ports UART_RX2]
+set_property PACKAGE_PIN W21 [get_ports UART_TX2]
+set_property IOSTANDARD LVCMOS33 [get_ports UART_TX2]
+
 #ejtag
 set_property PACKAGE_PIN K15 [get_ports EJTAG_TRST]
 set_property PACKAGE_PIN M15 [get_ports EJTAG_TCK]

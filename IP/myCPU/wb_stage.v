@@ -54,6 +54,9 @@ module wb_stage(
     output        real_mem_inst                    ,
     output        real_br_pre                      ,
     output        real_br_pre_error                ,
+    //debug
+    output        ws_valid                         ,
+    input         break_point                      ,
     //trace debug interface
     output [31:0] debug_wb_pc                      ,
     output [ 3:0] debug_wb_rf_wen                  ,
@@ -165,7 +168,7 @@ assign ws_to_rf_bus = {rf_we   ,  //37:37
                        rf_wdata   //31:0
                       };
 
-assign ws_ready_go = 1'b1;
+assign ws_ready_go = ~break_point;
 assign ws_allowin  = !ws_valid || ws_ready_go;
 always @(posedge clk) begin
     if (reset || flush_sign) begin

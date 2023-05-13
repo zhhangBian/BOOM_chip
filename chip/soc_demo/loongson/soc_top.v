@@ -94,6 +94,10 @@ module soc_top(
     inout         UART_RX,
     inout         UART_TX,
 
+    //------debug-uart------
+    input         UART_RX2,
+    output        UART_TX2,
+
     //------nand-------
     output        NAND_CLE ,
     output        NAND_ALE ,
@@ -605,6 +609,116 @@ end
 
 assign cpu_aresetn = cpu_aresetn_2;
 
+//debug signals
+wire [31:0] debug_wb_pc;
+wire [3 :0] debug_wb_rf_wen;
+wire [4 :0] debug_wb_rf_wnum;
+wire [31:0] debug_wb_rf_wdata;
+wire        ws_valid;
+wire        break_point;
+wire        infor_flag;
+wire [ 4:0] reg_num;
+wire [31:0] rf_rdata;
+
+//uart_ram signals
+wire [3 :0] uart_arid   ;
+wire [31:0] uart_araddr ;
+wire [7 :0] uart_arlen  ;
+wire [2 :0] uart_arsize ;
+wire [1 :0] uart_arburst;
+wire [1 :0] uart_arlock ;
+wire [3 :0] uart_arcache;
+wire [2 :0] uart_arprot ;
+wire        uart_arvalid;
+wire        uart_arready;
+wire [3 :0] uart_rid    ;
+wire [31:0] uart_rdata  ;
+wire [1 :0] uart_rresp  ;
+wire        uart_rlast  ;
+wire        uart_rvalid ;
+wire        uart_rready ;
+
+wire        infom_flag;
+wire [31:0] start_addr;
+wire        mem_flag;
+wire [ 7:0] mem_rdata;
+
+//axi_2x1 signals
+wire [`LID         -1 :0] m1_arid;
+wire [`Laraddr     -1 :0] m1_araddr;
+wire [`Larlen      -1 :0] m1_arlen;
+wire [`Larsize     -1 :0] m1_arsize;
+wire [`Larburst    -1 :0] m1_arburst;
+wire [`Larlock     -1 :0] m1_arlock;
+wire [`Larcache    -1 :0] m1_arcache;
+wire [`Larprot     -1 :0] m1_arprot;
+wire                      m1_arvalid;
+wire                      m1_arready;
+wire [`LID         -1 :0] m1_rid;
+wire [`Lrdata      -1 :0] m1_rdata;
+wire [`Lrresp      -1 :0] m1_rresp;
+wire                      m1_rlast;
+wire                      m1_rvalid;
+wire                      m1_rready;
+
+debug_top u_debug_top(
+    .sys_clk              (cpu_clk          ),
+    .sys_rst_n            (resetn           ),
+    .uart_rxd             (UART_RX2         ),
+    .debug_wb_pc          (debug_wb_pc      ),
+    .debug_wb_rf_wnum     (debug_wb_rf_wnum ),
+    .debug_wb_rf_wdata    (debug_wb_rf_wdata),
+    .ws_valid             (ws_valid         ),
+    .break_point          (break_point      ),
+    .infor_flag           (infor_flag       ),
+    .reg_num              (reg_num          ),
+    .rf_rdata             (rf_rdata         ),
+    .infom_flag           (infom_flag       ),
+    .start_addr           (start_addr       ),
+    .mem_flag             (mem_flag         ),
+    .mem_rdata            (mem_rdata        ),
+    .uart_txd             (UART_TX2         )
+
+);
+
+
+debug_sram u_debug_sram(
+    .clk       (cpu_clk        ),
+    .aresetn   (resetn         ),   
+
+    .arid      (uart_arid      ),
+    .araddr    (uart_araddr    ),
+    .arlen     (uart_arlen     ),
+    .arsize    (uart_arsize    ),
+    .arburst   (uart_arburst   ),
+    .arlock    (uart_arlock    ),
+    .arcache   (uart_arcache   ),
+    .arprot    (uart_arprot    ),
+    .arvalid   (uart_arvalid   ),
+    .arready   (uart_arready   ),
+                
+    .rid       (uart_rid       ),
+    .rdata     (uart_rdata     ),
+    .rresp     (uart_rresp     ),
+    .rlast     (uart_rlast     ),
+    .rvalid    (uart_rvalid    ),
+    .rready    (uart_rready    ),
+
+    .break_point(              ),
+    .cpu_rready (              ),  
+    .rvalid_r   (              ),
+    .rid_r      (              ),
+    .rdata_r    (              ),
+    .rlast_r    (              ),
+    .flag       (              ),
+
+    .infom_flag(infom_flag    ),
+    .start_addr(start_addr    ),
+    .mem_flag  (mem_flag      ),
+    .mem_rdata (mem_rdata     ) 
+
+);
+
 // cpu
 core_top cpu_mid(
   .aclk             (cpu_clk),
@@ -649,14 +763,145 @@ core_top cpu_mid(
   .bvalid       (m0_bvalid    ),
   .bready       (m0_bready    ),
 
-  .debug0_wb_pc         (),
-  .debug0_wb_rf_wen     (),
-  .debug0_wb_rf_wnum    (),
-  .debug0_wb_rf_wdata   ()
+  .ws_valid     (ws_valid     ),
+  .break_point  (break_point  ),
+  .infor_flag   (infor_flag   ),
+  .reg_num      (reg_num      ),
+  .rf_rdata     (rf_rdata     ),
+
+  .debug0_wb_pc        (debug_wb_pc      ),
+  .debug0_wb_rf_wen    (debug_wb_rf_wen  ),
+  .debug0_wb_rf_wnum   (debug_wb_rf_wnum ),
+  .debug0_wb_rf_wdata  (debug_wb_rf_wdata)
+);
+
+//AXI_2x1_MUX
+axi_2x1_mux u_axi_2x1_mux
+(
+    .INTERCONNECT_ACLK   (cpu_clk     ),
+    .INTERCONNECT_ARESETN(resetn      ),
+    .S00_AXI_ACLK        (cpu_clk     ),
+    .S00_AXI_ARESET_OUT_N(            ),
+    .S00_AXI_ARADDR      (m0_araddr   ),
+    .S00_AXI_ARBURST     (m0_arburst  ),
+    .S00_AXI_ARCACHE     (m0_arcache  ),
+    .S00_AXI_ARID        (m0_arid[3:0]),
+    .S00_AXI_ARLEN       (m0_arlen    ),
+    .S00_AXI_ARLOCK      (m0_arlock   ),
+    .S00_AXI_ARPROT      (m0_arprot   ),
+    .S00_AXI_ARQOS       (4'b0        ),
+    .S00_AXI_ARREADY     (m0_arready  ),
+    .S00_AXI_ARSIZE      (m0_arsize   ),
+    .S00_AXI_ARVALID     (m0_arvalid  ),
+    .S00_AXI_RDATA       (m0_rdata    ),
+    .S00_AXI_RID         (m0_rid[3:0] ),
+    .S00_AXI_RLAST       (m0_rlast    ),
+    .S00_AXI_RREADY      (m0_rready   ),
+    .S00_AXI_RRESP       (m0_rresp    ),
+    .S00_AXI_RVALID      (m0_rvalid   ),
+    .S00_AXI_AWADDR      (`Lawaddr'b0 ),
+    .S00_AXI_AWBURST     (`Lawburst'b0),
+    .S00_AXI_AWCACHE     (`Lawcache'b0),
+    .S00_AXI_AWID        (`LID'b0     ),
+    .S00_AXI_AWLEN       (`Lawlen'b0  ),
+    .S00_AXI_AWLOCK      (`Lawlock'b0 ),
+    .S00_AXI_AWPROT      (`Lawprot'b0 ),
+    .S00_AXI_AWQOS       (4'b0        ),
+    .S00_AXI_AWREADY     (            ),
+    .S00_AXI_AWSIZE      (`Lawsize'b0 ),
+    .S00_AXI_AWVALID     (1'b0        ),
+    .S00_AXI_WDATA       (`Lwdata'b0  ),
+    .S00_AXI_WLAST       (1'b0        ),
+    .S00_AXI_WREADY      (            ),
+    .S00_AXI_WSTRB       (`Lwstrb'b0  ),
+    .S00_AXI_WVALID      (1'b0        ),
+    .S00_AXI_BID         (            ),
+    .S00_AXI_BREADY      (1'b0        ),
+    .S00_AXI_BRESP       (            ),
+    .S00_AXI_BVALID      (            ),
+   
+    .S01_AXI_ACLK        (cpu_clk     ),
+    .S01_AXI_ARESET_OUT_N(            ),
+    .S01_AXI_ARADDR      (uart_araddr ),
+    .S01_AXI_ARBURST     (uart_arburst),
+    .S01_AXI_ARCACHE     (uart_arcache),
+    .S01_AXI_ARID        (uart_arid   ),
+    .S01_AXI_ARLEN       (uart_arlen  ),
+    .S01_AXI_ARLOCK      (uart_arlock ),
+    .S01_AXI_ARPROT      (uart_arprot ),
+    .S01_AXI_ARQOS       (4'b0        ),
+    .S01_AXI_ARREADY     (uart_arready),
+    .S01_AXI_ARSIZE      (uart_arsize ),
+    .S01_AXI_ARVALID     (uart_arvalid),
+    .S01_AXI_RDATA       (uart_rdata  ),
+    .S01_AXI_RID         (uart_rid    ),
+    .S01_AXI_RLAST       (uart_rlast  ),
+    .S01_AXI_RREADY      (uart_rready ),
+    .S01_AXI_RRESP       (uart_rresp  ),
+    .S01_AXI_RVALID      (uart_rvalid ),
+    .S01_AXI_AWADDR      (`Lawaddr'b0 ),
+    .S01_AXI_AWBURST     (`Lawburst'b0),
+    .S01_AXI_AWCACHE     (`Lawcache'b0),
+    .S01_AXI_AWID        (`LID'b0     ),
+    .S01_AXI_AWLEN       (`Lawlen'b0  ),
+    .S01_AXI_AWLOCK      (`Lawlock'b0 ),
+    .S01_AXI_AWPROT      (`Lawprot'b0 ),
+    .S01_AXI_AWQOS       (4'b0        ),
+    .S01_AXI_AWREADY     (            ),
+    .S01_AXI_AWSIZE      (`Lawsize'b0 ),
+    .S01_AXI_AWVALID     (1'b0        ),
+    .S01_AXI_WDATA       (`Lwdata'b0  ),
+    .S01_AXI_WLAST       (1'b0        ),
+    .S01_AXI_WREADY      (            ),
+    .S01_AXI_WSTRB       (`Lwstrb'b0  ),
+    .S01_AXI_WVALID      (1'b0        ),
+    .S01_AXI_BID         (            ),
+    .S01_AXI_BREADY      (1'b0        ),
+    .S01_AXI_BRESP       (            ),
+    .S01_AXI_BVALID      (            ),
+    
+    .M00_AXI_ACLK        (cpu_clk     ),
+    .M00_AXI_ARESET_OUT_N(            ),
+    .M00_AXI_ARADDR      (m1_araddr   ),
+    .M00_AXI_ARBURST     (m1_arburst  ),
+    .M00_AXI_ARCACHE     (m1_arcache  ),
+    .M00_AXI_ARID        (m1_arid[3:0]),
+    .M00_AXI_ARLEN       (m1_arlen    ),
+    .M00_AXI_ARLOCK      (m1_arlock   ),
+    .M00_AXI_ARPROT      (m1_arprot   ),
+    .M00_AXI_ARQOS       (4'b0        ),
+    .M00_AXI_ARREADY     (m1_arready  ),
+    .M00_AXI_ARSIZE      (m1_arsize   ),
+    .M00_AXI_ARVALID     (m1_arvalid  ),
+    .M00_AXI_RDATA       (m1_rdata    ),
+    .M00_AXI_RID         (m1_rid[3:0] ),
+    .M00_AXI_RLAST       (m1_rlast    ),
+    .M00_AXI_RREADY      (m1_rready   ),
+    .M00_AXI_RRESP       (m1_rresp    ),
+    .M00_AXI_RVALID      (m1_rvalid   ),
+    .M00_AXI_AWADDR      (            ),
+    .M00_AXI_AWBURST     (            ),
+    .M00_AXI_AWCACHE     (            ),
+    .M00_AXI_AWID        (            ),
+    .M00_AXI_AWLEN       (            ),
+    .M00_AXI_AWLOCK      (            ),
+    .M00_AXI_AWPROT      (            ),
+    .M00_AXI_AWQOS       (            ),
+    .M00_AXI_AWREADY     (1'b0        ),
+    .M00_AXI_AWSIZE      (            ),
+    .M00_AXI_AWVALID     (            ),
+    .M00_AXI_WDATA       (            ),
+    .M00_AXI_WLAST       (            ),
+    .M00_AXI_WREADY      (1'b0        ),
+    .M00_AXI_WSTRB       (            ),
+    .M00_AXI_WVALID      (            ),
+    .M00_AXI_BID         (`LID'b0     ),
+    .M00_AXI_BREADY      (            ),
+    .M00_AXI_BRESP       (`Lbresp'b0  ),
+    .M00_AXI_BVALID      (1'b0        )
 );
 
 // cpu_axi asyn
-
 axi_clock_converter_0 AXI_CLK_CONVERTER (
     .s_axi_awid       (m0_awid[3:0]       ),	
     .s_axi_awaddr     (m0_awaddr          ),
@@ -679,23 +924,23 @@ axi_clock_converter_0 AXI_CLK_CONVERTER (
     .s_axi_bresp      (m0_bresp           ),
     .s_axi_bvalid     (m0_bvalid          ),
     .s_axi_bready     (m0_bready          ),
-    .s_axi_arid       (m0_arid[3:0]       ),
-    .s_axi_araddr     (m0_araddr          ),
-    .s_axi_arlen      (m0_arlen           ),
-    .s_axi_arsize     (m0_arsize          ),
-    .s_axi_arburst    (m0_arburst         ),
-    .s_axi_arlock     (m0_arlock          ),
-    .s_axi_arcache    (m0_arcache         ),
-    .s_axi_arprot     (m0_arprot          ),
+    .s_axi_arid       (m1_arid[3:0]       ),
+    .s_axi_araddr     (m1_araddr          ),
+    .s_axi_arlen      (m1_arlen           ),
+    .s_axi_arsize     (m1_arsize          ),
+    .s_axi_arburst    (m1_arburst         ),
+    .s_axi_arlock     (m1_arlock          ),
+    .s_axi_arcache    (m1_arcache         ),
+    .s_axi_arprot     (m1_arprot          ),
     .s_axi_arqos      (4'b0               ),
-    .s_axi_arvalid    (m0_arvalid         ),
-    .s_axi_arready    (m0_arready         ),
-    .s_axi_rid        (m0_rid[3:0]        ),
-    .s_axi_rdata      (m0_rdata           ),
-    .s_axi_rresp      (m0_rresp           ),
-    .s_axi_rlast      (m0_rlast           ),
-    .s_axi_rvalid     (m0_rvalid          ),
-    .s_axi_rready     (m0_rready          ),
+    .s_axi_arvalid    (m1_arvalid         ),
+    .s_axi_arready    (m1_arready         ),
+    .s_axi_rid        (m1_rid[3:0]        ),
+    .s_axi_rdata      (m1_rdata           ),
+    .s_axi_rresp      (m1_rresp           ),
+    .s_axi_rlast      (m1_rlast           ),
+    .s_axi_rvalid     (m1_rvalid          ),
+    .s_axi_rready     (m1_rready          ),
 
     .s_axi_aclk	      (cpu_clk            ),
     .s_axi_aresetn    (cpu_aresetn        ),

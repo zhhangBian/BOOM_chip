@@ -15,6 +15,7 @@ Welcome to chiplab's documentation!
    Simulation/difftest
    FPGA_run_linux/linux_run
    FPGA_run_linux/flash
+   Debug/debug
 
 Indices and tables
 ==================

@@ -58,6 +58,12 @@ module id_stage(
     output [31:0]                       btb_right_target  ,    
     output [31:0]                       btb_operate_pc    ,
     output [ 4:0]                       btb_operate_index ,
+ 
+    //debug
+    input                               infor_flag,
+    input  [ 4:0]                       reg_num,
+    output [31:0]                       rf_rdata1,
+
     //to rf: for write back
     input  [`WS_TO_RF_BUS_WD -1:0]      ws_to_rf_bus      
     `ifdef DIFFTEST_EN
@@ -723,7 +729,7 @@ assign inst_need_rkd = inst_add_w   |
                        inst_invtlb  ;
 
 
-assign rf_raddr1 = rj;
+assign rf_raddr1 = infor_flag?reg_num:rj;
 assign rf_raddr2 = src_reg_is_rd ? rd : rk;
 regfile u_regfile(
     .clk    (clk      ),

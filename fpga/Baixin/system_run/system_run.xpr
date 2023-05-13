@@ -64,6 +64,15 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <File Path="$PPRDIR/../../../IP/xilinx_ip/axi_2x1_mux/axi_2x1_mux.xci">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/xilinx_ip/axi_2x1_mux/axi_2x1_mux.xci"/>
+          <Attr Name="ImportTime" Val="1624585641"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
       <File Path="$PPRDIR/../../../IP/xilinx_ip/axi_interconnect_0/axi_interconnect_0.xci">
         <FileInfo>
           <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/xilinx_ip/axi_interconnect_0/axi_interconnect_0.xci"/>
@@ -96,6 +105,24 @@
           <Attr Name="ImportPath" Val="$PPRDIR/../../../chip/soc_demo/Baixin/config.h"/>
           <Attr Name="ImportTime" Val="1622528226"/>
           <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../../IP/DEBUG/debug_sram.v">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/DEBUG/debug_sram.v"/>
+          <Attr Name="ImportTime" Val="1626766565"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../../../IP/DEBUG/debug_top.v">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/DEBUG/debug_top.v"/>
+          <Attr Name="ImportTime" Val="1626766565"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>

@@ -108,6 +108,12 @@ set_property IOSTANDARD LVCMOS33 [get_ports UART_RX]
 set_property PACKAGE_PIN H19 [get_ports UART_TX]
 set_property IOSTANDARD LVCMOS33 [get_ports UART_TX]
 
+#debug uart
+set_property PACKAGE_PIN Y21 [get_ports UART_RX2]
+set_property IOSTANDARD LVCMOS33 [get_ports UART_RX2]
+set_property PACKAGE_PIN W21 [get_ports UART_TX2]
+set_property IOSTANDARD LVCMOS33 [get_ports UART_TX2]
+
 #nand flash
 set_property PACKAGE_PIN V19 [get_ports NAND_CLE]
 set_property PACKAGE_PIN W20 [get_ports NAND_ALE]

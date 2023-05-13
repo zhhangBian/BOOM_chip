@@ -378,7 +378,13 @@ core_top cpu
     .bid               (cpu_bid           ),// I, 4  
     .bresp             (cpu_bresp         ),// I, 2  
     .bvalid            (cpu_bvalid        ),// I, 1  
-    .bready            (cpu_bready        ) // O, 1  
+    .bready            (cpu_bready        ),// O, 1  
+
+    .break_point       (1'b0              ),
+    .infor_flag        (1'b0              ),
+    .reg_num           (5'b0              ),
+    .ws_valid          (                  ),
+    .rf_rdata          (                  )
     
     ,
     .debug0_wb_pc      (debug0_wb_pc      ),// O, 64 

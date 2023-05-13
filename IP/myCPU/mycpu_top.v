@@ -45,6 +45,13 @@ module core_top(
     input           bvalid,
     output          bready,
 
+    //debug
+    input           break_point,
+    input           infor_flag,
+    input  [ 4:0]   reg_num,
+    output          ws_valid,
+    output [31:0]   rf_rdata,
+
     output [31:0] debug0_wb_pc,
     output [ 3:0] debug0_wb_rf_wen,
     output [ 4:0] debug0_wb_rf_wnum,
@@ -379,6 +386,10 @@ id_stage id_stage(
     .btb_right_target     (btb_right_target    ),
     .btb_operate_pc       (btb_operate_pc      ),
     .btb_operate_index    (btb_operate_index   ),
+    //debug
+    .infor_flag           (infor_flag          ),
+    .reg_num              (reg_num             ),
+    .rf_rdata1            (rf_rdata            ),
     //to rf: for write back
     .ws_to_rf_bus         (ws_to_rf_bus        )
     `ifdef DIFFTEST_EN
@@ -582,6 +593,10 @@ wb_stage wb_stage(
     .real_mem_inst     (mem_inst         ),
     .real_br_pre       (br_pre           ),
     .real_br_pre_error (br_pre_error     ),
+    //debug
+    .ws_valid          (ws_valid         ),
+    .break_point       (break_point      ),
+
     //trace debug interface
     .debug_wb_pc       (debug0_wb_pc      ),
     .debug_wb_rf_wen   (debug0_wb_rf_wen  ),
