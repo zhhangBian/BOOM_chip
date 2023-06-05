@@ -262,9 +262,6 @@ wire         fs_icache_miss;
 wire         ms_dcache_miss;
 wire         disable_cache;
 
-wire [ 8:0]  interrupt;
-assign interrupt = intrpt;
-
 // IF stage
 if_stage if_stage(
     .clk             (aclk           ),
@@ -632,7 +629,7 @@ csr u_csr(
     .wr_addr        (wr_csr_addr    ),
     .wr_data        (wr_csr_data    ),
     //interrupt
-    .interrupt      (interrupt      ),
+    .interrupt      (intrpt         ),
     .has_int        (has_int        ),
     //from ws
     .excp_flush     (excp_flush     ),

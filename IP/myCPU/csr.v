@@ -15,7 +15,7 @@ module csr(
     input  [13:0]                   wr_addr      ,
     input  [31:0]                   wr_data      ,
     //interrupt
-    input  [ 8:0]                   interrupt    ,
+    input  [ 7:0]                   interrupt    ,
     output                          has_int      ,
     //from ws
     input                           excp_flush   ,
@@ -341,7 +341,8 @@ always @(posedge clk) begin
         csr_ectl <= 32'b0;
     end
     else if (ectl_wen) begin
-        csr_ectl[ `LIE] <= wr_data[ `LIE];
+        csr_ectl[ `LIE_1] <= wr_data[ `LIE_1];
+        csr_ectl[ `LIE_2] <= wr_data[ `LIE_2];
     end
 end
 
@@ -349,6 +350,7 @@ end
 always @(posedge clk) begin
     if (reset) begin
         csr_estat[ 1: 0] <= 2'b0; 
+	csr_estat[10]    <= 1'b0;
         csr_estat[15:13] <= 3'b0;
         csr_estat[31]    <= 1'b0;
         
@@ -365,7 +367,7 @@ always @(posedge clk) begin
             csr_estat[11] <= 1'b1;
             timer_en      <= csr_tcfg[`PERIODIC];
         end
-        csr_estat[10:2] <= interrupt;
+        csr_estat[9:2] <= interrupt;
         if (excp_flush) begin
             csr_estat[   `ECODE] <= ecode_in;
             csr_estat[`ESUBCODE] <= esubcode_in;
