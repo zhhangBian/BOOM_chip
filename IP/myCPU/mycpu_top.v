@@ -386,7 +386,7 @@ id_stage id_stage(
     //debug
     .infor_flag           (infor_flag          ),
     .reg_num              (reg_num             ),
-    .rf_rdata1            (rf_rdata            ),
+    .debug_rf_rdata1      (rf_rdata            ),
     //to rf: for write back
     .ws_to_rf_bus         (ws_to_rf_bus        )
     `ifdef DIFFTEST_EN
@@ -591,8 +591,8 @@ wb_stage wb_stage(
     .real_br_pre       (br_pre           ),
     .real_br_pre_error (br_pre_error     ),
     //debug
-    .ws_valid          (ws_valid         ),
-    .break_point       (break_point      ),
+    .debug_ws_valid    (ws_valid         ),
+    .debug_break_point (break_point      ),
 
     //trace debug interface
     .debug_wb_pc       (debug0_wb_pc      ),

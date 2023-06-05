@@ -55,8 +55,8 @@ module wb_stage(
     output        real_br_pre                      ,
     output        real_br_pre_error                ,
     //debug
-    output        ws_valid                         ,
-    input         break_point                      ,
+    output        debug_ws_valid                     ,
+    input         debug_break_point                  ,
     //trace debug interface
     output [31:0] debug_wb_pc                      ,
     output [ 3:0] debug_wb_rf_wen                  ,
@@ -168,7 +168,7 @@ assign ws_to_rf_bus = {rf_we   ,  //37:37
                        rf_wdata   //31:0
                       };
 
-assign ws_ready_go = ~break_point;
+assign ws_ready_go = ~debug_break_point;
 assign ws_allowin  = !ws_valid || ws_ready_go;
 always @(posedge clk) begin
     if (reset || flush_sign) begin
@@ -278,6 +278,8 @@ assign debug_wb_rf_wen   = {4{rf_we}};
 assign debug_wb_rf_wnum  = ws_dest;
 assign debug_wb_rf_wdata = ws_final_result;
 assign debug_wb_inst     = ws_inst;
+assign debug_ws_valid    = ws_valid;
+
 
 // difftest
 wire [31:0] ws_inst         ;

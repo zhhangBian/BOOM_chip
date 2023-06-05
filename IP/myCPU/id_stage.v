@@ -62,7 +62,7 @@ module id_stage(
     //debug
     input                               infor_flag,
     input  [ 4:0]                       reg_num,
-    output [31:0]                       rf_rdata1,
+    output [31:0]                       debug_rf_rdata1,
 
     //to rf: for write back
     input  [`WS_TO_RF_BUS_WD -1:0]      ws_to_rf_bus      
@@ -956,5 +956,7 @@ assign inst_ld_en = {2'b0, inst_ll_w, inst_ld_w, inst_ld_hu, inst_ld_h, inst_ld_
 assign inst_st_en = {4'b0, ds_llbit && inst_sc_w, inst_st_w, inst_st_h, inst_st_b};
 assign inst_csr_rstat_en = (inst_csrrd || inst_csrwr || inst_csrxchg) && (csr_idx == 14'd5);
 
+// debug
+assign debug_rf_rdata1 = rf_raddr1;
 
 endmodule
