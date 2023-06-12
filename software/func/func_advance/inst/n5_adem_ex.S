@@ -2,7 +2,7 @@
 #include <regdef.h>
 #include <inst_test.h>
 
-LEAF(n6_adem_ex_test)
+LEAF(n5_adem_ex_test)
 
     addi.w  s0, s0, 1 
     
@@ -330,4 +330,4 @@ inst_error:
     or      t0, t1, s3 
     st.w    t0, s1, 0 
     jirl    zero, ra, 0 
-END(n6_adem_ex_test)
+END(n5_adem_ex_test)

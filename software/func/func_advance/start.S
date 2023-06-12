@@ -949,17 +949,14 @@ cacop_disable:
     bl n4_pgd_test
     bl idle_1s
 
-    bl n5_adef_ex_test
-    bl idle_1s
-
-    bl n6_adem_ex_test
+    bl n5_adem_ex_test
     bl idle_1s
 
 #ifndef ENABLE_TRACE  
-    bl n7_ipe_ex_test
+    bl n6_ipe_ex_test
     bl idle_1s
 
-    bl n8_csr_rw_test
+    bl n7_csr_rw_test
     bl idle_1s
 #endif
 
@@ -999,6 +996,7 @@ test_end:
 	bl test_finish
 
 idle_1s:
+    jirl    zero, ra, 0
     LI (t0,SW_INTER_ADDR)
     LI (t1, 0xaaaa)
 

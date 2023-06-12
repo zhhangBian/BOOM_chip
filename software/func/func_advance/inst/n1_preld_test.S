@@ -19,7 +19,7 @@ start:
     li.w       t3, 0x1
     or        t1, t1, t2
     or        t1, t1, t3
-    csrwr     t1, csr_dmw1
+    csrwr     t1, csr_dmw0
     invtlb    0x0, zero, zero
 
     li.w       t7, 0xd0100000
@@ -30,7 +30,7 @@ start:
     li.w       t3, 0x1
     or        t1, t1, t2
     or        t1, t1, t3
-    csrwr     t1, csr_dmw0
+    csrwr     t1, csr_dmw1
     invtlb    0x0, zero, zero
 
     //let DA=0, PG=1, prl=0
@@ -82,7 +82,7 @@ start:
     li.w       t3, 0x11
     or        t1, t1, t2
     or        t1, t1, t3
-    csrwr     t1, csr_dmw0
+    csrwr     t1, csr_dmw1
     invtlb    0x0, zero, zero   
 
 # pre-load the data in addr 0xd0100000

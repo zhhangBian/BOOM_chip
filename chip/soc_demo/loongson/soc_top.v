@@ -874,7 +874,7 @@ axi_2x1_mux u_axi_2x1_mux
     .M00_AXI_ARSIZE      (m1_arsize   ),
     .M00_AXI_ARVALID     (m1_arvalid  ),
     .M00_AXI_RDATA       (m1_rdata    ),
-    .M00_AXI_RID         (m1_rid[3:0] ),
+    .M00_AXI_RID         ({1'b0,m1_rid[3:0]} ),
     .M00_AXI_RLAST       (m1_rlast    ),
     .M00_AXI_RREADY      (m1_rready   ),
     .M00_AXI_RRESP       (m1_rresp    ),
@@ -895,7 +895,7 @@ axi_2x1_mux u_axi_2x1_mux
     .M00_AXI_WREADY      (1'b0        ),
     .M00_AXI_WSTRB       (            ),
     .M00_AXI_WVALID      (            ),
-    .M00_AXI_BID         (`LID'b0     ),
+    .M00_AXI_BID         (5'b0        ),
     .M00_AXI_BREADY      (            ),
     .M00_AXI_BRESP       (`Lbresp'b0  ),
     .M00_AXI_BVALID      (1'b0        )

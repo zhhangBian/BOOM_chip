@@ -2,7 +2,7 @@
 #include <regdef.h>
 #include <inst_test.h>
 
-LEAF(n7_ipe_ex_test)
+LEAF(n6_ipe_ex_test)
 
     addi.w  s0, s0, 1 
     //clear ti
@@ -113,7 +113,7 @@ LEAF(n7_ipe_ex_test)
     li.w     s2, 0x07
     la.local s4, 1f 
 1:  
-    idle    0
+    #idle    0
     bne     s2, s7, inst_error 
 
 ###score +++
@@ -132,5 +132,5 @@ inst_error:
     or      t0, t1, s3 
     st.w    t0, s1, 0 
     jirl    zero, ra, 0 
-END(n7_ipe_ex_test)
+END(n6_ipe_ex_test)
 

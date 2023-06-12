@@ -2,7 +2,7 @@
 #include <regdef.h>
 #include <inst_test.h>
 
-LEAF(n8_csr_rw_test) 
+LEAF(n7_csr_rw_test) 
     addi.w  s0, s0, 1 
     //clear ti
     li.w     t0, 0x1
@@ -40,7 +40,7 @@ LEAF(n8_csr_rw_test)
 
 ###euen 
     li.w     t2, 0xffffffff 
-    csrwr   t2, csr_euen
+    #csrwr   t2, csr_euen
     csrrd   t0, csr_euen 
     li.w     t1, 0x0    //not implement float point inst, read only
     srli.w   t0, t0, 0x1
@@ -573,4 +573,4 @@ inst_error:
   or      t0, t1, s3 
   st.w    t0, s1, 0 
   jirl    zero, ra, 0 
-END(n8_csr_rw_test)
+END(n7_csr_rw_test)
