@@ -1,7 +1,11 @@
 `include "mycpu.h"
 `include "csr.h"
 
-module csr(
+module csr 
+#(
+	parameter TLBNUM = 32
+)
+(
     input                           clk          ,
     input                           reset        ,
     //from to ds 
@@ -350,7 +354,8 @@ end
 always @(posedge clk) begin
     if (reset) begin
         csr_estat[ 1: 0] <= 2'b0; 
-	csr_estat[10]    <= 1'b0;
+		csr_estat[10]    <= 1'b0;
+		csr_estat[12]    <= 1'b0;
         csr_estat[15:13] <= 3'b0;
         csr_estat[31]    <= 1'b0;
         
@@ -413,9 +418,10 @@ always @(posedge clk) begin
     if (reset) begin
         csr_tlbidx[23: 5] <= 19'b0;
         csr_tlbidx[30]    <= 1'b0;
+		csr_tlbidx[`INDEX]<= 5'b0;
     end
     else if (tlbidx_wen) begin
-        csr_tlbidx[`INDEX] <= wr_data[`INDEX];
+		csr_tlbidx[$clog2(TLBNUM)-1:0] <= wr_data[$clog2(TLBNUM)-1:0];
         csr_tlbidx[`PS]    <= wr_data[`PS];
         csr_tlbidx[`NE]    <= wr_data[`NE];
     end
@@ -669,8 +675,9 @@ end
 //llbctl
 always @(posedge clk) begin
     if (reset) begin
-        csr_llbctl[`KLO] <= 1'b0;
-        csr_llbctl[31:3] <= 29'b0;
+        csr_llbctl[`KLO]   <= 1'b0;
+        csr_llbctl[31:3]   <= 29'b0;
+		csr_llbctl[`WCLLB] <= 1'b0;
         llbit <= 1'b0;
     end 
     else if (ertn_flush) begin

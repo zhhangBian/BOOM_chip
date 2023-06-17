@@ -1,4 +1,8 @@
-module core_top(
+module core_top
+#(
+	parameter TLBNUM = 32
+)
+(
     input           aclk,
     input           aresetn,
     input    [ 7:0] intrpt, 
@@ -615,7 +619,7 @@ wb_stage wb_stage(
     .ws_csr_data_diff   (csr_data_diff     )
 );
 
-csr u_csr(
+csr #(TLBNUM) u_csr(
     .clk            (aclk           ),
     .reset          (reset          ),
     //from to ds
@@ -784,7 +788,7 @@ axi_bridge axi_bridge(
     .write_buffer_empty (write_buffer_empty)
 );
 
-addr_trans addr_trans(
+addr_trans #(TLBNUM) addr_trans(
     .clk            (aclk           ),
     .asid           (csr_asid       ),
     //trans mode 
