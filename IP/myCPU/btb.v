@@ -1,6 +1,7 @@
 module btb
 #(
-    parameter BTBNUM = 32
+    parameter BTBNUM = 32,
+	parameter RASNUM = 16
 )
 (
     input             clk           ,
@@ -27,15 +28,20 @@ module btb
     input  [31:0]     right_target  
 );
 
-reg [29:0] pc      [BTBNUM-1:0];
-reg [29:0] target  [BTBNUM-1:0];
-reg [ 2:0] counter [BTBNUM-1:0];
+reg [29:0] btb_pc      [BTBNUM-1:0];
+reg [29:0] btb_target  [BTBNUM-1:0];
+reg [ 1:0] btb_counter [BTBNUM-1:0];
+
+reg [BTBNUM-1:0] btb_valid;
+
+reg [29:0] ras_pc [RASNUM-1:0];
+
+reg [RASNUM-1:0] ras_valid;
 
 reg [31:0] fetch_pc_r;
 reg fetch_en_r;
 
-reg [BTBNUM-1:0] jirl_flag;
-reg [BTBNUM-1:0] valid    ;
+//reg [BTBNUM-1:0] jirl_flag;
 
 reg [29:0] ras [7:0];
 reg [ 3:0] ras_ptr;
@@ -45,17 +51,23 @@ wire [29:0] ras_top;
 wire ras_full;
 wire ras_empty;
 
-wire [31:0] match_rd;
+wire [31:0] btb_match_rd;
+wire [15:0] ras_match_rd;
 
-wire [29:0] match_target;
-wire [ 2:0] match_counter;
-wire [ 4:0] match_index;
-wire        match_jirl_flag;
+wire btb_match;
+wire ras_match;
 
-wire all_entry_valid;
-wire [4:0] select_one_invalid_entry;
+wire [29:0] btb_match_target;
+wire [ 1:0] btb_match_counter;
+wire [ 4:0] btb_match_index;
 
-wire [4:0] add_entry_index;
+wire btb_all_entry_valid;
+wire [4:0] btb_select_one_invalid_entry;
+wire [4:0] btb_add_entry_index;
+
+wire ras_all_entry_valid;
+wire [3:0] ras_select_one_invalid_entry;
+wire [3:0] ras_add_entry_index;
 
 reg [5:0] fcsr;
 
@@ -69,69 +81,83 @@ always @(posedge clk) begin
         fetch_pc_r <= fetch_pc;
 end
 
-assign add_entry_index = all_entry_valid ? fcsr[4:0] : select_one_invalid_entry;
+assign btb_add_entry_index = btb_all_entry_valid ? fcsr[4:0] : btb_select_one_invalid_entry;
+assign btb_all_entry_valid = &btb_valid;
+one_valid_32 sel_one_btb_entry (.in(~btb_valid), .out_en(btb_select_one_invalid_entry));
 
-assign all_entry_valid = &valid;
+assign ras_add_entry_index = ras_all_entry_valid ? fcsr[3:0] : ras_select_one_invalid_entry;
+assign ras_all_entry_valid = &ras_valid;
+one_valid_16 sel_one_ras_entry (.in(~ras_valid), .out_en(ras_select_one_invalid_entry));
 
-one_valid_32 sel_on_entry (.in(~valid), .out_en(select_one_invalid_entry));
 
 always @(posedge clk) begin
     if (reset) begin
-        valid <= 8'b0;
+        btb_valid <= 32'b0;
+		ras_valid <= 16'b0;
     end
-    else if (operate_en) begin
+    else if (operate_en && !pop_ras) begin
         if (add_entry) begin
-            valid[add_entry_index]     <= 1'b1;
-            pc[add_entry_index]        <= operate_pc[31:2];
-            target[add_entry_index]    <= right_target[31:2];
-            counter[add_entry_index]   <= 3'b100;
-            jirl_flag[add_entry_index] <= pop_ras;
+            btb_valid[btb_add_entry_index]   <= 1'b1;
+            btb_pc[btb_add_entry_index]      <= operate_pc[31:2];
+            btb_target[btb_add_entry_index]  <= right_target[31:2];
+            btb_counter[btb_add_entry_index] <= 2'b10;
         end
-        else if (delete_entry) begin
-            valid[operate_index]     <= 1'b0;
-            jirl_flag[operate_index] <= 1'b0;
-        end
-        else if (target_error && !pop_ras) begin
-            target[operate_index]    <= right_target[31:2];
-            counter[operate_index]   <= 3'b100;
-            jirl_flag[operate_index] <= 1'b0;
+        else if (target_error) begin
+            btb_target[operate_index]    <= right_target[31:2];
+            btb_counter[operate_index]   <= 2'b10;
         end
         else if (pre_error || pre_right) begin
             if (right_orien) begin
-                if (counter[operate_index] != 3'b111) begin
-                    counter[operate_index] <= counter[operate_index] + 3'b1;
+                if (btb_counter[operate_index] != 2'b11) begin
+                    btb_counter[operate_index] <= btb_counter[operate_index] + 2'b1;
                 end
             end
             else begin
-                if (counter[operate_index] != 3'b000) begin
-                    counter[operate_index] <= counter[operate_index] - 3'b1;
+                if (btb_counter[operate_index] != 2'b00) begin
+                    btb_counter[operate_index] <= btb_counter[operate_index] - 2'b1;
                 end
             end
         end
     end
+	else if (operate_en && pop_ras) begin
+		if (add_entry) begin
+			ras_valid[ras_add_entry_index] <= 1'b1;
+            ras_pc[ras_add_entry_index]    <= operate_pc[31:2];
+		end
+	end
     
 end
 
 genvar i;
 generate 
     for (i = 0; i < BTBNUM; i = i + 1)
-        begin: match
-            assign match_rd[i] = fetch_en_r && ((fetch_pc_r[31:2] == pc[i]) && valid[i] && !(jirl_flag[i] && ras_empty)); 
+        begin: btb_match_com
+            assign btb_match_rd[i] = (fetch_pc_r[31:2] == btb_pc[i]) && btb_valid[i]; 
         end
 endgenerate
 
+generate 
+    for (i = 0; i < RASNUM; i = i + 1)
+        begin: ras_match_com
+            assign ras_match_rd[i] = (fetch_pc_r[31:2] == ras_pc[i]) && ras_valid[i]; 
+        end
+endgenerate
+
+assign btb_match = |btb_match_rd;
+assign ras_match = |ras_match_rd;
+
 assign ras_top = ras[ras_ptr - 4'b1]; //ras modify may before inst fetch
 
-encoder_32_5 encode_match (.in(match_rd), .out(match_index));
+encoder_32_5 encode_match (.in(btb_match_rd), .out(btb_match_index));
 
-assign match_target = target[match_index];
-assign match_counter = counter[match_index];
-assign match_jirl_flag = jirl_flag[match_index];
+assign btb_match_target = btb_target[btb_match_index];
+assign btb_match_counter = btb_counter[btb_match_index];
 
-assign ret_pc = match_jirl_flag ? {ras_top, 2'b0} : {match_target, 2'b0};
-assign ret_en = |match_rd;
-assign taken  = match_counter[2];
-assign ret_index = match_index;
+assign ret_pc = {32{ras_match}} & {ras_top, 2'b0} |
+				{32{btb_match}} & {btb_match_target, 2'b0};
+assign ret_en = btb_match || ras_match;
+assign taken  = btb_match && btb_match_counter[1] || ras_match;
+assign ret_index = btb_match_index;
 
 assign ras_full  = ras_ptr[3];
 assign ras_empty = (ras_ptr == 4'd0);
