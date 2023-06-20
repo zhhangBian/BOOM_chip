@@ -103,15 +103,20 @@ reg          idle_lock;
 
 wire         tlb_excp_lock_pc;
 
+wire  [31:0] btb_ret_pc_t;
+wire  [ 4:0] btb_index_t;
+wire         btb_taken_t;
+wire         btb_en_t;
+
 assign {btb_pre_error_flush,
         btb_pre_error_flush_target  } = br_bus;
 
 wire [31:0] fs_inst;
 reg  [31:0] fs_pc;
-assign fs_to_ds_bus = {btb_ret_pc,      //108:77
-                       btb_index,       //76:72
-                       btb_taken,       //71:71
-                       btb_en,          //70:70
+assign fs_to_ds_bus = {btb_ret_pc_t,    //108:77
+                       btb_index_t,     //76:72
+                       btb_taken_t,     //71:71
+                       btb_en_t,        //70:70
                        icache_miss,     //69:69
                        excp,            //68:68
                        excp_num,        //67:64
@@ -152,7 +157,7 @@ always @(posedge clk) begin
     endcase
 end
 
-assign fetch_btb_target = btb_taken && btb_en;
+assign fetch_btb_target = (btb_taken && btb_en) || (btb_lock_en && btb_lock_buffer[37]);
 
 always @(posedge clk) begin
     if (reset) begin
@@ -210,6 +215,23 @@ always @(posedge clk) begin
     endcase
 end
 
+//btb lock
+reg [37:0] btb_lock_buffer;
+reg        btb_lock_en;
+always @(posedge clk) begin
+	if (reset || flush_sign || fetch_en)
+		btb_lock_en <= 1'b0;
+	else if (btb_en && !(fs_ready_go && ds_allowin)) begin
+		btb_lock_en     <= 1'b1;
+		btb_lock_buffer <= {btb_taken, btb_index, btb_ret_pc};
+	end
+end
+
+assign btb_ret_pc_t = {32{btb_lock_en}} & btb_lock_buffer[31:0] | btb_ret_pc;
+assign btb_index_t  = {5{btb_lock_en}} & btb_lock_buffer[36:32] | btb_index;
+assign btb_taken_t  = btb_lock_en && btb_lock_buffer[37] || btb_taken;
+assign btb_en_t     = btb_lock_en || btb_en;
+
 // pre-IF stage
 assign pfs_ready_go = (inst_valid || pfs_excp) && inst_addr_ok;
 assign to_fs_valid  = ~reset && pfs_ready_go;
@@ -219,7 +241,7 @@ assign nextpc       = (excp_flush && !excp_tlbrefill)               ? csr_eentry
                       ertn_flush                                    ? csr_era                    :
                       (refetch_flush || icacop_flush || idle_flush) ? (ws_pc + 32'h4)            :
                       btb_pre_error_flush && fs_valid               ? btb_pre_error_flush_target :
-                      fetch_btb_target                              ? btb_ret_pc                 :
+                      fetch_btb_target                              ? btb_ret_pc_t               :
                                                                       seq_pc;                                                   
 
 assign real_nextpc = (flush_inst_req_state == flush_inst_req_full)                                  ? flush_inst_req_buffer     :

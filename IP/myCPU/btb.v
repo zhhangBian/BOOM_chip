@@ -60,6 +60,10 @@ wire ras_match;
 wire [29:0] btb_match_target;
 wire [ 1:0] btb_match_counter;
 wire [ 4:0] btb_match_index;
+wire [ 4:0] btb_random_index;
+
+wire [ 3:0] ras_match_index;
+wire [ 3:0] ras_random_index;
 
 wire btb_all_entry_valid;
 wire [4:0] btb_select_one_invalid_entry;
@@ -81,10 +85,12 @@ always @(posedge clk) begin
         fetch_pc_r <= fetch_pc;
 end
 
+//assign btb_random_index = (btb_match && (fcsr[4:0] == btb_match_index)) ? (fcsr[4:0]+1'b1) : fcsr[4:0];
 assign btb_add_entry_index = btb_all_entry_valid ? fcsr[4:0] : btb_select_one_invalid_entry;
 assign btb_all_entry_valid = &btb_valid;
 one_valid_32 sel_one_btb_entry (.in(~btb_valid), .out_en(btb_select_one_invalid_entry));
 
+//assign ras_random_index = (ras_match && (fcsr[3:0] == ras_match_index)) ? (fcsr[3:0]+1'b1) : fcsr[3:0];
 assign ras_add_entry_index = ras_all_entry_valid ? fcsr[3:0] : ras_select_one_invalid_entry;
 assign ras_all_entry_valid = &ras_valid;
 one_valid_16 sel_one_ras_entry (.in(~ras_valid), .out_en(ras_select_one_invalid_entry));
@@ -132,14 +138,14 @@ genvar i;
 generate 
     for (i = 0; i < BTBNUM; i = i + 1)
         begin: btb_match_com
-            assign btb_match_rd[i] = (fetch_pc_r[31:2] == btb_pc[i]) && btb_valid[i]; 
+            assign btb_match_rd[i] = fetch_en_r && ((fetch_pc_r[31:2] == btb_pc[i]) && btb_valid[i]); 
         end
 endgenerate
 
 generate 
     for (i = 0; i < RASNUM; i = i + 1)
         begin: ras_match_com
-            assign ras_match_rd[i] = (fetch_pc_r[31:2] == ras_pc[i]) && ras_valid[i]; 
+            assign ras_match_rd[i] = fetch_en_r && ((fetch_pc_r[31:2] == ras_pc[i]) && ras_valid[i]); 
         end
 endgenerate
 
@@ -148,7 +154,8 @@ assign ras_match = |ras_match_rd;
 
 assign ras_top = ras[ras_ptr - 4'b1]; //ras modify may before inst fetch
 
-encoder_32_5 encode_match (.in(btb_match_rd), .out(btb_match_index));
+encoder_32_5 encode_btb_match (.in(btb_match_rd), .out(btb_match_index));
+encoder_16_4 encode_ras_match (.in(ras_match_rd), .out(ras_match_index));
 
 assign btb_match_target = btb_target[btb_match_index];
 assign btb_match_counter = btb_counter[btb_match_index];
@@ -157,7 +164,8 @@ assign ret_pc = {32{ras_match}} & {ras_top, 2'b0} |
 				{32{btb_match}} & {btb_match_target, 2'b0};
 assign ret_en = btb_match || ras_match;
 assign taken  = btb_match && btb_match_counter[1] || ras_match;
-assign ret_index = btb_match_index;
+assign ret_index = {5{btb_match}} & {btb_match_index} | 
+				   {5{ras_match}} & {1'b0,ras_match_index};
 
 assign ras_full  = ras_ptr[3];
 assign ras_empty = (ras_ptr == 4'd0);
