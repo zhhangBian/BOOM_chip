@@ -113,7 +113,7 @@ LEAF(n6_ipe_ex_test)
     li.w     s2, 0x07
     la.local s4, 1f 
 1:  
-    #idle    0
+    idle    0
     bne     s2, s7, inst_error 
 
 ###score +++
