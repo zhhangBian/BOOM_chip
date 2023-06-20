@@ -206,7 +206,7 @@ assign wr_csr_data  = ws_csr_result;
 
 assign icacop_flush = ws_icacop_op_en && ws_valid;
 
-assign idle_flush = ws_idle && ws_valid;
+assign idle_flush = ws_idle && real_valid;
 
 assign tlb_inst_stall = (ws_tlbsrch || ws_tlbrd) && ws_valid;
 
