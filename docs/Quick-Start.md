@@ -134,7 +134,7 @@ module core_top(
      
 #### 综合
 该步骤的工作目录位于`fpga`，当前支持龙芯实验箱及百芯开发板。  
-使用vivado打开`loongson/system_run/system_run.xpr`或者`Baixin/system_run/system_run.xpr`工程文件，添加处理器核代码后，可直接开始综合。    
+使用vivado打开`loongson/system_run/system_run.xpr`或者`Baixin/system_run/system_run.xpr`工程文件，添加处理器核代码后，可直接开始综合。若选择添加`chiplab`中的参考核，注意添加`myCPU/IP`下的xilinx IP。    
 处理器核输入时钟频率默认为33MHz，可对`clk_pll_33`xilinx IP的输出时钟频率进行调整，修改处理器核的输入时钟频率。此外，还需将`chip/soc_demo/loongson/config.h`或者`chip/soc_demo/Baixin/config.h`文件中的`FREQ`宏定义修改为对应频率。
 #### 板上启动内核
 板上内核启动步骤包括：`flash`加载`pmon`，通过网口加载内核。   
