@@ -111,7 +111,7 @@ generate
 endgenerate
 
 encoder_32_5 en_match0 (.in({{(32-TLBNUM){1'b0}},match0}), .out(match0_en));
-encoder_32_5 en_match1 (.in({{(32-TLBNUM){1'b0}},match0}), .out(match1_en));
+encoder_32_5 en_match1 (.in({{(32-TLBNUM){1'b0}},match1}), .out(match1_en));
 
 assign s0_found_t = |match0;
 assign s1_found_t = |match1;
