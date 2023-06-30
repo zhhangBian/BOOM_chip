@@ -71,7 +71,6 @@ wire         pfs_ready_go;
 
 wire [31:0]  seq_pc;
 wire [31:0]  nextpc;
-wire [31:0]  real_nextpc;
 
 wire         pfs_excp_adef;
 wire         fs_excp_tlbr;
@@ -90,6 +89,7 @@ reg  [31:0]  inst_rd_buff;
 reg          inst_buff_enable;
 
 wire         da_mode;
+wire         pg_mode;
 
 wire         btb_pre_error_flush;
 wire [31:0]  btb_pre_error_flush_target;
@@ -107,6 +107,9 @@ wire  [31:0] btb_ret_pc_t;
 wire  [ 4:0] btb_index_t;
 wire         btb_taken_t;
 wire         btb_en_t;
+
+wire  [31:0] excp_entry;
+wire  [31:0] inst_flush_pc;
 
 assign {btb_pre_error_flush,
         btb_pre_error_flush_target  } = br_bus;
@@ -221,7 +224,7 @@ reg        btb_lock_en;
 always @(posedge clk) begin
 	if (reset || flush_sign || fetch_en)
 		btb_lock_en <= 1'b0;
-	else if (btb_en && !(fs_ready_go && ds_allowin)) begin
+	else if (btb_en && !pfs_ready_go) begin
 		btb_lock_en     <= 1'b1;
 		btb_lock_buffer <= {btb_taken, btb_index, btb_ret_pc};
 	end
@@ -236,16 +239,19 @@ assign btb_en_t     = btb_lock_en || btb_en;
 assign pfs_ready_go = (inst_valid || pfs_excp) && inst_addr_ok;
 assign to_fs_valid  = ~reset && pfs_ready_go;
 assign seq_pc       = fs_pc + 32'h4;
-assign nextpc       = (excp_flush && !excp_tlbrefill)               ? csr_eentry                 :
-                      (excp_flush && excp_tlbrefill)                ? csr_tlbrentry              :
-                      ertn_flush                                    ? csr_era                    :
-                      (refetch_flush || icacop_flush || idle_flush) ? (ws_pc + 32'h4)            :
-                      btb_pre_error_flush && fs_valid               ? btb_pre_error_flush_target :
-                      fetch_btb_target                              ? btb_ret_pc_t               :
-                                                                      seq_pc;                                                   
+assign excp_entry   = {32{excp_tlbrefill}}  & csr_tlbrentry |
+				      {32{!excp_tlbrefill}} & csr_eentry    ;
 
-assign real_nextpc = (flush_inst_req_state == flush_inst_req_full)                                  ? flush_inst_req_buffer     :
-                     (br_target_inst_req_state == br_target_inst_req_wait_br_target) && !flush_sign ? br_target_inst_req_buffer : nextpc;
+assign inst_flush_pc = {32{ertn_flush}}                                  & csr_era         |
+					   {32{refetch_flush || icacop_flush || idle_flush}} & (ws_pc + 32'h4) ;
+
+assign nextpc = (flush_inst_req_state == flush_inst_req_full)                   ? flush_inst_req_buffer     :
+			    excp_flush                                                      ? excp_entry                :
+			    (ertn_flush || refetch_flush || icacop_flush || idle_flush)     ? inst_flush_pc             :
+			    (br_target_inst_req_state == br_target_inst_req_wait_br_target) ? br_target_inst_req_buffer :
+                btb_pre_error_flush && fs_valid                                 ? btb_pre_error_flush_target:
+                fetch_btb_target                                                ? btb_ret_pc_t              :
+                                                                                  seq_pc                    ;
 
 assign tlb_excp_lock_pc = tlb_excp_cancel_req && br_target_inst_req_state != br_target_inst_req_wait_br_target && flush_inst_req_state != flush_inst_req_full;
 
@@ -253,7 +259,7 @@ assign tlb_excp_lock_pc = tlb_excp_cancel_req && br_target_inst_req_state != br_
 assign inst_valid = (fs_allowin && !pfs_excp && !tlb_excp_lock_pc || flush_sign || btb_pre_error_flush) && !(idle_flush || idle_lock);
 assign inst_op     = 1'b0;
 assign inst_wstrb  = 4'h0;
-assign inst_addr   = real_nextpc; //nextpc
+assign inst_addr   = nextpc; //nextpc
 assign inst_wdata  = 32'b0;
 
 assign fs_inst     = (inst_buff_enable) ? inst_rd_buff : inst_rdata;
@@ -271,7 +277,7 @@ always @(posedge clk) begin
 end
 
 //exception
-assign pfs_excp_adef = (real_nextpc[0] || real_nextpc[1]); //word align
+assign pfs_excp_adef = (nextpc[0] || nextpc[1]); //word align
 //tlb 
 assign fs_excp_tlbr = !inst_tlb_found && inst_addr_trans_en;
 assign fs_excp_pif  = !inst_tlb_v && inst_addr_trans_en;
@@ -286,14 +292,15 @@ assign excp = fs_excp || fs_excp_tlbr || fs_excp_pif || fs_excp_ppi ;
 assign excp_num = {fs_excp_ppi, fs_excp_pif, fs_excp_tlbr, fs_excp_num};
 
 //addr trans
-assign inst_addr_trans_en = csr_pg && !csr_da && !dmw0_en && !dmw1_en;
+assign inst_addr_trans_en = pg_mode && !dmw0_en && !dmw1_en;
 
 //addr dmw trans  //TOT
-assign dmw0_en = ((csr_dmw0[`PLV0] && csr_plv == 2'd0) || (csr_dmw0[`PLV3] && csr_plv == 2'd3)) && (fs_pc[31:29] == csr_dmw0[`VSEG]);
-assign dmw1_en = ((csr_dmw1[`PLV0] && csr_plv == 2'd0) || (csr_dmw1[`PLV3] && csr_plv == 2'd3)) && (fs_pc[31:29] == csr_dmw1[`VSEG]);
+assign dmw0_en = ((csr_dmw0[`PLV0] && csr_plv == 2'd0) || (csr_dmw0[`PLV3] && csr_plv == 2'd3)) && (fs_pc[31:29] == csr_dmw0[`VSEG]) && pg_mode;
+assign dmw1_en = ((csr_dmw1[`PLV0] && csr_plv == 2'd0) || (csr_dmw1[`PLV3] && csr_plv == 2'd3)) && (fs_pc[31:29] == csr_dmw1[`VSEG]) && pg_mode;
 
 //uncache judgement
 assign da_mode = csr_da && !csr_pg;
+assign pg_mode = csr_pg && !csr_da;
 
 assign inst_uncache_en = (da_mode && (csr_datf == 2'b0))                 ||
                          (dmw0_en && (csr_dmw0[`DMW_MAT] == 2'b0))       ||
@@ -321,14 +328,14 @@ always @(posedge clk) begin
         fs_excp_num  <= 4'b0;
     end
     else if (to_fs_valid && (fs_allowin || flush_inst_go_dirt)) begin
-        fs_pc        <= real_nextpc;
+        fs_pc        <= nextpc;
         fs_excp      <= pfs_excp;
         fs_excp_num  <= pfs_excp_num;
     end
 end
 
 //btb
-assign fetch_pc  = real_nextpc;
-assign fetch_en  = inst_valid && inst_addr_ok || flush_sign;
+assign fetch_pc  = nextpc;
+assign fetch_en  = inst_valid && inst_addr_ok;
 
 endmodule

@@ -815,7 +815,7 @@ assign excp_num = {excp_ipe, excp_ine, inst_break, inst_syscall, ds_excp_num, ha
 assign rd_csr_addr = csr_idx;
 
 //when cache operate icache, will refetch inst after this inst.
-assign refetch = (inst_tlbwr || inst_tlbfill || inst_tlbrd || inst_invtlb || inst_ertn || inst_ibar) && ds_valid;  //this inst will change addr trans 
+assign refetch = (inst_tlbwr || inst_tlbfill || inst_tlbrd || inst_invtlb || inst_ibar) && ds_valid;  //this inst will change addr trans 
 
 assign tlb_inst_stall = es_tlb_inst_stall || ms_tlb_inst_stall || ws_tlb_inst_stall;
 
