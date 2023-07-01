@@ -68,10 +68,20 @@ wire [ 3:0] ras_random_index;
 wire btb_all_entry_valid;
 wire [4:0] btb_select_one_invalid_entry;
 wire [4:0] btb_add_entry_index;
+reg  [4:0] btb_add_entry_index_r;
+wire [31:0] btb_add_entry_dec;
 
 wire ras_all_entry_valid;
 wire [3:0] ras_select_one_invalid_entry;
 wire [3:0] ras_add_entry_index;
+
+wire [31:0] btb_untaken_entry;
+reg  [31:0] btb_untaken_entry_r;
+wire [31:0] btb_untaken_entry_t;
+reg         btb_add_entry_r;
+wire [31:0] btb_sel_untaken_entry;
+wire [4:0]  btb_sel_one_untaken_entry;
+wire        btb_has_one_untaken_entry;
 
 reg [5:0] fcsr;
 
@@ -85,8 +95,23 @@ always @(posedge clk) begin
         fetch_pc_r <= fetch_pc;
 end
 
+always @(posedge clk) begin
+	btb_untaken_entry_r   <= btb_untaken_entry;
+	btb_add_entry_r       <= operate_en && !pop_ras && add_entry;
+	btb_add_entry_index_r <= btb_add_entry_index;
+end
+
+assign btb_untaken_entry_t = btb_untaken_entry_r & ({32{!btb_add_entry_r}} | ~btb_add_entry_dec); 
+assign btb_has_one_untaken_entry = |btb_untaken_entry_t;
+
+decoder_5_32 dec_btb_add_entry (.in(btb_add_entry_index_r), .out(btb_add_entry_dec));
+one_valid_32 sel_one_untaken_entry (.in(btb_untaken_entry_t), .out_en(btb_sel_one_untaken_entry));
+
 //assign btb_random_index = (btb_match && (fcsr[4:0] == btb_match_index)) ? (fcsr[4:0]+1'b1) : fcsr[4:0];
-assign btb_add_entry_index = btb_all_entry_valid ? fcsr[4:0] : btb_select_one_invalid_entry;
+assign btb_add_entry_index = !btb_all_entry_valid ?      btb_select_one_invalid_entry :
+							 btb_has_one_untaken_entry ? btb_sel_one_untaken_entry : 
+							 							 fcsr[4:0] ; 
+
 assign btb_all_entry_valid = &btb_valid;
 one_valid_32 sel_one_btb_entry (.in(~btb_valid), .out_en(btb_select_one_invalid_entry));
 
@@ -94,7 +119,6 @@ one_valid_32 sel_one_btb_entry (.in(~btb_valid), .out_en(btb_select_one_invalid_
 assign ras_add_entry_index = ras_all_entry_valid ? fcsr[3:0] : ras_select_one_invalid_entry;
 assign ras_all_entry_valid = &ras_valid;
 one_valid_16 sel_one_ras_entry (.in(~ras_valid), .out_en(ras_select_one_invalid_entry));
-
 
 always @(posedge clk) begin
     if (reset) begin
@@ -147,6 +171,13 @@ generate
         begin: ras_match_com
             assign ras_match_rd[i] = fetch_en_r && ((fetch_pc_r[31:2] == ras_pc[i]) && ras_valid[i]); 
         end
+endgenerate
+
+generate 
+	for (i = 0; i < BTBNUM; i = i + 1)
+		begin: sel_untaken_entry
+			assign btb_untaken_entry[i] = btb_valid[i] && ~|btb_counter[i];
+		end
 endgenerate
 
 assign btb_match = |btb_match_rd;
