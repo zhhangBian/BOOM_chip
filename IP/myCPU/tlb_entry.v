@@ -5,31 +5,31 @@ module tlb_entry
 (
     input        clk,
     // search port 0
-    input                           s0_fetch    ,
-    input      [18:0]               s0_vppn     ,
-    input                           s0_odd_page ,
-    input      [ 9:0]               s0_asid     ,
-    output reg                      s0_found    ,
-    output reg [ 4:0]               s0_index    ,
-    output reg [ 5:0]               s0_ps       ,
-    output reg [19:0]               s0_ppn      ,
-    output reg                      s0_v        ,
-    output reg                      s0_d        ,
-    output reg [ 1:0]               s0_mat      ,
-    output reg [ 1:0]               s0_plv      ,
+    input                        s0_fetch    ,
+    input   [18:0]               s0_vppn     ,
+    input                        s0_odd_page ,
+    input   [ 9:0]               s0_asid     ,
+    output                       s0_found    ,
+    output  [ 4:0]               s0_index    ,
+    output  [ 5:0]               s0_ps       ,
+    output  [19:0]               s0_ppn      ,
+    output                       s0_v        ,
+    output                       s0_d        ,
+    output  [ 1:0]               s0_mat      ,
+    output  [ 1:0]               s0_plv      ,
     //search port 1
-    input                           s1_fetch    ,
-    input      [18:0]               s1_vppn     ,
-    input                           s1_odd_page ,
-    input      [ 9:0]               s1_asid     ,
-    output reg                      s1_found    ,
-    output reg [ 4:0]               s1_index    ,
-    output reg [ 5:0]               s1_ps       ,
-    output reg [19:0]               s1_ppn      ,
-    output reg                      s1_v        ,
-    output reg                      s1_d        ,
-    output reg [ 1:0]               s1_mat      ,
-    output reg [ 1:0]               s1_plv      ,
+    input                        s1_fetch    ,
+    input   [18:0]               s1_vppn     ,
+    input                        s1_odd_page ,
+    input   [ 9:0]               s1_asid     ,
+    output                       s1_found    ,
+    output  [ 4:0]               s1_index    ,
+    output  [ 5:0]               s1_ps       ,
+    output  [19:0]               s1_ppn      ,
+    output                       s1_v        ,
+    output                       s1_d        ,
+    output  [ 1:0]               s1_mat      ,
+    output  [ 1:0]               s1_plv      ,
     // write port 
     input                       we          ,
     input  [$clog2(TLBNUM)-1:0] w_index     ,
@@ -88,6 +88,15 @@ reg [ 1:0] tlb_mat1     [TLBNUM-1:0];
 reg        tlb_d1       [TLBNUM-1:0];
 reg        tlb_v1       [TLBNUM-1:0];
 
+reg		   s0_fetch_r   ;
+reg [18:0] s0_vppn_r    ;
+reg        s0_odd_page_r;
+reg [ 9:0] s0_asid_r    ;
+reg		   s1_fetch_r   ;
+reg [18:0] s1_vppn_r    ;
+reg        s1_odd_page_r;
+reg [ 9:0] s1_asid_r    ;
+
 wire [TLBNUM-1:0] match0;
 wire [TLBNUM-1:0] match1;
 
@@ -97,52 +106,52 @@ wire [$clog2(TLBNUM)-1:0] match1_en;
 wire [TLBNUM-1:0] s0_odd_page_buffer;
 wire [TLBNUM-1:0] s1_odd_page_buffer;
 
-wire s0_found_t, s1_found_t;
+always @(posedge clk) begin
+	s0_fetch_r <= s0_fetch;
+	if (s0_fetch) begin
+		s0_vppn_r      <= s0_vppn;    
+        s0_odd_page_r  <= s0_odd_page;
+        s0_asid_r      <= s0_asid;
+	end
+	s1_fetch_r <= s1_fetch;
+	if (s1_fetch) begin
+		s1_vppn_r      <= s1_vppn;    
+        s1_odd_page_r  <= s1_odd_page;
+        s1_asid_r      <= s1_asid;
+	end
+end
 
 genvar i;
 generate
     for (i = 0; i < TLBNUM; i = i + 1)
         begin: match
-            assign s0_odd_page_buffer[i] = (tlb_ps[i] == 6'd12) ? s0_odd_page : s0_vppn[8];
-            assign match0[i] = (tlb_e[i] == 1'b1) && ((tlb_ps[i] == 6'd12) ? s0_vppn == tlb_vppn[i] : s0_vppn[18: 9] == tlb_vppn[i][18: 9]) && ((s0_asid == tlb_asid[i]) || tlb_g[i]);
-            assign s1_odd_page_buffer[i] = (tlb_ps[i] == 6'd12) ? s1_odd_page : s1_vppn[8];
-            assign match1[i] = (tlb_e[i] == 1'b1) && ((tlb_ps[i] == 6'd12) ? s1_vppn == tlb_vppn[i] : s1_vppn[18: 9] == tlb_vppn[i][18: 9]) && ((s1_asid == tlb_asid[i]) || tlb_g[i]);
+            assign s0_odd_page_buffer[i] = (tlb_ps[i] == 6'd12) ? s0_odd_page_r : s0_vppn_r[8];
+            assign match0[i] = tlb_e[i] && ((tlb_ps[i] == 6'd12) ? s0_vppn_r == tlb_vppn[i] : s0_vppn_r[18: 9] == tlb_vppn[i][18: 9]) && ((s0_asid_r == tlb_asid[i]) || tlb_g[i]);
+            assign s1_odd_page_buffer[i] = (tlb_ps[i] == 6'd12) ? s1_odd_page_r : s1_vppn_r[8];
+            assign match1[i] = tlb_e[i] && ((tlb_ps[i] == 6'd12) ? s1_vppn_r == tlb_vppn[i] : s1_vppn_r[18: 9] == tlb_vppn[i][18: 9]) && ((s1_asid_r == tlb_asid[i]) || tlb_g[i]);
         end
 endgenerate
 
 encoder_32_5 en_match0 (.in({{(32-TLBNUM){1'b0}},match0}), .out(match0_en));
 encoder_32_5 en_match1 (.in({{(32-TLBNUM){1'b0}},match1}), .out(match1_en));
 
-assign s0_found_t = |match0;
-assign s1_found_t = |match1;
+assign s0_found = |match0;
+assign s0_index = {{(5-$clog2(TLBNUM)){1'b0}},match0_en};
+assign s0_ps    = tlb_ps[match0_en];
+assign s0_ppn   = s0_odd_page_buffer[match0_en] ? tlb_ppn1[match0_en] : tlb_ppn0[match0_en];
+assign s0_v     = s0_odd_page_buffer[match0_en] ? tlb_v1[match0_en]   : tlb_v0[match0_en]  ;
+assign s0_d     = s0_odd_page_buffer[match0_en] ? tlb_d1[match0_en]   : tlb_d0[match0_en]  ;
+assign s0_mat   = s0_odd_page_buffer[match0_en] ? tlb_mat1[match0_en] : tlb_mat0[match0_en];
+assign s0_plv   = s0_odd_page_buffer[match0_en] ? tlb_plv1[match0_en] : tlb_plv0[match0_en];
 
-always @(posedge clk) begin
-	if (s0_fetch)
-		s0_found <= s0_found_t;
-
-	if (s0_found_t && s0_fetch) begin
-		s0_index <= {{(5-$clog2(TLBNUM)){1'b0}},match0_en};
-		s0_ps    <= tlb_ps[match0_en];
-		s0_ppn   <= s0_odd_page_buffer[match0_en] ? tlb_ppn1[match0_en] : tlb_ppn0[match0_en];
-		s0_v     <= s0_odd_page_buffer[match0_en] ? tlb_v1[match0_en]   : tlb_v0[match0_en]  ;
-		s0_d     <= s0_odd_page_buffer[match0_en] ? tlb_d1[match0_en]   : tlb_d0[match0_en]  ;
-		s0_mat   <= s0_odd_page_buffer[match0_en] ? tlb_mat1[match0_en] : tlb_mat0[match0_en];
-		s0_plv   <= s0_odd_page_buffer[match0_en] ? tlb_plv1[match0_en] : tlb_plv0[match0_en];
-	end
-
-	if (s1_fetch)
-	s1_found <= s1_found_t;
-
-	if (s1_found_t && s1_fetch) begin
-		s1_index <= {{(5-$clog2(TLBNUM)){1'b0}},match1_en};
-		s1_ps    <= tlb_ps[match1_en];
-		s1_ppn   <= s1_odd_page_buffer[match1_en] ? tlb_ppn1[match1_en] : tlb_ppn0[match1_en];
-		s1_v     <= s1_odd_page_buffer[match1_en] ? tlb_v1[match1_en]   : tlb_v0[match1_en]  ;
-		s1_d     <= s1_odd_page_buffer[match1_en] ? tlb_d1[match1_en]   : tlb_d0[match1_en]  ;
-		s1_mat   <= s1_odd_page_buffer[match1_en] ? tlb_mat1[match1_en] : tlb_mat0[match1_en];
-		s1_plv   <= s1_odd_page_buffer[match1_en] ? tlb_plv1[match1_en] : tlb_plv0[match1_en];
-	end
-end
+assign s1_found = |match1;
+assign s1_index = {{(5-$clog2(TLBNUM)){1'b0}},match1_en};
+assign s1_ps    = tlb_ps[match1_en];
+assign s1_ppn   = s1_odd_page_buffer[match1_en] ? tlb_ppn1[match1_en] : tlb_ppn0[match1_en];
+assign s1_v     = s1_odd_page_buffer[match1_en] ? tlb_v1[match1_en]   : tlb_v0[match1_en]  ;
+assign s1_d     = s1_odd_page_buffer[match1_en] ? tlb_d1[match1_en]   : tlb_d0[match1_en]  ;
+assign s1_mat   = s1_odd_page_buffer[match1_en] ? tlb_mat1[match1_en] : tlb_mat0[match1_en];
+assign s1_plv   = s1_odd_page_buffer[match1_en] ? tlb_plv1[match1_en] : tlb_plv0[match1_en];
 
 always @(posedge clk) begin
     if (we) begin
@@ -208,13 +217,13 @@ generate
                     end
                     else if (inv_op == 5'd5) begin
                         if (!tlb_g[i] && (tlb_asid[i] == inv_asid) && 
-                           ((tlb_ps[i] == 6'd12) ? (tlb_vppn[i] == inv_vpn) : (tlb_vppn[i][18:10] == inv_vpn[18:10]))) begin
+                           ((tlb_ps[i] == 6'd12) ? (tlb_vppn[i] == inv_vpn) : (tlb_vppn[i][18:9] == inv_vpn[18:9]))) begin
                             tlb_e[i] <= 1'b0;
                         end
                     end
                     else if (inv_op == 5'd6) begin
                         if ((tlb_g[i] || (tlb_asid[i] == inv_asid)) && 
-                           ((tlb_ps[i] == 6'd12) ? (tlb_vppn[i] == inv_vpn) : (tlb_vppn[i][18:10] == inv_vpn[18:10]))) begin
+                           ((tlb_ps[i] == 6'd12) ? (tlb_vppn[i] == inv_vpn) : (tlb_vppn[i][18:9] == inv_vpn[18:9]))) begin
                             tlb_e[i] <= 1'b0;
                         end
                     end

@@ -924,7 +924,7 @@ always @(posedge clk) begin
     end
 end
 
-assign btb_operate_en    = ds_valid && ds_allowin && !ds_excp;
+assign btb_operate_en    = ds_valid && ds_ready_go && es_allowin && !ds_excp;
 assign btb_operate_pc    = ds_pc;
 assign btb_pop_ras       = inst_jirl; 
 assign btb_push_ras      = inst_bl;

@@ -79,7 +79,6 @@ wire [31:0] btb_untaken_entry;
 reg  [31:0] btb_untaken_entry_r;
 wire [31:0] btb_untaken_entry_t;
 reg         btb_add_entry_r;
-wire [31:0] btb_sel_untaken_entry;
 wire [4:0]  btb_sel_one_untaken_entry;
 wire        btb_has_one_untaken_entry;
 
