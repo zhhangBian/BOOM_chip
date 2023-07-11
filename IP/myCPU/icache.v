@@ -128,7 +128,6 @@ wire         tagv_wea_en    ;
 
 wire         main_state_is_idle   ;
 wire         main_state_is_lookup ;
-wire         main_state_is_miss   ;
 wire         main_state_is_replace;
 wire         main_state_is_refill ;
 
@@ -157,7 +156,6 @@ wire         req_or_inst_valid ;
 
 localparam main_idle    = 5'b00001;
 localparam main_lookup  = 5'b00010;
-localparam main_miss    = 5'b00100;
 localparam main_replace = 5'b01000;
 localparam main_refill  = 5'b10000;
 localparam write_buffer_idle  = 1'b0;
@@ -222,20 +220,14 @@ always @(posedge clk) begin
                 main_state <= main_idle;
             end
             else if (!cache_hit) begin
-                main_state <= main_miss;
+                main_state <= main_replace;
 
                 request_buffer_tag <= real_tag;
                 request_buffer_uncache_en <= (uncache_en && !request_buffer_icacop);
+                miss_buffer_replace_way <= replace_way;
             end
             else begin
                 main_state <= main_idle;
-            end
-        end
-        main_miss: begin
-            if (wr_rdy) begin
-                main_state <= main_replace;
-
-                miss_buffer_replace_way <= replace_way;
             end
         end
         main_replace: begin
@@ -302,7 +294,7 @@ assign load_res  = {32{way0_hit}} & way0_load_word |
 assign invalid_way = (!way1_tagv_douta[0] || chosen_way) && way0_tagv_douta[0];  //chose invalid way first. 
 
 assign replace_way = ((cacop_op_mode0 || cacop_op_mode1) && request_buffer_offset[0]) ||
-                     (cacop_op_mode2 && lookup_way1_hit_buffer)                       ||
+                     (cacop_op_mode2 && way1_hit)                                     ||
                      (!request_buffer_icacop) && invalid_way;
 
 /*==================================main state replace======================================*/
@@ -371,8 +363,7 @@ assign rdata = {32{main_state_is_lookup}} & load_res |
 /*===============================bank addra logic==============================*/
 
 assign bank_addra = {8{addr_ok}}                                  & real_index           |          /*lookup*/
-                    {8{(main_state_is_miss && wr_rdy) ||                                            /*replace*/
-                        main_state_is_refill}}                    & request_buffer_index ;          /*refill*/
+					{8{!addr_ok}} 								  & request_buffer_index ;
                                  
 assign way0_bank0_addra = bank_addra; 
 assign way0_bank1_addra = bank_addra; 
@@ -438,9 +429,9 @@ assign way1_bank3_ena = bank_ena;
 /*===============================tagv addra logic=================================*/
 
 assign tagv_addra = {8{addr_ok || (icacop_op_en && 
-                    (main_state_is_idle || main_state_is_lookup))}} & real_index           | 
-                    {8{(main_state_is_miss && wr_rdy) ||
-                    main_state_is_replace || main_state_is_refill}} & request_buffer_index ;
+                    (main_state_is_idle || main_state_is_lookup))}} & real_index              | 
+                    {8{main_state_is_replace || main_state_is_refill}} & request_buffer_index ;
+                    //{8{(main_state_is_miss && wr_rdy) ||
 
 assign way0_tagv_addra = tagv_addra;
 assign way1_tagv_addra = tagv_addra;
@@ -567,7 +558,6 @@ lfsr lfsr(
 
 assign main_state_is_idle    = main_state == main_idle   ;
 assign main_state_is_lookup  = main_state == main_lookup ;
-assign main_state_is_miss    = main_state == main_miss   ;
 assign main_state_is_replace = main_state == main_replace;
 assign main_state_is_refill  = main_state == main_refill ;
 

@@ -28,7 +28,7 @@ module dcache
     input               ret_valid    ,
     input               ret_last     ,
     input  [31:0]       ret_data     ,
-    output reg          wr_req       ,
+    output              wr_req       ,
     output [ 2:0]       wr_type      ,
     output [31:0]       wr_addr      ,
     output [ 3:0]       wr_wstrb     ,
@@ -41,6 +41,7 @@ module dcache
 reg [255:0] way0_d_reg;
 reg [255:0] way1_d_reg;
 
+wire        request_uncache_en        ;
 reg         request_buffer_op         ;
 reg         request_buffer_preld      ;
 reg [ 2:0]  request_buffer_size       ;
@@ -166,6 +167,7 @@ wire         write_state_is_idle;
 wire         write_state_is_full;
 
 wire         uncache_wr     ;
+reg          uncache_wr_buffer;
 wire [ 2:0]  uncache_wr_type;
 
 wire         way0_wr_en;
@@ -179,7 +181,7 @@ wire         cacop_op_mode1;
 wire         cacop_op_mode2;
 
 wire         cacop_op_mode2_hit_wr;
-wire         cacop_op_mode2_no_hit;
+reg          cacop_op_mode2_hit_wr_buffer;
 
 wire         preld_st_en;
 wire         preld_ld_en;
@@ -225,8 +227,6 @@ always @(posedge clk) begin
         request_buffer_dcacop        <= 1'b0;
 
         miss_buffer_replace_way <= 1'b0;
-
-        wr_req <= 1'b0;
     end
     else case (main_state)
         main_idle: begin
@@ -264,10 +264,19 @@ always @(posedge clk) begin
                 main_state <= main_idle;
             end
             else if (!cache_hit) begin
-                main_state <= main_miss;
+				//uncache wr --> wr_req 1
+				//uncache rd, cacop(code==0) --> wr_req 0
+				//cacop(code==1, 2), cache st, cache ld --> wr_req (dirty && valid)
+				if (uncache_wr || ((replace_d && replace_v) && (!request_uncache_en || cacop_op_mode2_hit_wr) && !cacop_op_mode0))
+                	main_state <= main_miss;
+				else 
+					main_state <= main_replace;
 
-                request_buffer_tag <= tag;
-                request_buffer_uncache_en <= (uncache_en && !request_buffer_dcacop);
+                request_buffer_tag        <= tag;
+                request_buffer_uncache_en <= request_uncache_en;
+				uncache_wr_buffer         <= uncache_wr;
+                miss_buffer_replace_way   <= replace_way;
+				cacop_op_mode2_hit_wr_buffer <= cacop_op_mode2_hit_wr;
             end
             else begin
                 main_state <= main_idle;
@@ -276,25 +285,12 @@ always @(posedge clk) begin
         main_miss: begin
             if (wr_rdy) begin
                 main_state <= main_replace;
-
-                miss_buffer_replace_way <= replace_way;
-
-                //uncache wr --> wr_req 1
-                //uncache rd, cacop(code==0) --> wr_req 0
-                //cacop(code==1, 2), cache st, cache ld --> wr_req (dirty && valid)
-                wr_req <= uncache_wr || 
-                          ((replace_d && replace_v) && (!request_buffer_uncache_en || cacop_op_mode2_hit_wr) && !cacop_op_mode0);
-                          
             end
         end
         main_replace: begin
             if (rd_rdy) begin
                 main_state <= main_refill;
                 miss_buffer_ret_num <= 2'b0;   //when get ret data, it will be sent to cpu directly.
-            end
-
-            if (wr_req) begin
-               wr_req <= 1'b0;
             end
         end
         main_refill: begin
@@ -384,14 +380,15 @@ assign way1_load_word = way1_data[request_buffer_offset[3:2]*32 +: 32];
 assign load_res  = {32{way0_hit}} & way0_load_word |
                    {32{way1_hit}} & way1_load_word ;
 
-//data_ok logic
+assign request_uncache_en = (uncache_en && !request_buffer_dcacop);
 
-/*====================================main state miss=======================================*/
+assign uncache_wr = request_uncache_en && request_buffer_op && !cacop_op_mode1 && !cacop_op_mode2_hit_wr;
+//data_ok logic
 
 assign invalid_way = (!way1_tagv_douta[0] || chosen_way) && way0_tagv_douta[0];  //chose invalid way first. 
 
 assign replace_way = ((cacop_op_mode0 || cacop_op_mode1) && request_buffer_offset[0]) ||
-                     (cacop_op_mode2 && lookup_way1_hit_buffer)                       ||
+                     (cacop_op_mode2 && way1_hit)                                     ||
                      (!request_buffer_dcacop) && invalid_way   ;
 
 assign way0_d = way0_d_reg[request_buffer_index];
@@ -400,27 +397,28 @@ assign way1_d = way1_d_reg[request_buffer_index];
 assign replace_d    = replace_way ? way1_d : way0_d;
 assign replace_v    = replace_way ? way1_tagv_douta[0] : way0_tagv_douta[0];
 
-/*==================================main state replace======================================*/
+/*====================================main state miss=======================================*/
 
 assign replace_tag  = miss_buffer_replace_way ? way1_tagv_douta[20:1] : way0_tagv_douta[20:1];
 assign replace_data = miss_buffer_replace_way ? way1_data : way0_data;
 
+assign wr_type  = uncache_wr_buffer ? uncache_wr_type : 3'b100;     //replace cache line
+assign wr_addr  = uncache_wr_buffer ? {request_buffer_tag, request_buffer_index, request_buffer_offset} :
+ 	                                  {replace_tag, request_buffer_index, 4'b0};
+assign wr_data  = uncache_wr_buffer ? {96'b0, request_buffer_wdata} : replace_data;
+assign wr_wstrb = uncache_wr_buffer ? request_buffer_wstrb : 4'hf;
+
+assign wr_req = main_state_is_miss;
+
+/*==================================main state replace======================================*/
+
 assign uncache_wr_type = request_buffer_size;
 
-assign uncache_wr = request_buffer_uncache_en && request_buffer_op && !cacop_op_mode1 && !cacop_op_mode2_hit_wr;
-
-assign wr_type  = uncache_wr ? uncache_wr_type : 3'b100;     //replace cache line
-assign wr_addr  = uncache_wr ? {request_buffer_tag, request_buffer_index, request_buffer_offset} :
-                               {replace_tag, request_buffer_index, 4'b0};
-assign wr_data  = uncache_wr ? {96'b0, request_buffer_wdata} : replace_data;
-assign wr_wstrb = uncache_wr ? request_buffer_wstrb : 4'hf;
-
-assign rd_req  = main_state_is_replace && !(uncache_wr || cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2);
-
-/*===================================main state refill======================================*/
+assign rd_req  = main_state_is_replace && !(uncache_wr_buffer || cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2);
 
 assign rd_type = request_buffer_uncache_en ? request_buffer_size : 3'b100;
 assign rd_addr = request_buffer_uncache_en ? {request_buffer_tag, request_buffer_index, request_buffer_offset} : {request_buffer_tag, request_buffer_index, 4'b0};
+/*===================================main state refill======================================*/
 
 //write process will not block pipeline
 //preld ins will not block pipeline      ps:preld is not real mem inst, this operation is controled in pipeline
@@ -484,19 +482,7 @@ assign cacop_op_mode0 = request_buffer_dcacop && (request_buffer_cacop_op_mode =
 assign cacop_op_mode1 = request_buffer_dcacop && ((request_buffer_cacop_op_mode == 2'b01) || (request_buffer_cacop_op_mode == 2'b11));
 assign cacop_op_mode2 = request_buffer_dcacop && (request_buffer_cacop_op_mode == 2'b10);
 
-assign cacop_op_mode2_hit_wr = cacop_op_mode2 && (lookup_way0_hit_buffer || lookup_way1_hit_buffer);
-assign cacop_op_mode2_no_hit = cacop_op_mode2 && !lookup_way0_hit_buffer && !lookup_way1_hit_buffer;
-
-always @(posedge clk) begin
-    if (reset) begin
-        lookup_way0_hit_buffer <= 1'b0;
-        lookup_way1_hit_buffer <= 1'b0;
-    end
-    else if (cacop_op_mode2 && main_state_is_lookup) begin
-        lookup_way0_hit_buffer <= way0_hit;
-        lookup_way1_hit_buffer <= way1_hit;         //buffer way hit info
-    end
-end
+assign cacop_op_mode2_hit_wr = cacop_op_mode2 && (way0_hit || way1_hit);
 
 //output
 assign rdata = {32{main_state_is_lookup}} & load_res |
@@ -514,8 +500,7 @@ assign wr_match_way1_bank2 = write_state_is_full && ( write_buffer_way && (write
 assign wr_match_way1_bank3 = write_state_is_full && ( write_buffer_way && (write_buffer_offset[3:2] == 2'b11));
 
 assign main_state_index = {8{addr_ok}}                             & index                  |             /*lookup*/
-                          {8{(main_state_is_miss && wr_rdy) ||                                            /*replace*/
-                              main_state_is_refill}}               & request_buffer_index    ;            /*refill*/
+						  {8{!addr_ok}}                            & request_buffer_index   ;
 
 assign way0_bank0_addra = wr_match_way0_bank0 ? write_buffer_index : main_state_index;
 assign way0_bank1_addra = wr_match_way0_bank1 ? write_buffer_index : main_state_index;
@@ -596,14 +581,14 @@ assign way1_tagv_ena  = tagv_ena;
 
 /*===============================tagv wea logic=================================*/
 
-assign tagv_wea_en = main_state_is_refill && ((ret_valid && ret_last) || cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2_hit_wr);
+assign tagv_wea_en = main_state_is_refill && ((ret_valid && ret_last) || cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2_hit_wr_buffer);
 
 assign way0_tagv_wea = !miss_buffer_replace_way && tagv_wea_en; //wirte at last 4B
 assign way1_tagv_wea =  miss_buffer_replace_way && tagv_wea_en;
 
 /*===============================tagv dina logic=================================*/
 
-assign tagv_dina = (cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2_hit_wr) ? 21'b0 : {request_buffer_tag, 1'b1};
+assign tagv_dina = (cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2_hit_wr_buffer) ? 21'b0 : {request_buffer_tag, 1'b1};
 
 assign way0_tagv_dina = tagv_dina;
 assign way1_tagv_dina = tagv_dina;
