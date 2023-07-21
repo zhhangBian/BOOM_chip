@@ -135,6 +135,14 @@ wire        preld_inst       ;
 wire        es_br_pre_error  ;
 wire        es_br_pre        ;
 
+// difftest
+wire [31:0] es_inst         ;
+wire [63:0] es_timer_64     ;
+wire        es_cnt_inst     ;
+wire [ 7:0] es_inst_ld_en   ;
+wire [ 7:0] es_inst_st_en   ;
+wire        es_csr_rstat_en ;
+
 assign {es_csr_rstat_en  ,  //349:349  for difftest
         es_inst_st_en    ,  //348:341  for difftest
         es_inst_ld_en    ,  //340:333  for difftst
@@ -361,13 +369,5 @@ assign preld_inst = es_preld && ((preld_hint == 5'd0) || (preld_hint == 5'd8))/*
 assign preld_en   = preld_inst && dcache_req_or_inst_en; 
 
 assign data_fetch = (data_valid || dcacop_inst || preld_en) && data_addr_ok || ((icacop_inst || es_tlbsrch) && es_ready_go && ms_allowin);
-
-// difftest
-wire [31:0] es_inst         ;
-wire [63:0] es_timer_64     ;
-wire        es_cnt_inst     ;
-wire [ 7:0] es_inst_ld_en   ;
-wire [ 7:0] es_inst_st_en   ;
-wire        es_csr_rstat_en ;
 
 endmodule
