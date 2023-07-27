@@ -1,6 +1,7 @@
 #ifndef CHIPLAB_EMU_H
 #define CHIPLAB_EMU_H
 
+#include <verilated.h>
 #include <verilated_save.h>
 #include "cpu_tool.h"
 #include "diff_manage.h"

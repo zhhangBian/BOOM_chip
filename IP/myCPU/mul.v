@@ -163,7 +163,7 @@ always @(posedge mul_clk) begin
 end
 
 //wallace
-wire [13:0] WallaceInter [64:0] /*verilator split_var*/;
+wire [13:0] WallaceInter [64:0];
 wire [63:0] COut, SOut;
 
 WallaceTreeBase firs(

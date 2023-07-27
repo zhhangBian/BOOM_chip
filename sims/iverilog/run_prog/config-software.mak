@@ -1,0 +1,2 @@
+RUN_SOFTWARE=func_lab3
+DUMP=n

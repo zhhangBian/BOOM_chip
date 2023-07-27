@@ -1,0 +1,1 @@
+../../../chip/config-generator.mak

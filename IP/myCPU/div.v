@@ -45,8 +45,8 @@ assign real_div_signed = real_complete ? div_signed_buffer : div_signed;
 assign real_x_31 = real_complete ? x_31_buffer : x[31];
 assign real_y_31 = real_complete ? y_31_buffer : y[31];
 
-assign UnsignX = {1'b0, (real_div_signed ? (x[31] ? (~x + 1) : x) : x)}; //取绝对值并扩展至33位
-assign UnsignY = {1'b0, (real_div_signed ? (y[31] ? (~y + 1) : y) : y)};
+assign UnsignX = {1'b0, (real_div_signed ? (x[31] ? (~x + 32'b1) : x) : x)}; //取绝对值并扩展至33位
+assign UnsignY = {1'b0, (real_div_signed ? (y[31] ? (~y + 32'b1) : y) : y)};
 
 always @(posedge div_clk) begin  //33位除法计算
     if (reset || ~div || complete_delay) begin

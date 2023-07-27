@@ -22,6 +22,19 @@ _start:
 start:
     li.w     t0, 0xffffffff
     addi.w t0, zero, -1
+
+# invalid the old inst in icacche by index
+
+    li.w t0,0x0
+    li.w t2,0x100
+1: 
+    slli.w    t1, t0, OFFSET
+    cacop     0x00, t1, 0x0 
+    cacop     0x00, t1, 0x1
+    cacop     0x01, t1, 0x0 
+    cacop     0x01, t1, 0x1
+    addi.w    t0, t0, 0x1
+    bne       t0, t2, 1b
 #ifdef CSR_INIT
     ori    $r1,$r0,0x28
     csrwr  $r1,0x0

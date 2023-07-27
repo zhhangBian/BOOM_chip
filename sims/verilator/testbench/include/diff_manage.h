@@ -1,6 +1,7 @@
 #ifndef CHIPLAB_DIFF_MANAGE_H
 #define CHIPLAB_DIFF_MANAGE_H
 
+#include <verilated.h>
 #include <verilated_save.h>
 #include "difftest.h"
 
