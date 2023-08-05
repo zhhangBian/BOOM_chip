@@ -162,6 +162,10 @@ end
 
 assign fetch_btb_target = (btb_taken && btb_en) || (btb_lock_en && btb_lock_buffer[37]);
 
+/*
+* idle lock
+* when idle inst commit, stop inst fetch until interrupted
+*/
 always @(posedge clk) begin
     if (reset) begin
         idle_lock <= 1'b0;
@@ -174,7 +178,11 @@ always @(posedge clk) begin
     end
 end
 
-//br state machine
+/*
+* br state machine
+* when btb pre error, id stage will cancel one inst. so need confirm useless
+* inst (will be canceled) is generated. 
+*/ 
 reg [31:0] br_target_inst_req_buffer;
 reg [ 2:0] br_target_inst_req_state;
 localparam br_target_inst_req_empty = 3'b001;
@@ -218,7 +226,11 @@ always @(posedge clk) begin
     endcase
 end
 
-//btb lock
+/*
+* btb lock
+* btb ret only maintain one clock
+* when pfs not ready go, should buffer btb ret
+*/
 reg [37:0] btb_lock_buffer;
 reg        btb_lock_en;
 always @(posedge clk) begin
@@ -240,19 +252,22 @@ assign pfs_ready_go = (inst_valid || pfs_excp) && inst_addr_ok;
 assign to_fs_valid  = ~reset && pfs_ready_go;
 assign seq_pc       = fs_pc + 32'h4;
 assign excp_entry   = {32{excp_tlbrefill}}  & csr_tlbrentry |
-				      {32{!excp_tlbrefill}} & csr_eentry    ;
+                      {32{!excp_tlbrefill}} & csr_eentry    ;
 
 assign inst_flush_pc = {32{ertn_flush}}                                  & csr_era         |
-					   {32{refetch_flush || icacop_flush || idle_flush}} & (ws_pc + 32'h4) ;
+                       {32{refetch_flush || icacop_flush || idle_flush}} & (ws_pc + 32'h4) ;
 
 assign nextpc = (flush_inst_req_state == flush_inst_req_full)                   ? flush_inst_req_buffer     :
-			    excp_flush                                                      ? excp_entry                :
-			    (ertn_flush || refetch_flush || icacop_flush || idle_flush)     ? inst_flush_pc             :
-			    (br_target_inst_req_state == br_target_inst_req_wait_br_target) ? br_target_inst_req_buffer :
+                excp_flush                                                      ? excp_entry                :
+                (ertn_flush || refetch_flush || icacop_flush || idle_flush)     ? inst_flush_pc             :
+                (br_target_inst_req_state == br_target_inst_req_wait_br_target) ? br_target_inst_req_buffer :
                 btb_pre_error_flush && fs_valid                                 ? btb_pre_error_flush_target:
                 fetch_btb_target                                                ? btb_ret_pc_t              :
                                                                                   seq_pc                    ;
-
+/*
+*when encounter tlb excp, stop inst fetch until excp_flush. avoid fetch useless inst.
+*but should not lock when btb state machine or flush state machine is work.
+*/
 assign tlb_excp_lock_pc = tlb_excp_cancel_req && br_target_inst_req_state != br_target_inst_req_wait_br_target && flush_inst_req_state != flush_inst_req_full;
 
 //when flush_sign meet icache_busy 1, flush_sign's inst valid should not set immediately
@@ -267,7 +282,6 @@ assign fs_inst     = (inst_buff_enable) ? inst_rd_buff : inst_rdata;
 //inst read buffer  use for stall situation
 always @(posedge clk) begin
     if (reset || (fs_ready_go && ds_allowin) || flush_sign) begin
-        inst_rd_buff <= 32'b0;
         inst_buff_enable  <= 1'b0;
     end
     else if ((inst_data_ok) && !ds_allowin) begin
@@ -334,7 +348,7 @@ always @(posedge clk) begin
     end
 end
 
-//btb
+//go btb and tlb
 assign fetch_pc  = nextpc;
 assign fetch_en  = inst_valid && inst_addr_ok;
 

@@ -28,6 +28,10 @@ module btb
     input  [31:0]     right_target  
 );
 
+/*
+* btb_pc record all branch inst pc except jirl
+* ras_pc only record jirl pc
+*/
 reg [29:0] btb_pc      [BTBNUM-1:0];
 reg [29:0] btb_target  [BTBNUM-1:0];
 reg [ 1:0] btb_counter [BTBNUM-1:0];
@@ -100,6 +104,7 @@ always @(posedge clk) begin
 	btb_add_entry_index_r <= btb_add_entry_index;
 end
 
+//untaken entry list cal at previous clock
 assign btb_untaken_entry_t = btb_untaken_entry_r & ({32{!btb_add_entry_r}} | ~btb_add_entry_dec); 
 assign btb_has_one_untaken_entry = |btb_untaken_entry_t;
 
@@ -107,6 +112,7 @@ decoder_5_32 dec_btb_add_entry (.in(btb_add_entry_index_r), .out(btb_add_entry_d
 one_valid_32 sel_one_untaken_entry (.in(btb_untaken_entry_t), .out_en(btb_sel_one_untaken_entry));
 
 //assign btb_random_index = (btb_match && (fcsr[4:0] == btb_match_index)) ? (fcsr[4:0]+1'b1) : fcsr[4:0];
+//untaken entry can exit first, make no difference, except lose history infor. 
 assign btb_add_entry_index = !btb_all_entry_valid ?      btb_select_one_invalid_entry :
 							 btb_has_one_untaken_entry ? btb_sel_one_untaken_entry : 
 							 							 fcsr[4:0] ; 
