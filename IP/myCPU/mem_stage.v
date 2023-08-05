@@ -106,6 +106,18 @@ wire        ms_cacop;
 wire        ms_idle;
 wire [31:0] ms_error_va;
 
+// difftest
+wire        ms_cnt_inst     ;
+wire [63:0] ms_timer_64     ;
+wire [31:0] ms_inst         ;
+wire [ 7:0] ms_inst_ld_en   ;
+wire [31:0] ms_ld_paddr     ;
+wire [31:0] ms_ld_vaddr     ;
+wire [ 7:0] ms_inst_st_en   ;
+wire [31:0] ms_st_data      ;
+wire        ms_csr_rstat_en ;
+wire [31:0] ms_csr_data     ;
+
 assign {ms_csr_data      ,  //424:393  for difftest
         ms_csr_rstat_en  ,  //392:392  for difftest
         ms_st_data       ,  //391:360  for difftest
@@ -329,18 +341,6 @@ assign ms_wr_tlbehi = ms_csr_we && (ms_csr_idx == 14'h11) && ms_valid; //stall e
 assign cacop_op = ms_dest;
 assign cacop_op_mode    = cacop_op[4:3];
 assign cacop_op_mode_di = ms_cacop && ((cacop_op_mode == 2'b0) || (cacop_op_mode == 2'b1));
-
-// difftest
-wire        ms_cnt_inst     ;
-wire [63:0] ms_timer_64     ;
-wire [31:0] ms_inst         ;
-wire [ 7:0] ms_inst_ld_en   ;
-wire [31:0] ms_ld_paddr     ;
-wire [31:0] ms_ld_vaddr     ;
-wire [ 7:0] ms_inst_st_en   ;
-wire [31:0] ms_st_data      ;
-wire        ms_csr_rstat_en ;
-wire [31:0] ms_csr_data     ;
 
 reg  [ 7:0] tmp_data_index  ;
 reg  [ 3:0] tmp_data_offset ;

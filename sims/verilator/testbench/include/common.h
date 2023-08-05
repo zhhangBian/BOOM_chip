@@ -12,6 +12,7 @@
 /* nemu memory size */
 #define EMU_RAM_SIZE (4 * 1024 * 1024 * 1024UL) // 4 GB
 
+#include <verilated.h>
 #include <verilated_save.h>
 #include "Vsimu_top.h"
 typedef Vsimu_top Vtop;

@@ -113,6 +113,18 @@ wire        ws_br_pre;
 wire        ws_br_pre_error;
 wire        ws_idle;
 
+// difftest
+wire [31:0] ws_inst         ;
+wire        ws_cnt_inst     ;
+wire [63:0] ws_timer_64     ;
+wire [ 7:0] ws_inst_ld_en   ;
+wire [31:0] ws_ld_paddr     ;
+wire [31:0] ws_ld_vaddr     ;
+wire [ 7:0] ws_inst_st_en   ;
+wire [31:0] ws_st_data      ;
+wire        ws_csr_rstat_en ;
+wire [31:0] ws_csr_data     ;
+
 assign {ws_csr_data    ,  //459:428 for difftest
         ws_csr_rstat_en,  //427:427 for difftest
         ws_st_data     ,  //426:395 for difftest
@@ -279,19 +291,6 @@ assign debug_wb_rf_wnum  = ws_dest;
 assign debug_wb_rf_wdata = ws_final_result;
 assign debug_wb_inst     = ws_inst;
 assign debug_ws_valid    = ws_valid;
-
-
-// difftest
-wire [31:0] ws_inst         ;
-wire        ws_cnt_inst     ;
-wire [63:0] ws_timer_64     ;
-wire [ 7:0] ws_inst_ld_en   ;
-wire [31:0] ws_ld_paddr     ;
-wire [31:0] ws_ld_vaddr     ;
-wire [ 7:0] ws_inst_st_en   ;
-wire [31:0] ws_st_data      ;
-wire        ws_csr_rstat_en ;
-wire [31:0] ws_csr_data     ;
 
 assign ws_valid_diff        = real_valid        ;
 assign ws_timer_64_diff     = ws_timer_64       ;

@@ -2,6 +2,7 @@
 #define CHIPLAB_DIFFTEST_H
 
 #include <stdint.h>
+#include <verilated.h>
 #include <verilated_save.h>
 #include "common.h"
 #include "nemuproxy.h"

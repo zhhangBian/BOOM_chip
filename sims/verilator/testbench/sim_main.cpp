@@ -22,7 +22,7 @@ void init_verilator(int argc, char** argv, char** env){
     Verilated::randReset(RESET_VAL);
 
     //if INIT_VAL is 2, set random seed
-    Verilated::randSeed(RESET_SEED);
+    //Verilated::randSeed(RESET_SEED);
 
     // Verilator must compute traced signals
     Verilated::traceEverOn(true);
