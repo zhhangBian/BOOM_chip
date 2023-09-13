@@ -28,7 +28,7 @@ module dcache
     input               ret_valid    ,
     input               ret_last     ,
     input  [31:0]       ret_data     ,
-    output              wr_req       ,
+    output reg          wr_req       ,
     output [ 2:0]       wr_type      ,
     output [31:0]       wr_addr      ,
     output [ 3:0]       wr_wstrb     ,
@@ -285,6 +285,7 @@ always @(posedge clk) begin
         main_miss: begin
             if (wr_rdy) begin
                 main_state <= main_replace;
+				wr_req <= 1'b1;
             end
         end
         main_replace: begin
@@ -292,6 +293,7 @@ always @(posedge clk) begin
                 main_state <= main_refill;
                 miss_buffer_ret_num <= 2'b0;   //when get ret data, it will be sent to cpu directly.
             end
+			wr_req <= 1'b0;
         end
         main_refill: begin
             if ((ret_valid && ret_last) || !rd_req_buffer) begin   //when rd_req is not set, go to next state directly
@@ -408,7 +410,7 @@ assign wr_addr  = uncache_wr_buffer ? {request_buffer_tag, request_buffer_index,
 assign wr_data  = uncache_wr_buffer ? {96'b0, request_buffer_wdata} : replace_data;
 assign wr_wstrb = uncache_wr_buffer ? request_buffer_wstrb : 4'hf;
 
-assign wr_req = main_state_is_miss;
+//assign wr_req = main_state_is_miss;
 
 /*==================================main state replace======================================*/
 
