@@ -20,6 +20,7 @@ module dcache
     input  [ 4:0]       preld_hint   ,
     input               preld_en     ,
     input               tlb_excp_cancel_req,
+	output              dcache_empty ,
     //to from axi
     output              rd_req       ,
     output [ 2:0]       rd_type      ,
@@ -227,6 +228,8 @@ always @(posedge clk) begin
         request_buffer_dcacop        <= 1'b0;
 
         miss_buffer_replace_way <= 1'b0;
+
+		wr_req <= 1'b0;
     end
     else case (main_state)
         main_idle: begin
@@ -358,6 +361,7 @@ assign req_or_inst_valid = valid || dcacop_op_en || preld_en;
 //state change condition, write hit cache block write do not conflict with lookup read and cacop
 assign main_idle2lookup   = !(write_state_is_full && ((write_buffer_offset[3:2] == offset[3:2]) || dcacop_op_en));
 
+assign dcache_empty = main_state_is_idle;
 //addr_ok logic
 
 /*===================================main state lookup======================================*/

@@ -45,6 +45,8 @@ module id_stage(
     input                               ws_to_ds_valid,
     //from axi
     input                               write_buffer_empty,
+    //from dcache 
+	input 							    dcache_empty      ,
     //to btb
     output                              btb_operate_en    ,
     output                              btb_pop_ras       ,
@@ -941,7 +943,7 @@ assign btb_pre_error_flush = (btb_add_entry || btb_delete_entry || btb_pre_error
 assign btb_pre_error_flush_target = br_taken ? br_target : ds_pc + 32'h4;
 
 //ibar dbar
-assign pipeline_no_empty = es_to_ds_valid || ms_to_ds_valid || ws_to_ds_valid || !write_buffer_empty;
+assign pipeline_no_empty = es_to_ds_valid || ms_to_ds_valid || ws_to_ds_valid || !write_buffer_empty || !dcache_empty;
 assign dbar_stall = inst_dbar && pipeline_no_empty;
 assign ibar_stall = inst_ibar && pipeline_no_empty;
 

@@ -247,6 +247,7 @@ wire         data_uncache_en;
 wire         data_dmw0_en;
 wire         data_dmw1_en;
 wire         data_tlb_excp_cancel_req;
+wire         dcache_empty;
 
 wire         es_to_ds_valid;
 wire         ms_to_ds_valid;
@@ -374,6 +375,8 @@ id_stage id_stage(
     .ws_to_ds_valid       (ws_to_ds_valid      ),
     //from axi 
     .write_buffer_empty   (write_buffer_empty  ),
+    //from dcache
+	.dcache_empty         (dcache_empty        ),
     //to btb
     .btb_operate_en       (btb_operate_en      ),
     .btb_pop_ras          (btb_pop_ras         ),
@@ -909,6 +912,7 @@ dcache dcache(
     .preld_hint     (preld_hint     ),
     .preld_en       (preld_en       ),
     .tlb_excp_cancel_req (data_tlb_excp_cancel_req),
+	.dcache_empty   (dcache_empty   ),
 //to from axi 
     .rd_req         (data_rd_req    ), 
     .rd_type        (data_rd_type   ), 
