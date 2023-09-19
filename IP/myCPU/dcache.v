@@ -397,8 +397,10 @@ assign replace_way = ((cacop_op_mode0 || cacop_op_mode1) && request_buffer_offse
                      (cacop_op_mode2 && way1_hit)                                     ||
                      (!request_buffer_dcacop) && invalid_way   ;
 
-assign way0_d = way0_d_reg[request_buffer_index];
-assign way1_d = way1_d_reg[request_buffer_index];
+assign way0_d = way0_d_reg[request_buffer_index] ||
+				((write_buffer_index==request_buffer_index)&&write_state_is_full&&!write_buffer_way);
+assign way1_d = way1_d_reg[request_buffer_index] ||
+				((write_buffer_index==request_buffer_index)&&write_state_is_full&& write_buffer_way);
 
 assign replace_d    = replace_way ? way1_d : way0_d;
 assign replace_v    = replace_way ? way1_tagv_douta[0] : way0_tagv_douta[0];
