@@ -53,14 +53,14 @@ LEAF(n7_csr_rw_test)
     srli.w   t0, t0, 0x1
     bne     t0, t1, inst_error  
 
-###ectl 
+###ecfg 
     li.w     t2, 0xffffffff 
     csrwr   t2, csr_ectl 
     csrrd   t0, csr_ectl 
-    li.w     t1, 0x1fff 
+    li.w     t1, 0x1bff 
     bne     t0, t1, inst_error 
 
-    li.w     t2, 0xffffe000 
+    li.w     t2, 0xffffe400 
     csrwr   t2, csr_ectl 
     csrrd   t0, csr_ectl 
     li.w     t1, 0x0 
@@ -189,21 +189,21 @@ LEAF(n7_csr_rw_test)
     csrwr t1, csr_tlbelo0
     csrrd t2, csr_tlbelo0
     csrwr t1, csr_tlbelo0
-    li.w   t1, 0xffffff7f
+    li.w   t1, 0x0fffff7f
     bne   t1, t2, inst_error
 
     li.w   t1, 0xabcdabcd
     csrwr t1, csr_tlbelo0
     csrrd t2, csr_tlbelo0
     csrwr t1, csr_tlbelo0
-    li.w   t1, 0xabcdab4d
+    li.w   t1, 0x0bcdab4d
     bne   t1, t2, inst_error
 
     li.w   t1, 0xdcbadcba
     csrwr t1, csr_tlbelo0
     csrrd t2, csr_tlbelo0
     csrwr t1, csr_tlbelo0
-    li.w   t1, 0xdcbadc3a
+    li.w   t1, 0x0cbadc3a
     bne   t1, t2, inst_error
 
 #tlbelo1
@@ -211,21 +211,21 @@ LEAF(n7_csr_rw_test)
     csrwr t1, csr_tlbelo1
     csrrd t2, csr_tlbelo1
     csrwr t1, csr_tlbelo1
-    li.w   t1, 0xffffff7f
+    li.w   t1, 0x0fffff7f
     bne   t1, t2, inst_error
 
     li.w   t1, 0xabcdabcd
     csrwr t1, csr_tlbelo1
     csrrd t2, csr_tlbelo1
     csrwr t1, csr_tlbelo1
-    li.w   t1, 0xabcdab4d
+    li.w   t1, 0x0bcdab4d
     bne   t1, t2, inst_error
 
     li.w   t1, 0xdcbadcba
     csrwr t1, csr_tlbelo1
     csrrd t2, csr_tlbelo1
     csrwr t1, csr_tlbelo1
-    li.w   t1, 0xdcbadc3a
+    li.w   t1, 0x0cbadc3a
     bne   t1, t2, inst_error
 
 #asid

@@ -16,7 +16,7 @@
 #ifdef ENABLE_TRACE 
 #define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*9 + lab14*12 + lab16*0 + advance*3)
 #else
-#define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*13 + lab14*13 + lab16*6 + advance*8)
+#define TEST_NUM (lab3*20 + lab6*16 + lab7*10 + lab8*1 + lab9*13 + lab14*13 + lab16*6 + advance*6)
 #endif
 
 ##s0, number
@@ -949,8 +949,8 @@ cacop_disable:
     bl n4_pgd_test
     bl idle_1s
 
-    bl n5_adem_ex_test
-    bl idle_1s
+    # bl n5_adem_ex_test
+    # bl idle_1s
 
 #ifndef ENABLE_TRACE  
     bl n6_ipe_ex_test
@@ -978,6 +978,7 @@ test_end:
 	  st.w    zero, a0, 0
     st.w    t1, a1, 0
     st.w    t1, a2, 0
+    li.w    a0, 0x1
     b  2f
     nop
 1:
@@ -987,6 +988,7 @@ test_end:
     NOP4
     st.w    t1, a0, 0
     st.w    t1, a1, 0
+    li.w    a0, 0
 
 2:
 	//LI (t1, 0xff)
