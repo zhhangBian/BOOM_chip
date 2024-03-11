@@ -1279,6 +1279,19 @@ axi2apb_misc APB_DEV
 .axi_s_rvalid       (apb_s_rvalid       ),
 .axi_s_rready       (apb_s_rready       ),
 
+.apb_rw_dma         (1'b0               ),
+.apb_psel_dma       (1'b0               ),
+.apb_enab_dma       (1'b0               ),
+.apb_addr_dma       (20'b0              ),
+.apb_valid_dma      (1'b0               ),
+.apb_wdata_dma      (32'b0              ),
+.apb_rdata_dma      (                   ),
+.apb_ready_dma      (                   ), 
+.dma_grant          (                   ),
+
+.dma_req_o          (dma_req            ),
+.dma_ack_i          (dma_ack            ),
+
 //UART0
 .uart0_txd_i        (uart0_txd_i      ),
 .uart0_txd_o        (uart0_txd_o      ),

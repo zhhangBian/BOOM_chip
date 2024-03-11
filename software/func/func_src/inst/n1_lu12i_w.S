@@ -59,6 +59,7 @@ LEAF(n1_lu12i_w_test)
     TEST_LU12I_W(0x2202d, 0x22020)
     TEST_LU12I_W(0x2202e, 0x22020)
     TEST_LU12I_W(0x2202f, 0x22020)
+  #if (!SHORT_TEST1)
     addi.w t1, zero, 0x0
     TEST_LU12I_W(0x33030, 0x33030)
     TEST_LU12I_W(0x33031, 0x33030)
@@ -212,9 +213,10 @@ LEAF(n1_lu12i_w_test)
     TEST_LU12I_W(0xff0ad, 0xff0a0)
     TEST_LU12I_W(0xff0ae, 0xff0a0)
     TEST_LU12I_W(0xff0af, 0xff0a0)
+  #endif
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w  s3, s3, 1
 ###output (s0<<24)|s3
@@ -225,5 +227,5 @@ inst_error:
     NOP4
     st.w    t0, s1, 0
     jirl    zero, ra, 0
-    nop
+    NOP4
 END(n1_lu12i_w_test)

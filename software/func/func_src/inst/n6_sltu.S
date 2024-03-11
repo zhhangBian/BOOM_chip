@@ -53,6 +53,8 @@ LEAF(n6_sltu_test)
     TEST_SLTU(0x1ee44d08, 0xb304b390, 0x00000001)
     TEST_SLTU(0x129a349f, 0x75ef4ad2, 0x00000001)
     TEST_SLTU(0x6ab84278, 0xd122cbac, 0x00000001)
+    TEST_SLTU(0x7e63be30, 0x41c94e36, 0x00000000)
+  #if (!SHORT_TEST1)
     TEST_SLTU(0xfdeb066c, 0xce3c8df0, 0x00000000)
     TEST_SLTU(0x9808a230, 0x9fe41574, 0x00000001)
     TEST_SLTU(0x2648526c, 0x0c86441c, 0x00000000)
@@ -68,7 +70,6 @@ LEAF(n6_sltu_test)
     TEST_SLTU(0x4447223a, 0x832293d2, 0x00000001)
     TEST_SLTU(0x6609acf8, 0x32a19df5, 0x00000000)
     TEST_SLTU(0xec16fb64, 0xc9490954, 0x00000000)
-    TEST_SLTU(0x7e63be30, 0x41c94e36, 0x00000000)
     TEST_SLTU(0xe3779a7b, 0x9807199a, 0x00000000)
     TEST_SLTU(0x65109b22, 0xea4d1eb0, 0x00000001)
     TEST_SLTU(0xaf59d3e0, 0x10484714, 0x00000000)
@@ -300,6 +301,7 @@ LEAF(n6_sltu_test)
     TEST_SLTU(0x00000000, 0x39ab0100, 0x00000001)
     TEST_SLTU(0x00000000, 0x52ef4485, 0x00000001)
     TEST_SLTU(0x00000000, 0xad19dd1c, 0x00000001)
+  #endif
     TEST_SLTU(0x00000000, 0xdc03b4c0, 0x00000001)
     TEST_SLTU(0x00000000, 0x2fa8986c, 0x00000001)
     TEST_SLTU(0x00000000, 0xed08ea47, 0x00000001)
@@ -310,7 +312,7 @@ LEAF(n6_sltu_test)
     TEST_SLTU(0x00000000, 0x00000000, 0x00000000)
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -321,5 +323,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n6_sltu_test)

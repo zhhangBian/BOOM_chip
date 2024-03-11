@@ -29,18 +29,12 @@ LEAF(n71_tlb_ex_test)
     FILL_TLB_ITEM_r
     FILL_TLB_ITEM_r
     FILL_TLB_ITEM_r
-    FILL_TLB_ITEM_r
-    FILL_TLB_ITEM_r
-    FILL_TLB_ITEM_r
-    FILL_TLB_ITEM_r
-    FILL_TLB_ITEM_r
-    FILL_TLB_ITEM_r
  
-    li.w        t0, 0xd0000
+    li.w        t0, DATABASE
     li.w        t1, 0xffffe000
     and       t4, t0, t1
     srli.w    t4, t4, 0x4 
-    li.w        t1, 0x4d
+    li.w        t1, 0x5f
     or        t1, t4, t1
     li.w        t2, 0x14d
     or        t2, t4, t2
@@ -61,9 +55,13 @@ LEAF(n71_tlb_ex_test)
     FILL_TLB_ITEM_r
     FILL_TLB_ITEM_r
     FILL_TLB_ITEM_r
+    FILL_TLB_ITEM_r
+    FILL_TLB_ITEM_r
+    FILL_TLB_ITEM_r
+    FILL_TLB_ITEM_r
   
     //set datm=1
-    li.w      t0, 0x80 
+    li.w      t0, 0xa0 
     li.w      t1, 0x180
     csrxchg t0, t1, csr_crmd
 
@@ -265,7 +263,7 @@ LEAF(n71_tlb_ex_test)
     syscall 0  // return to kernel mode
 
 ### TLB address error in memory access: adem
-//2023.4.3 ADE changed, no ADEM now 
+//2023.4.3 ADE changed, no ADEM now
 //    //let DA=1 and PG=0 and prl=0
 //    li.w      t0, 0x08
 //    li.w      t1, 0x1f
@@ -277,7 +275,7 @@ LEAF(n71_tlb_ex_test)
 //    FILL_TLB_ITEM(0x0c000000,0x800fc000, 0x000f004d, 0x000a004d) 
 //    csrwr    zero, csr_tlbehi
 //
-//    //let DA=0 and PG=1 and prl=3
+//    let DA=0 and PG=1 and prl=3
 //    li.w      t0, 0x13
 //    li.w      t1, 0x1f
 //    csrxchg t0, t1, csr_crmd 
@@ -294,7 +292,7 @@ LEAF(n71_tlb_ex_test)
 
 
 ### TLB address error in inst fetch: adef
-//2023.4.3 ADE changed, ADEF only happen when not aligned 
+//2023.4.3 ADE changed, ADEF only happen when not aligned
 //    //let DA=1 and PG=0 and prl=0
 //    li.w      t0, 0x08
 //    li.w      t1, 0x1f

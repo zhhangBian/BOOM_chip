@@ -126,9 +126,9 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../../../IP/APB_DEV/apb_dev_top.v">
+      <File Path="$PPRDIR/../../../IP/APB_DEV/apb_dev_top_no_nand.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/APB_DEV/apb_dev_top.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../../IP/APB_DEV/apb_dev_top_no_nand.v"/>
           <Attr Name="ImportTime" Val="1626766565"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>

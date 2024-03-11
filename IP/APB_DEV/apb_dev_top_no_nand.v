@@ -75,6 +75,19 @@ axi_s_rlast,
 axi_s_rvalid,
 axi_s_rready,
 
+apb_rw_dma,
+apb_psel_dma,
+apb_enab_dma,
+apb_addr_dma,
+apb_valid_dma,
+apb_wdata_dma,
+apb_rdata_dma,
+apb_ready_dma,
+dma_grant,
+
+dma_req_o,
+dma_ack_i,
+
 uart0_txd_i,
 uart0_txd_o,
 uart0_txd_oe,
@@ -88,7 +101,7 @@ uart0_dsr_i,
 uart0_dcd_i,
 uart0_ri_i,
 
-uart0_int
+uart0_int 
 );
 
 parameter ADDR_APB = 20,
@@ -138,6 +151,19 @@ output                      axi_s_rlast;
 output                      axi_s_rvalid;
 input                       axi_s_rready;
 
+output                 apb_ready_dma;
+input                  apb_rw_dma;
+input                  apb_psel_dma;
+input                  apb_enab_dma;
+input [ADDR_APB-1:0]   apb_addr_dma;
+input [31:0]   	       apb_wdata_dma;
+output[31:0]   	       apb_rdata_dma;
+input                  apb_valid_dma;
+output                 dma_grant;
+
+output                 dma_req_o;
+input                  dma_ack_i;
+
 input               uart0_txd_i;
 output              uart0_txd_o;
 output              uart0_txd_oe;
@@ -150,7 +176,9 @@ input               uart0_cts_i;
 input               uart0_dsr_i;
 input               uart0_dcd_i;
 input               uart0_ri_i;
-output              uart0_int;
+
+assign  dma_req_o      = 1'b0;
+assign  nand_dma_ack_i = dma_ack_i; 
 
 wire                    apb_ready_cpu;
 wire                    apb_rw_cpu;
@@ -161,6 +189,37 @@ wire [DATA_APB-1:0]     apb_datai_cpu;
 wire [DATA_APB-1:0]     apb_datao_cpu;
 wire                    apb_clk_cpu;
 wire                    apb_reset_n_cpu; 
+wire                    apb_word_trans_cpu;
+wire                    apb_valid_cpu;
+wire                    dma_grant;
+wire  [23:0]            apb_high_24b_rd;
+wire  [23:0]            apb_high_24b_wr;
+
+wire                    apb_rw_dma;
+wire                    apb_psel_dma;
+wire                    apb_enab_dma;
+wire [31:0]             apb_wdata_dma;
+wire [31:0]             apb_rdata_dma;
+wire                    apb_clk_dma;
+wire                    apb_reset_n_dma; 
+
+wire                apb_uart0_req;
+wire                apb_uart0_ack;
+wire                apb_uart0_rw;
+wire                apb_uart0_enab;
+wire                apb_uart0_psel;
+wire  [ADDR_APB -1:0] apb_uart0_addr;
+wire  [DATA_APB -1:0] apb_uart0_datai;
+wire  [DATA_APB -1:0] apb_uart0_datao;
+
+wire                apb_nand_req; 
+wire                apb_nand_ack; 
+wire                apb_nand_rw; 
+wire                apb_nand_enab; 
+wire                apb_nand_psel; 
+wire  [ADDR_APB -1:0] apb_nand_addr; 
+wire  [31:0]        apb_nand_datai; 
+wire  [31:0]        apb_nand_datao; 
 
 axi2apb_bridge AA_axi2apb_bridge_cpu 
 (
@@ -203,11 +262,11 @@ axi2apb_bridge AA_axi2apb_bridge_cpu
 .axi_s_rvalid       (axi_s_rvalid       ),
 .axi_s_rready       (axi_s_rready       ),
 
-.apb_word_trans     (1'b1               ),
-.apb_high_24b_rd    (24'd0              ),
-.apb_high_24b_wr    (                   ),
-.apb_valid_cpu      (                   ),
-.cpu_grant          (1'b1               ),
+.apb_word_trans     (apb_word_trans_cpu ),
+.apb_high_24b_rd    (apb_high_24b_rd    ),
+.apb_high_24b_wr    (apb_high_24b_wr    ),
+.apb_valid_cpu      (apb_valid_cpu      ),
+.cpu_grant          (~dma_grant         ),
 
 .apb_clk            (apb_clk_cpu        ),
 .apb_reset_n        (apb_reset_n_cpu    ),
@@ -217,21 +276,68 @@ axi2apb_bridge AA_axi2apb_bridge_cpu
 .reg_addr           (apb_addr_cpu       ),
 .reg_datai          (apb_datai_cpu      ),
 .reg_datao          (apb_datao_cpu      ),
-.reg_ready_1        (1'b1               )
+.reg_ready_1        (apb_ready_cpu      )
+);
+
+apb_mux2 AA_apb_mux16
+(
+.clk                (clk                ),
+.rst_n              (rst_n              ),
+.apb_ready_dma      (apb_ready_dma      ),
+.apb_rw_dma         (apb_rw_dma         ),
+.apb_addr_dma       (apb_addr_dma       ),
+.apb_psel_dma       (apb_psel_dma       ),
+.apb_enab_dma       (apb_enab_dma       ),
+.apb_wdata_dma      (apb_wdata_dma      ),
+.apb_rdata_dma      (apb_rdata_dma      ),
+.apb_valid_dma      (apb_valid_dma      ),
+.apb_valid_cpu      (apb_valid_cpu      ),
+.dma_grant          (dma_grant          ),
+
+.apb_ack_cpu        (apb_ready_cpu      ),
+.apb_rw_cpu         (apb_rw_cpu         ),
+.apb_addr_cpu       (apb_addr_cpu       ),
+.apb_psel_cpu       (apb_psel_cpu       ),
+.apb_enab_cpu       (apb_enab_cpu       ),
+.apb_datai_cpu      (apb_datai_cpu      ),
+.apb_datao_cpu      (apb_datao_cpu      ),
+.apb_high_24b_rd    (apb_high_24b_rd),
+.apb_high_24b_wr    (apb_high_24b_wr),
+.apb_word_trans_cpu (apb_word_trans_cpu ),
+
+.apb0_req           (apb_uart0_req      ),
+.apb0_ack           (apb_uart0_ack      ),
+.apb0_rw            (apb_uart0_rw       ),
+.apb0_psel          (apb_uart0_psel     ),
+.apb0_enab          (apb_uart0_enab     ),
+.apb0_addr          (apb_uart0_addr     ),
+.apb0_datai         (apb_uart0_datai    ),
+.apb0_datao         (apb_uart0_datao    ),
+                                        
+.apb1_req           (                   ),
+.apb1_ack           (1'b1               ),
+.apb1_rw            (                   ),
+.apb1_enab          (                   ),
+.apb1_psel          (                   ),
+.apb1_addr          (                   ),
+.apb1_datai         (                   ),
+.apb1_datao         (32'b0              )
+                                        
 );
 
 //uart0
+assign apb_uart0_ack = apb_uart0_enab;
 UART_TOP uart0
 (
 .PCLK              (clk              ),
 .clk_carrier       (1'b0             ),
 .PRST_             (rst_n            ),
-.PSEL              (apb_psel_cpu      ),
-.PENABLE           (apb_enab_cpu      ),
-.PADDR             (apb_addr_cpu[7:0] ),
-.PWRITE            (apb_rw_cpu        ),
-.PWDATA            (apb_datai_cpu     ),
-.URT_PRDATA        (apb_datao_cpu     ),
+.PSEL              (apb_uart0_psel   ),
+.PENABLE           (apb_uart0_enab   ),
+.PADDR             (apb_uart0_addr[7:0] ),
+.PWRITE            (apb_uart0_rw     ),
+.PWDATA            (apb_uart0_datai  ),
+.URT_PRDATA        (apb_uart0_datao  ),
 .INT               (uart0_int         ),
 .TXD_o             (uart0_txd_o       ),
 .TXD_i             (uart0_txd_i       ),
@@ -248,6 +354,5 @@ UART_TOP uart0
 );
 
 endmodule
-
 
 

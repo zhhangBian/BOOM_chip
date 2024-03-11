@@ -43,6 +43,7 @@ LEAF(n15_st_w_test)
     TEST_ST_W(0x4f612db4, 0xd0000,  0x474,  0x474, 0x4f612db4)
     TEST_ST_W(0x81e4a52c, 0xd0000,  0x370,  0x370, 0x81e4a52c)
     TEST_ST_W(0x6b615254, 0xd0000,  0x79c,  0x79c, 0x6b615254)
+  #if (!SHORT_TEST1)
     TEST_ST_W(0x2447d85d, 0xd0000,  0x790,  0x790, 0x2447d85d)
     TEST_ST_W(0x8dde1c20, 0xd0000,  0x37c,  0x37c, 0x8dde1c20)
     TEST_ST_W(0xcf304a09, 0xd0000, -0x060, -0x060, 0xcf304a09)
@@ -76,10 +77,10 @@ LEAF(n15_st_w_test)
     TEST_ST_W(0x36964fd0, 0xd0000,  0x000,  0x000, 0x36964fd0)
     TEST_ST_W(0xe67b1aa6, 0xd0000,  0x000,  0x000, 0xe67b1aa6)
     TEST_ST_W(0x00000000, 0xd0000,  0x000,  0x000, 0x00000000)
-
+  #endif
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -90,5 +91,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n15_st_w_test)

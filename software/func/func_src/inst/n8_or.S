@@ -22,6 +22,7 @@ LEAF(n8_or_test)
     TEST_OR(0x62e3914c, 0x6762ab45, 0x67e3bb4d)
     TEST_OR(0x69ff9ea0, 0x4910452c, 0x69ffdfac)
     TEST_OR(0x1c4bc4e8, 0x5aeab614, 0x5eebf6fc)
+  #if (!SHORT_TEST1)
     TEST_OR(0x0da114aa, 0x6c31e1a8, 0x6db1f5aa)
     TEST_OR(0xac65b92c, 0x804734d8, 0xac67bdfc)
     TEST_OR(0x1019aba0, 0x6bec6690, 0x7bfdefb0)
@@ -159,6 +160,7 @@ LEAF(n8_or_test)
     TEST_OR(0x1fd31088, 0xdf8904d6, 0xdfdb14de)
     TEST_OR(0x49ea5256, 0x78004ec8, 0x79ea5ede)
     TEST_OR(0xa3db0a10, 0x5650db82, 0xf7dbdb92)
+  #endif
     TEST_OR(0x0ca86144, 0x3ffdb54c, 0x3ffdf54c)
     TEST_OR(0xb1c7731a, 0xfa49621c, 0xfbcf731e)
     TEST_OR(0xb3d88649, 0x960a282e, 0xb7daae6f)
@@ -189,6 +191,7 @@ LEAF(n8_or_test)
     TEST_OR(0x8e58fa10, 0xf9d74a50, 0xffdffa50)
     TEST_OR(0x2987a216, 0xa97a9500, 0xa9ffb716)
     TEST_OR(0xf7ce3e74, 0x8e1d4b80, 0xffdf7ff4)
+  #if (!SHORT_TEST1)
     TEST_OR(0x0caa2a2c, 0xa47159e0, 0xacfb7bec)
     TEST_OR(0x54bbfd22, 0x6a96d77c, 0x7ebfff7e)
     TEST_OR(0x0fd04100, 0xfabdbef4, 0xfffdfff4)
@@ -308,9 +311,10 @@ LEAF(n8_or_test)
     TEST_OR(0x00000000, 0x8ad8c75c, 0x8ad8c75c)
     TEST_OR(0x00000000, 0xc82df286, 0xc82df286)
     TEST_OR(0x00000000, 0x00000000, 0x00000000)
+  #endif
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -321,5 +325,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n8_or_test)

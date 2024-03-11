@@ -17,6 +17,7 @@ LEAF(n10_nor_test)
     TEST_NOR(0xfa40f126, 0xfa382538, 0x05870ac1)
     TEST_NOR(0x06033064, 0xa758b5c0, 0x58a44a1b)
     TEST_NOR(0x8d0f7094, 0x13b7b000, 0x60400f6b)
+  #if (!SHORT_TEST1)
     TEST_NOR(0x596eaab2, 0x9e2f6d2f, 0x20901040)
     TEST_NOR(0x336ff361, 0x0132a370, 0xcc800c8e)
     TEST_NOR(0x881c8d00, 0x80ed3fa3, 0x7702405c)
@@ -151,6 +152,7 @@ LEAF(n10_nor_test)
     TEST_NOR(0xbb0cbf04, 0x4a014272, 0x04f20089)
     TEST_NOR(0x4153ebc9, 0x3f3941aa, 0x80841414)
     TEST_NOR(0xa2814c60, 0x78530580, 0x052cb21f)
+  #endif
     TEST_NOR(0xd3c8ad0a, 0xf4887be3, 0x08370014)
     TEST_NOR(0x80ebbfac, 0x981eb0ea, 0x67004011)
     TEST_NOR(0xcff25fee, 0x784ed707, 0x00012010)
@@ -197,6 +199,7 @@ LEAF(n10_nor_test)
     TEST_NOR(0x70a79087, 0x5ffa2b27, 0x80004458)
     TEST_NOR(0x04bbf65d, 0xa3a29d62, 0x58440080)
     TEST_NOR(0xc30cff48, 0xf8430cc4, 0x04b00033)
+  #if (!SHORT_TEST1)
     TEST_NOR(0x27cd0240, 0x05570d50, 0xd820f0af)
     TEST_NOR(0xec4fb6ac, 0xa51fc104, 0x12a00853)
     TEST_NOR(0xa9ae9c10, 0x17da8cf6, 0x40016309)
@@ -308,9 +311,10 @@ LEAF(n10_nor_test)
     TEST_NOR(0x00000000, 0xe07cdec0, 0x1f83213f)
     TEST_NOR(0x00000000, 0xc5b31dc7, 0x3a4ce238)
     TEST_NOR(0x00000000, 0x00000000, 0xffffffff)
+  #endif
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -321,5 +325,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n10_nor_test)

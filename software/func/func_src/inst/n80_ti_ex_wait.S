@@ -30,7 +30,7 @@ LEAF(n80_ti_ex_idle_test)
   bne     t1, t0, inst_error 
 
 ###2
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   li.w      s2, 0x04
   la.local  s4, 1f
   st.w    s4, t7, 4 

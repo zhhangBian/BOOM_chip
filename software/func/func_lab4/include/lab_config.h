@@ -11,6 +11,7 @@
 //NOP_INSERT: Insert 4 nop insts between every alu operation.
 //            Only for Lab3
 //==================================================================
+#define SHORT_TEST1 0
 #define NOP_INSERT 0
 #define TEST1 1
 #define TEST2 0

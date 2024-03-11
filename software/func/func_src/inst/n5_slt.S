@@ -17,6 +17,7 @@ LEAF(n5_slt_test)
     TEST_SLT(0x257742f8, 0x90730020, 0x00000000)
     TEST_SLT(0x76477934, 0x464fa176, 0x00000000)
     TEST_SLT(0x004a533a, 0xa9dada60, 0x00000000)
+  #if (!SHORT_TEST1)
     TEST_SLT(0xbd3f3520, 0x236518fa, 0x00000001)
     TEST_SLT(0x03f15cd8, 0xa777f32c, 0x00000000)
     TEST_SLT(0xf8e74f26, 0x1d9af9b4, 0x00000001)
@@ -306,11 +307,12 @@ LEAF(n5_slt_test)
     TEST_SLT(0x00000000, 0xef17ce60, 0x00000000)
     TEST_SLT(0x00000000, 0x36d43eb0, 0x00000001)
     TEST_SLT(0x00000000, 0x1eaac5e3, 0x00000001)
+  #endif
     TEST_SLT(0x00000000, 0xb566662b, 0x00000000)
     TEST_SLT(0x00000000, 0x00000000, 0x00000000)
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -321,5 +323,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n5_slt_test)

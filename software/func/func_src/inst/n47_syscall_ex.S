@@ -3,7 +3,6 @@
 #include "inst_test.h"
 
 LEAF(n47_syscall_ex_test)
-   
   addi.w  s0, s0, 1 
   li.w    t4, 0x2f
   LI_EXIMM(t0,s2,IMM_SYSCALL)
@@ -36,7 +35,7 @@ syscall_pc1:
 ###2
   li.w      s2, 0x01 
   la.local  s4, syscall_pc2
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   st.w      s4, t7, 4
 syscall_pc2:
   syscall 0

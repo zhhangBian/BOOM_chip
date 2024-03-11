@@ -45,6 +45,7 @@ LEAF(n14_ld_w_test)
     TEST_LD_W(0xc268a414, 0xd0000,  0x5c0,  0x5c0, 0xc268a414)
     TEST_LD_W(0x102044e3, 0xd0000,  0x30c,  0x30c, 0x102044e3)
     TEST_LD_W(0xff0f205f, 0xd0000,  0x7e0,  0x7e0, 0xff0f205f)
+  #if (!SHORT_TEST1)
     TEST_LD_W(0xe394e882, 0xd0000,  0x300,  0x300, 0xe394e882)
     TEST_LD_W(0x6b53ef5a, 0xd0000,  0x3d0,  0x3d0, 0x6b53ef5a)
     TEST_LD_W(0xd3ad5b32, 0xd0000, -0x290, -0x290, 0xd3ad5b32)
@@ -71,9 +72,10 @@ LEAF(n14_ld_w_test)
     TEST_LD_W(0x9393289c, 0xd0000,  0x000,  0x000, 0x9393289c)
     TEST_LD_W(0x29b2c02d, 0xd0000,  0x000,  0x000, 0x29b2c02d)
     TEST_LD_W(0x00000000, 0xd0000,  0x000,  0x000, 0x00000000)
+  #endif
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -84,5 +86,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n14_ld_w_test)

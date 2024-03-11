@@ -9,21 +9,21 @@ LEAF(n70_tlb_4MB)
     invtlb 0x0, zero, zero
 
     li.w  t0, 0x15000000            #index with 4MB PS
-    li.w  t2, 8<<23
-    li.w  t3, 1<<23
+    li.w  t2, 8<<22
+    li.w  t3, 1<<22
     add.w t1, t2, t3                #VPN
 
     li.w    t2, 0x000000aa
     csrwr t2, csr_asid
 
 ###TLB item 1
-    FILL_TLB_4MB(0x00003400, 0x00007000)
+    FILL_TLB_4MB(0x00010000)
 ###TLB item 2
-    FILL_TLB_4MB(0x00003500, 0x00007100)
+    FILL_TLB_4MB(0x00050000)
 ###TLB item 3
-    FILL_TLB_4MB(0x00003600, 0x00007200)
+    FILL_TLB_4MB(0x00090000)
 ###TLB item 4 G=1
-    FILL_TLB_4MB(0x00003640, 0x00007240)
+    FILL_TLB_4MB(0x000d0040)
 
     csrwr  zero, csr_tlbehi
     csrwr  zero, csr_tlbelo0

@@ -34,7 +34,7 @@ break_pc1:
   LI_EXIMM(t0,s2,IMM_BREAK)
 
 ###2 
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   li.w      s2, 0x02 
   la.local  s4, break_pc2
   st.w    s4, t7, 4 

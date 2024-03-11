@@ -851,17 +851,13 @@ begin
         wr_data_s_hit[w_ad_int]  =  (!wr_fifo_empty && wr_data_dir == w_ad_int);
 end
 
-//assign wr_addr_hit[1] = axi_s_awaddr[31:20]==12'h1fc ||
-//                        axi_s_awaddr[31:16]==16'h1fe8;  //SPI
 assign wr_addr_hit[1] = 1'b0;
-assign wr_addr_hit[2] = axi_s_awaddr[31:16]==16'h1fe0;
-                        //axi_s_awaddr[31:16]==16'h1fe7 ; //APB: uart and nand
-assign wr_addr_hit[3] = axi_s_awaddr[28:16]==16'h1faf || 
-			axi_s_awaddr[28:16]==16'h1fd0 ;  //CONF
-//assign wr_addr_hit[4] = axi_s_awaddr[31:16]==16'h1ff0;  //MAC
+
+assign wr_addr_hit[2] = axi_s_awaddr[31:16]==16'h1fe0;   //UART
+
+assign wr_addr_hit[3] = axi_s_awaddr[28:16]==16'h1fd0 ;  //CONF
 assign wr_addr_hit[4] = 1'b0;
-wire wr_addr_hit_temp = ~((axi_s_awaddr[31:16]==16'h1fe0) | (axi_s_awaddr[28:16]==16'h1faf || axi_s_awaddr[28:16]==16'h1fd0)); //~|wr_addr_hit[4:1]; 
-assign wr_addr_hit[0] = wr_addr_hit_temp;            //DDR3
+assign wr_addr_hit[0] = ~|wr_addr_hit[4:1];             //DDR3
 
 nb_sync_fifo_mux wr_fifo
 (

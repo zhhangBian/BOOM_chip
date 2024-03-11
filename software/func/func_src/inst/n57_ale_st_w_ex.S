@@ -40,7 +40,7 @@ LEAF(n57_ale_st_w_ex_test)
   LI_EXIMM(t0,s2,IMM_ALE)
 
 ###2
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   li.w      s2, 0x06 
   TEST_ST_W_ALE(0xc052b3f0, 0xd23d4, 0x00006a2, 0x00006a0, 0xc052b3f0)
   la.local  s4, 1f

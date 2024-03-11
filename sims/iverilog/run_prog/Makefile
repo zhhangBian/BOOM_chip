@@ -40,7 +40,7 @@ endif
 VERILATOR_INCLUDE += -I ${AMBA_SRC}
 VERILATOR_SRC += ${AMBA_SRC}/axi2apb.v ${AMBA_SRC}/axi_mux_sim.v
 VERILATOR_INCLUDE += -I ${APB_DEV_SRC}
-VERILATOR_SRC += ${APB_DEV_SRC}/apb_dev_top.v ${APB_DEV_SRC}/apb_mux2.v ${APB_DEV_SRC}/nand_module.v
+VERILATOR_SRC += ${APB_DEV_SRC}/apb_dev_top_no_nand.v ${APB_DEV_SRC}/apb_mux2.v
 VERILATOR_INCLUDE += -I ${UART_SRC}
 VERILATOR_SRC += ${UART_SRC}/*.v
 VERILATOR_INCLUDE += -I ${NAND_SRC}

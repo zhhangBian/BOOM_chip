@@ -39,7 +39,7 @@ LEAF(n53_ale_ld_w_ex_test)
   LI_EXIMM(t0,s2,IMM_ALE)
 
 ###2
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   li.w      s2, 0x06 
   TEST_LD_W_ALE(0x3101bbec, 0xd7748, 0x000006a2, 0x000006a0, 0xc0442bd0)
   la.local  s4, 1f

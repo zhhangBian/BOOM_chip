@@ -13,8 +13,8 @@ LEAF(n64_invtlb_0x2_test)
 
     invtlb 0x2, zero, zero
 
-	li.w     t1, 0x0c00000c
-	li.w     t2, 0x0c000010
+    li.w     t1, 0x0c00000c
+    li.w     t2, 0x0c000010
     add.w t0, zero, t1
     add.w t4, zero, t2 
 1:
@@ -39,8 +39,8 @@ LEAF(n64_invtlb_0x2_test)
     addi.w t0, t0, 0x1  
     bne   t0, t4, 1b
 
-	li.w     t1, 0x0c000000
-	li.w     t2, 0x0c00000c
+    li.w     t1, 0x0c000000
+    li.w     t2, 0x0c00000c
     add.w t0, zero, t1
     add.w t4, zero, t2
 2:
@@ -49,7 +49,7 @@ LEAF(n64_invtlb_0x2_test)
     tlbrd
     csrrd t1, csr_tlbidx
     srli.w t1, t1, TLB_IDX
-    li.w  t2, 0x00600000
+    li.w  t2, (0x0c000000>>TLB_IDX)
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b

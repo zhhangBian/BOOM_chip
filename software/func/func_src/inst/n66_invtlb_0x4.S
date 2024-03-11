@@ -14,7 +14,7 @@ LEAF(n66_invtlb_0x4_test)
     li.w    s4, 0x000000aa
     invtlb 0x4, s4, zero
 
-	li.w     t4, 0x0c000000
+    li.w     t4, 0x0c000000
     addi.w t0, t4, 0x0
     addi.w t4, t4, 0x4
 1:
@@ -39,7 +39,7 @@ LEAF(n66_invtlb_0x4_test)
     addi.w t0, t0, 0x1  
     bne   t0, t4, 1b
 
-	li.w   t4, 0x0c000000
+    li.w   t4, 0x0c000000
     addi.w t0, t4, 0x4
     addi.w t4, t4, 0x10
 2:
@@ -48,7 +48,7 @@ LEAF(n66_invtlb_0x4_test)
     tlbrd
     csrrd t1, csr_tlbidx
     srli.w t1, t1, TLB_IDX
-    li.w  t2, 0x00600000
+    li.w  t2, (0x0c000000>>TLB_IDX)
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b

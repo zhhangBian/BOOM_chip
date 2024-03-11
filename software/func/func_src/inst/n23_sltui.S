@@ -310,15 +310,12 @@ LEAF(n23_sltui_test)
     TEST_SLTUI(0x00000000, 0x00000000, 0x0)
 ###detect exception
     bne s2, zero, inst_error
-    nop
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
 inst_error:  
     slli.w t1, s0, 24
-    NOP4
     or t0, t1, s3 
-    NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
 END(n23_sltui_test)

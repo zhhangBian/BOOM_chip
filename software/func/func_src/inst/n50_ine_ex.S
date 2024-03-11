@@ -34,7 +34,7 @@ LEAF(n50_ine_ex_test)
   li.w      t5, 0   //used for verify prmd 
   LI_EXIMM(t0,s2,IMM_INE)
 ###2
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   li.w      s2, 0x03 
   la.local  s4, 1f
   st.w    t7, t7, 4

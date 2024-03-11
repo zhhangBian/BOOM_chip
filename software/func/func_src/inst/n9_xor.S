@@ -29,6 +29,7 @@ LEAF(n9_xor_test)
     TEST_XOR(0xc3b5db06, 0x3283d4b8, 0xf1360fbe)
     TEST_XOR(0x4d2e3cf5, 0x30c8f34c, 0x7de6cfb9)
     TEST_XOR(0x0150f52c, 0x92006da0, 0x9350988c)
+  #if (!SHORT_TEST1)
     TEST_XOR(0xa2f8049c, 0x6450fe88, 0xc6a8fa14)
     TEST_XOR(0xddce3250, 0xe1885c50, 0x3c466e00)
     TEST_XOR(0x0aae56ee, 0x293cef38, 0x2392b9d6)
@@ -101,6 +102,7 @@ LEAF(n9_xor_test)
     TEST_XOR(0x52e70cc0, 0xdd8f3b08, 0x8f6837c8)
     TEST_XOR(0xb70b4c48, 0x464435c0, 0xf14f7988)
     TEST_XOR(0xfee30fe0, 0xa97a6250, 0x57996db0)
+  #endif
     TEST_XOR(0x1fe12bd5, 0xfefbecc5, 0xe11ac710)
     TEST_XOR(0xd515843c, 0x7f6d24b4, 0xaa78a088)
     TEST_XOR(0xcab015b0, 0x63e00e40, 0xa9501bf0)
@@ -122,6 +124,7 @@ LEAF(n9_xor_test)
     TEST_XOR(0x7e12a3fc, 0x75bbc9e7, 0x0ba96a1b)
     TEST_XOR(0x96756580, 0xd4ccd960, 0x42b9bce0)
     TEST_XOR(0xd11078c0, 0xd2f45c20, 0x03e424e0)
+  #if (!SHORT_TEST1)
     TEST_XOR(0xa337d9ae, 0xf7023ce0, 0x5435e54e)
     TEST_XOR(0x98bddbc4, 0xd7bb5a80, 0x4f068144)
     TEST_XOR(0x7b10de60, 0x6bbee859, 0x10ae3639)
@@ -307,10 +310,11 @@ LEAF(n9_xor_test)
     TEST_XOR(0x00000000, 0xa3288960, 0xa3288960)
     TEST_XOR(0x00000000, 0xc67e946c, 0xc67e946c)
     TEST_XOR(0x00000000, 0xb6a8c6f0, 0xb6a8c6f0)
+  #endif
     TEST_XOR(0x00000000, 0x00000000, 0x00000000)
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -321,5 +325,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n9_xor_test)

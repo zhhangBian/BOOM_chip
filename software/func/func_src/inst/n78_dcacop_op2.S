@@ -1,6 +1,6 @@
-#include <asm.h>
-#include <regdef.h>
-#include <inst_test.h>
+#include "asm.h"
+#include "regdef.h"
+#include "inst_test.h"
 
 LEAF(n78_dcacop_op2)
     addi.w    s0, s0, 0x1
@@ -11,8 +11,10 @@ LEAF(n78_dcacop_op2)
     csrwr   t0, csr_ticlr  
 
     li.w    t0, 0x1c008000
+    csrwr zero, csr_eentry
     csrwr t0, csr_eentry
     li.w    t1, 0x1c000000 + TLBREBASE
+    csrwr zero, csr_tlbrentry
     csrwr t1, csr_tlbrentry 
  
     la.local  t7, start
@@ -108,7 +110,7 @@ tlb_refill_error:
     bne   t5, t0, inst_error
 
 # test if cacop can triger tlb page invalid error or not
-    li.w    t0, (DATABASE+0xd0000)
+    li.w    t0, DATABASE
     li.w    t1, 0x8 
     st.w  t1, t0, 0
 

@@ -47,7 +47,13 @@ LEAF(n60_tlbfill_test)
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
-inst_error:  
+inst_error: 
+### clear tlb-related CSR
+    csrwr  zero, csr_tlbidx
+    csrwr  zero, csr_tlbehi
+    csrwr  zero, csr_tlbelo0
+    csrwr  zero, csr_tlbelo1
+
     slli.w t1, s0, 24
     or t0, t1, s3 
     st.w t0, s1, 0x0

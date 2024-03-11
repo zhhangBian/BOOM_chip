@@ -13,6 +13,7 @@ LEAF(n19_jirl_test)
     TEST_JIRL(0x70640e44, 0x391afbca, 0x70640e44, 0x391afbca)
     TEST_JIRL(0x0506233b, 0xb14115a8, 0x0506233b, 0xb14115a8)
     TEST_JIRL(0x9c781547, 0xde178220, 0x9c781547, 0xde178220)
+  #if (!SHORT_TEST1)
     TEST_JIRL(0xa8dd2c05, 0xfb3d8034, 0xa8dd2c05, 0xfb3d8034)
     TEST_JIRL(0x01c45860, 0x6bdc4550, 0x01c45860, 0x6bdc4550)
     TEST_JIRL(0x47d1c1c0, 0xf853cd8e, 0x47d1c1c0, 0xf853cd8e)
@@ -146,6 +147,7 @@ LEAF(n19_jirl_test)
     TEST_JIRL(0x83ce7672, 0xe3fc075d, 0x83ce7672, 0xe3fc075d)
     TEST_JIRL(0x9b268b70, 0xeaed5ca8, 0x9b268b70, 0xeaed5ca8)
     TEST_JIRL(0x358514a0, 0xf11483e7, 0x358514a0, 0xf11483e7)
+  #endif
     TEST_JIRL(0xee61423b, 0x282e3580, 0xee61423b, 0x282e3580)
     TEST_JIRL(0xdccfd296, 0xd26d5480, 0xdccfd296, 0xd26d5480)
     TEST_JIRL(0x29be8f01, 0x4955d3eb, 0x29be8f01, 0x4955d3eb)
@@ -209,7 +211,7 @@ LEAF(n19_jirl_test)
     TEST_JIRL(0x87151984, 0x381fd770, 0x87151984, 0x381fd770)
 ###detect exception
     bne s2, zero, inst_error
-    nop
+    NOP4
 ###score ++
     addi.w s3, s3, 1
 ###output (s0<<24)|s3
@@ -220,5 +222,5 @@ inst_error:
     NOP4
     st.w t0, s1, 0
     jirl zero, ra, 0
-    nop
+    NOP4
 END(n19_jirl_test)

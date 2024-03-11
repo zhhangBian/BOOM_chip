@@ -1,6 +1,6 @@
-#include <asm.h>
-#include <regdef.h>
-#include <inst_test.h>
+#include "asm.h"
+#include "regdef.h"
+#include "inst_test.h"
 
 LEAF(n76_dcacop_op1)
     addi.w    s0, s0, 0x1

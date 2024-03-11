@@ -45,7 +45,7 @@ LEAF(n65_invtlb_0x3_test)
     tlbrd
     csrrd t1, csr_tlbidx
     srli.w t1, t1, TLB_IDX
-    li.w  t2, 0x00600000
+    li.w  t2, (0x0c000000>>TLB_IDX)
     bne   t1, t2, inst_error
     addi.w t0, t0, 0x1  
     bne   t0, t4, 2b
@@ -53,7 +53,7 @@ LEAF(n65_invtlb_0x3_test)
     bne s2, zero, inst_error
 
 #if 0
-	li.w    t1, 0xa
+    li.w    t1, 0xa
     li.w    t2, 0xb
     invtlb 0x0, t1, t2
 ###detect exception

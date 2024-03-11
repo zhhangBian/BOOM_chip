@@ -38,7 +38,7 @@ LEAF(n49_ti_ex_test)
   bne     t1, t0, inst_error  
 
 ###2
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   li.w      s2, 0x04
   la.local  s4, 1f
   st.w    s4, t7, 4 
@@ -53,11 +53,10 @@ LEAF(n49_ti_ex_test)
   li.w      s2, 0x04
   la.local  s4, 1f
   st.w    t7, t7, 4
-  st.w    s5, t7, 4 
   TEST_TI_EX_CYC(0xe74) 
   st.w    s4, t7, 0 
   ld.w    t1, t7, 4 
-  bne     t1, s5, inst_error  
+  bne     t1, t7, inst_error  
   bne     s2, s7, inst_error 
   li.w      s2, 0x4 
   st.w    s2, t7, 0 

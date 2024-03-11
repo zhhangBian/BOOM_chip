@@ -29,7 +29,7 @@ LEAF(n51_soft_int_ex_test)
   bne     t1, t0, inst_error  
 
 ###2
-  li.w      t7, (DATABASE+0xd0000)
+  li.w      t7, DATABASE
   li.w      s2, 0x04
   la.local  s4, 1f
   st.w    t7, t7, 4
