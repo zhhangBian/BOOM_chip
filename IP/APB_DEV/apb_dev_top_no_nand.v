@@ -177,6 +177,8 @@ input               uart0_dsr_i;
 input               uart0_dcd_i;
 input               uart0_ri_i;
 
+output uart0_int;
+
 assign  dma_req_o      = 1'b0;
 assign  nand_dma_ack_i = dma_ack_i; 
 

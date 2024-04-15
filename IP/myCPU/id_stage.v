@@ -900,7 +900,7 @@ assign excp_ine = ~inst_valid;
 assign kernel_inst = inst_csrrd    |
                      inst_csrwr    |
                      inst_csrxchg  |
-                     inst_cacop    |
+                     inst_cacop & (rd[4:3] != 2'b10)   |
                      inst_tlbsrch  |
                      inst_tlbrd    |
                      inst_tlbwr    |

@@ -1,6 +1,6 @@
-#include <asm.h>
-#include <regdef.h>
-#include <inst_test.h>
+#include "asm.h"
+#include "regdef.h"
+#include "inst_test.h"
 
 LEAF(n4_pgd_test)
 

@@ -301,10 +301,10 @@ always @(posedge clk) begin
     else if (excp_flush) begin
         csr_crmd[ `PLV] <=  2'b0;
         csr_crmd[  `IE] <=  1'b0;
-    if (excp_tlbrefill) begin
-        csr_crmd [`DA] <= 1'b1;
-        csr_crmd [`PG] <= 1'b0;
-    end
+        if (excp_tlbrefill) begin
+            csr_crmd [`DA] <= 1'b1;
+            csr_crmd [`PG] <= 1'b0;
+        end
     end
     else if (ertn_flush) begin
         csr_crmd[ `PLV] <= csr_prmd[`PPLV];
@@ -474,7 +474,7 @@ always @(posedge clk) begin
         csr_tlbelo0[`TLB_PLV] <= wr_data[`TLB_PLV];
         csr_tlbelo0[`TLB_MAT] <= wr_data[`TLB_MAT];
         csr_tlbelo0[`TLB_G]   <= wr_data[`TLB_G];
-        csr_tlbelo0[`TLB_PPN] <= wr_data[`TLB_PPN];
+        csr_tlbelo0[`TLB_PPN_EN] <= wr_data[`TLB_PPN_EN];
     end
     else if (tlbrd_valid_wr_en) begin
         csr_tlbelo0[`TLB_V]   <= tlbelo0_in[`TLB_V];
@@ -482,7 +482,7 @@ always @(posedge clk) begin
         csr_tlbelo0[`TLB_PLV] <= tlbelo0_in[`TLB_PLV];
         csr_tlbelo0[`TLB_MAT] <= tlbelo0_in[`TLB_MAT];
         csr_tlbelo0[`TLB_G]   <= tlbelo0_in[`TLB_G];
-        csr_tlbelo0[`TLB_PPN] <= tlbelo0_in[`TLB_PPN];
+        csr_tlbelo0[`TLB_PPN_EN] <= tlbelo0_in[`TLB_PPN_EN];
     end
     else if (tlbrd_invalid_wr_en) begin
         csr_tlbelo0[`TLB_V]   <= 1'b0;
@@ -490,7 +490,7 @@ always @(posedge clk) begin
         csr_tlbelo0[`TLB_PLV] <= 2'b0;
         csr_tlbelo0[`TLB_MAT] <= 2'b0;
         csr_tlbelo0[`TLB_G]   <= 1'b0;
-        csr_tlbelo0[`TLB_PPN] <= 24'b0;
+        csr_tlbelo0[`TLB_PPN_EN] <= 20'b0;
     end
 end
 
@@ -505,7 +505,7 @@ always @(posedge clk) begin
         csr_tlbelo1[`TLB_PLV] <= wr_data[`TLB_PLV];
         csr_tlbelo1[`TLB_MAT] <= wr_data[`TLB_MAT];
         csr_tlbelo1[`TLB_G]   <= wr_data[`TLB_G];
-        csr_tlbelo1[`TLB_PPN] <= wr_data[`TLB_PPN];
+        csr_tlbelo1[`TLB_PPN_EN] <= wr_data[`TLB_PPN_EN];
     end
     else if (tlbrd_valid_wr_en) begin
         csr_tlbelo1[`TLB_V]   <= tlbelo1_in[`TLB_V];
@@ -513,7 +513,7 @@ always @(posedge clk) begin
         csr_tlbelo1[`TLB_PLV] <= tlbelo1_in[`TLB_PLV];
         csr_tlbelo1[`TLB_MAT] <= tlbelo1_in[`TLB_MAT];
         csr_tlbelo1[`TLB_G]   <= tlbelo1_in[`TLB_G];
-        csr_tlbelo1[`TLB_PPN] <= tlbelo1_in[`TLB_PPN];
+        csr_tlbelo1[`TLB_PPN_EN] <= tlbelo1_in[`TLB_PPN_EN];
     end
     else if (tlbrd_invalid_wr_en) begin
         csr_tlbelo1[`TLB_V]   <= 1'b0;
@@ -521,7 +521,7 @@ always @(posedge clk) begin
         csr_tlbelo1[`TLB_PLV] <= 2'b0;
         csr_tlbelo1[`TLB_MAT] <= 2'b0;
         csr_tlbelo1[`TLB_G]   <= 1'b0;
-        csr_tlbelo1[`TLB_PPN] <= 24'b0;
+        csr_tlbelo1[`TLB_PPN_EN] <= 20'b0;
     end
 end
 
