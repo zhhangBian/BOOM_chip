@@ -1,19 +1,19 @@
-# PMON 运行并 load 内核启动的方法
+# load 内核启动的方法
 内核启动需要依次完成以下步骤：
-- 烧写 PMON 文件([gzrom.bin](https://gitee.com/chenzes/chiplab-tools/releases/download/pmon/gzrom.bin))到可插拔 SPI flash 上。
+- 烧写 PMON 文件([gzrom.bin](https://gitee.com/chenzes/chiplab-tools/releases/download/pmon/gzrom.bin))或 u-boot文件([uboot.bin](https://gitee.com/llh730/la32r-uboot/releases))到可插拔 SPI flash 上。
 - 下载 bit 流文件。
-- 运行 PMON。
+- 运行 PMON / u-boot。
 - 搭建 tftp 服务器 Load 内核([vmlinux](https://gitee.com/loongson-edu/la32r-Linux/releases))。
 - 启动内核。
     
-## 烧写PMON
+## 烧写PMON / u-boot
 使用基于龙芯实验箱的串口编程flash的bit流文件，该bit流文件为一个简易SoC，可实现通过串口在线编程flash芯片。编程过程中，不需要拔下flash芯片，且速率达到6KB/sec。具体使用方法参考[串口烧写flash说明](./flash.md)
 
 ## 下载bit流文件
 将开发板与主机间的下载线连接好，开发板上电，使用 Vavidao 工具里的 Open Hardware Manager 下载
 bit 文件到开发板上。
-## 运行PMON
-上述烧写的 PMON 运行在下载的 SoC 上，需要使用串口展示运行信息。
+## 运行PMON / u-boot
+上述烧写的 PMON / u-boot 运行在下载的 SoC 上，需要使用串口展示运行信息。
 将开发板与主机间的串口线连接好，打开串口软件，波特率设置为 115200。
 ### 串口软件
 #### Linux下
@@ -42,7 +42,9 @@ Windows下可以使用免安装的[SecureCRTPortable串口软件](https://gitee.
 ![](../figures/secure_three.png)
 配置好串口后，点击 connect，即可进入串口界面，在波特率设置正确的情况下，可以通过串口与开发板进行交互，如下：
 ![](../figures/secure_four.png)
-### PMON命令
+
+
+## PMON 网络加载并运行Linux
 连接上串口，打开串口软件，设置好波特率，则可以在串口窗口中看到 PMON 运行信息，运行成功后则会进入 PMON 提示符，此时可以输入 PMON 命令。
 ![](../figures/secure_five.png)
 比如， SoC 中具有 MAC 控制器，PMON 中也有 MAC 驱动，则我们输入命令
@@ -57,7 +59,6 @@ ping 10.90.50.43
 在 ping 网络是会一直发 ping 包，可以 `Ctrl+C` 取消 ping。运行结果如下：
 ![](../figures/secure_six.png)
 
-## 运行Linux
 由于运行 linux 时，最初的内核需要使用网口 load 进入内存执行，因而需要先搭建 Tftp 服务器。   
 具体方法参见[tftp下载地址](https://gitee.com/chenzes/chiplab-tools/releases/download/chiplab-tools/tftp.zip)。    
 目前运行 Linux 的方法是，先运行 PMON，随后通过网口 load Linux 内核进入 FPGA 上的 DDR3 内存上。在load内核前，需要通过以下命令裁剪掉内核二进制文件中的符号信息。
@@ -94,7 +95,7 @@ g console=ttyS0,baudrate rdinit=sbin/init
 ```
 即可运行该内核，命令中 baudrate 需为数字，即为串口控制器设置的波特率，设置不对时，串口显示字符为乱码。Linux 内核运行时波特率为 115200。    
 当运行 Linux 内核成功后会出现`/ #`提示符，可以使用常用的 Linux 命令。
-## 加载内存到 NandFlash
+## PMON 加载内存到 NandFlash
 当前 SoC 支持 128MB的 NandFlash 作为电脑中的硬盘功能。因而可以将 Linux 内核加载到NandFlash
 上。    
 如果将内核加载至 NandFlash 中，且 PMON 中设置好参数。则复位实验箱后，会先自动运行 PMON 对设备进行初始化，随后 PMON 会自动加载 NandFlash 中的 Linux 内核进行启动，这就是通常电脑启动的过程。        
@@ -130,3 +131,48 @@ set append "console=ttyS0,115200 rdinit=/sbin/init initcall_debug=1 loglevel=20"
 ```
 7. 重启 FPGA 实验箱，会自动完成本章开头描述的启动过程，自动运行到 Linux 内核状态：
 ![](../figures/nand.png)
+
+
+## u-boot 网络加载并运行内核 
+连接上串口，打开串口软件，设置好波特率，则可以在串口窗口中看到 u-boot 运行信息，运行成功后则会进入 u-boot 提示符，此时可以输入 u-boot 命令。
+
+![](../figures/uboot_commandline.jpg)
+
+在u-boot中使用`print`命令可以查看当前的环境配置。
+
+![](../figures/uboot_print.jpg)
+
+使用命令 
+```
+    setenv ipaddr 10.90.50.44
+    setenv serverip 10.90.50.43
+```
+可以配置u-boot和服务器（自己电脑）的使用的ip（两者需在同一子网下，配置的具体IP需查看自己本机IP），u-boot中通过命令
+```
+    ping 10.90.50.43
+```
+可以查看与服务器是否建立了连接。
+
+![](../figures/uboot_ping.jpg)
+
+完成了网络配置，就可以使用uboot加载内核，使用命令
+```
+    setenv bootcmd console=ttyS0,115200 rdinit=/init
+```
+可以配置内核的启动参数。
+通过命令
+```
+    tftpboot 0xa3000000 vmlinux
+```
+可以将内核加载到 0xa300_0000 开始的地址上，该地址并不是`readelf`显示的`entry`的入口地址。uboot会先把镜像加载到一段空余的位置，运行时再根据elf段的信息加载到对应的位置上。
+![](../figures/uboot_load1.jpg)
+![](../figures/uboot_load2.jpg)
+
+最后，使用命令
+```
+    bootelf 0xa3000000 bootcmd
+```
+即可成功运行linux内核！
+
+![](../figures/uboot_exec1.jpg)
+![](../figures/uboot_exec2.jpg)
