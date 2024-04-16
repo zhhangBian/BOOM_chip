@@ -144,12 +144,12 @@ set append "console=ttyS0,115200 rdinit=/sbin/init initcall_debug=1 loglevel=20"
 
 使用命令 
 ```
-    setenv ipaddr 10.90.50.44
-    setenv serverip 10.90.50.43
+setenv ipaddr 10.90.50.44
+setenv serverip 10.90.50.43
 ```
 可以配置u-boot和服务器（自己电脑）的使用的ip（两者需在同一子网下，配置的具体IP需查看自己本机IP），u-boot中通过命令
 ```
-    ping 10.90.50.43
+ping 10.90.50.43
 ```
 可以查看与服务器是否建立了连接。
 
@@ -157,20 +157,20 @@ set append "console=ttyS0,115200 rdinit=/sbin/init initcall_debug=1 loglevel=20"
 
 完成了网络配置，就可以使用uboot加载内核，使用命令
 ```
-    setenv bootcmd console=ttyS0,115200 rdinit=/init
+setenv bootcmd console=ttyS0,115200 rdinit=/init
 ```
 可以配置内核的启动参数。
 通过命令
 ```
-    tftpboot 0xa3000000 vmlinux
+tftpboot 0xa3000000 vmlinux
 ```
-可以将内核加载到 0xa300_0000 开始的地址上，该地址并不是`readelf`显示的`entry`的入口地址。uboot会先把镜像加载到一段空余的位置，运行时再根据elf段的信息加载到对应的位置上。
+可以将内核加载到 `0xa300_0000` 开始的地址上，该地址并不是`readelf`显示的`entry`的入口地址。uboot会先把镜像加载到一段无数据的地址，运行时再根据elf段的信息加载到对应的位置上。
 ![](../figures/uboot_load1.jpg)
 ![](../figures/uboot_load2.jpg)
 
 最后，使用命令
 ```
-    bootelf 0xa3000000 bootcmd
+bootelf 0xa3000000 bootcmd
 ```
 即可成功运行linux内核！
 

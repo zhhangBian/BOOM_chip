@@ -9,7 +9,9 @@ chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。
 │　　　　　├── Baixin&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;百芯开发板SoC顶层代码。   
 │　　　　　└── sim&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;仿真SoC顶层代码   
 ├── fpga&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;综合工程。   
-│　　└── loongson&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;龙芯实验箱综合工程。   
+│　　├── loongson&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;龙芯实验箱综合工程。   
+│　　　　　├── 2019.2&emsp;&emsp;&emsp;&emsp;对应Vivado 2019.2版本。   
+│　　　　　└── 2023.2&emsp;&emsp;&emsp;&ensp;对应Vivado 2023.2版本。   
 │　　└── Baixin&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;百芯开发板综合工程。   
 ├── IP&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;SoC IP。   
 │　　├── AMBA&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;总线 IP。    
@@ -25,6 +27,8 @@ chiplab项目致力于构建基于LoongArch32 Reduced的soc敏捷开发平台。
 │　　├── CONFREG&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;用于访问开发板上数码管、拨码开关等外设以及特殊寄存器。   
 │　　├── myCPU&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;处理器核逻辑。  
 │　　└── xilinx_ip&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Vivado平台所创建的IP。   
+│　　　　　├── 2019.2&emsp;&emsp;&emsp;&emsp;对应Vivado 2019.2版本。   
+│　　　　　└── 2023.2&emsp;&emsp;&emsp;&ensp;对应Vivado 2023.2版本。   
 ├── sims&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;运行仿真以及存放testbench源码。   
 │　　└── verilator&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;以verilator仿真工具为基础。   
 │　　　　　├── run_prog&emsp;&emsp;&emsp;&emsp;测试程序运行目录，包括func、性能测试程序、内核等。   
@@ -134,13 +138,14 @@ module core_top(
      
 #### 综合
 该步骤的工作目录位于`fpga`，当前支持龙芯实验箱及百芯开发板。  
-使用vivado打开`loongson/system_run/system_run.xpr`或者`Baixin/system_run/system_run.xpr`工程文件，添加处理器核代码后，可直接开始综合。若选择添加`chiplab`中的参考核，注意添加`myCPU/IP`下的xilinx IP。    
+使用vivado打开`loongson/20*.2/system_run.xpr`（根据具体vivado版本选择）或者`Baixin/system_run/system_run.xpr`工程文件，添加处理器核代码后，可直接开始综合。若选择添加`chiplab`中的参考核，注意添加`myCPU/IP`下的xilinx IP。    
 处理器核输入时钟频率默认为33MHz，可对`clk_pll_33`xilinx IP的输出时钟频率进行调整，修改处理器核的输入时钟频率。此外，还需将`chip/soc_demo/loongson/config.h`或者`chip/soc_demo/Baixin/config.h`文件中的`FREQ`宏定义修改为对应频率。
 #### 板上启动内核
-板上内核启动步骤包括：`flash`加载`pmon`，通过网口加载内核。   
+板上内核启动步骤包括：`flash`加载`pmon`或`uboot`，通过网口加载内核。   
 内核由[龙芯教育/la32r-Linux](https://gitee.com/loongson-edu/la32r-Linux)仓库提供源码。    
-pmon直接提供二进制文件。   
-具体流程请参考[pmon运行并load内核启动的方法](./FPGA_run_linux/linux_run.md)           
+pmon直接提供二进制文件。
+uboot由[龙芯教育/la32r-uboot](https://gitee.com/loongson-edu/la32r-uboot)仓库提供源码。   
+具体流程请参考[load 内核启动的方法](./FPGA_run_linux/linux_run.md)           
 内核中可尝试运行`unixbench`。    
 ```
 ./ub.sh
