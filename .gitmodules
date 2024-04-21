@@ -1,0 +1,3 @@
+[submodule "IP/myCPU"]
+	path = IP/myCPU
+	url = git@gitee.com:loongson-edu/open-la500.git
