@@ -1,6 +1,6 @@
 # load 内核启动的方法
 内核启动需要依次完成以下步骤：
-- 烧写 PMON 文件([gzrom.bin](https://gitee.com/chenzes/chiplab-tools/releases/download/pmon/gzrom.bin))或 u-boot文件([uboot.bin](https://gitee.com/llh730/la32r-uboot/releases))到可插拔 SPI flash 上。
+- 烧写 PMON 文件([gzrom.bin](https://gitee.com/chenzes/chiplab-tools/releases/download/pmon/gzrom.bin))或 u-boot文件([uboot.bin](https://gitee.com/loongson-edu/la32r-uboot/releases/download/loongsonsoc-v0.1.0/u-boot.bin))到可插拔 SPI flash 上。
 - 下载 bit 流文件。
 - 运行 PMON / u-boot。
 - 搭建 tftp 服务器 Load 内核([vmlinux](https://gitee.com/loongson-edu/la32r-Linux/releases))。
