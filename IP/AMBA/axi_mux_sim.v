@@ -855,7 +855,8 @@ assign wr_addr_hit[1] = 1'b0;
 
 assign wr_addr_hit[2] = axi_s_awaddr[31:16]==16'h1fe0;   //UART
 
-assign wr_addr_hit[3] = axi_s_awaddr[28:16]==16'h1fd0 ;  //CONF
+assign wr_addr_hit[3] = axi_s_awaddr[28:16]==16'h1fd0 ||
+						axi_s_awaddr[28:16]==16'h1faf ;  //CONF
 assign wr_addr_hit[4] = 1'b0;
 assign wr_addr_hit[0] = ~|wr_addr_hit[4:1];             //DDR3
 
