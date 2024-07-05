@@ -5,6 +5,7 @@ module fifo #(
     parameter int unsigned DATA_WIDTH = 32,
     parameter int unsigned DEPTH = 32,
     parameter int unsigned ADDR_DEPTH = (DEPTH > 1) ? $clog2(DEPTH) : 1,
+    parameter bit BYPASS = 1;
     parameter type T = logic[DATA_WIDTH - 1 : 0]
 ) (
     input   logic         clk,
@@ -45,7 +46,7 @@ end
 assign wptr  = push ? (wptr_q + 1'd1) : wptr_q;
 assign rptr  = pop  ? (rptr_q + 1'd1) : rptr_q;
 assign cnt   = cnt_q + push - pop;
-assign empty = (cnt == '0);
+assign empty = BYPASS & (cnt == '0);
 
 // 握手信号
 logic  ready_tmp, valid_tmp;
