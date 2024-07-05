@@ -94,10 +94,14 @@ module dpsram #(
   always_ff @(posedge clk0) begin
     if (!rst_n0) begin
       for (integer i = 0; i < DATA_DEPTH ; i++) begin
-        sim_ram[i]   <= '0; 
+        for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
+          sim_ram[i][j] <= '0; 
+        end
       end
-      rdata0_split_q <= '0;
-      rdata1_split_q <= '0;
+      for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
+          rdata0_split_q[j] <= '0;
+          rdata1_split_q[j] <= '0;
+      end
     end
   end
 
