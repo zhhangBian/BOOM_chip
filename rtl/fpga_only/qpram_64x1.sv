@@ -1,4 +1,4 @@
-`include "wired0_defines.svh"
+`include "a_defines.svh"
 
 module qpram_64x1(
     input  wire        CLK,

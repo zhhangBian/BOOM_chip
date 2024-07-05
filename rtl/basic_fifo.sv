@@ -76,11 +76,11 @@ always_ff @(posedge clk) begin
         data_out_q <= data_out;
     end
 end
-assign  data_out  =  data[rptr];
+assign  data_out  =  ((cnt_q == 0 && push) || (cnt_q == 1 && push && pop)) ? receiver.data : data[rptr];
 // write
 always_ff @(posedge clk) begin
     if (rst_n & push) begin
-        data[wptr] <= receiver.data;
+        data[wptr_q] <= receiver.data;
     end
 end
 

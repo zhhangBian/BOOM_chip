@@ -1,5 +1,4 @@
-// THIS MODULE IS FPGA ONLY
-`include "wired0_defines.svh"
+`include "a_defines.svh"
 module fpga_ram_3r1w_64d#(
     parameter int WIDTH = 32
 )( 

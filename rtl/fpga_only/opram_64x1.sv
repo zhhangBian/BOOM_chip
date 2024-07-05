@@ -1,4 +1,4 @@
-`include "wired0_defines.svh"
+`include "a_defines.svh"
 
 module opram_64x1(
     input  wire        CLK,
