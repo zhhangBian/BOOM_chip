@@ -28,5 +28,4 @@
 `define _SFT_SLA      (3'b011)
 `define _SFT_SRA      (3'b100)
 
-
 `endif
