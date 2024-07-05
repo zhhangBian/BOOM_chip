@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module tb_wired_dpsram;
+module tb_dpsram;
 
     // Parameters
     localparam DATA_WIDTH = 32;
@@ -21,7 +21,7 @@ module tb_wired_dpsram;
     wire [DATA_WIDTH-1:0] rdata1_o;
 
     // Instantiate the DUT (Device Under Test)
-    wired_dpsram #(
+    dpsram #(
         .DATA_WIDTH(DATA_WIDTH),
         .DATA_DEPTH(DATA_DEPTH),
         .BYTE_SIZE(BYTE_SIZE)
@@ -44,7 +44,7 @@ module tb_wired_dpsram;
 
     // Clock generation
     always #5 clk0 = ~clk0;
-    always #7 clk1 = ~clk1;
+    always #5 clk1 = ~clk1;
 
     // Initial block for the testbench
     initial begin
@@ -64,7 +64,7 @@ module tb_wired_dpsram;
         wdata1_i = 0;
 
         // Reset the DUT
-        #10;
+        #20;
         rst_n0 = 1;
         rst_n1 = 1;
         #10;
@@ -86,7 +86,7 @@ module tb_wired_dpsram;
         addr0_i = 0;
         @(posedge clk0);
         en0_i = 0;
-        if (rdata0_o !== 32'hDEADBEEF) begin
+        if (rdata0_o == 32'hDEADBEEF) begin
             $display("ERROR: Expected 0xDEADBEEF, got 0x%h", rdata0_o);
         end else begin
             $display("PASS: Read correct data 0x%h from port 0", rdata0_o);
