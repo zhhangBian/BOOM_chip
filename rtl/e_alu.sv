@@ -9,7 +9,6 @@ module e_alu(
   input   logic [2:0]   op_i,
 
   output  logic [31:0]  result_o
-
 );
 
 logic [31:0] bw_result;   // 逻辑运算
