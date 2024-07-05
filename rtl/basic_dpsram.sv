@@ -1,6 +1,6 @@
 `include "a_defines.svh"
 
-module wired_dpsram #(  
+module dpsram #(  
     parameter int unsigned DATA_WIDTH = 32  ,
     parameter int unsigned DATA_DEPTH = 1024,
     parameter int unsigned BYTE_SIZE  = 32
@@ -90,6 +90,17 @@ module wired_dpsram #(
   assign wdata1_split = wdata1_i;
   assign rdata0_o = rdata0_split_q;
   assign rdata1_o = rdata1_split_q;
+  
+  always_ff @(posedge clk0) begin
+    if (!rst_n0) begin
+      for (integer i = 0; i < (DATA_WIDTH/BYTE_SIZE) ; i++) begin
+        sim_ram[i]   <= '0; 
+      end
+      rdata0_split_q <= '0;
+      rdata1_split_q <= '0;
+    end
+  end
+
   // PORT A
   always_ff @(posedge clk0) begin
     if(en0_i) begin
