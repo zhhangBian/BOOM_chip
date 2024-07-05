@@ -1,0 +1,4 @@
+`ifndef _BOOM_STRUCTURE_HEAD
+`define _BOOM_STRUCTURE_HEAD
+
+`endif
