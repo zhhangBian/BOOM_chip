@@ -16,8 +16,6 @@
 
 ## 访存指令
 
-> 由于采用访存顺序且单核设计，不用关注`dbar`和`ibar`指令，当作nop指令处理即可
-
 - 大部分访存指令在LSU中进行，可以在解码部分进行数据预取
 - 部分指令需要在提交级进行处理（对Cache、TLB的维护指令）
 - 对于一些预取指令，需要提前发向总线发送数据请求，加载数据
@@ -54,11 +52,13 @@
 
 比赛评测不要求，启动系统中是否影响功能存疑
 
-// 需要问学长
+==需要做，预取不需要==
 
 # 控制信号梳理
 
-对于耦合关系的控制：//TODO
+==握手信号、不同流水级的交互信号==
+
+对于耦合关系的控制：
 
 - 是由buffer在外控制数据的ready还是内置相应元件
 - 输出有相应的ready信号，对于buffer数量的控制
@@ -79,6 +79,47 @@
   - 后端
     - //
 
+## BPU
+
+BPU仅与ICache进行连接，需要在中间加入一个Skidbuffer，进行缓冲
+
+与后续的SkidBuffer的握手信号：
+
+- 输入的ready信号：SkidBuffer输出的可以接收信号的ready信号
+- 输出的valid信号：输出给SkidBuffer的生成数据、数据有效的valid信号
+
+## ICache
+
+ICache前是Skidbuffer，后是FIFO，需要进行分别握手
+
+并且，LSU-IQ也可能会访问ICache中的数据，也需要进行相应的握手（通过总线进行）
+
+握手信号：
+
+- // 与前面Skidbuffer的握手信号
+- 输入的valid信号：前序Skidbuffer输出的PC有效信号，用于拿到PC
+- 输出的ready信号：与Skidbuffer进行握手，可以接收PC
+- // 与后面的FIFO的握手信号
+- // 在wired中是`lsu_resp`前缀的信号
+- 输出的数据有效valid：可以有有效的数据输出给FIFO
+- 输入的接收ready信号：FIFO可以接收数据
+- // 与LSU-IQ进行的握手：通过总线进行
+- 输入的总线ready信号：LSU请求ready
+- 输出的valid信号：ICache中数据有效，可以进行总线请求
+
+## FIFO
+
+所有的FIFO都是有同一结构的，由宏实现了泛型（在硬件中的不同类型即不同的数据打包类型）
+
+握手信号：
+
+- // 前面输入的组件
+- 输入的数据有效valid
+- 输出的相应ready：可以输入相应的数据
+- // 后面输出的组件
+- 输出的数据有效valid
+- 输入的相应ready：FIFO可以输出相应的数据
+
 ## Decoder
 
 主要控制信号：
@@ -88,10 +129,14 @@
   - 后续由所有原件进行汇总
 - 输出给buffer的ready信号
 
+握手信号：
+
+- 不进行握手，纯粹的组合逻辑
+
 可能用到的：
 
 ```systemverilog
-decode_err_o = 1'b1;
+decode_err_o = 1'b1;	// 用于指示指令是否为异常指令
 ertn_inst = 1'd0;
 priv_inst = 1'd0;
 wait_inst = 1'd0;
@@ -149,6 +194,30 @@ llsc_inst = 1'd0;
 dbarrier = 1'd0;
 ```
 
+## Pipereg
+
+接在Decoder后面用作流水寄存器，用于暂存一部分数据
+
+逻辑和Skidbuffer一致，但是不能直接导通，相当于一个需要握手信号的寄存器
+
+握手信号：
+
+- 输入的valid：前序原件数据是否有效
+- 输出的ready：能否对前序原件响应
+- 输出的valid：能否给后续原件有效数据
+- 输入的ready：后续原件的响应
+
+## Packer
+
+作用为在流水寄存器和后续Rename前的FIFO起到一个对齐的作用
+
+内置了一个SkidBuffer，积累两条指令再发射
+
+握手信号：
+
+- 即为普通的valid-ready
+- 内部处理逻辑为判断指令的冲突与发射情况
+
 ## Rename
 
 主要控制信号：
@@ -182,6 +251,8 @@ dbarrier = 1'd0;
   - TODO：还不是很清楚原理
 - 输出的发射信息
 - 输出到ROB的数据预唤醒信息
+
+
 
 ## ROB
 
@@ -273,8 +344,6 @@ dbarrier = 1'd0;
 
 ## LSU
 
-> TODO：确定LSU做完全顺序，再加上StoreBuffer保证正确性？
-
 主要控制信号：
 
 - 外部指令的ready信号
@@ -287,9 +356,9 @@ dbarrier = 1'd0;
 - 输出的与CDB接口的信号
 - 进行的Cache预取指令
   - 提前发出总线请求信号
-  - TODO：在这一级完成吗
+  - ==可能的优化不大==
 
-## StoreBuffer
+## Store Buffer
 
 主要控制信号：
 
@@ -310,7 +379,7 @@ dbarrier = 1'd0;
   - 常规异常
   - uncached
   - 外部中断
-  - 访问csr指令
+  - 访问CSR指令
 - 输入的ALU/MDU/LSU完成ready信号
 - 输入的指令PC
 - 输入的ROB相关表项有效信号*2
