@@ -56,13 +56,15 @@ typedef struct packed {
 } rat_entry_t;
 
 // id信号
-arf_id [3 :0] r_rarid;
-arf_id [1 :0] r_warid;
-logic  [1 :0] r_issue;
-rob_id [3 :0] r_rrobid;
-rob_id [1 :0] r_wrobid;
+arf_id [3 :0] r_rarid; // 读寄存器的id
+arf_id [1 :0] r_warid; // 写寄存器的id
+logic  [1 :0] r_issue; // 指令是否发射
+rob_id [3 :0] r_rrobid;  // 读寄存器的rob_id
+rob_id [1 :0] r_wrobid;  // 写寄存器的rob_id
 rat_entry_t  [3 :0] r_rename_result; 
 rat_entry_t  [1 :0] r_rename_new;
+logic  [1 :0] r_we; // 写寄存器是否发射
+assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}};
 
 assign r_rarid = d_r_receiver.data.arftable.r_arfid;
 assign r_warid = d_r_receiver.data.arftable.w_arfid;
@@ -71,6 +73,11 @@ assign r_wrobid = {rob_ptr2_q, rob_ptr1_q};
 
 for (genvar i = 0; i < 4; i++) begin
     assign r_rrobid[i] = r_rename_result[i].robid;
+end
+
+for (genvar i = 0; i < 2; i++) begin
+    assign r_rename_new[i].robid = r_wrobid[i];
+    assign r_rename_new[i].check = ~cw_result[i].check;
 end
 
 
@@ -89,7 +96,7 @@ r_rename_table (
     .raddr_i(r_rarid),
     .rdata_o(r_rename_result),
     .waddr_i(r_warid),
-    .we_i(r_issue & {{(|r_warid[1])}, {(|r_warid[0])}}),
+    .we_i(r_we),
     .wdata_i(r_rename_new)
 );
 
@@ -99,6 +106,18 @@ r_rename_table (
 rat_entry_t  [3 :0] cr_result;
 rat_entry_t  [1 :0] cw_result; 
 rat_entry_t  [1 :0] c_new;
+arf_id       [1 :0] c_warid;
+logic        [1 :0] c_we;
+
+assign c_we = c_retire_i & {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} 
+    & {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
+
+assign c_warid = {c_retire_info_i[1].arf_id, c_retire_info_i[0].arf_id};
+
+for (genvar i = 0; i < 2; i++) begin
+    assign c_new[i].check = c_retire_info_i[i].w_check;
+    assign c_new[i].robid = c_retire_info_i[i].rob_id;
+end
 
 rat # (
     .DATA_WIDTH(6 + 1),
@@ -113,8 +132,8 @@ c_rename_table (
     .rst_n(rst_n && !c_flush_i),
     .raddr_i(r_rarid, r_warid),
     .rdata_o(cr_result, cw_result),
-    .waddr_i(r_warid),
-    .we_i(r_issue & {{(|r_warid[1])}, {(|r_warid[0])}}),
+    .waddr_i(c_warid),
+    .we_i(c_we),
     .wdata_i(c_new)
 );
 
