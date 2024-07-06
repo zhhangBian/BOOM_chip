@@ -1,12 +1,15 @@
-module divide_pace (
+// 固定32周期出结果
+// 频率较高
+
+module divide_high_pace (
   input   wire    clk,
   input   wire    rst_n,
 
   input   [31:0]  num0,
   input   [31:0]  num1,
 
-  output  [31:0]  rem,
-  output  [31:0]  quo,
+  output  [31:0]  div_res,
+  output  [31:0]  mod_res,
 
   input   start,
   input   sign,
@@ -17,15 +20,15 @@ wire [31:0] num0_abs = (sign && num0[31]) ? -num0 : num0;
 wire [31:0] num1_abs = (sign && num1[31]) ? -num1 : num1;
 
 logic[5:0] timer;
-logic[31:0] dividend_q, quo_q;
+logic[31:0] dividend_q, mod_res_q;
 logic[62:0] divisor_q;
 
-logic neg_rem_q, neg_quo_q;
+logic neg_div_res_q, neg_mod_res_q;
 
 logic[63:0] sub_result;
 
-assign rem = neg_rem_q ? -dividend_q[31:0] : dividend_q[31:0];
-assign quo = neg_quo_q ? -quo_q : quo_q;
+assign div_res = neg_div_res_q ? -dividend_q[31:0] : dividend_q[31:0];
+assign mod_res = neg_mod_res_q ? -mod_res_q : mod_res_q;
 assign sub_result = {31'd0, dividend_q} - divisor_q[62:0];
 
 always_ff @(posedge clk) begin
@@ -35,9 +38,8 @@ always_ff @(posedge clk) begin
   end
 
   else if(start) begin
-      // 固定32周期出结果
-      timer <= 6'd32;
-      busy <= '1;
+    timer <= 6'd32;
+    busy <= '1;
   end
 
   else begin
@@ -56,19 +58,19 @@ always_ff @(posedge clk) begin
     dividend_q <= num0_abs;
     divisor_q <= {num1_abs, 31'd0};
 
-    neg_rem_q <= num0[31] && sign;
-    neg_quo_q <= (num0[31] != num1[31]) && sign;
+    neg_div_res_q <= num0[31] && sign;
+    neg_mod_res_q <= (num0[31] != num1[31]) && sign;
   end
 
   else begin
     if(timer != 0) begin
       if(!sub_result[63]) begin
-        quo_q <= {quo_q[30:0], 1'b1};
+        mod_res_q <= {mod_res_q[30:0], 1'b1};
         dividend_q <= sub_result[31:0];
       end
 
       else begin
-        quo_q <= {quo_q[30:0], 1'b0};
+        mod_res_q <= {mod_res_q[30:0], 1'b0};
       end
 
       divisor_q <= {'0, divisor_q[62:1]};

@@ -1,5 +1,5 @@
-`ifndef a_alu_definition
-`define a_alu_definition
+`ifndef a_alu_defines
+`define a_alu_defines
 
 `define _ALU_NOP      (3'b000)
 

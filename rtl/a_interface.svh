@@ -8,7 +8,7 @@ interface handshake_if#(type T);
     modport sender (
         output data,
         input  ready,
-        output valid 
+        output valid
     );
     modport receiver (
         input  data,
