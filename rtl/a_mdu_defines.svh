@@ -2,6 +2,7 @@
 `define a_mdu_defines
 
 `define ARF_WIDTH 5
+`define ROB_WIDTH 6
 
 `define _MDU_MUL    3'b001
 `define _MDU_MULH   3'b010
@@ -16,13 +17,13 @@ typedef struct packed {
   logic [31:0]  data0;
   logic [31:0]  data1;
   // 需要写回的寄存器地址
-  logic [`ARF_WIDTH-1:0] reg_addr;
+  logic [`ROB_WIDTH-1:0] reg_addr;
 } mdu_i_t;
 
 typedef struct packed {
   logic [31:0]  result;
   // 需要写回的寄存器地址
-  logic [`ARF_WIDTH-1:0] reg_addr;
+  logic [`ROB_WIDTH-1:0] reg_addr;
 } mdu_o_t;
 
 `endif

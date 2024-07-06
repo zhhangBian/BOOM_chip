@@ -25,7 +25,7 @@ module mdu_muler (
 // 模拟晚3拍
 logic valid_s_1, valid_s_2, valid_s_3;
 logic [2:0] op_s_1, op_s_2, op_s_3;
-logic [`ARF_WIDTH-1:0] reg_addr_s_1, reg_addr_s_2, reg_addr_s_3;
+logic [`ROB_WIDTH-1:0] reg_addr_s_1, reg_addr_s_2, reg_addr_s_3;
 
 logic [32:0] r0_q, r1_q;
 logic [63:0] result_q;

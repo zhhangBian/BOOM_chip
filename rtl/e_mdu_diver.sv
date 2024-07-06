@@ -21,7 +21,7 @@ module mdu_diver (
 
 logic valid_q;
 logic [2:0] op_q;
-logic [`ARF_WIDTH-1:0] reg_addr_q;
+logic [`ROB_WIDTH-1:0] reg_addr_q;
 logic busy;
 
 always_ff @(posedge clk) begin
