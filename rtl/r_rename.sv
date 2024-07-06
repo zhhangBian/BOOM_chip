@@ -65,6 +65,12 @@ rat_entry_t  [3 :0] r_rename_result;
 rat_entry_t  [1 :0] r_rename_new;
 logic  [1 :0] r_we; // 写寄存器是否发射
 assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}};
+// commit 表结果
+rat_entry_t  [3 :0] cr_result;
+rat_entry_t  [1 :0] cw_result; 
+rat_entry_t  [1 :0] c_new;
+arf_id       [1 :0] c_warid;
+logic        [1 :0] c_we;
 
 assign r_rarid = d_r_receiver.data.arftable.r_arfid;
 assign r_warid = d_r_receiver.data.arftable.w_arfid;
@@ -81,14 +87,13 @@ for (genvar i = 0; i < 2; i++) begin
 end
 
 
+
 // R级RAT表的实现
-rat # (
-    .DATA_WIDTH(6 + 1),
+rename_rat # (
+    .DATA_WIDTH(7),
     .DEPTH(32),
-    .R_PORT_COUNT(4), // CHANGEABLE
-    .W_PORT_COUNT(2), // CHANGEABLE
-    .NEED_RESET(1),
-    .NEED_FORWARD(0)
+    .R_PORT_COUNT(4), 
+    .NEED_RESET(1)
 )
 r_rename_table (
     .clk(clk),
@@ -103,12 +108,6 @@ r_rename_table (
 // C级RAT表的实现
 // TODO: C级RAT表的实现
 
-rat_entry_t  [3 :0] cr_result;
-rat_entry_t  [1 :0] cw_result; 
-rat_entry_t  [1 :0] c_new;
-arf_id       [1 :0] c_warid;
-logic        [1 :0] c_we;
-
 assign c_we = c_retire_i & {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} 
     & {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
 
@@ -119,34 +118,34 @@ for (genvar i = 0; i < 2; i++) begin
     assign c_new[i].robid = c_retire_info_i[i].rob_id;
 end
 
-rat # (
-    .DATA_WIDTH(6 + 1),
+commit_rat # (
+    .DATA_WIDTH(7),
     .DEPTH(32),
-    .R_PORT_COUNT(4 + 2), // CHANGEABLE
-    .W_PORT_COUNT(2),     // CHANGEABLE
+    .R_PORT_COUNT(4 + 2), 
+    .W_PORT_COUNT(2),     
     .NEED_RESET(1),
     .NEED_FORWARD(1)
 )
 c_rename_table (
     .clk(clk),
     .rst_n(rst_n && !c_flush_i),
-    .raddr_i(r_rarid, r_warid),
-    .rdata_o(cr_result, cw_result),
+    .raddr_i({r_rarid, r_warid}),
+    .rdata_o({cr_result, cw_result}),
     .waddr_i(c_warid),
     .we_i(c_we),
     .wdata_i(c_new)
 );
 
-
-
 // ARF的实现
 logic [3 :0][31:0] r_arf_data;
+logic [1 :0][31:0] write_data;
+assign write_data = {c_retire_info_i[1].data, c_retire_info_i[0].data};
 
 arf # (
     .DATA_WIDTH(32),
     .DEPTH(32),
-    .R_PORT_COUNT(4), // CHANGEABLE
-    .W_PORT_COUNT(2), // CHANGEABLE
+    .R_PORT_COUNT(4), 
+    .W_PORT_COUNT(2), 
     .NEED_RESET(1),
     .NEED_FORWARD(1)
 )
@@ -154,10 +153,10 @@ arf_inst (
     .clk(clk),
     .rst_n(rst_n && !c_flush_i),
     .raddr_i(r_rarid),
-    .rdata_o(/*TODO*/),
-    .waddr_i(/*TODO*/),
-    .we_i(/*TODO*/),
-    .wdata_i(/*TODO*/)
+    .rdata_o(r_arf_data),
+    .waddr_i(c_warid),
+    .we_i(c_we),
+    .wdata_i(write_data)
 );
 
 

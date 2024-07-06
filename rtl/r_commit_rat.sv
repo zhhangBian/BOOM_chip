@@ -1,12 +1,12 @@
 `include "a_defines.svh"
 
-module arf #(
-    parameter int unsigned DATA_WIDTH = 32,
+module commit_rat #(
+    parameter int unsigned DATA_WIDTH = 7,
     parameter int unsigned DEPTH = 32,
-    parameter int unsigned R_PORT_COUNT = 4,
+    parameter int unsigned R_PORT_COUNT = 6,
     parameter int unsigned REGISTERS_FILE_TYPE = 0, // optional: 0:ff, 1:latch
     parameter bit NEED_RESET = 1,
-    parameter bit NEED_FORWARD = 0,
+    parameter bit NEED_FORWARD = 1,
     parameter logic[DEPTH-1:0][DATA_WIDTH-1:0] RESET_VAL = '0,
     // DO NOT MODIFY
     parameter type T = logic[DATA_WIDTH - 1 : 0],

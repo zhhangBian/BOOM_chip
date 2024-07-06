@@ -1,12 +1,11 @@
 `include "a_defines.svh"
 
-module rat #(
+module rename_rat #(
     parameter int unsigned DATA_WIDTH = 7,
     parameter int unsigned DEPTH = 32,
     parameter int unsigned R_PORT_COUNT = 4,
     parameter int unsigned REGISTERS_FILE_TYPE = 0, // optional: 0:ff, 1:latch
     parameter bit NEED_RESET = 1,
-    parameter bit NEED_FORWARD = 0,
     parameter logic[DEPTH-1:0][DATA_WIDTH-1:0] RESET_VAL = '0,
     // DO NOT MODIFY
     parameter type T = logic[DATA_WIDTH - 1 : 0],
@@ -28,29 +27,28 @@ module rat #(
     assign equal1 = (raddr_i[2] == waddr_i[0]) & we_i[0];
     assign equal2 = (raddr_i[3] == waddr_i[0]) & we_i[0];
 
-    for(genvar r = 0 ; r < R_PORT_COUNT/2 ; r += 1) begin
+    for(genvar r = 0 ; r < 2 ; r += 1) begin
         assign rdata_o[r] = rdata[r];
     end
-// FORWARD
+    // FORWARD
     assign rdata_o[2] = equal1? wdata_i[0] : rdata[2];
     assign rdata_o[3] = equal2? wdata_i[0] : rdata[3];
 
     wire [DEPTH-1:0][DATA_WIDTH-1:0] regfiles;
-    if(REGISTERS_FILE_TYPE == 0) begin
-        registers_file_ff_tp #(
-            .DATA_WIDTH(DATA_WIDTH),
-            .DEPTH(DEPTH),
-            .NEED_RESET(NEED_RESET),
-            .RESET_VAL(RESET_VAL)
-        ) regcore_ff (
-            .clk,
-            .rst_n,
-            .waddr_i,
-            .we_i,
-            .wdata_i,
-            // outport
-            .regfiles_o(regfiles)
-        );
+    reg  [DEPTH-1:0][DATA_WIDTH-1:0] regfiles_q;
+    assign regfiles = regfiles_q;
+
+    // 这里全部使用ff作为寄存器文件，后续可以改成distributed RAM，但是bank的逻辑有点奇怪？
+    for(genvar i = 0 ; i < DEPTH ; i += 1) begin
+        always_ff @(posedge clk) begin
+            if(NEED_RESET && ~rst_n) begin
+                regfiles_q[i] <= RESET_VAL[i];
+            end else if(we_i[1] && waddr_i[1] == i[ADDR_DEPTH-1:0]) begin
+                regfiles_q[i] <= wdata_i[1];
+            end else if(we_i[0] && waddr_i[0] == i[ADDR_DEPTH-1:0]) begin
+                regfiles_q[i] <= wdata_i[0];
+            end
+        end
     end
 
     // Read port generation
