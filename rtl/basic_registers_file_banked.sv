@@ -42,6 +42,7 @@ module registers_file_banked #(
             wdata = '0;
             for(integer p = 0 ; p < W_PORT_COUNT ; p += 1) begin
                 if(waddr_i[p][BADDR_DEPTH-1:0] == b[BADDR_DEPTH-1:0] && we_i[p]) begin
+                    // ???
                     waddr |= waddr_i[p][ADDR_DEPTH-1:BADDR_DEPTH];
                     we    |= '1;
                     wdata |= wdata_i[p];
