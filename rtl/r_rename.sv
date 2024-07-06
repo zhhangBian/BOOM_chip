@@ -15,6 +15,7 @@ module r_rename #(
     // C级信号
     input  logic c_flush_i,
     input  logic [1 :0] c_retire_i,
+    input  retire_pkg_t [1 :0] c_retire_info_i,
     output c_flush_ack_o
     // …… TODO: C级其他信号
 );
@@ -50,7 +51,7 @@ assign d_r_receiver.ready = rob_available_q & !c_flush_i & r_p_sender.ready;
 
 // rat entry
 typedef struct packed {
-    logic valid;
+    logic check;
     logic [`ROB_WIDTH - 1 :0] robid;
 } rat_entry_t;
 
@@ -73,7 +74,7 @@ for (genvar i = 0; i < 4; i++) begin
 end
 
 
-// RAT表的实现
+// R级RAT表的实现
 rat # (
     .DATA_WIDTH(6 + 1),
     .DEPTH(32),
@@ -91,5 +92,54 @@ r_rename_table (
     .we_i(r_issue & {{(|r_warid[1])}, {(|r_warid[0])}}),
     .wdata_i(r_rename_new)
 );
+
+// C级RAT表的实现
+// TODO: C级RAT表的实现
+
+rat_entry_t  [3 :0] cr_result;
+rat_entry_t  [1 :0] cw_result; 
+rat_entry_t  [1 :0] c_new;
+
+rat # (
+    .DATA_WIDTH(6 + 1),
+    .DEPTH(32),
+    .R_PORT_COUNT(4 + 2), // CHANGEABLE
+    .W_PORT_COUNT(2),     // CHANGEABLE
+    .NEED_RESET(1),
+    .NEED_FORWARD(1)
+)
+c_rename_table (
+    .clk(clk),
+    .rst_n(rst_n && !c_flush_i),
+    .raddr_i(r_rarid, r_warid),
+    .rdata_o(cr_result, cw_result),
+    .waddr_i(r_warid),
+    .we_i(r_issue & {{(|r_warid[1])}, {(|r_warid[0])}}),
+    .wdata_i(c_new)
+);
+
+
+
+// ARF的实现
+logic [3 :0][31:0] r_arf_data;
+
+arf # (
+    .DATA_WIDTH(32),
+    .DEPTH(32),
+    .R_PORT_COUNT(4), // CHANGEABLE
+    .W_PORT_COUNT(2), // CHANGEABLE
+    .NEED_RESET(1),
+    .NEED_FORWARD(1)
+)
+arf_inst (
+    .clk(clk),
+    .rst_n(rst_n && !c_flush_i),
+    .raddr_i(r_rarid),
+    .rdata_o(/*TODO*/),
+    .waddr_i(/*TODO*/),
+    .we_i(/*TODO*/),
+    .wdata_i(/*TODO*/)
+);
+
 
 endmodule
