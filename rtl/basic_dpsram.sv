@@ -1,6 +1,6 @@
 `include "a_defines.svh"
 
-module dpsram #(  
+module dpsram #(
     parameter int unsigned DATA_WIDTH = 32  ,
     parameter int unsigned DATA_DEPTH = 1024,
     parameter int unsigned BYTE_SIZE  = 32
@@ -72,7 +72,7 @@ module dpsram #(
     .injectsbiterrb('0      ),
     .regcea        ('1      ),
     .regceb        ('1      ),
-    .rsta          (~rst_n0 ), 
+    .rsta          (~rst_n0 ),
     .rstb          (~rst_n1 ),
     .sleep         ('0      ),
     .wea           (DATA_WIDTH == BYTE_SIZE ? we0_i : ext_we0),
@@ -96,7 +96,7 @@ module dpsram #(
     if (!rst_n0) begin
       for (integer i = 0; i < DATA_DEPTH ; i++) begin
         for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
-          sim_ram[i][j] <= '0; 
+          sim_ram[i][j] <= '0;
         end
       end
       for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
@@ -126,7 +126,8 @@ module dpsram #(
             if(we1_i[i]) begin
                 rdata1_split_q[i]   <= wdata1_split[i];
                 sim_ram[addr1_i][i] <= wdata1_split[i];
-            end else begin
+            end
+            else begin
                 rdata1_split_q[i]   <= sim_ram[addr1_i][i];
             end
         end
