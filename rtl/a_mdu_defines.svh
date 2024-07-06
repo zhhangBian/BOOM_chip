@@ -1,8 +1,6 @@
 `ifndef a_mdu_defines
 `define a_mdu_defines
 
-`define ARF_WIDTH 5
-`define ROB_WIDTH 6
 
 `define _MDU_MUL    3'b001
 `define _MDU_MULH   3'b010
