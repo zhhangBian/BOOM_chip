@@ -10,7 +10,8 @@ module registers_file_ff_tp #(
     parameter type T = logic[DATA_WIDTH - 1 : 0],
     parameter int unsigned ADDR_DEPTH   = (DEPTH > 1) ? $clog2(DEPTH) : 1
 )(
-    `_WIRED_GENERAL_DEFINE,
+    input    clk,
+    input    rst_n,
     input    [1:0][ADDR_DEPTH-1:0] waddr_i,
     input    [1:0]                    we_i,
     input  T [1:0]                 wdata_i,
