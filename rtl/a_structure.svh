@@ -15,4 +15,13 @@ typedef struct packed {
     // else controller signals
 } d_r_pkg_t;
 
+typedef struct packed {
+    // register write back
+    logic [`ROB_WIDTH - 1 :0] rob_id;
+    logic [`ARF_WIDTH - 1 :0] arf_id;
+    logic [31 :0] data;
+    logic w_valid;
+    // else information for retirement
+} retire_pkg_t;
+
 `endif
