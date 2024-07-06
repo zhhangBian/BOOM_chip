@@ -1,9 +1,9 @@
 `include "a_defines.svh"
 
 module mdu_diver (
-  input wire    clk,
-  input wire    rst_n,
-  input wire    flush,
+  input   wire    clk,
+  input   wire    rst_n,
+  input   wire    flush,
 
   // 需要的操作数
   input   mdu_i_t req_i,
@@ -25,13 +25,13 @@ logic [`ARF_WIDTH-1:0] reg_addr_q;
 logic busy;
 
 always_ff @(posedge clk) begin
-  if(flush_i || !rst_n) begin
+  if(flush || !rst_n) begin
     valid_q <= '0;
   end
   else if(ready_o) begin
     valid_q <= valid_i;
     op_q <= req_i.op;
-    wid_q <= req_i.wid;
+    reg_addr_q <= req_i.reg_addr;
   end
 end
 

@@ -1,9 +1,9 @@
 `include "a_defines.svh"
 
 module mdu (
-  input wire    clk,
-  input wire    rst_n,
-  input wire    flush,
+  input   wire    clk,
+  input   wire    rst_n,
+  input   wire    flush,
 
   // 需要的操作数
   input   mdu_i_t req_i,
@@ -19,15 +19,19 @@ module mdu (
   // handshake_if.sender   sender
 );
 
+mdu_o_t mul_res_o, div_res_o;
+logic mul_valid_o, div_valid_o;
+logic mul_ready_o, div_ready_o;
+
 mdu_muler muler(
   .clk,
   .rst_n,
   .flush,
   .req_i,
-  .res_o,
+  .res_o(mul_res_o),
   .valid_i,
-  .ready_o,
-  .valid_o,
+  .ready_o(mul_read_o),
+  .valid_o(mul_valid_o),
   .ready_i
 );
 
@@ -36,11 +40,20 @@ mdu_diver diver(
   .rst_n,
   .flush,
   .req_i,
-  .res_o,
+  .res_o(div_res_o),
   .valid_i,
-  .ready_o,
-  .valid_o,
+  .ready_o(div_ready_o),
+  .valid_o(div_valid_o),
   .ready_i
 );
+
+assign res_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
+                mul_res_o : div_res_o;
+
+assign ready_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
+                  mul_ready_o : div_ready_o;
+
+assign valid_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
+                  mul_valid_o : div_valid_o;
 
 endmodule

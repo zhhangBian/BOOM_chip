@@ -2,9 +2,9 @@
 `include "a_interface.svh"
 
 module mdu_muler (
-  input wire    clk,
-  input wire    rst_n,
-  input wire    flush,
+  input   wire    clk,
+  input   wire    rst_n,
+  input   wire    flush,
 
   // 需要的操作数
   input   mdu_i_t req_i,
@@ -39,8 +39,8 @@ always_ff @(posedge clk) begin
     valid_s_3 <= '0;
   end
   else if(ready_i) begin
-    r0_q <= {!(req_i.op == `MUL_MULHU) & req.data0[31], req_i.data0[0]};
-    r1_q <= {!(req_i.op == `MUL_MULHU) & req.data1[31], req_i.data1[0]};
+    r0_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data0[31], req_i.data0[0]};
+    r1_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data1[31], req_i.data1[0]};
 
     cal_result_q <= $signed(r0_q) * $signed(r1_q);
     result_q <= cal_result_q;
