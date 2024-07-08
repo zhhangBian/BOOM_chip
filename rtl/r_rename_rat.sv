@@ -31,8 +31,8 @@ module rename_rat #(
         assign rdata_o[r] = rdata[r];
     end
     // FORWARD
-    assign rdata_o[2] = equal1? wdata_i[0] : rdata[2];
-    assign rdata_o[3] = equal2? wdata_i[0] : rdata[3];
+    assign rdata_o[2] = equal1 ? wdata_i[0] : rdata[2];
+    assign rdata_o[3] = equal2 ? wdata_i[0] : rdata[3];
 
     wire [DEPTH-1:0][DATA_WIDTH-1:0] regfiles;
     reg  [DEPTH-1:0][DATA_WIDTH-1:0] regfiles_q;

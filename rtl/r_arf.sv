@@ -43,7 +43,7 @@ module arf #(
     for(genvar i = 0 ; i < R_PORT_COUNT ; i++) begin
         assign rdata_o[i] = (NEED_FORWARD && we_i[1] && raddr_i[i] == waddr_i[1]) ? wdata_i[1] : 
                             (NEED_FORWARD && we_i[0] && raddr_i[i] == waddr_i[0]) ? wdata_i[0] :
-                                               regfiles[raddr_i[i]];
+                            regfiles[raddr_i[i]];
     end
 
 endmodule

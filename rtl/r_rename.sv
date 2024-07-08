@@ -3,7 +3,7 @@
 module r_rename #(
     parameter int unsigned DEPTH = 32,
     parameter int unsigned ADDR_DEPTH   = (DEPTH > 1) ? $clog2(DEPTH) : 1
-) (
+)(
     input  logic clk,
     input  logic rst_n,   
     // R级输入
@@ -14,6 +14,7 @@ module r_rename #(
     // data 包含 R 级已经读取的ARF的数据及有效性，以及读出 ARF的id在RAT中的映射结果及有效性
     // C级信号
     input  logic c_flush_i,
+    // 是否有指令退休
     input  logic [1 :0] c_retire_i,
     input  retire_pkg_t [1 :0] c_retire_info_i,
     output c_flush_ack_o
@@ -21,9 +22,11 @@ module r_rename #(
 );
 
 // rob控制信号及分配
-logic  [`ROB_WIDTH - 1 :0] rob_cnt,  rob_cnt_q;
-logic         rob_available, rob_available_q;
-rob_id        rob_ptr1, rob_ptr2, rob_ptr1_q, rob_ptr2_q;
+logic   [`ROB_WIDTH - 1 :0] rob_cnt, rob_cnt_q;
+logic   rob_available, rob_available_q;
+// rob的相应写指针
+rob_id  rob_ptr1, rob_ptr2;
+rob_id  rob_ptr1_q, rob_ptr2_q;
 
 
 always_ff @(posedge clk) begin
@@ -56,14 +59,14 @@ typedef struct packed {
 } rat_entry_t;
 
 // id信号
-arf_id [3 :0] r_rarid; // 读寄存器的id
-arf_id [1 :0] r_warid; // 写寄存器的id
-logic  [1 :0] r_issue; // 指令是否发射
-rob_id [3 :0] r_rrobid;  // 读寄存器的rob_id
-rob_id [1 :0] r_wrobid;  // 写寄存器的rob_id
+arf_id [3 :0] r_rarid;  // 读寄存器的id
+arf_id [1 :0] r_warid;  // 写寄存器的id
+logic  [1 :0] r_issue;  // 指令是否发射
+rob_id [3 :0] r_rrobid; // 读寄存器的rob_id
+rob_id [1 :0] r_wrobid; // 写寄存器的rob_id
 rat_entry_t  [3 :0] r_rename_result; 
 rat_entry_t  [1 :0] r_rename_new;
-logic  [1 :0] r_we; // 写寄存器是否发射
+logic  [1 :0] r_we;     // 写寄存器是否发射
 assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}};
 // commit 表结果
 rat_entry_t  [3 :0] cr_result;
@@ -74,7 +77,9 @@ logic        [1 :0] c_we;
 
 assign r_rarid = d_r_receiver.data.arftable.r_arfid;
 assign r_warid = d_r_receiver.data.arftable.w_arfid;
-assign r_issue = d_r_receiver.data.r_valid & {d_r_receiver.valid, d_r_receiver.valid} & {r_p_sender.ready, r_p_sender.ready};
+assign r_issue = d_r_receiver.data.r_valid & 
+                {d_r_receiver.valid, d_r_receiver.valid} & 
+                {r_p_sender.ready, r_p_sender.ready};
 assign r_wrobid = {rob_ptr2_q, rob_ptr1_q};
 
 for (genvar i = 0; i < 4; i++) begin
@@ -87,15 +92,13 @@ for (genvar i = 0; i < 2; i++) begin
 end
 
 
-
 // R级RAT表的实现
 rename_rat # (
     .DATA_WIDTH(7),
     .DEPTH(32),
     .R_PORT_COUNT(4), 
     .NEED_RESET(1)
-)
-r_rename_table (
+) r_rename_table (
     .clk(clk),
     .rst_n(rst_n && !c_flush_i),
     .raddr_i(r_rarid),
@@ -108,8 +111,9 @@ r_rename_table (
 // C级RAT表的实现
 // TODO: C级RAT表的实现
 
-assign c_we = c_retire_i & {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} 
-    & {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
+assign c_we = c_retire_i & 
+            {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} & 
+            {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
 
 assign c_warid = {c_retire_info_i[1].arf_id, c_retire_info_i[0].arf_id};
 
@@ -125,8 +129,7 @@ commit_rat # (
     .W_PORT_COUNT(2),     
     .NEED_RESET(1),
     .NEED_FORWARD(1)
-)
-c_rename_table (
+) c_rename_table (
     .clk(clk),
     .rst_n(rst_n && !c_flush_i),
     .raddr_i({r_rarid, r_warid}),
@@ -148,8 +151,7 @@ arf # (
     .W_PORT_COUNT(2), 
     .NEED_RESET(1),
     .NEED_FORWARD(1)
-)
-arf_inst (
+) arf_inst (
     .clk(clk),
     .rst_n(rst_n && !c_flush_i),
     .raddr_i(r_rarid),
