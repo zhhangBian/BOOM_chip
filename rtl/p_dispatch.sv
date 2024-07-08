@@ -29,6 +29,7 @@ module p_dispatch #(
 ) (
     input clk,
     input rst_n,
+    input rename_dispatch_pkg_t [1 : 0] rename_dispatch_i,
     input cdb_dispatch_pkg_t    [1 : 0] cdb_dispatch_i,
     input rob_dispatch_pkg_t    [1 : 0] rob_dispatch_i,
     
@@ -36,8 +37,23 @@ module p_dispatch #(
 
     handshake_if.receiver r_p_receiver,
 
-    handshake_if.sender   p_alu_sender,
+    handshake_if.sender   p_alu_sender, 
     handshake_if.sender   p_lsu_sender,
     handshake_if.sender   p_mdu_sender,
 )
+
+// handshake signal
+logic  alu_ready, lsu_ready, mdu_ready;
+assign alu_ready = p_alu_sender.ready;
+assign lsu_ready = p_lsu_sender.ready;
+assign mdu_ready = p_mdu_sender.ready;
+
+logic  alu_available, lsu_available, mdu_available;
+assign alu_available = alu_ready | !()
+
+
+assign r_p_receiver.ready = 
+
+
+endmodule
 
