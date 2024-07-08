@@ -11,6 +11,7 @@ typedef struct packed {
     logic                                          issue; // 是否被分配到ROB
     logic                                          w_reg;
     logic                                          w_mem;
+    logic                                          tier_id;
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
@@ -30,7 +31,8 @@ typedef struct packed {
 
 typedef struct pack {
     logic [1 : 0][31 : 0] rob_data; 
-} rob_dispatch_entry_t;
+    logic [1 : 0]         rob_complete;
+} rob_dispatch_pkg_t;
 
 module rob #(
 ) (
@@ -41,7 +43,7 @@ module rob #(
     input   cdb_rob_pkg_t      [1 : 0] cdb_info_i     ,
 
     // output
-    output  rob_dispatch_entry_t [1 : 0] rob_dispatch_o,
+    output  rob_dispatch_pkg_t [1 : 0] rob_dispatch_o,
     output  commit_rob_pkg_t   [1 : 0] commit_info_o  ,
 );
 
@@ -99,7 +101,7 @@ end
 // comb
 assign head_ptr0 = head_ptr0_q + dispatch_info_i[0].issue + dispatch_info_i[1].issue;
 assign head_ptr1 = head_ptr1_q + dispatch_info_i[0].issue + dispatch_info_i[1].issue;
-assign tail_ptr0 = tail_ptr0_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready; // 为了更短的路径，后续将直接使用 complete 表的结果 TODO
+assign tail_ptr0 = tail_ptr0_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
 assign tail_ptr1 = tail_ptr1_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
 
 // 指令信息表项
@@ -109,6 +111,7 @@ typedef struct packed {
     logic [31: 0] pc;
     logic         w_reg;
     logic         w_mem;
+    logic         tier_id;
 } rob_inst_entry_t;
 
 // 有效信息表项
@@ -146,6 +149,7 @@ always_comb begin
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
+        dispatch_inst_i[i].tier_id = dispatch_info_i[i].tier_id;
         dispatch_preg_i[i]       = dispatch_info_i[i].preg;
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
     end
@@ -182,7 +186,7 @@ rob_data_entry_t [1 : 0] dispatch_src1_data_o;
 rob_data_entry_t [1 : 0] dispatch_src0_data_o;
 // write(comb)
 logic [1 : 0][`ROB_WIDTH - 1 : 0] cdb_preg_i;
-logic [1 : 0][31             : 0] cdb_data_i;
+rob_data_entry_t          [1 : 0] cdb_data_i;
 logic [1 : 0]                     cdb_valid_i;
 
 always_comb begin
@@ -192,8 +196,9 @@ always_comb begin
     for (genvar i = 0; i < 2; i++) begin
         // cdb
         cdb_preg_i[i] = cdb_info_i[i].w_preg;
-        cdb_data_i[i] = cdb_info_i[i].w_data;
         cdb_valid_i[i] = cdb_info_i[i].w_valid;
+        cdb_data_i[i].data = cdb_info_i[i].w_data;
+        cdb_data_i[i].ctrl = cdb_info_i[i].ctrl;
         // C级
         commit_info_o[i].w_data = commit_data_o[i].data;
     end
@@ -219,6 +224,58 @@ registers_file_banked #(
 );
 
 // TODO complete 状态表，两张表比对实现
+logic [1 : 0]           commit_complete_p_o;
+logic [1 : 0][1 : 0]    rob_dispatch_complete_p_o;
+logic [1 : 0]           dispatch_in_complete_o; // 写的两项对应的结果
+
+logic [1 : 0]           commit_complete_cdb_o;
+logic [1 : 0][1 : 0]    rob_dispatch_complete_cdb_o;
+logic [1 : 0]           cdb_in_complete_o; // 写的两项对应的结果
+
+always_comb begin
+    for (genvar i = 0 ; i < 2; i++) begin
+        commit_info_o[i].c_ready = ~(commit_complete_p_o[i] ^ commit_complete_cdb_o[i]);
+        rob_dispatch_o[i].rob_complete = ~(rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]);
+    end
+end
+
+// P级写
+registers_file_banked # (
+    .DATA_WITH($bits(rob_valid_entry_t)),
+    .DEPTH(1 << `ROB_WIDTH),
+    .R_PORT_COUNT(8),
+    .W_PORT_COUNT(2),
+    .REGISTERS_FILE_TYPE(2),
+    .NEED_RESET(1)
+) rob_valid_table (
+    .clk,
+    .rst_n,
+    .raddr_i({dispatch_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
+    .rdata_o({dispatch_in_complete_o, commit_complete_p_o, rob_dispatch_complete_p_o}),
+
+    .waddr_i(dispatch_preg_i),
+    .we_i(dispatch_issue_i),
+    .wdata_i(~dispatch_in_complete_o)
+);
+
+// C级写
+registers_file_banked # (
+    .DATA_WITH($bits(rob_valid_entry_t)),
+    .DEPTH(1 << `ROB_WIDTH),
+    .R_PORT_COUNT(8),
+    .W_PORT_COUNT(2),
+    .REGISTERS_FILE_TYPE(2),
+    .NEED_RESET(1)
+) rob_valid_table (
+    .clk,
+    .rst_n,
+    .raddr_i({cdb_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
+    .rdata_o({cdb_in_complete_o, commit_complete_cdb_o, rob_dispatch_complete_cdb_o}),
+    
+    .waddr_i(cdb_preg_i),
+    .we_i(cdb_valid_i),
+    .wdata_i(~cdb_in_complete_o)
+);
 
 
 
