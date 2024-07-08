@@ -8,7 +8,7 @@ typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器 
     logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
     logic [31             : 0]                     pc;    // 指令地址
-    logic                                          issue; // 是否被分配到ROB
+    logic                                          issue; // 是否被分配到ROB valid
     logic                                          w_reg;
     logic                                          w_mem;
     logic                                          tier_id;
@@ -19,13 +19,13 @@ typedef struct packed {
     logic [4 : 0] w_areg;
     logic         w_reg;
     logic         w_mem;
-    logic         c_ready;
-} commit_rob_pkg_t;
+    logic         c_ready;    // valid
+} rob_commit_pkg_t;
 
 typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0] w_preg;
     logic [31             : 0] w_data;
-    logic                      w_valid;
+    logic                      w_valid;  // valid
     rob_ctrl_entry_t           ctrl;
 } cdb_rob_pkg_t;
 
@@ -44,7 +44,7 @@ module rob #(
 
     // output
     output  rob_dispatch_pkg_t [1 : 0] rob_dispatch_o,
-    output  commit_rob_pkg_t   [1 : 0] commit_info_o  ,
+    output  rob_commit_pkg_t   [1 : 0] commit_info_o  ,
 );
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -81,26 +81,20 @@ module rob #(
 */
 
 // 头指针 & 尾指针  头为写入新表项， 尾为读出旧表项
-logic [`ROB_WIDTH - 1 : 0] head_ptr0,   head_ptr1,   tail_ptr0,   tail_ptr1;
-reg   [`ROB_WIDTH - 1 : 0] head_ptr0_q, head_ptr1_q, tail_ptr0_q, tail_ptr1_q;
+logic [`ROB_WIDTH - 1 : 0] tail_ptr0,   tail_ptr1;
+reg   [`ROB_WIDTH - 1 : 0] tail_ptr0_q, tail_ptr1_q;
 
 // ff
 always_ff @(posedge clk) begin
     if (!rst_n || flush_i) begin
-        head_ptr0_q <= '0;
-        head_ptr1_q <= '1;
         tail_ptr0_q <= '0;
         tail_ptr1_q <= '1;
     end else begin
-        head_ptr0_q <= head_ptr0;
-        head_ptr1_q <= head_ptr1;
         tail_ptr0_q <= tail_ptr0;
         tail_ptr1_q <= tail_ptr1;
     end
 end
 // comb
-assign head_ptr0 = head_ptr0_q + dispatch_info_i[0].issue + dispatch_info_i[1].issue;
-assign head_ptr1 = head_ptr1_q + dispatch_info_i[0].issue + dispatch_info_i[1].issue;
 assign tail_ptr0 = tail_ptr0_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
 assign tail_ptr1 = tail_ptr1_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
 
