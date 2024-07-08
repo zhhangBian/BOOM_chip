@@ -5,7 +5,7 @@ typedef struct packed {
     // static info
     logic [1              : 0]                     inst_type; // 0: alu, 1: mdu, 2: lsu, 3: reserved
     logic [`ARF_WIDTH - 1 : 0]                     areg;  // 目的寄存器
-    logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器 
+    logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器
     logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
     logic [31             : 0]                     pc;    // 指令地址
     logic                                          issue; // 是否被分配到ROB valid
@@ -30,21 +30,21 @@ typedef struct packed {
 } cdb_rob_pkg_t;
 
 typedef struct pack {
-    logic [1 : 0][31 : 0] rob_data; 
+    logic [1 : 0][31 : 0] rob_data;
     logic [1 : 0]         rob_complete;
 } rob_dispatch_pkg_t;
 
 module rob #(
-) (
+)(
     // input
     input   clk,
     input   rst_n,
     input   dispatch_rob_pkg_t [1 : 0] dispatch_info_i,
-    input   cdb_rob_pkg_t      [1 : 0] cdb_info_i     ,
+    input   cdb_rob_pkg_t      [1 : 0] cdb_info_i,
 
     // output
     output  rob_dispatch_pkg_t [1 : 0] rob_dispatch_o,
-    output  rob_commit_pkg_t   [1 : 0] commit_info_o  ,
+    output  rob_commit_pkg_t   [1 : 0] commit_info_o,
 );
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ module rob #(
 指令信息表项： | TYPE(1:0) | AREG(4:0) | PC(31:0) |
 有效信息表项： | COMPLETE(0:0) |
 数据信息表项： | DATA(31:0) |
-控制信息表项： | EXCEPTION | BPU FAIL | 
+控制信息表项： | EXCEPTION | BPU FAIL |
 */
 
 // 头指针 & 尾指针  头为写入新表项， 尾为读出旧表项
@@ -94,6 +94,7 @@ always_ff @(posedge clk) begin
         tail_ptr1_q <= tail_ptr1;
     end
 end
+
 // comb
 assign tail_ptr0 = tail_ptr0_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
 assign tail_ptr1 = tail_ptr1_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
@@ -151,9 +152,10 @@ always_comb begin
     for (genvar i = 0; i < 2; i++) begin
         commit_info_o[i].w_areg = commit_inst_o[i].areg;
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
-        commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;   
+        commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;
     end
 end
+
 // 表体分 bank，写入处理bank conflict
 registers_file_banked #(
     .DATA_WIDTH($bits(rob_inst_entry_t)),
@@ -224,7 +226,7 @@ logic [1 : 0]           dispatch_in_complete_o; // 写的两项对应的结果
 
 logic [1 : 0]           commit_complete_cdb_o;
 logic [1 : 0][1 : 0]    rob_dispatch_complete_cdb_o;
-logic [1 : 0]           cdb_in_complete_o; // 写的两项对应的结果
+logic [1 : 0]           cdb_in_complete_o;      // 写的两项对应的结果
 
 always_comb begin
     for (genvar i = 0 ; i < 2; i++) begin
@@ -249,6 +251,7 @@ registers_file_banked # (
 
     .waddr_i(dispatch_preg_i),
     .we_i(dispatch_issue_i),
+    // 将相应位置反
     .wdata_i(~dispatch_in_complete_o)
 );
 
@@ -265,7 +268,7 @@ registers_file_banked # (
     .rst_n,
     .raddr_i({cdb_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
     .rdata_o({cdb_in_complete_o, commit_complete_cdb_o, rob_dispatch_complete_cdb_o}),
-    
+
     .waddr_i(cdb_preg_i),
     .we_i(cdb_valid_i),
     .wdata_i(~cdb_in_complete_o)

@@ -18,113 +18,113 @@ logic [31:0] sft_result;  // SFT移位
 
 // GRAND_OP
 always_comb begin
-  case (grand_op_i)
+    case (grand_op_i)
     `_GRAND_OP_BW: begin
-      result_o = bw_result;
+          result_o = bw_result;
     end
 
     `_GRAND_OP_LI: begin
-      result_o = li_result;
+          result_o = li_result;
     end
 
     `_GRAND_OP_INT: begin
-      result_o = int_result;
+          result_o = int_result;
     end
 
     `_GRAND_OP_SFT: begin
-      result_o = sft_result;
+          result_o = sft_result;
     end
 
     default: begin
-      result_o = 32'b0;
+          result_o = 32'b0;
     end
-  endcase
+    endcase
 end
 
 // BW
 always_comb begin
-  case (op)
+    case (op)
     `_BW_AND: begin
-      bw_result = r1_i & r0_i;
+          bw_result = r1_i & r0_i;
     end
 
     `_BW_OR: begin
-      bw_result = r1 | r0_i;
+          bw_result = r1 | r0_i;
     end
 
     `_BW_NOR: begin
-      bw_result = ~(r1_i | r0_i);
+          bw_result = ~(r1_i | r0_i);
     end
 
     `_BW_XOR: begin
-      bw_result = r1_i ^ r0_i;
+          bw_result = r1_i ^ r0_i;
     end
 
     `_BW_ANDN: begin
-      bw_result = r1_i & (~r0_i);
+          bw_result = r1_i & (~r0_i);
     end
 
     `_BW_NORN: begin
-      bw_result = r1_i | (~r0_i);
+          bw_result = r1_i | (~r0_i);
     end
 
     default: begin
-      bw_result = 32'b0;
+          bw_result = 32'b0;
     end
-  endcase
+    endcase
 end
 
 // LI
 always_comb begin
-  case (op)
+    case (op)
     `_LI_LUI: begin
-      li_result = {r0_i[19:0], 12'0};
+        li_result = {r0_i[19:0], 12'0};
     end
 
     `_LI_PCADDUI: begin
-      li_result = {r0_i[19:0], 12'0} + pc_i;
+        li_result = {r0_i[19:0], 12'0} + pc_i;
     end
 
     default: begin
-      li_result = 32'b0;
+        li_result = 32'b0;
     end
-  endcase
+    endcase
 end
 
 // INT
 always_comb begin
-  case (op)
+    case (op)
     `_INT_ADD: begin
-      int_result = r1_i + r0_i;
+        int_result = r1_i + r0_i;
     end
 
     `_INT_SUB: begin
-      int_result = r1_i - r0_i;
+        int_result = r1_i - r0_i;
     end
 
     `_INT_SLT: begin
-      int_result = ($signed(r1_i) < $signed(r0_i)) ? 1: 0;
+        int_result = ($signed(r1_i) < $signed(r0_i)) ? 1: 0;
     end
 
     `_INT_SLTU: begin
-      int_result = r1_i < r0_i ? 1 : 0;
+        int_result = r1_i < r0_i ? 1 : 0;
     end
 
     default: begin
-      int_result = 32'b0;
+        int_result = 32'b0;
     end
-  endcase
+    endcase
 end
 
 // SFT
 always_comb begin
-  case (op)
+    case (op)
     `_SFT_SLL: begin
-      sft_result = r1_i >> r0_i[4:0];
+        sft_result = r1_i >> r0_i[4:0];
     end
 
     `_SFT_SRL: begin
-      sft_result = r1_i << r0_i[4:0];
+        sft_result = r1_i << r0_i[4:0];
     end
 
     `_SFT_SLA: begin
@@ -132,13 +132,13 @@ always_comb begin
     end
 
     `_SFT_SRA: begin
-      sft_result = $signed($signed(r1_i) >>> $signed(r0_i[4:0]));
+        sft_result = $signed($signed(r1_i) >>> $signed(r0_i[4:0]));
     end
 
     default: begin
-      sft_result = 32'b0;
+        sft_result = 32'b0;
     end
-  endcase
+    endcase
 end
 
 endmodule
