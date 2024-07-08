@@ -1,7 +1,7 @@
 `ifndef _BOOM_STRUCTURE_HEAD
 `define _BOOM_STRUCTURE_HEAD
 
-`include `macro.svh
+`include "a_macros.svh"
 
 /*============================== BPU start ============================== */
 
@@ -29,25 +29,27 @@ typedef struct packed {
     logic  [31:0]   redir_addr; // 如果跳转错误,后端得到正确的跳转地址之后反馈给前端
 
     logic           taken; // 是否跳转
-    logic           pc_miss; // Miss 就一定更新
-    logic           type_miss; // 类型预测错误，说明一定这条指令一定不在表中，一定要更新。
+    logic           cond_br; // 是否是条件跳转指令。无条件跳转指令仅包括JIRL, B, BL
+    logic           target_miss; // 目标地址预测错误，需要更新BTB. taken预测错了也要将target_miss置有效。
+    logic           type_miss; // 类型预测错误，说明一定这条指令一定不在表中，全部更新
     logic           update; // update = pc_miss | type_miss;
     br_type_t       target_type;
     logic  [31:0]   target; // 正确的跳转地址，用于更新 BTB
     logic  [`BPU_HISTORY_LEN-1:0] history; // 历史记录
-
+    logic  [ 1:0]   scnt;
 } correct_info_t;
 
 typedef struct packed {
     logic       is_call;
     logic       is_ret;
+    logic       is_cond_br; // 是否是条件跳转指令
     br_type_t   br_type;
 } branch_info_t;
 
 typedef struct packed {
     logic                           valid;
     logic  [`BPU_TAG_LEN-1 : 0]  tag;
-    logic  [31:2]                   target_pc;
+    logic  [31:0]                   target_pc;
     branch_info_t                   br_info;
 } bpu_btb_entry_t;
 
