@@ -7,7 +7,6 @@ module rename_rat #(
     parameter int unsigned REGISTERS_FILE_TYPE = 0, // optional: 0:ff, 1:latch
     parameter bit NEED_RESET = 1,
     parameter logic[DEPTH-1:0][DATA_WIDTH-1:0] RESET_VAL = '0,
-    // DO NOT MODIFY
     parameter type T = logic[DATA_WIDTH - 1 : 0],
     parameter int unsigned ADDR_DEPTH   = (DEPTH > 1) ? $clog2(DEPTH) : 1
 )(

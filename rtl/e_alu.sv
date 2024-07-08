@@ -128,7 +128,7 @@ always_comb begin
     end
 
     `_SFT_SLA: begin
-    sft_result = $signed($signed(r1_i) <<< $signed(r0_i[4:0]));
+      sft_result = $signed($signed(r1_i) <<< $signed(r0_i[4:0]));
     end
 
     `_SFT_SRA: begin

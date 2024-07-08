@@ -3,7 +3,7 @@
 // TEMP!!! 结构体定义：后面放入头文件中
 typedef struct packed {
     // static info
-    logic [1              : 0]                     inst_type;
+    logic [1              : 0]                     inst_type; // 0: alu, 1: mdu, 2: lsu, 3: reserved
     logic [`ARF_WIDTH - 1 : 0]                     areg;  // 目的寄存器
     logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器 
     logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器

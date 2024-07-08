@@ -48,11 +48,22 @@ assign alu_ready = p_alu_sender.ready;
 assign lsu_ready = p_lsu_sender.ready;
 assign mdu_ready = p_mdu_sender.ready;
 
-logic  alu_available, lsu_available, mdu_available;
-assign alu_available = alu_ready | !()
+assign r_p_receiver.ready = alu_ready & lsu_ready & mdu_ready;
 
-
-assign r_p_receiver.ready = 
+r_p_pkg_t   r_p_pkg;
+always_comb begin
+    for (genvar i = 0; i < 2; i++) begin
+        dispatch_rob_o[i].inst_type = r_p_pkg.inst_type[i];
+        dispatch_rob_o[i].areg      = r_p_pkg.areg[i];
+        dispatch_rob_o[i].preg      = r_p_pkg.preg[i];
+        dispatch_rob_o[i].src_preg  = {r_p_pkg.src_preg[i * 2 + 1],r_p_pkg.src_preg[i * 2]};
+        dispatch_rob_o[i].pc        = r_p_pkg.pc[i];
+        dispatch_rob_o[i].issue     = r_p_pkg.r_valid[i];
+        dispatch_rob_o[i].w_reg     = r_p_pkg.w_reg[i];
+        dispatch_rob_o[i].w_mem     = r_p_pkg.w_mem[i];
+        dispatch_rob_o[i].tier_id   = r_p_pkg.tier_id[i];
+    end
+end
 
 
 endmodule

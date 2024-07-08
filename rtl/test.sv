@@ -18,6 +18,10 @@ fifo #(
 
 );
 
+type T2 = d_r_pkg_t;
+handshake_if #(.T(T2)) d_r_handshake_interface ();
+type T3 
+
 
 
 endmodule
