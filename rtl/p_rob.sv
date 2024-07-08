@@ -164,15 +164,15 @@ end
 registers_file_banked #(
     .DATA_WIDTH($bits(rob_inst_entry_t)),
     .DEPTH(1 << `ROB_WIDTH),
-    .R_PORT_COUNT(2),
+    .R_PORT_COUNT(3),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
     .NEED_RESET(1)
 ) rob_inst_table (
     .clk,
     .rst_n,
-    .raddr_i({tail_ptr1_q, tail_ptr0_q}),
-    .rdata_o(commit_inst_o),
+    .raddr_i({`ROB_WIDTH'd0, tail_ptr1_q, tail_ptr0_q}),
+    .rdata_o(commit_inst_o), // 读低位的两个项
 
     .waddr_i(dispatch_preg_i),
     .we_i(dispatch_issue_i),
@@ -208,14 +208,14 @@ end
 registers_file_banked #(
     .DATA_WIDTH($bits(rob_data_entry_t)),
     .DEPTH(1 << `ROB_WIDTH),
-    .R_PORT_COUNT(6),
+    .R_PORT_COUNT(7),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
     .NEED_RESET(1)
 ) rob_data_table (
     .clk,
     .rst_n,
-    .raddr_i({tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
+    .raddr_i({`ROB_WIDTH'd0, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
     .rdata_o({commit_data_o[1], commit_data_o[0], dispatch_src1_data_o, dispatch_src0_data_o}),
 
     .waddr_i(cdb_preg_i),
@@ -247,7 +247,7 @@ registers_file_banked # (
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
     .NEED_RESET(1)
-) rob_valid_table (
+) dispatch_valid_table (
     .clk,
     .rst_n,
     .raddr_i({dispatch_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
@@ -266,7 +266,7 @@ registers_file_banked # (
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
     .NEED_RESET(1)
-) rob_valid_table (
+) cdb_valid_table (
     .clk,
     .rst_n,
     .raddr_i({cdb_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
