@@ -51,6 +51,7 @@ always_comb begin
 end
 
 assign d_r_receiver.ready = rob_available_q & !c_flush_i & r_p_sender.ready;
+assign r_p_sender.valid   = '1;
 
 // rat entry
 typedef struct packed {
@@ -161,5 +162,6 @@ arf # (
     .wdata_i(write_data)
 );
 
+// 打包P级信号，并握手
 
 endmodule
