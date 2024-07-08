@@ -4,12 +4,12 @@ module e_jump (
     input   logic [31:0]  r0_i,
     input   logic [31:0]  r1_i,
     input   logic [31:0]  pc_i,
-    input   logic [27:0]  imm_i,
+    input   logic [27:0]  imm_i,    // 较ALU增加
 
-    input   logic [5:0]   op_i,
+    input   logic [5:0]   op_i,     // 与ALU不同
 
     output  logic [31:0]  result_o,
-    output  logic jump_o
+    output  logic jump_o            // 较ALU增加
 );
 
 logic target_type, sign_type;
