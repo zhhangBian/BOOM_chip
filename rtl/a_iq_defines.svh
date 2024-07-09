@@ -7,12 +7,12 @@ typedef struct packed {
     decode_info_t di;
     logic [31:0] pc;
     logic [31:0] imm;
-    rob_id wreg_id;
+    rob_id_t wreg_id;
 } ctrl_info_t;
 
 typedef struct packed {
     logic [1:0] valid;
-    rob_id [1:0] rreg_id;
+    rob_id_t [1:0] rreg_id;
     word_t [1:0] data;
 } data_pack_i;
 
@@ -21,7 +21,14 @@ typedef struct packed {
     decode_info_t di;
     logic [31:0] pc;
     logic [31:0] imm;
-    rob_id wreg_id;
+    rob_id_t wreg_id;
 } iq_static_t;
+
+// CDB传递信号的子集
+typedef struct packed {
+    logic valid;
+    rob_id_t wreg_id;
+    word_t data;
+} cdb_info_t;
 
 `endif

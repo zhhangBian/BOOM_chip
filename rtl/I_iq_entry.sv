@@ -14,16 +14,16 @@ module iq_entry # (
     // input 相应的控制信息
 
     input logic [1:0]   wkup_valid_i,
-    input rob_id [1:0]  wkup_rid_i,
+    input rob_id_t [1:0]  wkup_rid_i,
     input logic [1:0][31:0] wkup_data_i,
 
     output logic wkup_valid_o,
-    output rob_id [1:0] wkup_rid_o,
+    output rob_id_t [1:0] wkup_rid_o,
     output logic [1:0][31:0] wkup_data_o
 );
 
-
 // 生成静态部分
+// 当前指令是否有效
 wire valid_inst;
 iq_entry_static # (
     .PAYLOAD_SIZE(PAYLOAD_SIZE)
@@ -36,8 +36,7 @@ iq_entry_static # (
 
     .payload_i(payload_i),
     .payload_o(payload_o),
-    .valid_inst_o(valid_inst),
-    .empty_o(empty_o)
+    .valid_inst_o(valid_inst)
 );
 
 // 生成动态捕获部分

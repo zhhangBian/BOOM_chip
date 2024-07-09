@@ -1,12 +1,12 @@
 `ifndef _BOOM_STRUCTURE_HEAD
 `define _BOOM_STRUCTURE_HEAD
 
-typedef logic [`ARF_WIDTH - 1 :0] arf_id;
-typedef logic [`ROB_WIDTH - 1 :0] rob_id;
+typedef logic [`ARF_WIDTH - 1 :0] arf_id_t ;
+typedef logic [`ROB_WIDTH - 1 :0] rob_id_t ;
 
 typedef struct packed {
-    arf_id [3 :0] r_arfid;
-    arf_id [1 :0] w_arfid;
+    arf_id_t [3 :0] r_arfid;
+    arf_id_t [1 :0] w_arfid;
 } arf_table_t;
 
 typedef struct packed {
