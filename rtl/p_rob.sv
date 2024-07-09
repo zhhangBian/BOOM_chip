@@ -67,7 +67,6 @@ assign tail_ptr1 = tail_ptr1_q + commit_info_o[0].c_ready + commit_info_o[1].c_r
 
 // 指令信息表项
 typedef struct packed {
-    logic [1 : 0] inst_type;
     logic [4 : 0] areg;
     logic [31: 0] pc;
     logic         w_reg;
@@ -105,7 +104,6 @@ logic [1 : 0] dispatch_issue_i;
 always_comb begin
     // P级
     for (genvar i = 0; i < 2; i++) begin
-        dispatch_inst_i[i].inst_type  = dispatch_info_i[i].inst_type;
         dispatch_inst_i[i].areg  = dispatch_info_i[i].areg;
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
