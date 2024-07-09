@@ -115,10 +115,40 @@ always_comb begin
     end
 end
 
-assign p_alu_sender_0.valid = |choose_alu[0];
-assign p_alu_sender_1.valid = |choose_alu[1];
-assign p_mdu_sender.valid   = |choose_mdu;
-assign p_lsu_sender.valid   = |choose_lsu;
+assign p_alu_sender_0.valid = '1;
+assign p_alu_sender_1.valid = '1;
+assign p_mdu_sender.valid   = '1;
+assign p_lsu_sender.valid   = '1;
+
+typedef struct packed {
+    logic  [3 :0][31:0] data; // 四个源操作数
+    rob_id [3 :0]       preg; // 四个源操作数对应的preg id
+    logic  [3 :0]       data_valid; //四个源操作数是否已经有效
+    logic  [1 :0]       inst_choose;//选择送进来的哪条指令[1:0]分别对应传进来的两条指令
+    // 控制信号，包括：
+    // alu计算类型，jump类型
+    // mdu计算类型
+    // lsu类型
+    // 异常信号
+    // FU之前的一切异常信号
+} p_i_pkg_t;
+
+p_i_pkg_t [3 : 0] p_i_pkg; // 对应四个发射队列：[3:0]对应lsu,mdu,alu1,alu0
+p_i_pkg_t [3 : 0] p_i_pkg_q;
+
+always_comb begin
+    for (genvar i = 0; i < 4; i++) begin
+        p_i_pkg[i].data = sel_data;
+        p_i_pkg[i].preg = r_p_pkg.src_preg;
+        p_i_pkg[i].data_valid = data_valid;
+        // 控制信号TODO
+    end
+    p_i_pkg[0].inst_choose = choose_alu[0];
+    p_i_pkg[1].inst_choose = choose_alu[1];
+    p_i_pkg[2].inst_choose = choose_mdu;
+    p_i_pkg[3].inst_choose = choose_lsu;
+end
+
 
 
 
