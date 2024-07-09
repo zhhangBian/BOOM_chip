@@ -22,4 +22,9 @@
 
 `define BPU_INIT_PC 32'h1c00_0000
 
+`define ALU_TYPE   'd1
+`define MDU_TYPE   'd2
+`define LSU_TYPE   'd3
+`define RESERVE    'd0
+
 `endif

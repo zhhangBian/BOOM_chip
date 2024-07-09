@@ -1,39 +1,5 @@
 `include "a_defines.svh"
 
-// TEMP!!! 结构体定义：后面放入头文件中
-typedef struct packed {
-    // static info
-    logic [1              : 0]                     inst_type; // 0: alu, 1: mdu, 2: lsu, 3: reserved
-    logic [`ARF_WIDTH - 1 : 0]                     areg;  // 目的寄存器
-    logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器
-    logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
-    logic [31             : 0]                     pc;    // 指令地址
-    logic                                          issue; // 是否被分配到ROB valid
-    logic                                          w_reg;
-    logic                                          w_mem;
-    logic                                          tier_id;
-} dispatch_rob_pkg_t;
-
-typedef struct packed {
-    logic [31: 0] w_data;
-    logic [4 : 0] w_areg;
-    logic         w_reg;
-    logic         w_mem;
-    logic         c_ready;    // valid
-} rob_commit_pkg_t;
-
-typedef struct packed {
-    logic [`ROB_WIDTH - 1 : 0] w_preg;
-    logic [31             : 0] w_data;
-    logic                      w_valid;  // valid
-    rob_ctrl_entry_t           ctrl;
-} cdb_rob_pkg_t;
-
-typedef struct pack {
-    logic [1 : 0][31 : 0] rob_data;
-    logic [1 : 0]         rob_complete;
-} rob_dispatch_pkg_t;
-
 module rob #(
 )(
     // input
@@ -106,7 +72,7 @@ typedef struct packed {
     logic [31: 0] pc;
     logic         w_reg;
     logic         w_mem;
-    logic         tier_id;
+    logic         check;
 } rob_inst_entry_t;
 
 // 有效信息表项
@@ -144,7 +110,7 @@ always_comb begin
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
-        dispatch_inst_i[i].tier_id = dispatch_info_i[i].tier_id;
+        dispatch_inst_i[i].check = dispatch_info_i[i].check;
         dispatch_preg_i[i]       = dispatch_info_i[i].preg;
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
     end

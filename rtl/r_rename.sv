@@ -51,6 +51,7 @@ always_comb begin
 end
 
 assign d_r_receiver.ready = rob_available_q & !c_flush_i & r_p_sender.ready;
+assign r_p_sender.valid   = '1;
 
 // rat entry
 typedef struct packed {
@@ -67,7 +68,7 @@ rob_id [1 :0] r_wrobid; // 写寄存器的rob_id
 rat_entry_t  [3 :0] r_rename_result; 
 rat_entry_t  [1 :0] r_rename_new;
 logic  [1 :0] r_we;     // 写寄存器是否发射
-assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}};
+assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}} & {d_r_receiver.data.w_reg};
 // commit 表结果
 rat_entry_t  [3 :0] cr_result;
 rat_entry_t  [1 :0] cw_result; 
@@ -160,6 +161,47 @@ arf # (
     .we_i(c_we),
     .wdata_i(write_data)
 );
+
+// 打包P级信号，并握手
+r_p_pkg_t r_p_pkg_o, r_p_pkg_temp;
+d_r_pkg_t d_r_pkg_i;
+assign d_r_pkg_i = d_r_receiver.data;
+assign r_p_sender.data = r_p_pkg_o;
+logic   [3 : 0]  r_p_data_valid;
+for (genvar i = 0; i < 4; i++) begin
+    r_p_data_valid[i] = '0;
+    if (r_rename_result[i].check == cr_result[i].check) begin
+        r_p_data_valid[i] |= '1;
+    end
+end
+
+always_ff @(posedge clk) begin
+    if (!rst_n || flush_i) begin
+        r_p_pkg_o <= '0;
+    end else begin
+        if (r_p_sender.valid & r_p_sender.ready) begin
+            r_p_pkg_o <= r_p_pkg_temp;
+        end else begin
+            r_p_pkg_o <= r_p_pkg_o;
+        end
+    end
+end
+
+always_comb begin
+    r_p_pkg_temp.inst_type = d_r_pkg_i.inst_type;
+    r_p_pkg_temp.areg      = d_r_pkg_i.arf_table.w_arfid;
+    r_p_pkg_temp.preg      = r_wrobid;
+    r_p_pkg_temp.src_preg  = r_rrobid; 
+    r_p_pkg_temp.arf_data  = r_arf_data;
+    r_p_pkg_temp.pc        = d_r_pkg_i.pc;
+    r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid;
+    r_p_pkg_temp.w_reg     = d_r_pkg_i.w_reg;
+    r_p_pkg_temp.w_mem     = d_r_pkg_i.w_mem;
+    r_p_pkg_temp.check     = {r_rename_new[1].check, r_rename_new[0].check};
+    r_p_pkg_temp.use_imm   = d_r_pkg_i.use_imm;
+    r_p_pkg_temp.data_imm  = d_r_pkg_i.data_imm;
+    r_p_pkg_temp.data_valid= ~d_r_pkg_i.reg_need | r_p_data_valid;
+end
 
 
 endmodule
