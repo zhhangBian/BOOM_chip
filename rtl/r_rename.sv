@@ -166,6 +166,7 @@ arf # (
 r_p_pkg_t r_p_pkg_o, r_p_pkg_temp;
 d_r_pkg_t d_r_pkg_i;
 assign d_r_pkg_i = d_r_receiver.data;
+assign r_p_sender.data = r_p_pkg_o;
 logic   [3 : 0]  r_p_data_valid;
 for (genvar i = 0; i < 4; i++) begin
     r_p_data_valid[i] = '0;
