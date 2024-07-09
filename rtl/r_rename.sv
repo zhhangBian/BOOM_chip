@@ -25,8 +25,8 @@ module r_rename #(
 logic   [`ROB_WIDTH - 1 :0] rob_cnt, rob_cnt_q;
 logic   rob_available, rob_available_q;
 // rob的相应写指针
-rob_id  rob_ptr1, rob_ptr2;
-rob_id  rob_ptr1_q, rob_ptr2_q;
+rob_id_t  rob_ptr1, rob_ptr2;
+rob_id_t  rob_ptr1_q, rob_ptr2_q;
 
 
 always_ff @(posedge clk) begin
@@ -60,11 +60,11 @@ typedef struct packed {
 } rat_entry_t;
 
 // id信号
-arf_id [3 :0] r_rarid;  // 读寄存器的id
-arf_id [1 :0] r_warid;  // 写寄存器的id
+arf_id_t [3 :0] r_rarid;  // 读寄存器的id
+arf_id_t [1 :0] r_warid;  // 写寄存器的id
 logic  [1 :0] r_issue;  // 指令是否发射
-rob_id [3 :0] r_rrobid; // 读寄存器的rob_id
-rob_id [1 :0] r_wrobid; // 写寄存器的rob_id
+rob_id_t [3 :0] r_rrobid; // 读寄存器的rob_id
+rob_id_t [1 :0] r_wrobid; // 写寄存器的rob_id
 rat_entry_t  [3 :0] r_rename_result; 
 rat_entry_t  [1 :0] r_rename_new;
 logic  [1 :0] r_we;     // 写寄存器是否发射
@@ -73,7 +73,7 @@ assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}} & {d_r_receiver.data.
 rat_entry_t  [3 :0] cr_result;
 rat_entry_t  [1 :0] cw_result; 
 rat_entry_t  [1 :0] c_new;
-arf_id       [1 :0] c_warid;
+arf_id_t       [1 :0] c_warid;
 logic        [1 :0] c_we;
 
 assign r_rarid = d_r_receiver.data.arftable.r_arfid;
@@ -188,7 +188,9 @@ always_ff @(posedge clk) begin
 end
 
 always_comb begin
-    r_p_pkg_temp.inst_type = d_r_pkg_i.inst_type;
+    r_p_pkg_temp.alu_type = d_r_pkg_i.alu_type;
+    r_p_pkg_temp.mdu_type = d_r_pkg_i.mdu_type;
+    r_p_pkg_temp.lsu_type = d_r_pkg_i.lsu_type;
     r_p_pkg_temp.areg      = d_r_pkg_i.arf_table.w_arfid;
     r_p_pkg_temp.preg      = r_wrobid;
     r_p_pkg_temp.src_preg  = r_rrobid; 

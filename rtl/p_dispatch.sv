@@ -30,7 +30,6 @@ assign r_p_pkg            = r_p_receiver.data;
 r_p_pkg_t   r_p_pkg;
 always_comb begin
     for (genvar i = 0; i < 2; i++) begin
-        dispatch_rob_o[i].inst_type = r_p_pkg.inst_type[i];
         dispatch_rob_o[i].areg      = r_p_pkg.areg[i];
         dispatch_rob_o[i].preg      = r_p_pkg.preg[i];
         dispatch_rob_o[i].src_preg  = {r_p_pkg.src_preg[i * 2 + 1],r_p_pkg.src_preg[i * 2]};
@@ -93,7 +92,7 @@ always_comb begin
     for (genvar i = 0; i < 2; i++) begin
         choose_alu[i] = '0;
         for (genvar j = 0; j < 2; j++) begin
-            if ((r_p_pkg.inst_type[j] == `ALU_TYPE) & (r_p_pkg.preg[j][0] == i[0]) & (r_p_pkg.r_valid[j])) begin
+            if ((r_p_pkg.alu_type) & (r_p_pkg.preg[j][0] == i[0]) & (r_p_pkg.r_valid[j])) begin
                 choose_alu[i][j[0]] |= '1;
             end
         end
@@ -106,19 +105,48 @@ always_comb begin
     choose_mdu = '0;
     choose_lsu = '0;
     for (genvar j = 0; j < 2; j++) begin
-        if ((r_p_pkg.inst_type[j] == `MDU_TYPE) & (r_p_pkg.r_valid[j])) begin
+        if ((r_p_pkg.mdu_type) & (r_p_pkg.r_valid[j])) begin
             choose_mdu[j[0]] |= '1;
         end
-        if ((r_p_pkg.inst_type[j] == `LSU_TYPE) & (r_p_pkg.r_valid[j])) begin
+        if ((r_p_pkg.lsu_type) & (r_p_pkg.r_valid[j])) begin
             choose_lsu[j[0]] |= '1;
         end
     end
 end
 
-assign p_alu_sender_0.valid = |choose_alu[0];
-assign p_alu_sender_1.valid = |choose_alu[1];
-assign p_mdu_sender.valid   = |choose_mdu;
-assign p_lsu_sender.valid   = |choose_lsu;
+// choose 
+// 0 1 :  
+// 1 0 :
+// 1 1 : 
+// 0 0 :
+
+assign p_alu_sender_0.valid = '1;
+assign p_alu_sender_1.valid = '1;
+assign p_mdu_sender.valid   = '1;
+assign p_lsu_sender.valid   = '1;
+
+
+p_i_pkg_t [3 : 0] p_i_pkg; // 对应四个发射队列：[3:0]对应lsu,mdu,alu1,alu0
+
+
+always_comb begin
+    for (genvar i = 0; i < 4; i++) begin
+        p_i_pkg[i].data = sel_data;
+        p_i_pkg[i].preg = r_p_pkg.src_preg;
+        p_i_pkg[i].data_valid = data_valid;
+        // 控制信号TODO
+    end
+    p_i_pkg[0].inst_choose = choose_alu[0];
+    p_i_pkg[1].inst_choose = choose_alu[1];
+    p_i_pkg[2].inst_choose = choose_mdu;
+    p_i_pkg[3].inst_choose = choose_lsu;
+end
+
+assign p_alu_sender_0.data = p_i_pkg[0];
+assign p_alu_sender_1.data = p_i_pkg[1];
+assign p_mdu_sender.data   = p_i_pkg[2];
+assign p_lsu_sender.data   = p_i_pkg[3];
+
 
 
 
