@@ -9,7 +9,7 @@
 `define _RDCNT_NONE (2'd0)
 `define _RDCNT_ID_VLOW (2'd1)
 `define _RDCNT_VHIGH (2'd2)
-`define _RDCNT_VLOW (2'd3)
+`define _RDCNT_VLOW (2'd3) // 未使用
 `define _REG_ZERO (3'b000)
 `define _REG_RD (3'b001)
 `define _REG_RJ (3'b010)
@@ -269,8 +269,6 @@ typedef struct packed {
     gr2fcsr_t gr2fcsr;
     inst_t inst;
     invtlb_en_t invtlb_en;
-    jump_inst_t jump_inst;
-    llsc_inst_t llsc_inst;
     lsu_inst_t lsu_inst;
     mem_cacop_t mem_cacop;
     mem_read_t mem_read;
@@ -294,62 +292,62 @@ typedef struct packed {
 */
 
 typedef struct packed {
-    logic           decode_err;
-    addr_imm_type_t addr_imm_type;
-    alu_grand_op_t alu_grand_op;
-    alu_inst_t alu_inst;
-    alu_op_t alu_op;
-    bceqz_t bceqz;
-    bcnez_t bcnez;
-    break_inst_t break_inst;
-    cmp_type_t cmp_type;
-    csr_op_en_t csr_op_en;
-    csr_rdcnt_t csr_rdcnt;
-    dbarrier_t dbarrier;
-    div_inst_t div_inst;
-    ertn_inst_t ertn_inst;
-    fbranch_inst_t fbranch_inst;
-    fclass_t fclass;
-    fcmp_t fcmp;
-    fcsr2gr_t fcsr2gr;
-    fcsr_upd_t fcsr_upd;
-    fpd_inst_t fpd_inst;
-    fpu_inst_t fpu_inst;
-    fpu_mode_t fpu_mode;
-    fpu_op_t fpu_op;
-    fr0_t fr0;
-    fr1_t fr1;
-    fr2_t fr2;
-    fsel_t fsel;
-    fw_t fw;
-    gr2fcsr_t gr2fcsr;
-    imm_type_t imm_type;
-    inst_t inst;
-    invtlb_en_t invtlb_en;
-    jump_inst_t jump_inst;
-    llsc_inst_t llsc_inst;
-    lsu_inst_t lsu_inst;
-    mem_cacop_t mem_cacop;
-    mem_read_t mem_read;
-    mem_type_t mem_type;
-    mem_write_t mem_write;
-    mul_inst_t mul_inst;
-    need_fa_t need_fa;
-    priv_inst_t priv_inst;
-    refetch_t refetch;
-    reg_type_r0_t reg_type_r0;
-    reg_type_r1_t reg_type_r1;
-    reg_type_w_t reg_type_w;
-    rnd_mode_t rnd_mode;
-    slot0_t slot0;
-    syscall_inst_t syscall_inst;
-    target_type_t target_type;
-    tlbfill_en_t tlbfill_en;
-    tlbrd_en_t tlbrd_en;
-    tlbsrch_en_t tlbsrch_en;
-    tlbwr_en_t tlbwr_en;
-    upd_fcc_t upd_fcc;
-    wait_inst_t wait_inst;
+    logic           decode_err; // 出现未知指令
+    addr_imm_type_t addr_imm_type; // 地址是S12, S14, S16还是S26
+    alu_grand_op_t  alu_grand_op; // alu大类，分别来源于算术运算、逻辑运算、位移运算以及其他（LU12I, PCADDU12I, PC+4(link)）
+    alu_inst_t      alu_inst; // 是否是需要使用alu的指令
+    alu_op_t        alu_op; // alu子类，在不同大类下有不同含义
+    bceqz_t         bceqz; // 是否否是bceqz指令
+    bcnez_t         bcnez; // 是否是bcnez指令
+    break_inst_t    break_inst; // 是否是break指令
+    cmp_type_t      cmp_type; // 跳转条件类型，包括无条件跳转。实际上是一个独热码。四位分别表示{小于，等于，大于，有符号}。比如BLE就是1101(有符号)
+    csr_op_en_t     csr_op_en; // 是否是csr指令
+    csr_rdcnt_t     csr_rdcnt; // rdcnt 类指令类型
+    dbarrier_t      dbarrier; // 是否是 DBAR 指令
+    div_inst_t      div_inst; // 是否是除法指令
+    ertn_inst_t     ertn_inst; // 是否是 ertn 指令
+    fbranch_inst_t  fbranch_inst; // 是否是浮点分支指令
+    fclass_t        fclass; // 是否是fclass指令
+    fcmp_t          fcmp; // 是否是FCMP.cond.S指令
+    fcsr2gr_t       fcsr2gr; // 是否是
+    fcsr_upd_t      fcsr_upd; // TODO：未使用
+    fpd_inst_t      fpd_inst; // 不懂
+    fpu_inst_t      fpu_inst; // 不懂
+    fpu_mode_t      fpu_mode; // 不懂
+    fpu_op_t        fpu_op; // 不懂
+    fr0_t           fr0; // 不懂
+    fr1_t           fr1; // 不懂
+    fr2_t           fr2; // 不懂
+    fsel_t          fsel; // 不懂
+    fw_t            fw; // 不懂
+    gr2fcsr_t       gr2fcsr; // 不懂
+    imm_type_t      imm_type; // 立即数类型 _IMM_...
+    inst_t          inst; // 指令本身
+    invtlb_en_t     invtlb_en; // 是否是invtlb指令
+    jump_inst_t     jump_inst; // 是否是跳转指令
+    llsc_inst_t     llsc_inst; // 是否是原子访存指令
+    lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
+    mem_cacop_t     mem_cacop;
+    mem_read_t      mem_read;
+    mem_type_t      mem_type; // BHW[U]和none
+    mem_write_t     mem_write; 
+    mul_inst_t      mul_inst;
+    need_fa_t       need_fa;
+    priv_inst_t     priv_inst;
+    refetch_t       refetch;
+    reg_type_r0_t   reg_type_r0; // RD, RJ, RK, IMM, None
+    reg_type_r1_t   reg_type_r1; // RD, RJ, RK, IMM, None
+    reg_type_w_t    reg_type_w; // RD, RJD(RJ寄存器，仅RDCNTID指令会用), BL1(R1寄存器), None
+    rnd_mode_t      rnd_mode; // 不懂
+    slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
+    syscall_inst_t  syscall_inst;
+    target_type_t   target_type; // 只有JIRL的目标地址和寄存器有关，其余均之和PC有关，因此要做区分
+    tlbfill_en_t    tlbfill_en;
+    tlbrd_en_t      tlbrd_en;
+    tlbsrch_en_t    tlbsrch_en;
+    tlbwr_en_t      tlbwr_en;
+    upd_fcc_t       upd_fcc; // 浮点，更新cf。
+    wait_inst_t     wait_inst; // 仅在 IDLE 指令下置1.
 } decode_info_t;
 
 `endif
