@@ -10,12 +10,6 @@ typedef struct packed {
     rob_id_t wreg_id;
 } ctrl_info_t;
 
-typedef struct packed {
-    logic [1:0] valid;
-    rob_id_t [1:0] rreg_id;
-    word_t [1:0] data;
-} data_pack_i;
-
 // 存储在指令中不变的静态信息
 typedef struct packed {
     decode_info_t di;
@@ -29,6 +23,6 @@ typedef struct packed {
     logic valid;
     rob_id_t wreg_id;
     word_t data;
-} cdb_info_t;
+} cdb_issue_info_t;
 
 `endif
