@@ -72,7 +72,7 @@ typedef struct packed {
     logic [31: 0] pc;
     logic         w_reg;
     logic         w_mem;
-    logic         tier_id;
+    logic         check;
 } rob_inst_entry_t;
 
 // 有效信息表项
@@ -110,7 +110,7 @@ always_comb begin
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
-        dispatch_inst_i[i].tier_id = dispatch_info_i[i].tier_id;
+        dispatch_inst_i[i].check = dispatch_info_i[i].check;
         dispatch_preg_i[i]       = dispatch_info_i[i].preg;
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
     end
