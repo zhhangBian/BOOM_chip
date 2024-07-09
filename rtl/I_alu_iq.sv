@@ -16,16 +16,16 @@ module alu_iq # (
     input logic     [1:0]       p_valid_i,
     // IQ未满，可以接收指令
     output logic    [1:0]       iq_ready_o,
-    
+
     // TODO: CDB
 
     // 唤醒的信号
     input logic     [1:0]       wkup_valid_i,
-    input rob_id    [1:0]       wkup_rid_i,
+    input rob_id_t    [1:0]       wkup_rid_i,
     input word_t    [1:0]       wkup_data_i,
 
     output logic    [1:0]       wkup_valid_o,
-    output rob_id   [1:0]       wkup_rid_o,
+    output rob_id_t   [1:0]       wkup_rid_o,
     output logic    [1:0][31:0] wkup_data_o
 );
 
