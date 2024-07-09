@@ -48,4 +48,47 @@ typedef struct packed {
     // else information for retirement
 } retire_pkg_t;
 
+/********************cdb  to  dispatch  pkg******************/
+typedef struct packed {
+    logic [`ROB_WIDTH - 1 : 0] w_preg;
+    logic [31             : 0] w_data;
+    logic                      w_reg;
+    logic                      w_mem;
+    logic                      w_valid;
+} cdb_dispatch_pkg_t;
+
+/********************rob  package******************/
+typedef struct packed {
+    // static info
+    logic [1              : 0]                     inst_type; // 1: alu, 2: mdu, 3: lsu, 0: reserved
+    logic [`ARF_WIDTH - 1 : 0]                     areg;  // 目的寄存器
+    logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器
+    logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
+    logic [31             : 0]                     pc;    // 指令地址
+    logic                                          issue; // 是否被分配到ROB valid
+    logic                                          w_reg;
+    logic                                          w_mem;
+    logic                                          tier_id;
+} dispatch_rob_pkg_t;
+
+typedef struct packed {
+    logic [31: 0] w_data;
+    logic [4 : 0] w_areg;
+    logic         w_reg;
+    logic         w_mem;
+    logic         c_ready;    // valid
+} rob_commit_pkg_t;
+
+typedef struct packed {
+    logic [`ROB_WIDTH - 1 : 0] w_preg;
+    logic [31             : 0] w_data;
+    logic                      w_valid;  // valid
+    rob_ctrl_entry_t           ctrl;
+} cdb_rob_pkg_t;
+
+typedef struct pack {
+    logic [1 : 0][31 : 0] rob_data;
+    logic [1 : 0]         rob_complete;
+} rob_dispatch_pkg_t;
+
 `endif
