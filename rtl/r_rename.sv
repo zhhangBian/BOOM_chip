@@ -167,11 +167,11 @@ r_p_pkg_t r_p_pkg_o, r_p_pkg_temp;
 d_r_pkg_t d_r_pkg_i;
 assign d_r_pkg_i = d_r_receiver.data;
 assign r_p_sender.data = r_p_pkg_o;
-logic   [3 : 0]  r_p_data_valid;
+logic   [3 : 0]  r_p_arfdata_valid;
 for (genvar i = 0; i < 4; i++) begin
-    r_p_data_valid[i] = '0;
+    r_p_arfdata_valid[i] = '0;
     if (r_rename_result[i].check == cr_result[i].check) begin
-        r_p_data_valid[i] |= '1;
+        r_p_arfdata_valid[i] |= '1;
     end
 end
 
@@ -202,7 +202,7 @@ always_comb begin
     r_p_pkg_temp.check     = {r_rename_new[1].check, r_rename_new[0].check};
     r_p_pkg_temp.use_imm   = d_r_pkg_i.use_imm;
     r_p_pkg_temp.data_imm  = d_r_pkg_i.data_imm;
-    r_p_pkg_temp.data_valid= ~d_r_pkg_i.reg_need | r_p_data_valid;
+    r_p_pkg_temp.data_valid= ~d_r_pkg_i.reg_need | r_p_arfdata_valid;
 end
 
 
