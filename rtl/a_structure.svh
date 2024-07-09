@@ -19,11 +19,16 @@ typedef struct packed {
     logic  [1 :0][31:0] pc ; // 指令地址
     logic  [3 :0]   use_imm; // 指令是否使用立即数
     logic  [31:0]   data_imm; // 立即数
-    logic  [1 :0][1 :0] inst_type; // 指令类型
+    // 指令类型
+    logic  [1 :0]     alu_type; // 指令类型
+    logic  [1 :0]     mdu_type;
+    logic  [1 :0]     lsu_type;
 } d_r_pkg_t;
 
 typedef struct packed {
-    logic  [1 :0][1 :0] inst_type; // 指令类型
+    logic  [1 :0]     alu_type; // 指令类型
+    logic  [1 :0]     mdu_type;
+    logic  [1 :0]     lsu_type;
     logic  [1 :0][`ARF_WIDTH - 1:0] areg;
     logic  [1 :0][`ROB_WIDTH - 1:0] preg;
     logic  [3 :0][`ROB_WIDTH - 1:0] src_preg;
@@ -60,7 +65,6 @@ typedef struct packed {
 /********************rob  package******************/
 typedef struct packed {
     // static info
-    logic [1              : 0]                     inst_type; // 1: alu, 2: mdu, 3: lsu, 0: reserved
     logic [`ARF_WIDTH - 1 : 0]                     areg;  // 目的寄存器
     logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器
     logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
@@ -90,5 +94,19 @@ typedef struct pack {
     logic [1 : 0][31 : 0] rob_data;
     logic [1 : 0]         rob_complete;
 } rob_dispatch_pkg_t;
+
+/**********************dispatch  to  execute  pkg******************/
+typedef struct packed {
+    logic    [3 :0][31:0] data; // 四个源操作数
+    rob_id_t [3 :0]       preg; // 四个源操作数对应的preg id
+    logic    [3 :0]       data_valid; //四个源操作数是否已经有效
+    logic    [1 :0]       inst_choose;//选择送进来的哪条指令[1:0]分别对应传进来的两条指令
+    // 控制信号，包括：
+    // alu计算类型，jump类型
+    // mdu计算类型
+    // lsu类型
+    // 异常信号
+    // FU之前的一切异常信号
+} p_i_pkg_t;
 
 `endif

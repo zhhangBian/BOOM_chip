@@ -188,7 +188,9 @@ always_ff @(posedge clk) begin
 end
 
 always_comb begin
-    r_p_pkg_temp.inst_type = d_r_pkg_i.inst_type;
+    r_p_pkg_temp.alu_type = d_r_pkg_i.alu_type;
+    r_p_pkg_temp.mdu_type = d_r_pkg_i.mdu_type;
+    r_p_pkg_temp.lsu_type = d_r_pkg_i.lsu_type;
     r_p_pkg_temp.areg      = d_r_pkg_i.arf_table.w_arfid;
     r_p_pkg_temp.preg      = r_wrobid;
     r_p_pkg_temp.src_preg  = r_rrobid; 
