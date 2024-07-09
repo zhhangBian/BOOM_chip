@@ -21,11 +21,11 @@ module alu_iq # (
 
     // 唤醒的信号
     input logic     [1:0]       wkup_valid_i,
-    input rob_id_t    [1:0]       wkup_rid_i,
+    input rob_id_t  [1:0]       wkup_rid_i,
     input word_t    [1:0]       wkup_data_i,
 
     output logic    [1:0]       wkup_valid_o,
-    output rob_id_t   [1:0]       wkup_rid_o,
+    output rob_id_t [1:0]       wkup_rid_o,
     output logic    [1:0][31:0] wkup_data_o
 );
 
@@ -40,8 +40,7 @@ logic [IQ_SIZE - 1:0][AGING_LENGTH - 1:0] aging_q;
 // 根据AGING选择指令
 // 目前只处理了IQ为8的情况
 logic [3:0][3:0] aging_sel_1;
-logic [1:0][3:0] aging_sel_2;
-logic [3:0] aging_sel;
+logic [1:0][3:0] aging_sel;
 
 always_comb begin
     aging_sel_1[0] = (aging_q[1] > aging_q[0]) ? 1 : 0;
@@ -51,14 +50,10 @@ always_comb begin
 end
 
 always_comb begin
-    aging_sel_2[0] = (aging_sel_1[1] > aging_sel_1[0]) ? 1 : 0;
-    aging_sel_2[1] = (aging_sel_1[3] > aging_sel_1[2]) ? 3 : 2;
+    aging_sel[0] = (aging_sel_1[1] > aging_sel_1[0]) ? 1 : 0;
+    aging_sel[1] = (aging_sel_1[3] > aging_sel_1[2]) ? 3 : 2;
 end
-
-always_comb begin
-    aging_sel = (aging_sel_2[1] > aging_sel[0]) ? 1 : 0;
-end
-// 具体的移位算法之后实现
+// TODO：具体的移位算法之后实现
 //////////////////////////////////////////////////
 
 // 是否发射指令：同时发射
@@ -91,6 +86,8 @@ iq_static_t [IQ_SIZE-1:0] iq_static;
 word_t [IQ_SIZE-1:0] iq_data;
 // P级传入的信息
 iq_static_t [1:0] p_static_i;
+// 输出的static信息
+
 
 for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
@@ -104,8 +101,26 @@ end
 
 // 创建IQ表项
 for(genvar i = 0; i < IQ_SIZE; i += 1) begin
-    
-    
+    iq_entry # (
+        .CDB_COUNT(CDB_COUNT),
+        .IQ_SIZE(IQ_SIZE)
+    )(
+        .clk,
+        .rst_n,
+        .flush,
+
+        .wkup_valid_i(wkup_valid_i),
+        .wkup_rid_i(wkup_rid_i),
+        .wkup_data_i(wkup_data_i),
+        .static_i(p_static_i),
+
+        .wkup_valid_o(wkup_valid_o),
+        .wkup_rid_o(wkup_rid_o),
+        .wkup_data_o(wkup_data_o),
+        .static_o(iq_static)
+    );
 end
+
+
 
 endmodule

@@ -17,7 +17,7 @@ module iq_entry_data # (
 
     input logic         data_valid_i,
     input rob_id_t      wreg_id_i,
-    input logic [31:0]  data_i,
+    input word_t        data_i,
 
     // 背靠背唤醒
     // 这里的发射是随机发射
@@ -27,7 +27,7 @@ module iq_entry_data # (
     input logic     [WAKEUP_SRC_CNT-1:0][31:0] wkup_data_i,
 
     // CDB 数据前递
-    input cdb_info_t [CDB_COUNT-1:0] cdb_i,
+    input cdb_issue_info_t [CDB_COUNT-1:0] cdb_i,
     // 指令数据 已获得 或 可被转发
     output logic  value_ready_o,
 

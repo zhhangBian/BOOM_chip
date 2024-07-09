@@ -1,9 +1,7 @@
 `include "a_structure.svh"
 `include "a_iq_defines.svh"
 
-module iq_entry_static # (
-    parameter int STATIC_SIZE = 32
-)(
+module iq_entry_static(
     input logic clk,
     input logic rst_n,
     input logic flush,
@@ -13,9 +11,9 @@ module iq_entry_static # (
     // 新的指令加入标记
     input logic updata_i,
     // 新存储的静态数据
-    input logic [STATIC_SIZE-1:0] static_i,
+    input word_t static_i,
     // 原先存储的静态数据
-    output logic [STATIC_SIZE-1:0] static_o,
+    output word_t static_o,
     // IQ项目有效
     output logic valid_inst_o
 );
@@ -23,7 +21,7 @@ module iq_entry_static # (
 // 标记 IQ Entry 中存储的是一条有效的指令
 logic valid_inst_q;
 // 存储原先的控制信息
-logic [STATIC_SIZE-1:0] static_q;
+word_t static_q;
 
 assign static_o = static_q;
 assign valid_inst_o = valid_inst_q;
