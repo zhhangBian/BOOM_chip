@@ -1,30 +1,5 @@
 `include "a_defines.svh"
 
-// TEMP!!! 结构体定义：后面放入头文件中
-typedef struct packed {
-    logic [`ROB_WIDTH - 1 : 0] w_preg;
-    logic [31             : 0] w_data;
-    logic                      w_valid;
-} cdb_dispatch_pkg_t;
-
-// typedef struct packed {
-//     // static info
-//     logic [1              : 0]                     inst_type;
-//     logic [`ARF_WIDTH - 1 : 0]                     areg;  // 目的寄存器
-//     logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器 
-//     logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
-//     logic [31             : 0]                     pc;    // 指令地址
-//     logic                                          issue; // 是否被分配到ROB
-//     logic                                          w_reg;
-//     logic                                          w_mem;
-//     logic                                          tier_id;
-// } dispatch_rob_pkg_t;
-
-// typedef struct pack {
-//     logic [1 : 0][31 : 0] rob_data; 
-//     logic [1 : 0]         rob_complete;
-// } rob_dispatch_pkg_t;
-
 module p_dispatch #(    
 ) (
     input clk,
@@ -86,7 +61,8 @@ always_comb begin
         cdb_data_issue[i] = '0;
         cdb_data_hit[i]   = '0;
         for (genvar j = 0; j < 2; j++) begin
-            if (cdb_dispatch_i[j].w_preg == r_p_pkg.src_preg[i]) begin
+            if (cdb_dispatch_i[j].w_preg == r_p_pkg.src_preg[i] 
+                && cdb_dispatch_i[j].w_reg == '1) begin
                 cdb_data_issue[i] |= cdb_dispatch_i[j].w_data;
                 cdb_data_hit[i]   |= '1;
             end
@@ -106,6 +82,44 @@ always_comb begin
         data_valid[i] = cdb_data_hit[i] | r_p_pkg.data_valid[i] | rob_data_hit[i];
     end
 end
+
+
+// alu0: preg 为 偶
+// alu1: preg 为 奇
+// mdu : 可同时发两条
+// lsu : 可同时发两条
+logic [1 : 0][1 : 0] choose_alu;
+always_comb begin
+    for (genvar i = 0; i < 2; i++) begin
+        choose_alu[i] = '0;
+        for (genvar j = 0; j < 2; j++) begin
+            if ((r_p_pkg.inst_type[j] == `ALU_TYPE) & (r_p_pkg.preg[j][0] == i[0]) & (r_p_pkg.r_valid[j])) begin
+                choose_alu[i][j[0]] |= '1;
+            end
+        end
+    end
+end
+
+logic [1 : 0] choose_mdu;
+logic [1 : 0] choose_lsu;
+always_comb begin
+    choose_mdu = '0;
+    choose_lsu = '0;
+    for (genvar j = 0; j < 2; j++) begin
+        if ((r_p_pkg.inst_type[j] == `MDU_TYPE) & (r_p_pkg.r_valid[j])) begin
+            choose_mdu[j[0]] |= '1;
+        end
+        if ((r_p_pkg.inst_type[j] == `LSU_TYPE) & (r_p_pkg.r_valid[j])) begin
+            choose_lsu[j[0]] |= '1;
+        end
+    end
+end
+
+assign p_alu_sender_0.valid = |choose_alu[0];
+assign p_alu_sender_1.valid = |choose_alu[1];
+assign p_mdu_sender.valid   = |choose_mdu;
+assign p_lsu_sender.valid   = |choose_lsu;
+
 
 
 endmodule
