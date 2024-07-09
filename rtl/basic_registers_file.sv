@@ -67,6 +67,48 @@ module registers_file #(
                 .din(wdata_i)
             );
         end
+    end else if(REGISTERS_FILE_TYPE == 2 && DEPTH == 64 && !NEED_RESET && !NEED_FORWARD && (R_PORT_COUNT == 2)) begin
+        // 使用 2r1w 的寄存器堆构建
+        for(genvar i = 0 ; i < R_PORT_COUNT/2 ; i += 1) begin : gen_2r1w_64d
+            fpga_ram_2r1w_64d # (
+                .WIDTH(DATA_WIDTH)
+            )
+            fpga_ram_2r1w_64d_inst (
+                .clk(clk),
+                .addr0(raddr_i[i * 2 + 0]),
+                .addr1(raddr_i[i * 2 + 1]),
+                .dout0(rdata_o[i * 2 + 0]),
+                .dout1(rdata_o[i * 2 + 1]),
+                .addrw(waddr_i),
+                .wea(we_i),
+                .din(wdata_i)
+            );
+        end
+    end else if(REGISTERS_FILE_TYPE == 2 && DEPTH == 64 && !NEED_RESET && !NEED_FORWARD && (R_PORT_COUNT % 6) == 0) begin
+        // 使用 6r1w 的寄存器堆构建
+        for(genvar i = 0 ; i < R_PORT_COUNT/6 ; i += 1) begin : gen_6r1w_64d
+            fpga_ram_6r1w_64d # (
+                .WIDTH(DATA_WIDTH)
+            )
+            fpga_ram_6r1w_64d_inst (
+                .clk(clk),
+                .addr0(raddr_i[i * 6 + 0]),
+                .addr1(raddr_i[i * 6 + 1]),
+                .addr2(raddr_i[i * 6 + 2]),
+                .addr3(raddr_i[i * 6 + 3]),
+                .addr4(raddr_i[i * 6 + 4]),
+                .addr5(raddr_i[i * 6 + 5]),
+                .dout0(rdata_o[i * 6 + 0]),
+                .dout1(rdata_o[i * 6 + 1]),
+                .dout2(rdata_o[i * 6 + 2]),
+                .dout3(rdata_o[i * 6 + 3]),
+                .dout4(rdata_o[i * 6 + 4]),
+                .dout5(rdata_o[i * 6 + 5]),
+                .addrw(waddr_i),
+                .wea(we_i),
+                .din(wdata_i)
+            );
+        end
     end else if(REGISTERS_FILE_TYPE == 2 && DEPTH == 32 && !NEED_RESET && !NEED_FORWARD && (R_PORT_COUNT % 7) == 0) begin
         // 使用 7r1w 的寄存器堆构建
         for(genvar i = 0 ; i < R_PORT_COUNT/7 ; i += 1) begin : gen_7r1w_32d
