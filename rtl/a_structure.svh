@@ -18,7 +18,7 @@ typedef struct packed {
     // else controller signals
     logic  [1 :0][31:0] pc ; // 指令地址
     logic  [3 :0]   use_imm; // 指令是否使用立即数
-    logic  [1 :0][31:0] imm; // 立即数
+    logic  [31:0]   data_imm; // 立即数
     logic  [1 :0][1 :0] inst_type; // 指令类型
 } d_r_pkg_t;
 
@@ -32,7 +32,7 @@ typedef struct packed {
     logic  [1 :0]       r_valid;
     logic  [1 :0]       w_reg;
     logic  [1 :0]       w_mem;
-    logic  [1 :0]       tier_id;
+    logic  [1 :0]       check;
     logic  [3 :0]       use_imm; // 指令是否使用立即数
     logic  [3 :0]       data_valid; // 对应数据是否为有效，要么不需要使用该数据，要么已经准备好
     logic  [31:0]       data_imm; // 立即数
@@ -68,7 +68,7 @@ typedef struct packed {
     logic                                          issue; // 是否被分配到ROB valid
     logic                                          w_reg;
     logic                                          w_mem;
-    logic                                          tier_id;
+    logic                                          check;
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
