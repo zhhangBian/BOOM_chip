@@ -41,6 +41,7 @@ handshake_if #(.T(sb_entry_t)) sb_entry_sender ();
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head  ,   sb_ptr_tail  ;
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head_q,   sb_ptr_tail_q;
 logic [SB_DEPTH_LEN - 1 : 0] sb_cnt       ,   sb_cnt_q;
+logic [SB_DEPTH_LEN - 1 : 0] sb_commit_cnt,   sb_commit_cnt_q ;
 
 logic push, pop;
 
@@ -57,12 +58,18 @@ end
 always_ff @(posedge clk) begin
     if (!rst_n || flush_i) begin
         sb_cnt_q  <= '0;
-        sb_ptr_head_q <= '0;
-        sb_ptr_tail_q <= '0;
+        sb_ptr_head_q <= sb_ptr_tail_q + sb_commit_cnt_q;
+        // sb_ptr_tail_q <= '0;
+        if (!rst_n) begin
+            sb_commit_cnt_q <= '0;
+            sb_ptr_head_q <= '0;
+            sb_ptr_tail_q <= '0;
+        end
     end else begin
         sb_cnt_q <= sb_cnt;
         sb_ptr_head_q <= sb_ptr_head;
         sb_ptr_tail_q <= sb_ptr_tail;
+        sb_commit_cnt_q <= sb_commit_cnt;
     end
 end
 
@@ -75,6 +82,7 @@ assign sb_entry_sender.data = sb_entry_inst[sb_ptr_tail_q];
 
 logic [1 : 0] w_mem;
 assign w_mem = {c_w_mem_i[1] & c_w_mem_i[0] & sb_entry_inst[sb_ptr_tail_q + 1].valid, (c_w_mem_i[0] ^ c_w_mem_i[1]) & sb_entry_inst[sb_ptr_tail_q].valid};
+assign sb_commit_cnt = sb_commit_cnt_q + w_mem[0] + w_mem[1] - pop;
 
 always_ff @(posedge clk) begin
     for (genvar i = 0; i < SB_SIZE; i++) begin
@@ -112,9 +120,5 @@ fifo #(
     .receiver(sb_entry_sender.receiver),
     .sender(sb_fifo_entry_sender.sender)
 )
-
-
-
-
 
 endmodule
