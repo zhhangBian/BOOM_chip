@@ -4,11 +4,11 @@ module e_jump (
     input   logic [31:0]  r0_i,
     input   logic [31:0]  r1_i,
     input   logic [31:0]  pc_i,
-    input   logic [27:0]  imm_i,    // 较ALU增加
+    input   logic [31:0]  imm_i,    // 较ALU增加
 
     input   logic [5:0]   op_i,     // 与ALU不同
 
-    output  logic [31:0]  result_o,
+    output  logic [31:0]  res_o,
     output  logic jump_o            // 较ALU增加
 );
 
@@ -26,6 +26,6 @@ assign r0 = {(~r0_i[31]) & sign_type, r0_i};
 assign r1 = {(~r1_i[31]) & sign_type, r1_i};
 
 assign jump_o = |(cmp_result & jump_result);
-assign result_o = {{4{imm_i[27]}}, imm_i} + (jump_type == `_TAR_REG ? r1_i : pc_i);
+assign res_o = {{4{imm_i[27]}}, imm_i} + (jump_type == `_TAR_REG ? r1_i : pc_i);
 
 endmodule

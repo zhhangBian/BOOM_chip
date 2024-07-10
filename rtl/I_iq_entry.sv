@@ -23,31 +23,27 @@ module iq_entry # ()(
     // CDB 数据前递
     input data_t [1:0] cdb_i,
     // IQ 项目有效
-    output logic  empty_o, 
-    // 不等待 masked 的部分就绪
-    input  logic  [1:0] ready_mask_i,
+    output logic  data_ready_o, 
     // 指令数据就绪，可以发射
     output logic  ready_o, 
-    
-    output logic  [1:0] data_ready_o,
 
     // 唤醒数据源
     output logic  [1:0][1:0] wkup_sel_o,
-    output word_t [1:0] data_o
+    output word_t [1:0] data_o,
+    output decode_info_t di_o,
 );
 
-localparam int RREG_CNT = 2;
 logic [1:0] value_ready;
 logic [1:0] wkup_sel;
 
 always_ff @(posedge clk) begin
-    ready_o <= &(value_ready | ready_mask_i);
+    ready_o <= &(value_ready);
     data_ready_o <= value_ready;
 end
 
 iq_entry_t entry_data;
-// TODO：需要处理转发逻辑
-assign data_o = (|wkup_sel) ? wkup_sel_result : {entry_data.data0, entry_data.data1};
+assign di_o = entry_data.di;
+assign data_o = (|wkup_sel) ? wkup_sel_result : {entry_data.data[0], entry_data.data[1]};
 
 always_ff @(posedge clk) begin
     if(~rst_n) begin
@@ -85,16 +81,16 @@ logic [1:0][1:0] wkup_sel_q;
 always_ff @(posedge clk) begin
     if(updata_i) begin
         data_entry.di <= di_i;
-        data_entry.data0 <= data_i.data[0];
-        data_entry.data1 <= data_i.data[1];
+        data_entry.data[0] <= data_i.data[0];
+        data_entry.data[1] <= data_i.data[1];
     end
     else if(|cdb_forward) begin
-        data_entry.data0 <= cdb_forward[0] ? cdb_result[0] : data_entry.data0;
-        data_entry.data1 <= cdb_forward[1] ? cdb_result[1] : data_entry.data1;
+        data_entry.data[0] <= cdb_forward[0] ? cdb_result[0] : data_entry.data[0];
+        data_entry.data[1] <= cdb_forward[1] ? cdb_result[1] : data_entry.data[1];
     end
     else if(wkup_data_i[0].valid || wkup_data_i[1].valid) begin
-        data_entry.data0 <= wkup_data_i[0].valid ? wkup_data_i[0].data : data_entry.data0;
-        data_entry.data1 <= wkup_data_i[1].valid ? wkup_data_i[1].data : data_entry.data1;
+        data_entry.data[0] <= wkup_data_i[0].valid ? wkup_data_i[0].data : data_entry.data[0];
+        data_entry.data[1] <= wkup_data_i[1].valid ? wkup_data_i[1].data : data_entry.data[1];
     end
 end
 
