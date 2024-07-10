@@ -62,66 +62,6 @@ typedef struct packed {
     logic  [1:0]    scnt;
 } bpu_pht_entry_t;
 
-/*============================== Decoder ============================== */
-typedef struct packed {
-    decode_err_o;	// 用于指示指令是否为异常指令
-    ertn_inst;
-    priv_inst;
-    wait_inst;
-    syscall_inst;
-    break_inst;
-    csr_op_en;
-    csr_rdcnt;
-    tlbsrch_en;
-    tlbrd_en;
-    tlbwr_en;
-    tlbfill_en;
-    invtlb_en;
-    fpu_op;
-    fpu_mode;
-    rnd_mode;
-    fpd_inst;
-    fcsr_upd;
-    fcmp;
-    fcsr2gr;
-    gr2fcsr;
-    upd_fcc;
-    fsel;
-    fclass;
-    bceqz;
-    bcnez;
-    inst;
-    alu_inst;
-    mul_inst;
-    div_inst;
-    lsu_inst;
-    fpu_inst;
-    fbranch_inst;
-    reg_type_r0;
-    reg_type_r1;
-    reg_type_w;
-    imm_type;
-    addr_imm_type;
-    slot0;
-    refetch;
-    need_fa;
-    fr0;
-    fr1;
-    fr2;
-    fw;
-    alu_grand_op;
-    alu_op;
-    target_type;
-    cmp_type;
-    jump_inst;
-    mem_type;
-    mem_write;
-    mem_read;
-    mem_cacop;
-    llsc_inst;
-    dbarrier;
-} decode_info_t;
-
 typedef logic [`ARF_WIDTH - 1 :0] arf_id;
 typedef logic [`ROB_WIDTH - 1 :0] rob_id;
 

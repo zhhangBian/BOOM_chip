@@ -306,6 +306,7 @@ typedef struct packed {
     dbarrier_t      dbarrier; // 是否是 DBAR 指令
     div_inst_t      div_inst; // 是否是除法指令
     ertn_inst_t     ertn_inst; // 是否是 ertn 指令
+    /* Float point control signals
     fbranch_inst_t  fbranch_inst; // 是否是浮点分支指令
     fclass_t        fclass; // 是否是fclass指令
     fcmp_t          fcmp; // 是否是FCMP.cond.S指令
@@ -321,22 +322,23 @@ typedef struct packed {
     fsel_t          fsel; // 不懂
     fw_t            fw; // 不懂
     gr2fcsr_t       gr2fcsr; // 不懂
+    */
     imm_type_t      imm_type; // 立即数类型 _IMM_...
     inst_t          inst; // 指令本身
     invtlb_en_t     invtlb_en; // 是否是invtlb指令
     jump_inst_t     jump_inst; // 是否是跳转指令
     llsc_inst_t     llsc_inst; // 是否是原子访存指令
     lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
-    mem_cacop_t     mem_cacop;
-    mem_read_t      mem_read;
+    mem_cacop_t     mem_cacop; // 是否是 cacop 指令
+    mem_read_t      mem_read; // 是否需要读取内存
     mem_type_t      mem_type; // BHW[U]和none
-    mem_write_t     mem_write; 
+    mem_write_t     mem_write; // 是否会写入内存
     mul_inst_t      mul_inst;
     need_fa_t       need_fa;
     priv_inst_t     priv_inst;
     refetch_t       refetch;
-    reg_type_r0_t   reg_type_r0; // RD, RJ, RK, IMM, None
-    reg_type_r1_t   reg_type_r1; // RD, RJ, RK, IMM, None
+    reg_type_r0_t   reg_type_r0; // RD, RJ, RK, IMM, Zero
+    reg_type_r1_t   reg_type_r1; // RD, RJ, RK, IMM, Zero
     reg_type_w_t    reg_type_w; // RD, RJD(RJ寄存器，仅RDCNTID指令会用), BL1(R1寄存器), None
     rnd_mode_t      rnd_mode; // 不懂
     slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
