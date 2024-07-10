@@ -18,7 +18,7 @@ module storebuffer #(
     input   rst_n,
     input   flush_i,
 
-    input   logic [1 : 0] c_w_mem_i;
+    input   logic [1 : 0] c_w_mem_i,
 
     output  logic [SB_DEPTH_LEN - 1 : 0] sb_num,
     output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o,
