@@ -56,10 +56,11 @@ logic [half_IQ_SIZE:0][$bit(IQ_SIZE):0] aging_sel_1;
 logic [$bit(IQ_SIZE):0]                 aging_sel;
 
 always_comb begin
-    aging_sel_1[0] = (aging_q[1] > aging_q[0]) ? 1 : 0;
-    aging_sel_1[1] = (aging_q[3] > aging_q[2]) ? 3 : 2;
+    aging_sel_1[0] = (aging_q[1] > aging_q[0]) & ready_q[1] ? 1 : 0;
+    aging_sel_1[1] = (aging_q[3] > aging_q[2]) & ready_q[3] ? 3 : 2;
 
-    aging_sel = (aging_sel_1[1] > aging_sel_1[0]) ? 1 : 0;
+    aging_sel = (aging_q[aging_sel_1[0]] > aging_q[aging_sel_1[1]]) & 
+                ready_q[aging_sel_1[0]] ? aging_sel_1[0] : aging_sel_1[1];
 end
 
 for(genvar i = 0; i < IQ_SIZE; i += 1) begin
