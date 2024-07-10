@@ -10,15 +10,6 @@ out:|     addr        |     data     |   strb  |    1    |     1    |     1     
     complete : 有没有完成（后续优化）
 */
 
-typedef struct packed {
-    logic [31 : 0] target_addr;
-    logic [31 : 0] write_data;
-    logic [3  : 0] wstrb;
-    logic          valid;
-    logic          commit;
-    // logic          complete;
-} sb_entry_t;
-
 module storebuffer #(
     parameter int unsigned SB_SIZE = 4, //默认大小为4，后续配置可更改
     parameter int unsigned SB_DEPTH_LEN = $clog2(SB_SIZE)
@@ -30,6 +21,7 @@ module storebuffer #(
     input   logic [1 : 0] c_w_mem_i;
 
     output  logic [SB_DEPTH_LEN - 1 : 0] sb_num,
+    output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o,
 
     handshake_if.receiver  sb_entry_receiver,
 
@@ -76,9 +68,11 @@ always_ff @(posedge clk) begin
 end
 
 // 例化storebuffer_entry
+
 sb_entry_t [SB_SIZE - 1 : 0] sb_entry_inst;
 sb_entry_t                   sb_entry_in;
 
+assign sb_entry_o = sb_entry_inst;
 assign sb_entry_in = sb_entry_receiver.data;
 assign sb_entry_sender.data = sb_entry_inst[sb_ptr_tail_q];
 
