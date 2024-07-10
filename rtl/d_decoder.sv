@@ -21,19 +21,22 @@ assign d_r_pkg_o.r_valid = mask_i;
 assign d_r_pkg_o.pc = pc_i;
 
 for (genvar i = 0; i < 2; i++) begin
-    // TODO: assign arf_table = ???;
     assign d_r_pkg_o.w_reg[i] = decode_infos_o[i].reg_type_w == _REG_W_NONE;
     assign d_r_pkg_o.w_mem[i] = decode_infos_o[i].mem_type_write;
-    assign d_r_pkg_o.reg_need[(i << 1)    ] = decode_infos_o[i].reg_type_r0 == _REG_ZERO | decode_infos_o[i].reg_type_r0 == _REG_IMM;
-    assign d_r_pkg_o.reg_need[(i << 1) + 1] = decode_infos_o[i].reg_type_r1 == _REG_ZERO | decode_infos_o[i].reg_type_r1 == _REG_IMM;
+    assign d_r_pkg_o.reg_need[(1 << i)    ] = decode_infos_o[i].reg_type_r0 == _REG_ZERO | decode_infos_o[i].reg_type_r0 == _REG_IMM;
+    assign d_r_pkg_o.reg_need[(1 << i) + 1] = decode_infos_o[i].reg_type_r1 == _REG_ZERO | decode_infos_o[i].reg_type_r1 == _REG_IMM;
 
-    assign d_r_pkg_o.use_imm[(i << 1)    ] = decode_infos_o[i].reg_type_r0 == _REG_IMM;
-    assign d_r_pkg_o.use_imm[(i << 1) + 1] = decode_infos_o[i].reg_type_r1 == _REG_IMM;
+    assign d_r_pkg_o.use_imm[(1 << i)    ] = decode_infos_o[i].reg_type_r0 == _REG_IMM;
+    assign d_r_pkg_o.use_imm[(1 << i) + 1] = decode_infos_o[i].reg_type_r1 == _REG_IMM;
 
-    // TODO: assign d_r_pkg_o.data_imm = ???;
     assign d_r_pkg_o.alu_type[i] = decode_infos_o[i].alu_inst;
     assign d_r_pkg_o.mdu_type[i] = decode_infos_o[i].mul_inst | decode_infos_o[i].div_inst;
     assign d_r_pkg_o.lsu_type[i] = decode_infos_o[i].lsu_inst;
+end
+
+// arftable逻辑
+for (genvar i = 0; i < 2; i++) begin
+    // TODO
 end
 
 // 立即数逻辑
@@ -83,5 +86,7 @@ for (genvar i = 0; i < 2; i++) begin
         _ADDR_IMM_S26: addr_imms[i] = addr_imm_s26;
     endcase
 end
+assign d_r_pkg_o.data_imm = data_imms;
+assign d_r_pkg_o.addr_imm = addr_imms; // TODO: addr_imm member is not implemented yet. 
 
 endmodule
