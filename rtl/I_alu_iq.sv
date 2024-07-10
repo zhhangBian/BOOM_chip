@@ -12,12 +12,13 @@ module alu_iq # (
 
     // 控制信息
     input decode_info_t [1:0]   p_di_i,
-    input data__t   [1:0]       p_data_i,
+    input data_t    [1:0]       p_data_i,
     input logic     [1:0]       p_valid_i,
     // IQ未满，可以接收指令
     output logic    [1:0]       iq_ready_o,
 
     input data_t    [1:0]       cdb_i,
+    output iq_cdb_t [1:0]       cdb_o,
 
     // 唤醒的信号
     input data_t    [1:0]       wkup_data_i,
@@ -28,7 +29,21 @@ module alu_iq # (
 logic [IQ_SIZE - 1:0] empty_q;
 // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] ready_q;
-logic [IQ_SIZE - 1:0] select_q;
+
+logic [1:0][IQ_SIZE - 1:0] select_q;
+logic [1:0][IQ_SIZE - 1:0] update_q;
+
+for(genvar i = 0; i < 2; i += 1) begin
+    always_comb begin
+        update_q[i] = '0;
+        for(genvar  j = 0; j < IQ_SIZE; j += 1) begin
+            if(empty_q[]) begin
+                update_q[i] = '0;
+                update_q[i][j] = '1;
+            end
+        end
+    end
+end
 
 // 是否发射指令：同时发射
 logic excute_ready;
@@ -44,6 +59,7 @@ logic [IQ_SIZE - 1:0][AGING_LENGTH - 1:0] aging_q;
 // 目前只处理了IQ为8的情况
 logic [3:0][3:0] aging_sel_1;
 logic [1:0][3:0] aging_sel;
+logic [IQ_SIZE:0][$bit(IQ_SIZE):0] aging_list;
 
 always_comb begin
     aging_sel_1[0] = (aging_q[1] > aging_q[0]) ? 1 : 0;
@@ -56,11 +72,19 @@ always_comb begin
     aging_sel[0] = (aging_sel_1[1] > aging_sel_1[0]) ? 1 : 0;
     aging_sel[1] = (aging_sel_1[3] > aging_sel_1[2]) ? 3 : 2;
 end
-// TODO：具体的移位算法之后实现
+
+for(genvar i = 0; i < IQ_SIZE; i += 1) begin
+    if(select_q[i]) begin
+        aging_q[i] <= '0;
+    end
+    else begin
+        aging_q[i] <= (aging_q[i] == 4) ? 4 : (aging_q[i] << 1);
+    end
+end
 
 for(genvar i = 0; i < IQ_SIZE; i += 1) begin
     always_comb begin
-        select_q = (i == aging_sel) ? '1 : '0;
+        select_q[i] = (i == aging_sel) ? '1 : '0;
     end
 end
 //////////////////////////////////////////////////
@@ -107,7 +131,7 @@ end
 for(genvar i = 0; i < IQ_SIZE; i += 1) begin
     wire [1:0] update_by;
     for(genvar j = 0; j < 2; j += 1) begin
-        assign update_by = 
+        assign update_by[j] = update_q[j][i] & p_valid_i[j];
     end
 
     iq_entry # ()(
@@ -172,7 +196,7 @@ assign excute_ready = &l_e_ready;
 
 for(genvar i = 0; i < 2; i += 1) begin
     assign e_reg_id[i] = sel_di[i].wreg_id;
-    
+
     always_ff @(clk) begin
         if(!rst_n || flush) begin
             e_valid_q <= '0;
@@ -223,10 +247,20 @@ end
 
 for(genvar i = 0; i < 2; i += 1) begin
     fifo #(
-
+        .DATA_WIDTH($bits(rob_rid_t) + 32 + 32 + 1),
+        .DEPTH(2),
+        .BYPASS(1)
     )(
+        .clk,
+        .rst_n,
         
-    )
+        // TODO：对握手信号的控制
+    );
+
+    assign cdb_o[p].need_jump = c_jump;
+    assign cdb_o[p].target_addr = c_jump_target;
+    assign cdb_o[p].wdata = c_wdata;
+    assign cdb_o[p].wreg_id  = c_rid;
 end
 
 endmodule

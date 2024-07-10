@@ -40,4 +40,8 @@ typedef struct packed {
     word_t data;
 } cdb_issue_info_t;
 
+typedef struct packed {
+    
+} iq_cdb_t;
+
 `endif
