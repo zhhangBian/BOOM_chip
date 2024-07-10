@@ -82,7 +82,8 @@ typedef struct packed {
     // else controller signals
     logic  [1 :0][31:0] pc ; // 指令地址
     logic  [3 :0]   use_imm; // 指令是否使用立即数
-    logic  [31:0]   data_imm; // 立即数
+    logic  [1 :0][31:0]   data_imm; // 数据立即数
+    logic  [1 :0][31:0]   addr_imm; // 地址立即数
     // 指令类型
     logic  [1 :0]     alu_type; // 指令类型
     logic  [1 :0]     mdu_type;
@@ -104,7 +105,7 @@ typedef struct packed {
     logic  [1 :0]       check;
     logic  [3 :0]       use_imm; // 指令是否使用立即数
     logic  [3 :0]       data_valid; // 对应数据是否为有效，要么不需要使用该数据，要么已经准备好
-    logic  [31:0]       data_imm; // 立即数
+    logic  [1 :0][31:0] data_imm; // 立即数
 } r_p_pkg_t;
 
 typedef struct packed {
@@ -172,5 +173,15 @@ typedef struct packed {
     // 异常信号
     // FU之前的一切异常信号
 } p_i_pkg_t;
+
+/**********************store buffer pkg******************/
+typedef struct packed {
+    logic [31 : 0] target_addr;
+    logic [31 : 0] write_data;
+    logic [3  : 0] wstrb;
+    logic          valid;
+    logic          commit;
+    // logic          complete;
+} sb_entry_t;
 
 `endif
