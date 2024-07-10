@@ -5,7 +5,7 @@ module fifo #(
     parameter int unsigned DATA_WIDTH = 32,
     parameter int unsigned DEPTH = 32,
     parameter int unsigned ADDR_DEPTH = (DEPTH > 1) ? $clog2(DEPTH) : 1,
-    parameter bit BYPASS = 1;
+    parameter bit BYPASS = 1,
     parameter type T = logic[DATA_WIDTH - 1 : 0]
 )(
     input   logic         clk,
