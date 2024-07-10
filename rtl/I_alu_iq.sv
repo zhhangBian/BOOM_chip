@@ -4,7 +4,8 @@
 module alu_iq # (
     // 设置IQ共有4个表项
     parameter int IQ_SIZE = 4,
-    parameter int AGING_LENGTH = 4
+    parameter int AGING_LENGTH = 4,
+    parameter int 
 )(
     input   logic           clk,
     input   logic           rst_n,
@@ -50,10 +51,10 @@ end
 // 根据AGING选择指令
 localparam int half_IQ_SIZE = IQ_SIZE / 2;
 // 对应的aging位
-logic [IQ_SIZE - 1:0][$bit(IQ_SIZE) - 1:0] aging_q;
+logic [IQ_SIZE - 1:0][$bits(IQ_SIZE) - 1:0] aging_q;
 // 目前只处理了IQ为4的情况
-logic [half_IQ_SIZE:0][$bit(IQ_SIZE):0] aging_sel_1;
-logic [$bit(IQ_SIZE):0]                 aging_sel;
+logic [half_IQ_SIZE:0][$bits(IQ_SIZE):0] aging_sel_1;
+logic [$bits(IQ_SIZE):0]                 aging_sel;
 
 always_comb begin
     aging_sel_1[0] = ({ready_q[1], aging_q[1]} >{ready_q[1], aging_q[0]}) ? 1 : 0;
@@ -80,8 +81,8 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin
 end
 //////////////////////////////////////////////////
 
-logic [$bit(IQ_SIZE):0] free_cnt;
-logic [$bit(IQ_SIZE):0] free_cnt_q;
+logic [$bits(IQ_SIZE):0] free_cnt;
+logic [$bits(IQ_SIZE):0] free_cnt_q;
 
 always_comb begin
     free_cnt = free_cnt_q - p_valid_i + (excute_ready & excute_valid);

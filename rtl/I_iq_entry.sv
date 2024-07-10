@@ -108,10 +108,9 @@ for (genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         cdb_result[i] = '0;
         for(genvar j = 0; j < 2; i += 1) begin
-            cdb_hit[i][j] = (j[0] == 
-                entry_data[i].reg_id[i][0]) && 
-                cdb_i[j].valid && 
-                (cdb_i[j].wreg_id == entry_data[i].reg_id[i]);
+            cdb_hit[i][j] = (j[0] == entry_data[i].reg_id[i][0]) && 
+                            cdb_i[j].valid &&
+                            (cdb_i[j].wreg_id == entry_data[i].reg_id[i]);
             cdb_result[i] |= cdb_hit[i][j] ? cdb_i[i].data[j] : '0;
         end
     end
