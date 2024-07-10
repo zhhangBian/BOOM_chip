@@ -14,5 +14,7 @@
 `include "a_interface.svh"
 `include "a_alu_defines.svh"
 `include "a_mdu_defines.svh"
+`include "a_mmu_defines.svh"
+`include "a_exception_defines.svh"
 
 `endif
