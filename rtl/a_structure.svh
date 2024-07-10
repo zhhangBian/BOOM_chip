@@ -174,4 +174,14 @@ typedef struct packed {
     // FU之前的一切异常信号
 } p_i_pkg_t;
 
+/**********************store buffer pkg******************/
+typedef struct packed {
+    logic [31 : 0] target_addr;
+    logic [31 : 0] write_data;
+    logic [3  : 0] wstrb;
+    logic          valid;
+    logic          commit;
+    // logic          complete;
+} sb_entry_t;
+
 `endif
