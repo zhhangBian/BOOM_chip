@@ -67,7 +67,7 @@ word_t  cdb_result;
 
 logic   [WAKEUP_SRC_CNT-1:0] wkup_hit;
 logic   wkup_forward;
-logic   word_t wkup_sel_result;
+word_t  wkup_sel_result;
 
 always_comb begin
     wkup_sel_result = '0;
@@ -81,7 +81,7 @@ assign cdb_forward = (|cdb_hit) & (!data_ready_q);
 always_comb begin
     cdb_result = '0;
     for(genvar i = 0 ; i < 2 ; i++) begin
-        cdb_hit[i] = (j[0] == wreg_id_q[0]) && cdb_i[i].valid &&
+        cdb_hit[i] = (i[0] == wreg_id_q[0]) && cdb_i[i].valid &&
                     (cdb_i[i].wreg_id == wreg_id_q);
         cdb_result |= cdb_hit[i] ? cdb_i[i].data : '0;
     end

@@ -2,78 +2,178 @@
 
 // 将IQ分为了静态信息和动态信息
 
-module iq_entry # (
-    // 设置IQ共有8个表项
-    parameter int CDB_COUNT = 2,
-    parameter int IQ_SIZE = 8;
-)(
+module iq_entry # ()(
     input logic clk,
     input logic rst_n,
     input logic flush,
 
-    // input 相应的控制信息
-    input logic [1:0]       wkup_valid_i,
-    input rob_id_t [1:0]    wkup_rid_i,
-    input word_t [1:0]      wkup_data_i,
-    input word_t            static_i,
+    // 指令被发射标记
+    input logic sel_i,
 
-    output logic            wkup_valid_o,
-    output rob_id_t [1:0]   wkup_rid_o,
-    output word_t [1:0]     wkup_data_o,
-    output word_t           static_o
+    // 新的指令加入标记
+    input logic updata_i,
+    // 新指令的输入数据
+    input data_t [1:0] data_i,
+    // 新指令的控制数据
+    input decode_info_t di_i,
+
+    // 背靠背唤醒
+    input data_t [1:0] wkup_data_i,
+
+    // CDB 数据前递
+    input data_t [1:0] cdb_i,
+    // IQ 项目有效
+    output logic  empty_o, 
+    // 不等待 masked 的部分就绪
+    input  logic  [1:0] ready_mask_i,
+    // 指令数据就绪，可以发射
+    output logic  ready_o, 
+    
+    output logic  [1:0] data_ready_o,
+
+    // 唤醒数据源
+    output logic  [1:0][1:0] wkup_sel_o,
+    output word_t [1:0] data_o
 );
 
 localparam int RREG_CNT = 2;
-logic [RREG_CNT-1:0] value_ready;
-// 当前指令是否有效
-wire valid_inst;
+logic [1:0] value_ready;
+logic [1:0] wkup_sel;
 
 always_ff @(posedge clk) begin
     ready_o <= &(value_ready | ready_mask_i);
     data_ready_o <= value_ready;
 end
 
-// 生成静态部分
-iq_entry_static iq_entry_static (
-    .clk,
-    .rst_n,
-    .flush,
+iq_entry_t entry_data;
+// TODO：需要处理转发逻辑
+assign data_o = (|wkup_sel) ? wkup_sel_result : {entry_data.data0, entry_data.data1};
 
-    .sel_i(sel_i),
-    .updata_i(updata_i),
+always_ff @(posedge clk) begin
+    if(~rst_n) begin
+        entry_data <= '0;
+    end
+    else if begin
+        if(updata_i) begin
+            entry_data.valid_inst_inst <= '1;
+        end
+        else if(sel_i) begin
+            entry_data.valid_inst_inst <= '0;
+        end
+    end
+end
 
-    .static_i(static_i),
-    .static_o(static_o),
-    .valid_inst_o(valid_inst)
-);
+logic [1:0] data_ready_q;
+logic [1:0] data_ready;
 
-// 生成动态捕获部分
-for(genvar i = 0 ; i < RREG_CNT ; i += 1) begin
-    iq_entry_data # (
-        .CDB_COUNT(CDB_COUNT)
-    ) iq_entry_data (
-        .clk,
-        .rst_n,
-        .flush,
+logic [1:0][1:0] cdb_hit;
+logic [1:0] cdb_forward;
+word_t [1:0] cdb_result;
 
-        .sel_i(sel_i),
-        .updata_i(updata_i),
-        .valid_inst_i(valid_inst),
+logic [1:0][1:0] wkup_hit;
+logic [1:0] wkup_forward;
+word_t [1:0] wkup_result;
 
-        .data_valid_i(data_i.valid[i]),
-        .data_rid_i(data_i.rreg[i]),
-        .data_i(data_i.rdata[i]),
+logic [1:0][1:0] wkup_sel_q;
 
-        .wkup_valid_i(wkup_valid_i[i]),
-        .wkup_rid_i(wkup_rid_i[i]),
-        .wkup_data_i(wkup_data_i[i]),
+// 处理数据的更新逻辑
+// 静态数据仅可以在最初更新
+// 对于动态数据的更新
+// 1. 数据更新：包含指令一开始加入
+// 2. CDB前递
+// 3. 选中时的唤醒
+always_ff @(posedge clk) begin
+    if(updata_i) begin
+        data_entry.di <= di_i;
+        data_entry.data0 <= data_i.data[0];
+        data_entry.data1 <= data_i.data[1];
+    end
+    else if(|cdb_forward) begin
+        data_entry.data0 <= cdb_forward[0] ? cdb_result[0] : data_entry.data0;
+        data_entry.data1 <= cdb_forward[1] ? cdb_result[1] : data_entry.data1;
+    end
+    else if(wkup_data_i[0].valid || wkup_data_i[1].valid) begin
+        data_entry.data0 <= wkup_data_i[0].valid ? wkup_data_i[0].data : data_entry.data0;
+        data_entry.data1 <= wkup_data_i[1].valid ? wkup_data_i[1].data : data_entry.data1;
+    end
+end
 
-        .cdb_i(cdb_i),
-        .value_ready_o(value_ready[i]),
+// 处理相应的信号逻辑
 
-        .wkup_sel_o(wkup_sel_o[i]),
-        .data_o(data_o[i])
-    );
+for (genvar i = 0; i < 2; i += 1) begin
+    always_comb begin
+        wkup_result[i] = '0;
+        for(genvar j = 0; j < 2; j += 1) begin
+            wkup_result[i] |= wkup_sel_q[j] ? wkup_data_i[j] : '0;
+        end
+    end
+
+    assign cdb_forward[i] = (|(cdb_hit[i])) & (!data_ready[i]);
+    always_comb begin
+        cdb_result[i] = '0;
+        for(genvar j = 0; j < 2; i += 1) begin
+            cdb_hit[i][j] = (j[0] == 
+                entry_data[i].reg_id[i][0]) && 
+                cdb_i[j].valid && 
+                (cdb_i[j].wreg_id == entry_data[i].reg_id[i]);
+            cdb_result[i] |= cdb_hit[i][j] ? cdb_i[i].data[j] : '0;
+        end
+    end
+
+    // 更新逻辑
+    always_ff @(posedge clk) begin
+        if(sel_i) begin
+            wkup_sel_q[i] <= '0;
+        end
+        else begin
+            wkup_sel_q[i] <= wkup_hit[i];
+        end
+    end
+
+    always_ff @(posedge clk) begin
+        if(update_i) begin
+            data_ready_q[i] <= data_i[i].valid;
+            entry_data.data[i].wreg_id <= data_i[i].wreg_id;
+        end
+        else if(cdb_forward[i] | wkup_forward[i]) begin
+            data_ready_q[i] <= '1;
+        end
+    end
+
+    // 背靠背唤醒机制
+    assign wkup_forward[i] = |(wkup_hit[i]);
+    for(genvar j = 0 ; j < 2 ; j += 1) begin
+        assign wkup_hit[i][j] = 
+            entry_data.valid_inst && 
+            !data_ready_q[i] && 
+            wkup_data_i[j].valid &&
+            (wkup_data_i[j].wreg_id == wreg_id_q);
+    end
+
+    // 组合逻辑生成下一周期数据有效信息
+    always_comb begin
+        value_ready_o[i] = '0;
+        if(entry_data.valid_inst) begin
+            value_ready_o[i] = data_ready_q;
+
+            if(update_i) begin
+                value_ready_o[i] = entry_data.data[i].valid;
+            end
+            else if(sel_i) begin
+                value_ready_o[i] = '0;
+            end
+            else begin
+                if(cdb_forward[i] | wkup_forward[i]) begin
+                    value_ready_o[i] = '1;
+                end
+            end
+        end
+        else begin
+            if(update_i) begin
+                value_ready_o[i] = entry_data.data[i].valid;
+            end
+        end
+    end
 end
 
 endmodule
