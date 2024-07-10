@@ -12,7 +12,7 @@ module alu_iq # (
 
     // 控制信息
     input decode_info_t [1:0]   p_di_i,
-    input data__t   [1:0]       p_data_i,
+    input data_t   [1:0]       p_data_i,
     input logic     [1:0]       p_valid_i,
     // IQ未满，可以接收指令
     output logic    [1:0]       iq_ready_o,
