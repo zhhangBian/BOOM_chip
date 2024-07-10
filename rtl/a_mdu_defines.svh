@@ -11,17 +11,16 @@
 `define _MDU_MODU   3'b111
 
 typedef struct packed {
-    logic [2:0]   op;
-    logic [31:0]  data0;
-    logic [31:0]  data1;
+    logic   [2:0]   op;
+    word_t  [1:0]   data;
     // 需要写回的寄存器地址
-    logic [`ROB_WIDTH-1:0] reg_addr;
+    logic   [`ROB_WIDTH-1:0]    reg_id;
 } mdu_i_t;
 
 typedef struct packed {
-    logic [31:0]  result;
+    word_t          data;
     // 需要写回的寄存器地址
-    logic [`ROB_WIDTH-1:0] reg_addr;
+    logic   [`ROB_WIDTH-1:0]    reg_id;
 } mdu_o_t;
 
 `endif

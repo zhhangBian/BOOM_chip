@@ -56,11 +56,11 @@ logic [half_IQ_SIZE:0][$bit(IQ_SIZE):0] aging_sel_1;
 logic [$bit(IQ_SIZE):0]                 aging_sel;
 
 always_comb begin
-    aging_sel_1[0] = (aging_q[1] > aging_q[0]) & ready_q[1] ? 1 : 0;
-    aging_sel_1[1] = (aging_q[3] > aging_q[2]) & ready_q[3] ? 3 : 2;
+    aging_sel_1[0] = ({ready_q[1], aging_q[1]} >{ready_q[1], aging_q[0]}) ? 1 : 0;
+    aging_sel_1[1] = ({ready_q[3], aging_q[3]} > {ready_q[2], aging_q[2]}) ? 3 : 2;
 
-    aging_sel = (aging_q[aging_sel_1[0]] > aging_q[aging_sel_1[1]]) & 
-                ready_q[aging_sel_1[0]] ? aging_sel_1[0] : aging_sel_1[1];
+    aging_sel = ({ready_q[aging_sel_1[0]], aging_q[aging_sel_1[0]]} > 
+                {ready_q[aging_sel_1[1]], aging_q[aging_sel_1[1]]}) ? aging_sel_1[0] : aging_sel_1[1];
 end
 
 for(genvar i = 0; i < IQ_SIZE; i += 1) begin
@@ -95,16 +95,6 @@ always_ff @(posedge clk) begin
     end
     else begin
         free_cnt_q <= free_cnt;
-    end
-end
-
-for(genvar i = 0; i < 2; i += 1) begin
-    always_comb begin
-        // TODO：更新此部分用到的控制信号
-        p_static_i[i].di        = p_ctrl_i[i].di;
-        p_static_i[i].pc        = p_ctrl_i[i].pc;
-        p_static_i[i].wreg_id   = p_ctrl_i[i].wreg.rob_id;
-        p_static_i[i].imm       = p_ctrl_i[i].addr_imm;
     end
 end
 
@@ -202,8 +192,8 @@ e_alu alu(
     .r1_i(real_data[1]),
     .pc_i(sel_di_q.pc),
 
-    .grand_op_i(sel_di_q.di.alu_grand_op),
-    .op_i(sel_di_q.di.alu_op),
+    .grand_op_i(sel_di_q.di.grand_op),
+    .op_i(sel_di_q.di.op),
     .res_o(e_data)
 );
 

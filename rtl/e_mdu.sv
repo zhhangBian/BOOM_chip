@@ -1,4 +1,4 @@
-`include "a_defines.svh"
+`include "a_mdu_defines.svh"
 
 module mdu (
     input   wire    clk,
