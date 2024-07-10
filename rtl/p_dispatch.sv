@@ -75,7 +75,7 @@ logic [3 : 0][31: 0] sel_data;
 logic [3 : 0]        data_valid; 
 always_comb begin
     for (genvar i = 0; i < 4; i++) begin
-        gen_data[i] = r_p_pkg.use_imm[i]? r_p_pkg.data_imm : r_p_pkg.arf_data[i];
+        gen_data[i] = r_p_pkg.use_imm[i]? r_p_pkg.data_imm[i[1]] : r_p_pkg.arf_data[i];
         rob_data[i] = cdb_data_hit[i]   ? cdb_data_issue[i] : rob_data_issue[i];
         sel_data[i] = r_p_pkg.data_valid[i] ? gen_data[i] : rob_data[i];
         data_valid[i] = cdb_data_hit[i] | r_p_pkg.data_valid[i] | rob_data_hit[i];
