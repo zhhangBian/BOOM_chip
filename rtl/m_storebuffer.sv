@@ -64,7 +64,7 @@ always_ff @(posedge clk) begin
             sb_ptr_head_q   <= sb_ptr_tail_q + sb_commit_cnt_q;
             sb_cnt_q        <= sb_commit_cnt;
             sb_commit_cnt_q <= sb_commit_cnt;
-            sb_ptr_tail_q   <= sb_ptr_tail;
+            sb_ptr_tail_q   <= sb_ptr_commit;
             sb_ptr_commit_q <= sb_ptr_commit;
         end
     end else begin
