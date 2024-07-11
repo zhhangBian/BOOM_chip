@@ -34,9 +34,10 @@ logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head  ,   sb_ptr_tail  ;
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head_q,   sb_ptr_tail_q;
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_commit,   sb_ptr_commit_q;
 logic [SB_DEPTH_LEN     : 0] sb_cnt       ,   sb_cnt_q;
-logic [SB_DEPTH_LEN - 1 : 0] sb_commit_cnt,   sb_commit_cnt_q ;
+logic [SB_DEPTH_LEN     : 0] sb_commit_cnt,   sb_commit_cnt_q ;
 
 logic push, pop;
+logic w_mem;
 
 assign push = sb_entry_receiver.ready & sb_entry_receiver.valid & !flush_i;
 assign pop  = sb_entry_sender.ready   & sb_entry_sender.valid;
@@ -46,7 +47,7 @@ always_comb begin
     sb_ptr_head = sb_ptr_head_q + push;
     sb_ptr_tail = sb_ptr_tail_q + pop;
     sb_num      = sb_ptr_head_q;
-    sb_ptr_commit = sb_ptr_commit_q + w_mem;
+    sb_ptr_commit = sb_ptr_commit_q + w_mem - pop;
 end
 
 always_ff @(posedge clk) begin
@@ -60,8 +61,11 @@ always_ff @(posedge clk) begin
             sb_ptr_tail_q <= '0;
             sb_cnt_q  <= '0;
         end else begin 
-            sb_ptr_head_q <= sb_ptr_tail_q + sb_commit_cnt_q;
-            sb_cnt_q <= sb_commit_cnt_q;
+            sb_ptr_head_q   <= sb_ptr_tail_q + sb_commit_cnt_q;
+            sb_cnt_q        <= sb_commit_cnt;
+            sb_commit_cnt_q <= sb_commit_cnt;
+            sb_ptr_tail_q   <= sb_ptr_tail;
+            sb_ptr_commit_q <= sb_ptr_commit;
         end
     end else begin
         sb_cnt_q <= sb_cnt;
@@ -81,7 +85,7 @@ assign sb_entry_o = sb_entry_inst;
 assign sb_entry_in = sb_entry_receiver.data;
 assign sb_entry_sender.data = sb_entry_inst[sb_ptr_tail_q];
 
-logic  w_mem;
+
 assign w_mem = c_w_mem_i & sb_entry_inst[sb_ptr_commit_q].valid & !flush_i;
 assign sb_commit_cnt = sb_commit_cnt_q + w_mem - pop;
 
