@@ -27,8 +27,10 @@ mdu_muler muler(
     .clk,
     .rst_n,
     .flush,
+
     .req_i,
     .res_o(mul_res_o),
+
     .valid_i,
     .ready_o(mul_read_o),
     .valid_o(mul_valid_o),
@@ -39,8 +41,10 @@ mdu_diver diver(
     .clk,
     .rst_n,
     .flush,
+
     .req_i,
     .res_o(div_res_o),
+
     .valid_i,
     .ready_o(div_ready_o),
     .valid_o(div_valid_o),

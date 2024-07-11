@@ -11,9 +11,7 @@ typedef struct packed {
 
 typedef struct packed {
     data_t [1:0] data;
-    logic [1:0] valid;
-
-    logic available;
+    logic [1:0] ready;
     logic valid_inst;
     decode_info_t di;
 } iq_entry_t;
@@ -41,7 +39,12 @@ typedef struct packed {
 } cdb_issue_info_t;
 
 typedef struct packed {
-    
-} iq_cdb_t;
+    word_t pc;
+    word_t imm;
+    logic if_jump;
+    logic [2:0] grand_op;
+    logic [2:0] op;
+    rob_id_t wreg_id;
+} decode_info_t;
 
 `endif

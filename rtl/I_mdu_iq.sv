@@ -1,9 +1,9 @@
 `include "a_structure.svh"
 `include "a_iq_defines.svh"
 
-module alu_iq # (
+module mdu_iq # (
     // 设置IQ共有4个表项
-    parameter int IQ_SIZE = 4,
+    parameter int `IQ_SIZE = 4,
     parameter int AGING_LENGTH = 4
 )(
     input   logic           clk,
@@ -11,80 +11,77 @@ module alu_iq # (
     input   logic           flush,
 
     // 控制信息
-    input   decode_info_t   p_di_i,
-    input   data_t          p_data_i,
-    input   logic           p_valid_i,
-    // IQ未满，可以接收指令
+    input   logic [1:0]     choose,
+    input   decode_info_t [1:0] p_di_i,
+    input   data_t [1:0]    p_data_i,
+    input   logic [1:0]     p_valid_i,
+    // IQ的ready含义是队列未满，可以继续接收指令
     output  logic           iq_ready_o,
 
     input   data_t [1:0]    cdb_i,
     output  iq_cdb_t        cdb_o,
 
-    // 唤醒的信号
     input   data_t [1:0]    wkup_data_i,
     output  data_t [1:0]    wkup_data_o,
 
-    output  data_t          result_o,
-    output  logic           jump_o     
+    output  data_t          result_o
 );
 
-
-logic [IQ_SIZE - 1:0] empty_q;      // 对应的表项是否空闲
-logic [IQ_SIZE - 1:0] ready_q;      // 对应的表项是否可发射
-logic [IQ_SIZE - 1:0] select_q;     // 指令是否发射
-logic [IQ_SIZE - 1:0] update_q;     // 指令是否填入
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
-logic [1:0] excute_valid;           // 指令是否可执行
+logic excute_valid, excute_valid_q; // E级执行的FU是否有效
+logic [`IQ_SIZE - 1:0] ready_q;     // 对应的表项是否可发射
+logic [`IQ_SIZE - 1:0] select_q;    // 指令是否发射
+logic [`IQ_SIZE - 1:0] init_q;      // 是否填入表项
+logic [`IQ_SIZE - 1:0] empty_q;     // 对应的表项是否空闲
+logic fifo_ready_q;                 // 后续的FIFO是否ready
 
-always_comb begin
-    update_q[i] = '0;
-    for(genvar  j = 0; j < IQ_SIZE; j += 1) begin
-        if(empty_q[i]) begin
-            update_q[i] = '0;
-            update_q[i][j] = '1;
-        end
-    end
-end
-
-//////////////////////////////////////////////////
-// 根据AGING选择指令
-localparam int half_IQ_SIZE = IQ_SIZE / 2;
+// ------------------------------------------------------------------
+// 选择发射的指令
+// 根据AGING选择指令：但是完全顺序发射
+localparam int `half_IQ_SIZE = `IQ_SIZE / 2;
 // 对应的aging位
-logic [IQ_SIZE - 1:0][$bit(IQ_SIZE) - 1:0] aging_q;
+logic [`IQ_SIZE - 1:0][$bits(`IQ_SIZE) - 1:0] aging_q;
 // 目前只处理了IQ为4的情况
-logic [half_IQ_SIZE:0][$bit(IQ_SIZE):0] aging_sel_1;
-logic [$bit(IQ_SIZE):0]                 aging_sel;
+logic [`half_IQ_SIZE:0][$bits(`IQ_SIZE):0]    aging_select_1;
+// 选择出发射的指令：一定ready
+logic [$bits(`IQ_SIZE):0]                     aging_select;
 
 always_comb begin
-    aging_sel_1[0] = (aging_q[1] > aging_q[0]) & ready_q[1] ? 1 : 0;
-    aging_sel_1[1] = (aging_q[3] > aging_q[2]) & ready_q[3] ? 3 : 2;
-
-    aging_sel = (aging_q[aging_sel_1[0]] > aging_q[aging_sel_1[1]]) & 
-                ready_q[aging_sel_1[0]] ? aging_sel_1[0] : aging_sel_1[1];
-end
-
-for(genvar i = 0; i < IQ_SIZE; i += 1) begin
-    always_comb begin
-        select_q[i] = (i == aging_sel) ? '1 : '0;
-    end
+    aging_select_1[0] = (aging_q[1] > aging_q[0]) ? 1 : 0;
+    aging_select_1[1] = (aging_q[3] > aging_q[2]) ? 3 : 2;
+    // 根据aging选出发射的指令
+    aging_select = (aging_q[aging_select_1[0]] > aging_q[aging_select_1[1]]) ?
+                    aging_select_1[0] : aging_select_1[1];
+    // 给发射的指令置为
+    select_q = '0;
+    select_q[aging_select] = ready_q[aging_select];
 end
 
 // AGING的移位逻辑
-for(genvar i = 0; i < IQ_SIZE; i += 1) begin
-    if(select_q[i]) begin
-        aging_q[i] <= '0;
-    end
-    else begin
-        aging_q[i] <= (aging_q[i] == half_IQ_SIZE) ? half_IQ_SIZE : (aging_q[i] << 1);
+always_ff @(posedge clk) begin
+    for(genvar i = 0; i < `IQ_SIZE; i += 1) begin
+        if(select_q[i]) begin
+            aging_q[i] <= '0;
+        end
+        else begin
+            if(ready_q[i]) begin
+                aging_q[i] <= (aging_q[i] == (1 << `half_IQ_SIZE)) ? aging_q[i] : (aging_q[i] << 1);
+            end
+            else begin
+                aging_q[i] <= '0;
+            end
+        end
     end
 end
-//////////////////////////////////////////////////
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-logic [$bit(IQ_SIZE):0] free_cnt;
-logic [$bit(IQ_SIZE):0] free_cnt_q;
+// ------------------------------------------------------------------
+// 更新iq_ready信号
+logic [$bits(`IQ_SIZE):0] free_cnt;
+logic [$bits(`IQ_SIZE):0] free_cnt_q;
 
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i + (excute_ready & excute_valid);
+    free_cnt = free_cnt_q - (p_valid_i[0] + p_valid_i[1]) + (excute_ready & excute_valid);
     // 更新输出信号
     iq_ready_o = (free_cnt >= 1);
 end
@@ -98,130 +95,139 @@ always_ff @(posedge clk) begin
     end
 end
 
-for(genvar i = 0; i < 2; i += 1) begin
-    always_comb begin
-        // TODO：更新此部分用到的控制信号
-        p_static_i[i].di        = p_ctrl_i[i].di;
-        p_static_i[i].pc        = p_ctrl_i[i].pc;
-        p_static_i[i].wreg_id   = p_ctrl_i[i].wreg.rob_id;
-        p_static_i[i].imm       = p_ctrl_i[i].addr_imm;
+always_comb begin
+    for(genvar  i = 0; i < `IQ_SIZE; i += 1) begin
+        init_q[i] = empty_q[i] ? '1 : '0;
     end
 end
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+// ------------------------------------------------------------------
+// 生成执行信号
+assign excute_valid = |ready_q;
+assign excute_ready = (!excute_valid_q) | fifo_ready_q;
+
+always_ff @(clk) begin
+    if(!rst_n || flush) begin
+        excute_valid_q <= '0;
+    end
+    else begin
+        if(excute_ready) begin
+            excute_valid_q <= excute_valid;
+        end
+        else begin
+            if(excute_valid_q & fifo_ready_q) begin
+                excute_valid_q <= '0;
+            end
+        end
+    end
+end
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ------------------------------------------------------------------
 // 创建IQ表项
-for(genvar i = 0; i < IQ_SIZE; i += 1) begin
-    wire [1:0] update_by;
-    assign update_by = update_q[i] & p_valid_i;
+
+// 转发后的数据
+word_t [1:0] real_data;
+word_t [1:0] iq_data;
+logic [`IQ_SIZE - 1:0][1:0][1:0] wkup_src;
+
+for(genvar i = 0; i < `IQ_SIZE; i += 1) begin
+    wire init_by;
+    assign init_by = init_q[i] & p_valid_i;
 
     iq_entry # ()(
         .clk,
         .rst_n,
         .flush,
 
-        .sel_i(select_q[i] & excute_ready),
-        .update_i(|update_by),
+        .select_i(select_q[i] & excute_ready),
+        .init_i(|init_by),
         .data_i(p_data_i),
         .di_i(p_di_i),
 
         .wkup_data_i(wkup_data_i),
-        // 同时连接两个cdb_i
         .cdb_i(cdb_i),
 
-        .ready_o(ready_q),
+        .ready_o(ready_q[i]),
 
-        .wkup_sel_o(wkup_src),
+        .wkup_select_o(wkup_src[i]),
         .data_o(iq_data),
         .di_o(iq_di)
     );
 end
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-decode_info_t sel_di_q;
-decode_info_t sel_di;
-data_t sel_data;
-logic [1:0] sel_wkup_src;
-
-always_comb begin
-    sel_di = '0;
-    sel_data = '0;
-    sel_wkup_src = '0;
-    wkup_valid_o = '0,
-    wkup_rid_o = '0;
-    // 如果指令发射，选择相应的数据
-    for(genvar j = 0; j < IQ_SIZE; j += 1) begin
-        if(select_q[j]) begin
-            sel_di       |= iq_di;
-            sel_data     |= iq_data;
-            sel_wkup_src |= wkup_src;
-            wkup_valid_o |= excute_ready;
-            wkup_rid_o   |= iq_di.wreg_id;
-        end
-    end
-end
-
-assign excute_valid = {|ready_q, (|ready_q)};
+// ------------------------------------------------------------------
+// 填入发射指令所需的执行信息：下一个周期填入执行单元
+decode_info_t    select_di, select_di_q;
+word_t [1:0]     elect_data;
+logic [1:0][1:0] select_wkup_src;
+logic wkup_valid_o;
+rob_id_t wkup_wreg_id;
 
 always_ff @(posedge clk) begin
     if(excute_ready) begin
-        sel_di_q <= sel_di;
+        select_di_q <= select_di;
     end
 end
 
-rob_id_t e_reg_id;
-assign e_reg_id = sel_di.wreg_id;
-
-logic e_valid_q;
-logic fifo_ready_q;
-
-assign excute_ready = (!e_valid_q) | fifo_ready_q;
-
-always_ff @(clk) begin
-    if(!rst_n || flush) begin
-        e_valid_q <= '0;
-    end
-    else begin
-        if(excute_ready) begin
-            e_valid_q <= e_valid;
-        end
-        else begin
-            if(e_valid_q && fifo_ready_q) begin
-                e_valid_q <= '0;
-            end
-        end
-    end
-end
-
-logic  e_jump;
-logic [31:0] e_jump_result;
-word_t e_data;
-
-// 转化后的数据
-word_t [1:0] real_data;
-
-mdu_i_t req_i;
 always_comb begin
-    req_i.op = sel_di_q.di.op;
-    req_i.data[0] = real_data[0];
-    req_i.data[1] = real_data[1];
-    req_i.reg_id = sel_di_q.di.wreg_id;
+    select_di = '0;
+    select_data = '0;
+    select_wkup_src = '0;
+    wkup_valid_o = '0,
+    wkup_wreg_id = '0;
+
+    for(genvar i = 0; i < `IQ_SIZE; i += 1) begin
+        // 如果发射对应指令
+        if(select_q[i]) begin
+            select_di       |= iq_di;
+            select_data     |= iq_data[i];
+            select_wkup_src |= wkup_src[i];
+            wkup_valid_o    |= excute_ready;
+            wkup_wreg_id    |= iq_di.wreg_id;
+        end
+    end
 end
 
+// 负责数据的整体转发
+data_forward data_forward #() (
+    .clk,
+    .rst_n,
+    .flush
+
+    .ready_i(excute_ready),
+    .wkup_src_i(select_wkup_src),
+    .data_i(select_data),
+    .wkup_data_i(wkup_data_i),
+    .data_o(real_data)
+);
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ------------------------------------------------------------------
+// 创建IQ相联的部件
+mud_i_t req_i;
 mdu_o_t res_o;
+
 always_comb begin
-    result_0.data = res_o.data;
+    req_i.data = real_data;
+    req_i.op = op;
+    req_i.wreg_id = wkup_wreg_id;
+
+    result_o.data = res_o.data;
+    result_o.wreg_id = res_o.wreg_id;
 end
 
-e_mdu mdu(
+e_mdu mdu (
     .clk,
     .rst_n,
     .flush,
 
     .req_i(req_i),
-    .res_o(res_o),
-
-    .valid_i(),
-    .ready_o(),
-    .valid_o(),
-    .ready_i()
+    .res_o(res_o)
 );
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 endmodule

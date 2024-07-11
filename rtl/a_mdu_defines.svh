@@ -14,13 +14,13 @@ typedef struct packed {
     logic   [2:0]   op;
     word_t  [1:0]   data;
     // 需要写回的寄存器地址
-    logic   [`ROB_WIDTH-1:0]    reg_id;
+    logic   [`ROB_WIDTH-1:0]    wreg_id;
 } mdu_i_t;
 
 typedef struct packed {
     word_t          data;
     // 需要写回的寄存器地址
-    logic   [`ROB_WIDTH-1:0]    reg_id;
+    logic   [`ROB_WIDTH-1:0]    wreg_id;
 } mdu_o_t;
 
 `endif
