@@ -18,7 +18,7 @@ module storebuffer #(
     input   rst_n,
     input   flush_i,
 
-    input   logic [1 : 0] c_w_mem_i,
+    input   logic c_w_mem_i, //改成单条提交
 
     output  logic [SB_DEPTH_LEN - 1 : 0] sb_num,
     output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o,
@@ -26,18 +26,19 @@ module storebuffer #(
     handshake_if.receiver  sb_entry_receiver,
 
     handshake_if.sender    sb_entry_sender
-)
+);
 
 // handshake_if #(.T(sb_entry_t)) sb_entry_sender ();
 
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head  ,   sb_ptr_tail  ;
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head_q,   sb_ptr_tail_q;
-logic [SB_DEPTH_LEN - 1 : 0] sb_cnt       ,   sb_cnt_q;
+logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_commit,   sb_ptr_commit_q;
+logic [SB_DEPTH_LEN     : 0] sb_cnt       ,   sb_cnt_q;
 logic [SB_DEPTH_LEN - 1 : 0] sb_commit_cnt,   sb_commit_cnt_q ;
 
 logic push, pop;
 
-assign push = sb_entry_receiver.ready & sb_entry_receiver.valid;
+assign push = sb_entry_receiver.ready & sb_entry_receiver.valid & !flush_i;
 assign pop  = sb_entry_sender.ready   & sb_entry_sender.valid;
 
 always_comb begin
@@ -45,25 +46,29 @@ always_comb begin
     sb_ptr_head = sb_ptr_head_q + push;
     sb_ptr_tail = sb_ptr_tail_q + pop;
     sb_num      = sb_ptr_head_q;
+    sb_ptr_commit = sb_ptr_commit_q + w_mem;
 end
 
 always_ff @(posedge clk) begin
     if (!rst_n || flush_i) begin
-        sb_cnt_q  <= '0;
         // sb_ptr_head_q <= sb_ptr_tail_q + sb_commit_cnt_q;
         // sb_ptr_tail_q <= '0;
         if (!rst_n) begin
+            sb_ptr_commit_q <= '0;
             sb_commit_cnt_q <= '0;
             sb_ptr_head_q <= '0;
             sb_ptr_tail_q <= '0;
+            sb_cnt_q  <= '0;
         end else begin 
             sb_ptr_head_q <= sb_ptr_tail_q + sb_commit_cnt_q;
+            sb_cnt_q <= sb_commit_cnt_q;
         end
     end else begin
         sb_cnt_q <= sb_cnt;
         sb_ptr_head_q <= sb_ptr_head;
         sb_ptr_tail_q <= sb_ptr_tail;
         sb_commit_cnt_q <= sb_commit_cnt;
+        sb_ptr_commit_q <= sb_ptr_commit;
     end
 end
 
@@ -76,12 +81,12 @@ assign sb_entry_o = sb_entry_inst;
 assign sb_entry_in = sb_entry_receiver.data;
 assign sb_entry_sender.data = sb_entry_inst[sb_ptr_tail_q];
 
-logic [1 : 0] w_mem;
-assign w_mem = {c_w_mem_i[1] & c_w_mem_i[0] & sb_entry_inst[sb_ptr_tail_q + 1].valid, (c_w_mem_i[0] ^ c_w_mem_i[1]) & sb_entry_inst[sb_ptr_tail_q].valid} & {!flush_i, !flush_i};
-assign sb_commit_cnt = sb_commit_cnt_q + w_mem[0] + w_mem[1] - pop;
+logic  w_mem;
+assign w_mem = c_w_mem_i & sb_entry_inst[sb_ptr_commit_q].valid & !flush_i;
+assign sb_commit_cnt = sb_commit_cnt_q + w_mem - pop;
 
 always_ff @(posedge clk) begin
-    for (genvar i = 0; i < SB_SIZE; i++) begin
+    for (integer i = 0; i < SB_SIZE; i++) begin
         if (!rst_n || flush_i) begin
             if (!sb_entry_inst[i].commit) begin // 若已经提交，则不会被刷掉
                 sb_entry_inst[i] <= '0;
@@ -89,10 +94,8 @@ always_ff @(posedge clk) begin
         end else begin
             if ((i[SB_DEPTH_LEN - 1 : 0] == sb_ptr_head_q) & push) begin
                 sb_entry_inst[i] <= sb_entry_in;
-            end else if ((i[SB_DEPTH_LEN - 1 : 0] == sb_ptr_tail_q) & w_mem[0]) begin
+            end else if ((i[SB_DEPTH_LEN - 1 : 0] == sb_ptr_commit_q) & w_mem) begin
                 sb_entry_inst[i].commit <= 1; 
-            end else if ((i[SB_DEPTH_LEN - 1 : 0] == sb_ptr_tail_q + 1) & w_mem[1]) begin
-                sb_entry_inst[i].commit <= 1;
             end else if ((i[SB_DEPTH_LEN - 1 : 0] == sb_ptr_tail_q) & pop) begin
                 sb_entry_inst[i].commit <= 0;
                 sb_entry_inst[i].valid  <= 0;
