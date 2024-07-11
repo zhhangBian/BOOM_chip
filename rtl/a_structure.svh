@@ -145,7 +145,7 @@ typedef struct packed {
     logic [4 : 0] w_areg;
     logic         w_reg;
     logic         w_mem;
-    logic         c_ready;    // valid
+    logic         c_valid;    // valid
 } rob_commit_pkg_t;
 
 typedef struct packed {
@@ -159,6 +159,35 @@ typedef struct pack {
     logic [1 : 0][31 : 0] rob_data;
     logic [1 : 0]         rob_complete;
 } rob_dispatch_pkg_t;
+/**********************rob pkg**********************/
+
+// 指令信息表项
+typedef struct packed {
+    logic [4 : 0] areg;
+    logic [31: 0] pc;
+    logic         w_reg;
+    logic         w_mem;
+    logic         check;
+} rob_inst_entry_t;
+
+// 有效信息表项
+typedef struct packed {
+    logic complete;
+} rob_valid_entry_t;
+
+// 数据信息表项
+typedef struct packed {
+    logic [31: 0] data;
+    rob_ctrl_entry_t ctrl;
+} rob_data_entry_t;
+
+// 控制信息表项
+typedef struct packed {
+    // 异常控制信号流，其他控制信号流，后续补充
+    logic exception;
+    logic bpu_fail;
+} rob_ctrl_entry_t;
+
 
 /**********************dispatch  to  execute  pkg******************/
 typedef struct packed {

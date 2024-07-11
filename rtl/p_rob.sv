@@ -3,14 +3,16 @@
 module rob #(
 )(
     // input
-    input   clk,
-    input   rst_n,
+    input   logic clk,
+    input   logic rst_n,
+    input   logic flush_i,
     input   dispatch_rob_pkg_t [1 : 0] dispatch_info_i,
     input   cdb_rob_pkg_t      [1 : 0] cdb_info_i,
 
     // output
     output  rob_dispatch_pkg_t [1 : 0] rob_dispatch_o,
-    output  rob_commit_pkg_t   [1 : 0] commit_info_o,
+    input                      [1 : 0] commit_req, // commit 级根据 rob 的信息判断是否选择指令提交
+    output  rob_commit_pkg_t   [1 : 0] commit_info_o
 );
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -49,48 +51,28 @@ module rob #(
 // 头指针 & 尾指针  头为写入新表项， 尾为读出旧表项
 logic [`ROB_WIDTH - 1 : 0] tail_ptr0,   tail_ptr1;
 reg   [`ROB_WIDTH - 1 : 0] tail_ptr0_q, tail_ptr1_q;
+logic [`ROB_WIDTH - 1 : 0] rob_cnt;
+logic [             1 : 0] dispatch_valid;
+reg   [`ROB_WIDTH - 1 : 0] rob_cnt_q;
 
 // ff
 always_ff @(posedge clk) begin
     if (!rst_n || flush_i) begin
+        rob_cnt_q   <= '0;
         tail_ptr0_q <= '0;
         tail_ptr1_q <= '1;
     end else begin
+        rob_cnt_q   <= rob_cnt;
         tail_ptr0_q <= tail_ptr0;
         tail_ptr1_q <= tail_ptr1;
     end
 end
 
 // comb
-assign tail_ptr0 = tail_ptr0_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
-assign tail_ptr1 = tail_ptr1_q + commit_info_o[0].c_ready + commit_info_o[1].c_ready;
-
-// 指令信息表项
-typedef struct packed {
-    logic [4 : 0] areg;
-    logic [31: 0] pc;
-    logic         w_reg;
-    logic         w_mem;
-    logic         check;
-} rob_inst_entry_t;
-
-// 有效信息表项
-typedef struct packed {
-    logic complete;
-} rob_valid_entry_t;
-
-// 数据信息表项
-typedef struct packed {
-    logic [31: 0] data;
-    rob_ctrl_entry_t ctrl;
-} rob_data_entry_t;
-
-// 控制信息表项
-typedef struct packed {
-    // 异常控制信号流，其他控制信号流，后续补充
-    logic exception;
-    logic bpu_fail;
-} rob_ctrl_entry_t;
+assign tail_ptr0 = tail_ptr0_q + commit_req[0] + commit_req[1];
+assign tail_ptr1 = tail_ptr1_q + commit_req[0] + commit_req[1];
+assign dispatch_valid = {dispatch_info_i[1].issue, dispatch_info_i[0].issue};
+assign rob_cnt = rob_cnt_q + dispatch_valid[1] + dispatch_valid[0] - commit_req[1] - commit_req[0];
 
 
 
@@ -131,7 +113,7 @@ registers_file_banked #(
     .NEED_RESET(1)
 ) rob_inst_table (
     .clk,
-    .rst_n,
+    .rst_n(rst_n & !flush_i),
     .raddr_i({tail_ptr1_q, tail_ptr0_q}),
     .rdata_o(commit_inst_o), // 读低位的两个项
 
@@ -175,7 +157,7 @@ registers_file_banked #(
     .NEED_RESET(1)
 ) rob_data_table (
     .clk,
-    .rst_n,
+    .rst_n(rst_n & !flush_i),
     .raddr_i({tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
     .rdata_o({commit_data_o[1], commit_data_o[0], dispatch_src1_data_o, dispatch_src0_data_o}),
 
@@ -195,9 +177,10 @@ logic [1 : 0]           cdb_in_complete_o;      // 写的两项对应的结果
 
 always_comb begin
     for (genvar i = 0 ; i < 2; i++) begin
-        commit_info_o[i].c_ready = ~(commit_complete_p_o[i] ^ commit_complete_cdb_o[i]);
         rob_dispatch_o[i].rob_complete = ~(rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]);
     end
+    commit_info_o[0].c_valid = ~(commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
+    commit_info_o[1].c_valid = ~(commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1);
 end
 
 // P级写
@@ -210,7 +193,7 @@ registers_file_banked # (
     .NEED_RESET(1)
 ) dispatch_valid_table (
     .clk,
-    .rst_n,
+    .rst_n(rst_n & !flush_i),
     .raddr_i({dispatch_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
     .rdata_o({dispatch_in_complete_o, commit_complete_p_o, rob_dispatch_complete_p_o}),
 
@@ -220,7 +203,7 @@ registers_file_banked # (
     .wdata_i(~dispatch_in_complete_o)
 );
 
-// C级写
+// CDB级写
 registers_file_banked # (
     .DATA_WITH($bits(rob_valid_entry_t)),
     .DEPTH(1 << `ROB_WIDTH),
@@ -230,7 +213,7 @@ registers_file_banked # (
     .NEED_RESET(1)
 ) cdb_valid_table (
     .clk,
-    .rst_n,
+    .rst_n(rst_n & !flush_i),
     .raddr_i({cdb_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
     .rdata_o({cdb_in_complete_o, commit_complete_cdb_o, rob_dispatch_complete_cdb_o}),
 
@@ -238,7 +221,6 @@ registers_file_banked # (
     .we_i(cdb_valid_i),
     .wdata_i(~cdb_in_complete_o)
 );
-
 
 
 endmodule
