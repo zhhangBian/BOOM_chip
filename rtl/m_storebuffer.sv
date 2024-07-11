@@ -25,10 +25,10 @@ module storebuffer #(
 
     handshake_if.receiver  sb_entry_receiver,
 
-    handshake_if.sender    sb_fifo_entry_sender
+    handshake_if.sender    sb_entry_sender
 )
 
-handshake_if #(.T(sb_entry_t)) sb_entry_sender ();
+// handshake_if #(.T(sb_entry_t)) sb_entry_sender ();
 
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head  ,   sb_ptr_tail  ;
 logic [SB_DEPTH_LEN - 1 : 0] sb_ptr_head_q,   sb_ptr_tail_q;
@@ -106,15 +106,15 @@ assign sb_entry_sender.valid   = sb_entry_inst[sb_ptr_tail_q].valid & sb_entry_i
 
 
 // sb的数据在commit之后会提交到fifo里面，fifo选择指令提交，若fifo暂时为空，则相当于通路。
-fifo #(
-    .DATA_WIDTH($bits(sb_entry_t)),
-    .DEPTH(SB_SIZE),
-    .BYPASS(1)
-) sb_out_fifo (
-    .clk,
-    .rst_n,
-    .receiver(sb_entry_sender.receiver),
-    .sender(sb_fifo_entry_sender.sender)
-)
+// fifo #(
+//     .DATA_WIDTH($bits(sb_entry_t)),
+//     .DEPTH(SB_SIZE),
+//     .BYPASS(1)
+// ) sb_out_fifo (
+//     .clk,
+//     .rst_n,
+//     .receiver(sb_entry_sender.receiver),
+//     .sender(sb_fifo_entry_sender.sender)
+// )
 
 endmodule
