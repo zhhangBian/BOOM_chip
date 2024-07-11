@@ -17,29 +17,29 @@ module mmu #(
     output trans_result_t trans_result_o
 )
 
-wire cur_asid = csr.asid;
+wire  cur_asid = csr.asid;
 logic tlb_found;
-logic tlb_entry_t tlb_value_read;
+tlb_value_t tlb_value_read; // 
 
-logic tlb_key_t   [TLB_ENTRY_NUM - 1:0]      tlb_key_q;
-logic tlb_entry_t [1:0][TLB_ENTRY_NUM - 1:0] tlb_entry_q;
-
+tlb_key_t   [TLB_ENTRY_NUM - 1:0]      tlb_key_q;
+tlb_entry_t [TLB_ENTRY_NUM - 1:0]      tlb_entry_q;
+/*===================NOT OK======================*/
 always_comb begin
     tlb_found = 0;
     for (integer i = 0; i < TLB_ENTRY_NUM; i+= 1) begin
         if (tlb_key_q[i].e 
         && (tlb_entry_q[i].g || (tlb_entry_q[i].asid == cur_asid))
         && vppn_match(va, tlb_key_q[i].huge_ps)) begin
-            tlb_found = 1;
+            tlb_found |= 1;
             if (tlb_key_q[i].huge_ps) begin
-                tlb_value_read = tlb_value_q[va[22]][i];   //4MB
+                tlb_value_read = tlb_value_q[va[22]][i]; //4MB
             end else begin
                 tlb_value_read = tlb_value_q[va[12]][i]; //4KB
                 end
             end
         end
 end
-
+/*===================OK======================*/
 function automatic logic vppn_match(logic [31:0] va, 
                                     logic huge_ps)
     if (huge_ps) begin
@@ -72,6 +72,7 @@ wire da = csr.crmd.`_CRMD_DA;
 wire pg = csr.crmd.`_CRMD_PG;
 
 always_comb begin
+    trans_result = '0;
     if (da) begin
         trans_result.pa = va;
         trans_result.mat = (mem_type == `_MEM_FETCH) ? 
@@ -108,7 +109,7 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    if (rst_n || flush) begin
+    if (!rst_n || flush) begin
         trans_result_o <= '0;
     end else begin
         trans_result_o <= trans_result;
