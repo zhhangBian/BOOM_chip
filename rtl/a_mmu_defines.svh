@@ -34,8 +34,17 @@ typedef struct packed {
     logic [19:0]  ppn;
 } tlb_value_t;
 
+//tlb
 typedef struct packed {
     logic [31:0]  pa;
     logic [1:0]  mat;
     logic      valid;
+    exception_t exception;
 } trans_result_t;
+
+typedef struct packed {
+    logic [`_TLB_ENTRY_NUM - 1 : 0] tlb_rd_index;
+    logic [`_TLB_ENTRY_NUM - 1 : 0] tlb_wr_index;
+    tlb_entry_t tlb_wr_entry;
+} tlb_rdwr_req_t;
+
