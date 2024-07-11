@@ -51,9 +51,9 @@ module rob #(
 // 头指针 & 尾指针  头为写入新表项， 尾为读出旧表项
 logic [`ROB_WIDTH - 1 : 0] tail_ptr0,   tail_ptr1;
 reg   [`ROB_WIDTH - 1 : 0] tail_ptr0_q, tail_ptr1_q;
-logic [`ROB_WIDTH - 1 : 0] rob_cnt;
+logic [`ROB_WIDTH     : 0] rob_cnt;
 logic [             1 : 0] dispatch_valid;
-reg   [`ROB_WIDTH - 1 : 0] rob_cnt_q;
+reg   [`ROB_WIDTH     : 0] rob_cnt_q;
 
 // ff
 always_ff @(posedge clk) begin
