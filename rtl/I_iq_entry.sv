@@ -209,7 +209,7 @@ for(integer i = 0; i < REG_COUNT; i += 1) begin
         for(genvar j = 0; j < CDB_COUNT; j += 1) begin
             cdb_hit[i][j] = (cdb_reg_id_i[j] == entry_reg_id[i]) &
                             cdb_valid_i[i] &
-                            (~data_ready[i]);
+                            (~data_ready_q[i]);
 
             cdb_result[i] |= cdb_hit[i][j] ? cdb_data_i[j] : '0;
         end
