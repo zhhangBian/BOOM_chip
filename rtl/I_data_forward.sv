@@ -36,7 +36,6 @@ always_comb begin
             data_o[i] |= wkup_src_q[i][j] ? wkup_data_i[i][j] : '0;
         end
     end
-    
 end
 
 endmodule
