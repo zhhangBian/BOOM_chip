@@ -4,134 +4,150 @@
 // IQ_entry的表项
 // | data0 | ready0 | data1 | ready1 | valid（指令） | di |
 
-module iq_entry # ()(
-    input logic clk,
-    input logic rst_n,
-    input logic flush,
+module iq_entry # (
+    parameter int REG_COUNT  = 2,
+    parameter int CDB_COUNT  = 2,
+    parameter int WKUP_COUNT = 2
+)(
+    input logic     clk,
+    input logic     rst_n,
+    input logic     flush,
 
     // 指令被发射标记
-    input logic select_i,
+    input   logic   select_i,
 
     // 新的指令加入标记
-    input logic init_i,
+    input   logic   init_i,
     // 新指令的输入数据
-    input data_t [1:0] data_i,
+    input   word_t  [REG_COUNT - 1:0] data_i,
+    input   rob_id_t[REG_COUNT - 1:0] data_reg_id_i,
+    input   logic   [REG_COUNT - 1:0] data_valid_i,
     // 新指令的控制数据
-    input decode_info_t di_i,
+    input   decode_info_t di_i,
 
     // 背靠背唤醒
-    input data_t [1:0] wkup_data_i,
-    // CDB 数据前递
-    input data_t [1:0] cdb_i,
+    input   word_t  [WKUP_COUNT - 1:0] wkup_data_i,
+    input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
+    input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
+    // CDB数据前递
+    input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
+    input   rob_id_t[CDB_COUNT - 1:0] cdb_reg_id_i,
+    input   logic   [CDB_COUNT - 1:0] cdb_valid_i,
 
     // 指令数据就绪，可以发射
-    output logic  ready_o,
+    output  logic   ready_o,
 
     // 唤醒数据源
-    output logic  [1:0][1:0] wkup_select_o,
-    output word_t [1:0] data_o,
-    output decode_info_t di_o,
+    output  logic   [REG_COUNT - 1:0][WKUP_COUNT - 1:0] wkup_hit_q_o,
+    output  word_t  [REG_COUNT - 1:0] data_o,
+    output  decode_info_t di_o,
 );
 
-iq_entry_t entry_data;
+// ------------------------------------------------------------------
+// 定义变量
+// 保存的表项数据
+word_t  [REG_COUNT - 1:0]   entry_data;
+rob_id_t[REG_COUNT - 1:0]   entry_reg_id;
+logic   [REG_COUNT - 1:0]   data_ready, data_ready_q;
+logic                       entry_valid;
+decode_info_t               entry_di;
 
-// 指令中的数据是否已经就绪
-logic [1:0] data_ready_q;
-logic [1:0] data_ready;
-assign ready_o = &data_ready_q;
-assign di_o = entry_data.di;
+// 第i个reg是否hit了第j个CDB
+logic [REG_COUNT - 1:0][CDB_COUNT - 1:0]    cdb_hit;
+// 获得第i个reg的结果
+word_t [REG_COUNT - 1:0]                    cdb_result;
 
-// 是否进行CDB前递
-logic [1:0] cdb_forward;
-// 第i个data是否hit了第j个CDB
-logic [1:0][1:0] cdb_hit;
+// 第i个reg是否hit了第j个wkup：需要打两排等待结果
+logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0]   wkup_hit;
+logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0]   wkup_hit_q;
+logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0]   wkup_hit_qq;
+// 获得第i个reg的结果
+word_t [REG_COUNT - 1:0]                    wkup_result;
 
-// 是否进行wkup
-logic [1:0] wkup_forward;
-// 第i个data是否hit了第j个wkup
-logic [1:0][1:0] wkup_hit;
-// 获得的data结果
-word_t [1:0] wkup_result;
-// wkup是否被选中
-logic [1:0][1:0] wkup_select;
-// 打两拍等结果
-logic [1:0][1:0] wkup_select_q;
-
-assign wkup_select_o = wkup_select;
-
-always_ff @(posedge clk) begin
-    data_ready_q <= data_ready;
-end
-
-always_ff @(posedge clk) begin
-    if(~rst_n) begin
-        entry_data <= '0;
-    end
-    else if begin
-        if(init_i) begin
-            entry_data.valid_inst_inst <= '1;
-        end
-        else if(select_i) begin
-            entry_data.valid_inst_inst <= '0;
-        end
+// 没有准备好的数据都有相应的转发
+assign ready_o = &(data_ready_q | wkup_hit_qq);
+assign di_o = di;
+for(genvar i = 0; i < REG_COUNT; i += 1) begin
+    always_comb begin
+        // 打两排以后数据来了
+        data_o[i] = |wkup_hit_qq[i] ? wkup_result[i] : entry_data[i];
     end
 end
+assign wkup_hit_q_o = wkup_hit_q;
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
 // 处理数据的更新逻辑
+always_ff @(posedge clk) begin
+    if(~rst_n || flush) begin
+        entry_valid     <= '0;
+    end
+    else if begin
+        if(init_i) begin
+            entry_valid <= '1;
+        end
+        else if(select_i) begin
+            entry_valid <= '0;
+        end
+    end
+end
+
 // 静态数据仅可以在最初更新
 // 对于动态数据的更新
 // 1. 数据更新：包含指令一开始加入
 // 2. CDB前递
 // 3. 选中时的唤醒
 always_ff @(posedge clk) begin
-    if(init_i) begin
-        entry_data.di <= di;
+    if(~rst_n || flush) begin
+        entry_di <= '0;
+    end
+    else if(init_i) begin
+        entry_di <= di_i;
     end
 end
 
 // 更新数据
-for(integer i = 0; i < 2; i += 1) begin
+for(integer i = 0; i < REG_COUNT; i += 1) begin
     always_ff @(posedge clk) begin
-        if(init_i) begin
-            entry_data.data[i]  <= data_i[i].data;
-            entry_data.ready[i] <= data_i[i].valid;
+        if(~rst_n || flush) begin
+            entry_data[i]   <= '0;
         end
-        else if(cdb_hit[0][i] || cdb_hit[1][i]) begin
-            entry_data.data[i]  <= cdb_hit[0][i] ? cdb_i[0].data : cdb_i[1].data;
-            entry_data.ready[i] <= '1;
+        else if(init_i) begin
+            entry_data[i]   <= data_i[i];
         end
-        else if(wkup_select_q[0][i] || wkup_select_q[1][i]) begin
-            entry_data.data[i]  <= wkup_select_q[0][i] ? wkup_i[0].data : wkup_i[1].data;
-            entry_data.ready[i] <= '1;
+        else if(|cdb_hit[i]) begin
+            entry_data[i]   <= cdb_result[i];
+        end
+        else if(|wkup_hit_qq[i]) begin
+            entry_data[i]   <= wkup_result[i];
         end
     end
 end
 
-for(genvar i = 0; i < 2; i += 1) begin
-    always_comb begin
-        data_o[i] = (|(wkup_select_q[i])) ? wkup_result[i] : entry_data.data[i];
+always_ff @(posedge clk) begin
+    if(~rst_n || flush) begin
+        entry_ready_q <= '0;
+    end
+    else begin
+        entry_ready_q <= entry_ready;
     end
 end
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-// ------------------------------------------------------------------
-// 生成相应的数据
-for (genvar i = 0; i < 2; i += 1) begin
+for (genvar i = 0; i < REG_COUNT; i += 1) begin
     // 组合逻辑生成下一周期数据有效信息
     always_comb begin
-        data_ready[i] = '0;
+        data_ready[i] = data_ready_q[i];
 
         if(init_i) begin
-            data_ready[i] = entry_data.data[i].valid;
+            data_ready[i] = data_valid_i[i];
         end
         else if(select_i) begin
-            if(entry_data.valid_inst) begin
+            if(entry_valid) begin
                 data_ready[i] = '0;
             end
         end
         else begin
-            if((cdb_forward[i] | wkup_forward[i]) & entry_data.valid_inst) begin
+            if(((|cdb_hit[i]) | (wkup_hit[i])) & entry_valid) begin
                 data_ready[i] = '1;
             end
         end
@@ -141,29 +157,43 @@ end
 
 // ------------------------------------------------------------------
 // 生成wkup数据
-for(integer i = 0; i < 2; i += 1) begin
-    assign wkup_forward[i] = |(wkup_hit[i]);
+for(integer i = 0; i < REG_COUNT; i += 1) begin
     always_comb begin
+        wkup_hit = '0;
         wkup_result[i] = '0;
-        for(genvar j = 0; j < 2; j += 1) begin
-            wkup_hit[i][j] = (wkup_data_i[i].reg_id == entry_data.data[j].reg_id) &
-                            wkup_data_i[i].valid & entry_data.valid_inst &
-                            !data_ready_q[j];
-            wkup_result[i] |= wkup_select_q[i][j] ? wkup_data_i[j] : '0;
+
+        for(genvar j = 0; j < WKUP_COUNT; j += 1) begin
+            wkup_hit[i][j] |= (wkup_reg_id_i[j] == entry_reg_id[i]) &
+                              wkup_valid_i[j].valid &
+                              entry_valid &
+                              !data_ready_q[i];
+        end
+    end
+end
+
+always_comb begin
+    wkup_result = '0;
+    for(integer i = 0; i < REG_COUNT; i += 1) begin
+        for(integer j = 0; j < WKUP_COUNT; j += 1) begin
+            wkup_result[i] |= wkup_hit_qq[i][j] ? wkup_data_i[j] : '0;
         end
     end
 end
 
 // wkup等待两拍后唤醒
-for (integer i = 0; i < 2; i++) begin
+for (integer i = 0; i < REG_COUNT; i++) begin
     always_ff @(posedge clk) begin
-        if(select_i) begin
-            wkup_select[i]     <= '0;
-            wkup_select_q[i]   <= '0;
+        if(~rst_n || flush) begin
+            wkup_hit_q[i]   <= '0;
+            wkup_hit_qq[i]  <= '0;
+        end
+        else if(select_i) begin
+            wkup_hit_q[i]   <= '0;
+            wkup_hit_qq[i]  <= '0;
         end
         else begin
-            wkup_select[i]     <= wkup_hit[i];
-            wkup_select_q[i]   <= wkup_select[i];
+            wkup_hit_q[i]   <= wkup_hit[i];
+            wkup_hit_qq[i]  <= wkup_hit_q[i];
         end
     end
 end
@@ -171,16 +201,19 @@ end
 
 // ------------------------------------------------------------------
 // 生成CDB数据
-for(integer i = 0; i < 2; i += 1) begin
-    assign cdb_forward[i] = |(cdb_hit[i]);
+for(integer i = 0; i < REG_COUNT; i += 1) begin
     always_comb begin
-        // 监听CDB上的数据
-        for(genvar j = 0; j < 2; j += 1) begin
-            cdb_hit[i][j] = (cdb_i[i].reg_id == entry_data.data[j].reg_id) &
-                            cdb_i[i].valid & (~data_ready[j]);
+        cdb_hit[i] = '0;
+        cdb_result[i] = '0;
+
+        for(genvar j = 0; j < CDB_COUNT; j += 1) begin
+            cdb_hit[i][j] = (cdb_reg_id_i[j] == entry_reg_id[i]) &
+                            cdb_valid_i[i] &
+                            (~data_ready[i]);
+
+            cdb_result[i] |= cdb_hit[i][j] ? cdb_data_i[j] : '0;
         end
     end
-    
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
