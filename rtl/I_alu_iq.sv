@@ -16,7 +16,7 @@ module alu_iq # (
     input   logic           flush,
 
     // 控制信息
-    input   logic [DISPATCH_CNT - 1:0]        choose,
+    input   logic [DISPATCH_CNT - 1:0]      choose,
     input   decode_info_t [REG_COUNT - 1:0] p_di_c,
     input   word_t [REG_COUNT - 1:0]        p_data_c,
     input   rob_id_t [REG_COUNT - 1:0]      p_reg_id_c,
@@ -65,7 +65,6 @@ always_comb begin
 end
 
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
-logic excute_valid, excute_valid_q; // E级执行的FU是否有效
 logic [IQ_SIZE - 1:0] entry_ready;  // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] entry_select; // 指令是否发射
 logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
@@ -120,7 +119,7 @@ logic [$bits(IQ_SIZE):0] free_cnt;
 logic [$bits(IQ_SIZE):0] free_cnt_q;
 
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i + (excute_ready & excute_valid);
+    free_cnt = free_cnt_q - p_valid_i + excute_ready;
     entry_ready_o = (free_cnt >= 1);
 end
 
@@ -162,24 +161,7 @@ end
 
 // ------------------------------------------------------------------
 // 生成执行信号
-assign excute_valid = |entry_ready;
-assign excute_ready = (!excute_valid_q) | fifo_entry_ready;
-
-always_ff @(clk) begin
-    if(!rst_n || flush) begin
-        excute_valid_q <= '0;
-    end
-    else begin
-        if(excute_ready) begin
-            excute_valid_q <= excute_valid;
-        end
-        else begin
-            if(excute_valid_q & fifo_entry_ready) begin
-                excute_valid_q <= '0;
-            end
-        end
-    end
-end
+assign excute_ready = fifo_entry_ready;
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
