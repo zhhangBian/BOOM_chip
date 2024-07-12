@@ -233,7 +233,7 @@ always_comb begin
             select_wkup_hit_q |= wkup_hit_q[i];
             // 选中了提前唤醒
             wkup_valid_o    |= excute_ready;
-            wkup_reg_id     |= entry_di[i].wreg_id;
+            wkup_reg_id_o   |= entry_di[i].wreg_id;
         end
     end
 end
