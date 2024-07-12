@@ -1,7 +1,6 @@
 `include "a_defines.svh"
 
 //用寄存器存的tlb表项，打一拍出结果
-//目前错误码待补充
 //待测试
 module mmu #(
     parameter int unsigned TLB_ENTRY_NUM = 64,
@@ -13,11 +12,12 @@ module mmu #(
     // 地址翻译
     input  logic [31:0]           va,
     input  csr_t                  csr,
-    input  wire  [1:0]            mem_type,  //类型，定义见a_mmu_defines // 
+    input  wire  [1:0]            mmu_mem_type,  //类型，定义见a_mmu_defines // 
     // 维护
-    input  tlb_rdwr_req_t  tlb_rdwr_req_t,   //tlb维护的请求，包括读/写的index，见a_mmu_defines
+    //input  tlb_rdwr_req_t  tlb_rdwr_req,   //tlb维护的请求，包括读/写的index，见a_mmu_defines
 
     output trans_result_t trans_result_o,    //包含pa，mat，valid，见a_mmu_defines
+    output tlb_exception_t tlb_exception_o,  //tlb相关的例外，例外代码的编号在a_csr里面，默认为零，只有在result里面valid为0的时候这个错误码才有意义
     output tlb_entry_t    tlb_entry_o        //tlb维护（读）时找到的tlb_entry，暂时写成一拍后得到结果，但也可以马上得到
 )
 
@@ -47,7 +47,7 @@ always_comb begin
 end
 /*===================ok===================*/
 function automatic logic vppn_match(logic [31:0] va, 
-                                    logic huge_page, logic [19: 0] vppn)
+                                    logic huge_page, logic [18: 0] vppn)//位宽好像错了
     if (huge_page) begin
         return va[31:23] == vppn[18:10]; //???is this right
     end else begin
@@ -58,12 +58,12 @@ endfunction
 //tlb读写请求
 always_ff @(posedge clk) begin
     for (genvar i = 0; i < TLB_ENTRY_NUM; i += 1) begin
-        if (tlb_rdwr_req_t.tlb_wr_index[i]) begin
-            tlb_key_q[i]      <= tlb_rdwr_req_t.tlb_wr_entry.key;
-            tlb_value_q[i][0] <= tlb_rdwr_req_t.tlb_wr_entry.value[0];
-            tlb_value_q[i][1] <= tlb_rdwr_req_t.tlb_wr_entry.value[1];
+        if (tlb_rdwr_req.tlb_wr_index[i]) begin
+            tlb_key_q[i]      <= tlb_rdwr_req.tlb_wr_entry.key;
+            tlb_value_q[i][0] <= tlb_rdwr_req.tlb_wr_entry.value[0];
+            tlb_value_q[i][1] <= tlb_rdwr_req.tlb_wr_entry.value[1];
         end
-        if (tlb_rdwr_req_t.tlb_rd_index[i]) begin
+        if (tlb_rdwr_req.tlb_rd_index[i]) begin
             tlb_entry_o.key      <= tlb_key_q[i];
             tlb_entry_o.value[0] <= tlb_value_q[i][0];
             tlb_entry_o.value[1] <= tlb_value_q[i][1];
@@ -88,16 +88,21 @@ wire [31:0] dmw_read = dmw0_hit ? dmw0 :
                        dmw1_hit ? dmw1 :
                        '0;
 
+//choose from tlb/dmw/da
 logic trans_result_t trans_result;
 
 wire da = csr.crmd[`_CRMD_DA];
 wire pg = csr.crmd[`_CRMD_PG];
 
-//choose from tlb/dmw/da
+wire [5:0] ecode;
+wire [8:0] esubcode;
+
 always_comb begin
+    ecode = 6'h0;
+    esubcode = 9'h0;
     if (da) begin
         trans_result.pa = va;
-        trans_result.mat = (mem_type == `_MEM_FETCH) ? 
+        trans_result.mat = (mmu_mem_type == `_MEM_FETCH) ? 
             csr.crmd[`_CRMD_DATF] : csr.crmd[`_CRMD_DATM];
         trans_result.valid = 1;
     end else begin
@@ -114,17 +119,25 @@ always_comb begin
                 trans_result.mat = tlb_value_read.mat;
             end
             trans_result.valid = tlb_found;
+            if (!tlb_found) begin
+                ecode = `_ECODE_TLBR;
+            end
             if (!tlb_value_read.v) begin
                 trans_result.valid = 0;
-                case (mem_type)
-                    `FETCH:;
-                    `LOAD:;
-                    `STORE:;
+                case (mmu_mem_type)
+                    `FETCH:
+                        ecode = `_ECODE_PIF;
+                    `LOAD:
+                        ecode = `_ECODE_PIL;
+                    `STORE:
+                        ecode = `_ECODE_PIS;
                 endcase
             end elif(csr.crmd[`_CRMD_PLV] > tlb_value_read.plv) begin
                 trans_result.valid = 0;
-            end elif(mem_type == `STORE && !trans_result.d) begin
+                ecode = `_ECODE_PPI;
+            end elif(mmu_mem_type == `STORE && !trans_result.d) begin
                 trans_result.valid = 0;
+                ecode = `_ECODE_PME;
             end
         end
     end
@@ -133,8 +146,11 @@ end
 always_ff @(posedge clk) begin
     if (rst_n || flush) begin
         trans_result_o <= '0;
+        tlb_exception_o <= '0;
     end else begin
         trans_result_o <= trans_result;
+        tlb_exception_o.ecode <= ecode;
+        tlb_exception_o.esubcode <= esubcode;
     end
 end
 
