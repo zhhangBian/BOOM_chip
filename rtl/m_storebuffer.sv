@@ -47,7 +47,7 @@ always_comb begin
     sb_ptr_head = sb_ptr_head_q + push;
     sb_ptr_tail = sb_ptr_tail_q + pop;
     sb_num      = sb_ptr_head_q;
-    sb_ptr_commit = sb_ptr_commit_q + w_mem - pop;
+    sb_ptr_commit = sb_ptr_commit_q + w_mem;
 end
 
 always_ff @(posedge clk) begin
@@ -64,8 +64,8 @@ always_ff @(posedge clk) begin
             sb_ptr_head_q   <= sb_ptr_tail_q + sb_commit_cnt_q;
             sb_cnt_q        <= sb_commit_cnt;
             sb_commit_cnt_q <= sb_commit_cnt;
-            sb_ptr_tail_q   <= sb_ptr_commit;
-            sb_ptr_commit_q <= sb_ptr_commit;
+            sb_ptr_tail_q   <= sb_ptr_tail;
+            sb_ptr_commit_q <= sb_ptr_commit_q;
         end
     end else begin
         sb_cnt_q <= sb_cnt;
