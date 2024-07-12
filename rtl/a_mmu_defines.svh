@@ -1,6 +1,6 @@
 //a_csr.svh里面和tlb相关的内容还有wired的标记，最好删掉
 
-//mem_type
+//mmu_mem_type
 `define _MEM_FETCH  2'h0
 `define _MEM_LOAD   2'h1
 `define _MEM_STORE  2'h2
@@ -43,7 +43,8 @@ typedef struct packed {
 } trans_result_t;
 
 typedef struct packed {
-
+    logic [5:0]    ecode;
+    logic [8:0]    esubcode;
 } tlb_exception_t;
 
 typedef struct packed {
