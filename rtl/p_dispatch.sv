@@ -127,6 +127,7 @@ assign p_lsu_sender.valid   = '1;
 
 
 p_i_pkg_t [3 : 0] p_i_pkg; // 对应四个发射队列：[3:0]对应lsu,mdu,alu1,alu0
+p_i_pkg_t [3 : 0] p_i_pkg_q; // 握手缓存
 
 
 always_comb begin
@@ -142,10 +143,37 @@ always_comb begin
     p_i_pkg[3].inst_choose = choose_lsu;
 end
 
-assign p_alu_sender_0.data = p_i_pkg[0];
-assign p_alu_sender_1.data = p_i_pkg[1];
-assign p_mdu_sender.data   = p_i_pkg[2];
-assign p_lsu_sender.data   = p_i_pkg[3];
+always_ff @(posedge clk) begin
+    // alu_sender0
+    if (p_alu_sender_0.valid & p_alu_sender_0.ready) begin
+        p_i_pkg_q[0] <= p_i_pkg[0];
+    end else begin
+        p_i_pkg_q[0] <= '0;
+    end
+    // alu_sender1
+    if (p_alu_sender_1.valid & p_alu_sender_1.ready) begin
+        p_i_pkg_q[1] <= p_i_pkg[1];
+    end else begin
+        p_i_pkg_q[1] <= '0;
+    end
+    // mdu_sender
+    if (p_mdu_sender.valid & p_mdu_sender.ready) begin
+        p_i_pkg_q[2] <= p_i_pkg[2];
+    end else begin
+        p_i_pkg_q[2] <= '0;
+    end
+    // lsu_sender
+    if (p_lsu_sender.valid & p_lsu_sender.ready) begin
+        p_i_pkg_q[3] <= p_i_pkg[3];
+    end else begin
+        p_i_pkg_q[3] <= '0;
+    end
+end
+
+assign p_alu_sender_0.data = p_i_pkg_q[0];
+assign p_alu_sender_1.data = p_i_pkg_q[1];
+assign p_mdu_sender.data   = p_i_pkg_q[2];
+assign p_lsu_sender.data   = p_i_pkg_q[3];
 
 
 
