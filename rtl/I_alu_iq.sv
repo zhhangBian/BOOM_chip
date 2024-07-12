@@ -1,5 +1,5 @@
 `include "a_structure.svh"
-`include "a_entry_defines.svh"
+`include "a_iq_defines.svh"
 
 module alu_iq # (
     // 设置IQ共有4个表项
@@ -16,11 +16,11 @@ module alu_iq # (
     input   logic           flush,
 
     // 控制信息
-    input   logic [DISPATCH_CNT - 1:0]      choose,
-    input   decode_info_t [REG_COUNT - 1:0] p_di_c,
-    input   word_t [REG_COUNT - 1:0]        p_data_c,
-    input   rob_id_t [REG_COUNT - 1:0]      p_reg_id_c,
-    input   logic [REG_COUNT - 1:0]         p_valid_c,
+    input   logic [DISPATCH_CNT - 1:0]         choose,
+    input   decode_info_t [DISPATCH_CNT - 1:0] p_di_c,
+    input   word_t [DISPATCH_CNT - 1:0]        p_data_c,
+    input   rob_id_t [DISPATCH_CNT - 1:0]      p_reg_id_c,
+    input   logic [DISPATCH_CNT - 1:0]         p_valid_c,
     // IQ的ready含义是队列未满，可以继续接收指令
     output  logic           entry_ready_o,
 
