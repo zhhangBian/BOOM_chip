@@ -38,7 +38,7 @@ iq_entry_t entry_data;
 // 指令中的数据是否已经就绪
 logic [1:0] data_ready_q;
 logic [1:0] data_ready;
-assign ready_o = &data_ready_q;
+assign ready_o = (&data_ready_q) | wkup_select_q;
 assign di_o = entry_data.di;
 
 // 是否进行CDB前递
@@ -149,7 +149,7 @@ for(integer i = 0; i < 2; i += 1) begin
             wkup_hit[i][j] = (wkup_data_i[i].reg_id == entry_data.data[j].reg_id) &
                             wkup_data_i[i].valid & entry_data.valid_inst &
                             !data_ready_q[j];
-            wkup_result[i] |= wkup_select_q[i][j] ? wkup_data_i[j] : '0;
+            wkup_result[i] |= wkup_select_q[i][j] ? wkup_data_i[j].data : '0;
         end
     end
 end
@@ -178,6 +178,8 @@ for(integer i = 0; i < 2; i += 1) begin
         for(genvar j = 0; j < 2; j += 1) begin
             cdb_hit[i][j] = (cdb_i[i].reg_id == entry_data.data[j].reg_id) &
                             cdb_i[i].valid & (~data_ready[j]);
+
+            // cdb_result[i] |= cdb_hit[i][j] ? cdb_i[j] : '0;
         end
     end
     

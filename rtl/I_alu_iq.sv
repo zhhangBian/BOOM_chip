@@ -25,7 +25,7 @@ module alu_iq # (
     input   data_t [1:0]    wkup_data_i,
     output  data_t [1:0]    wkup_data_o,
 
-    output  data_t          result_o,
+    output  data_t          result_o, // wkup_src
     output  logic           jump_o,
 
     // 后续的FIFO是否ready
