@@ -52,7 +52,7 @@ logic [IQ_SIZE - 1:0] entry_empty_q;// 对应的表项是否空闲
 // ------------------------------------------------------------------
 // 配置IQ逻辑
 // 当前的表项数
-logic [PTR_LEN - 1:0]   iq_cnt, iq_cnt_q
+logic [PTR_LEN - 1:0]   free_cnt, free_cnt_q
 // 执行的指针
 logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 // 写的指针
@@ -62,15 +62,15 @@ always_ff @(posedge clk) begin
     if(!rst_n || flush_i) begin
         iq_head_q       <= '0;
         iq_tail_q       <= '0;
-        iq_cnt_q        <= '0;
+        free_cnt_q      <= IQ_SIZE;
         entry_ready_o   <= '1;
     end 
     else begin
         iq_head_q       <= iq_head;
         iq_tail_q       <= iq_tail;
-        iq_cnt_q        <= iq_cnt;
+        free_cnt_q      <= free_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (iq_cnt <= (IQ_SIZE - 2));
+        entry_ready_o   <= (free_cnt >= 2);
     end
 end
 
@@ -94,14 +94,14 @@ end
 
 // 存在IQ中的指令数
 always_comb begin
-    iq_cnt = iq_cnt_q + p_valid_i[0] + p_valid_i[1] - (excute_ready & excute_valid);
+    free_cnt = free_cnt_q - p_valid_i[0] + p_valid_i[1] + (excute_ready & excute_valid);
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
 // 选择进入IQ的数据
 word_t   [IQ_SIZE - 1:0]    iq_data;
-rob_ir_t [IQ_SIZE - 1:0]    iq_reg_id;
+rob_id_t [IQ_SIZE - 1:0]    iq_reg_id;
 logic    [IQ_SIZE - 1:0]    iq_valid;
 decode_info_t [IQ_SIZE - 1:0] iq_di;
 
@@ -116,10 +116,10 @@ end
 
 always_comb begin
     entry_init = '0;
-    if(p_valid_i[0] + p_valid_i[1] == 1) begin
+    if(^p_valid_i) begin
         entry_init[iq_tail_q] |= '1;
     end
-    else if(p_valid_i[0] + p_valid_i[1] == 1) begin
+    else if(&p_valid_i) begin
         entry_init[iq_tail_q] |= '1;
         entry_init[iq_tail_q + 1] |= '1;
     end
@@ -147,13 +147,13 @@ always_comb begin
     iq_valid    = '0;
     iq_di       = '0;
 
-    if(p_valid_i[0] + p_valid_i[1] == 1) begin
+    if(^p_valid_i) begin
         iq_data[iq_tail_q]      |= p_valid_i[0] ? p_data_i[0] : p_data_i[1];
         iq_reg_id[iq_tail_q]    |= p_valid_i[0] ? p_reg_id_i[0] : p_reg_id_i[1];
         iq_valid[iq_tail_q]     |= '1;
         iq_di[iq_tail_q]        |= p_valid_i[0] ? p_di_i[0] : p_di_i[1];
     end
-    else if(p_valid_i[0] + p_valid_i[1] == 2) begin
+    else if(&p_valid_i) begin
         iq_data[iq_tail_q]      |= p_data_i[0] ;
         iq_reg_id[iq_tail_q]    |= p_reg_id_i[0];
         iq_valid[iq_tail_q]     |= '1;
