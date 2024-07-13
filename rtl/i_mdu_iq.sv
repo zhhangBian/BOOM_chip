@@ -117,11 +117,11 @@ end
 always_comb begin
     entry_init = '0;
     if(p_valid_i[0] + p_valid_i[1] == 1) begin
-        entry_init[iq_tail_q + 1] |= '1;
+        entry_init[iq_tail_q] |= '1;
     end
     else if(p_valid_i[0] + p_valid_i[1] == 1) begin
+        entry_init[iq_tail_q] |= '1;
         entry_init[iq_tail_q + 1] |= '1;
-        entry_init[iq_tail_q + 2] |= '1;
     end
 end
 
