@@ -90,7 +90,7 @@ always_comb begin
                     aging_select_1[0] : aging_select_1[1];
     // 给发射的指令置位
     entry_select = '0;
-    entry_select[aging_select] |= '1;
+    entry_select[aging_select] |= entry_ready[aging_select];
 end
 
 // AGING的移位逻辑

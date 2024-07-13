@@ -38,7 +38,7 @@ always_comb begin
     for(genvar i = 0; i < REG_COUNT - 1; i += 1) begin
         real_data_o[i] = (|(wkup_hit_qq[i])) ? '0 : data_q[i];
 
-        for(integer j = 0 ; j < REG_COUNT - 1 ; j += 1) begin
+        for(integer j = 0 ; j < WKUP_COUNT - 1 ; j += 1) begin
             real_data_o[i] |= wkup_hit_qq[i][j] ? wkup_data_i[i][j] : '0;
         end
     end
