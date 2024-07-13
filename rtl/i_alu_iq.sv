@@ -16,13 +16,13 @@ module alu_iq # (
     input   logic           flush,
 
     // 控制信息
-    input   logic [DISPATCH_CNT - 1:0]         choose,
+    input   logic   [DISPATCH_CNT - 1:0] choose,
     input   decode_info_t [DISPATCH_CNT - 1:0] p_di_c,
-    input   word_t [DISPATCH_CNT - 1:0]        p_data_c,
-    input   rob_id_t [DISPATCH_CNT - 1:0]      p_reg_id_c,
-    input   logic [DISPATCH_CNT - 1:0]         p_valid_c,
+    input   word_t  [DISPATCH_CNT - 1:0] p_data_c,
+    input   rob_id_t[DISPATCH_CNT - 1:0] p_reg_id_c,
+    input   logic   [DISPATCH_CNT - 1:0] p_valid_c,
     // IQ的ready含义是队列未满，可以继续接收指令
-    output  logic           entry_ready_o,
+    output  logic   entry_ready_o,
 
     // CDB数据前递
     input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
@@ -40,7 +40,8 @@ module alu_iq # (
     output  word_t          result_o,
 
     // 后续的FIFO是否ready
-    input   logic           fifo_ready
+    input   logic           fifo_ready,
+    output  logic           excute_valid_o
 );
 
 decode_info_t   p_di_i;
@@ -65,6 +66,7 @@ always_comb begin
 end
 
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
+logic excute_valid, excute_valid_q; // 执行结果是否有效
 logic [IQ_SIZE - 1:0] entry_ready;  // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] entry_select; // 指令是否发射
 logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
@@ -119,13 +121,16 @@ logic [$bits(IQ_SIZE):0] free_cnt;
 logic [$bits(IQ_SIZE):0] free_cnt_q;
 
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i + excute_ready;
-    entry_ready_o = (free_cnt >= 1);
+    free_cnt = free_cnt_q - p_valid_i + (excute_ready & excute_valid);
+end
+
+always_ff @(posedge clk) begin
+    entry_ready_o <= (free_cnt >= 1);
 end
 
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin
-        free_cnt_q <= 4;
+        free_cnt_q <= IQ_SIZE;
     end
     else begin
         free_cnt_q <= free_cnt;
@@ -160,8 +165,26 @@ end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
-// 生成执行信号
-assign excute_ready = fifo_entry_ready;
+// 生成执行的ready和valid信号
+assign excute_ready = (!excute_valid_q) || fifo_ready;
+assign excute_valid = |entry_ready;
+
+always_ff @(posedge clk) begin
+    if(!rst_n || flush) begin
+        excute_valid_q <= '0;
+    end
+    else begin
+        if(excute_ready) begin
+            excute_valid_q <= excute_valid;
+        end
+        else begin
+            // 上一周期结果有效且FIFO可以接收
+            if(excute_valid_q && fifo_ready) begin
+                excute_valid_q <= '0;
+            end
+        end
+    end
+end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
@@ -297,7 +320,9 @@ assign result_o = jump_o ? e_jump_result : e_alu_result;
 always_ff @(posedge clk) begin
     e_alu_result_q <= e_alu_result;
 end
+
 assign wkup_data_o = e_alu_result_q;
+assign excute_valid_o = excute_valid;
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 endmodule
