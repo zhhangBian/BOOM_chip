@@ -6,7 +6,6 @@ module lsu_iq # (
     parameter int IQ_SIZE = 4,
     parameter int PTR_LEN = $clog2(IQ_SIZE),
     parameter int IQ_ID = 0,
-    parameter int DISPATCH_CNT = 2;
     parameter int REG_COUNT  = 2,
     parameter int CDB_COUNT  = 2,
     parameter int WKUP_COUNT = 2
@@ -16,13 +15,13 @@ module lsu_iq # (
     input   logic           flush,
 
      // 控制信息
-    input   logic [DISPATCH_CNT - 1:0]          choose,
-    input   decode_info_t [DISPATCH_CNT - 1:0]  p_di_i,
-    input   word_t [DISPATCH_CNT - 1:0]         p_data_i,
-    input   rob_id_t [DISPATCH_CNT - 1:0]       p_reg_id_i,
-    input   logic [DISPATCH_CNT - 1:0]          p_valid_i,
+    input   logic [1:0]             choose,
+    input   decode_info_t [1:0]     p_di_i,
+    input   word_t [1:0]            p_data_i,
+    input   rob_id_t [1:0]          p_reg_id_i,
+    input   logic [1:0]             p_valid_i,
     // IQ的ready含义是队列未满，可以继续接收指令
-    output  logic                               entry_ready_o,
+    output  logic                   entry_ready_o,
 
     // CDB数据前递
     input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
@@ -48,16 +47,15 @@ logic excute_valid, excute_valid_q; // 执行结果是否有效
 logic [IQ_SIZE - 1:0] entry_ready;  // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] entry_select; // 指令是否发射
 logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
-logic [IQ_SIZE - 1:0][PTR_LEN - 1:0] entry_init_id;// 填入选择的数据项在输入数据的id
 logic [IQ_SIZE - 1:0] entry_empty_q;// 对应的表项是否空闲
 
 // ------------------------------------------------------------------
 // 配置IQ逻辑
 // 当前的表项数
 logic [PTR_LEN - 1:0]   iq_cnt, iq_cnt_q
-// 写的指针
-logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 // 执行的指针
+logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
+// 写的指针
 logic [PTR_LEN - 1:0]   iq_tail, iq_tail_q;
 
 always_ff @(posedge clk) begin
@@ -72,68 +70,58 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= iq_tail;
         iq_cnt_q        <= iq_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (iq_cnt <= (IQ_SIZE - DISPATCH_CNT));
+        entry_ready_o   <= (iq_cnt <= (IQ_SIZE - 2));
     end
 end
 
+// 执行的指令
 always_comb begin
     iq_head = iq_head_q;
-    for(genvar i = 0; i < DISPATCH_CNT; i += 1) begin
-        if(entry_ready_o) begin
-            iq_head += p_valid_i[i];
-        end
-    end
-end
-
-always_comb begin
-    iq_tail = iq_tail_q;
     // 只能一条条发射
     if(excute_ready & excute_valid) begin
-        iq_tail += 1;
+        iq_head += 1;
     end
 end
 
+// 进入的指令
 always_comb begin
-    iq_cnt = iq_cnt_q;
-    for(genvar i = 0; i < DISPATCH_CNT; i += 1) begin
-        iq_cnt += p_valid_i[i];
+    iq_tail = iq_tail_q;
+    // 上一拍允许这一拍进入
+    if(entry_ready_o) begin
+        iq_tail += p_valid_i[0] + p_valid_i[1];
     end
+end
 
-    if(excute_ready & excute_valid) begin
-        iq_cnt -= 1;
-    end
+// 存在IQ中的指令数
+always_comb begin
+    iq_cnt = iq_cnt_q + p_valid_i[0] + p_valid_i[1] - (excute_ready & excute_valid);
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
+// 选择进入IQ的数据
+word_t   [IQ_SIZE - 1:0]    iq_data;
+rob_ir_t [IQ_SIZE - 1:0]    iq_reg_id;
+logic    [IQ_SIZE - 1:0]    iq_valid;
+decode_info_t [IQ_SIZE - 1:0] iq_di;
+
 always_comb begin
     entry_select = '0;
     for(genvar i = 0; i < IQ_SIZE; i += 1) begin
-        if(i[PTR_LEN - 1:0] == iq_tail) begin
+        if(i[PTR_LEN - 1:0] == iq_head_q) begin
             entry_select[i] |= entry_ready[i];
-        end
-    end
-end
-
-logic [PTR_LEN - 1:0] valid_cnt;
-logic [DISPATCH_CNT - 1:0][PTR_LEN - 1:0] valid_id; // 输入数据有效项的编号
-always_comb begin
-    valid_cnt = '0;
-    valid_id = '0;
-    for(genvar i = 0; i < DISPATCH_CNT; i += 1) begin
-        if(p_valid_i[i]) begin
-            valid_id[valid_cnt] |= i;
-            valid_cnt += 1;
         end
     end
 end
 
 always_comb begin
     entry_init = '0;
-    entry_init_id = '0;
-    for(i = 0; i < valid_cnt; i += 1) begin
-        entry_init[iq_head_q + i] |= '1;
-        entry_init_id[iq_head_q + i] |= i;
+    if(p_valid_i[0] + p_valid_i[1] == 1) begin
+        entry_init[iq_tail_q + 1] |= '1;
+    end
+    else if(p_valid_i[0] + p_valid_i[1] == 1) begin
+        entry_init[iq_tail_q + 1] |= '1;
+        entry_init[iq_tail_q + 2] |= '1;
     end
 end
 
@@ -146,10 +134,35 @@ always_ff @(posedge clk) begin
             if(entry_select[i]) begin
                 entry_empty_q[i] <= 1;
             end
-            else if(entry_init[i] & p_valid_i) begin
+            else if(entry_init[i]) begin
                 entry_empty_q[i] <= 0;
             end
         end
+    end
+end
+
+always_comb begin
+    iq_data     = '0;
+    iq_reg_id   = '0;
+    iq_valid    = '0;
+    iq_di       = '0;
+
+    if(p_valid_i[0] + p_valid_i[1] == 1) begin
+        iq_data[iq_tail_q]      |= p_valid_i[0] ? p_data_i[0] : p_data_i[1];
+        iq_reg_id[iq_tail_q]    |= p_valid_i[0] ? p_reg_id_i[0] : p_reg_id_i[1];
+        iq_valid[iq_tail_q]     |= '1;
+        iq_di[iq_tail_q]        |= p_valid_i[0] ? p_di_i[0] : p_di_i[1];
+    end
+    else if(p_valid_i[0] + p_valid_i[1] == 2) begin
+        iq_data[iq_tail_q]      |= p_data_i[0] ;
+        iq_reg_id[iq_tail_q]    |= p_reg_id_i[0];
+        iq_valid[iq_tail_q]     |= '1;
+        iq_di[iq_tail_q]        |= p_di_i[0];
+
+        iq_data[iq_tail_q + 1]  |= p_data_i[1] ;
+        iq_reg_id[iq_tail_q + 1]|= p_reg_id_i[1];
+        iq_valid[iq_tail_q + 1] |= '1;
+        iq_di[iq_tail_q + 1]    |= p_di_i[1];
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -199,10 +212,10 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin
         .select_i(entry_select[i] & excute_ready),
         .init_i(entry_init[i]),
 
-        .data_i(p_data_i[valid_id[entry_init_id[i]]]),
-        .data_reg_id_i(p_reg_id_i[valid_id[entry_init_id[i]]]),
-        .data_valid_i(p_valid_i[valid_id[entry_init_id[i]]]),
-        .di_i(p_di_i[valid_id[entry_init_id[i]]]),
+        .data_i(iq_data[i]),
+        .data_reg_id_i(iq_reg_id[i]),
+        .data_valid_i(iq_valid[i]),
+        .di_i(iq_di[i]),
 
         .wkup_data_i(wkup_data_i),
         .wkup_reg_id_i(wkup_reg_id_i),

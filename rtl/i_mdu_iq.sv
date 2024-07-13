@@ -4,9 +4,8 @@
 module mdu_iq # (
     // 设置IQ共有4个表项
     parameter int IQ_SIZE = 4,
-    parameter int AGING_LENGTH = 4,
+    parameter int PTR_LEN = $clog2(IQ_SIZE),
     parameter int IQ_ID = 0,
-    parameter int DISPATCH_CNT = 2;
     parameter int REG_COUNT  = 2,
     parameter int CDB_COUNT  = 2,
     parameter int WKUP_COUNT = 2
@@ -15,14 +14,14 @@ module mdu_iq # (
     input   logic           rst_n,
     input   logic           flush,
 
-     // 控制信息
-    input   logic [DISPATCH_CNT - 1:0]         choose,
-    input   decode_info_t [DISPATCH_CNT - 1:0] p_di_i,
-    input   word_t [DISPATCH_CNT - 1:0]        p_data_i,
-    input   rob_id_t [DISPATCH_CNT - 1:0]      p_reg_id_i,
-    input   logic [DISPATCH_CNT - 1:0]         p_valid_i,
+    // 控制信息
+    input   logic [1:0]             choose,
+    input   decode_info_t [1:0]     p_di_i,
+    input   word_t [1:0]            p_data_i,
+    input   rob_id_t [1:0]          p_reg_id_i,
+    input   logic [1:0]             p_valid_i,
     // IQ的ready含义是队列未满，可以继续接收指令
-    output  logic           entry_ready_o,
+    output  logic                   entry_ready_o,
 
     // CDB数据前递
     input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
@@ -32,7 +31,7 @@ module mdu_iq # (
     input   word_t  [WKUP_COUNT - 1:0] wkup_data_i,
     input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
     input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
-    
+
     output  word_t          wkup_data_o,
     output  rob_id_t        wkup_reg_id_o,
     output  logic           wkup_valid_o,
@@ -44,80 +43,85 @@ module mdu_iq # (
 );
 
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
+logic excute_valid, excute_valid_q; // 执行结果是否有效
 logic [IQ_SIZE - 1:0] entry_ready;  // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] entry_select; // 指令是否发射
 logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
 logic [IQ_SIZE - 1:0] entry_empty_q;// 对应的表项是否空闲
 
 // ------------------------------------------------------------------
-// 选择发射的指令
-// 根据AGING选择指令
-localparam int half_IQ_SIZE = IQ_SIZE / 2;
-// 对应的aging位
-logic [IQ_SIZE - 1:0][AGING_LENGTH - 1:0]   aging_q;
-// 目前只处理了IQ为4的情况
-logic [half_IQ_SIZE:0][$bits(IQ_SIZE):0]    aging_select_1;
-// 选择出发射的指令：一定ready
-logic [$bits(IQ_SIZE):0]                    aging_select;
+// 配置IQ逻辑
+// 当前的表项数
+logic [PTR_LEN - 1:0]   iq_cnt, iq_cnt_q
+// 执行的指针
+logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
+// 写的指针
+logic [PTR_LEN - 1:0]   iq_tail, iq_tail_q;
 
-always_comb begin
-    aging_select_1[0] = ({entry_ready[1], aging_q[1]} > {entry_ready[1], aging_q[0]}) ? 1 : 0;
-    aging_select_1[1] = ({entry_ready[3], aging_q[3]} > {entry_ready[2], aging_q[2]}) ? 3 : 2;
-    // 根据aging选出发射的指令
-    aging_select = ({entry_ready[aging_select_1[0]], aging_q[aging_select_1[0]]} >
-                    {entry_ready[aging_select_1[1]], aging_q[aging_select_1[1]]}) ?
-                    aging_select_1[0] : aging_select_1[1];
-    // 给发射的指令置位
-    entry_select = '0;
-    entry_select[aging_select] |= entry_ready[aging_select];
+always_ff @(posedge clk) begin
+    if(!rst_n || flush_i) begin
+        iq_head_q       <= '0;
+        iq_tail_q       <= '0;
+        iq_cnt_q        <= '0;
+        entry_ready_o   <= '1;
+    end 
+    else begin
+        iq_head_q       <= iq_head;
+        iq_tail_q       <= iq_tail;
+        iq_cnt_q        <= iq_cnt;
+        // 有可能同时接收两条指令
+        entry_ready_o   <= (iq_cnt <= (IQ_SIZE - 2));
+    end
 end
 
-// AGING的移位逻辑
-always_ff @(posedge clk) begin
-    for(integer i = 0; i < IQ_SIZE; i += 1) begin
-        if(entry_select[i]) begin
-            aging_q[i] <= '0;
-        end
-        else begin
-            if(entry_ready[i]) begin
-                aging_q[i] <= (aging_q[i] == 0) ? 1 :
-                              (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
-                              aging_q[i] : (aging_q[i] << 1);
-            end
-            else begin
-                aging_q[i] <= '0;
-            end
-        end
+// 执行的指令
+always_comb begin
+    iq_head = iq_head_q;
+    // 只能一条条发射
+    if(excute_ready & excute_valid) begin
+        iq_head += 1;
     end
+end
+
+// 进入的指令
+always_comb begin
+    iq_tail = iq_tail_q;
+    // 上一拍允许这一拍进入
+    if(entry_ready_o) begin
+        iq_tail += p_valid_i[0] + p_valid_i[1];
+    end
+end
+
+// 存在IQ中的指令数
+always_comb begin
+    iq_cnt = iq_cnt_q + p_valid_i[0] + p_valid_i[1] - (excute_ready & excute_valid);
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
-// 更新entry_ready信号
-logic [$bits(IQ_SIZE):0] free_cnt;
-logic [$bits(IQ_SIZE):0] free_cnt_q;
+// 选择进入IQ的数据
+word_t   [IQ_SIZE - 1:0]    iq_data;
+rob_ir_t [IQ_SIZE - 1:0]    iq_reg_id;
+logic    [IQ_SIZE - 1:0]    iq_valid;
+decode_info_t [IQ_SIZE - 1:0] iq_di;
 
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i + excute_ready;
-    entry_ready_o = (free_cnt >= 1);
-end
-
-always_ff @(posedge clk) begin
-    if(!rst_n || flush) begin
-        free_cnt_q <= 4;
-    end
-    else begin
-        free_cnt_q <= free_cnt;
-    end
-end
-
-always_comb begin
-    entry_init[i] = '0;
-    for(genvar  i = 0; i < IQ_SIZE; i += 1) begin
-        if(entry_empty_q[i]) begin
-            entry_init[i] = 1;
-            break;
+    entry_select = '0;
+    for(genvar i = 0; i < IQ_SIZE; i += 1) begin
+        if(i[PTR_LEN - 1:0] == iq_head_q) begin
+            entry_select[i] |= entry_ready[i];
         end
+    end
+end
+
+always_comb begin
+    entry_init = '0;
+    if(p_valid_i[0] + p_valid_i[1] == 1) begin
+        entry_init[iq_tail_q + 1] |= '1;
+    end
+    else if(p_valid_i[0] + p_valid_i[1] == 1) begin
+        entry_init[iq_tail_q + 1] |= '1;
+        entry_init[iq_tail_q + 2] |= '1;
     end
 end
 
@@ -130,17 +134,60 @@ always_ff @(posedge clk) begin
             if(entry_select[i]) begin
                 entry_empty_q[i] <= 1;
             end
-            else if(entry_init[i] & p_valid_i) begin
+            else if(entry_init[i]) begin
                 entry_empty_q[i] <= 0;
             end
         end
+    end
+end
+
+always_comb begin
+    iq_data     = '0;
+    iq_reg_id   = '0;
+    iq_valid    = '0;
+    iq_di       = '0;
+
+    if(p_valid_i[0] + p_valid_i[1] == 1) begin
+        iq_data[iq_tail_q]      |= p_valid_i[0] ? p_data_i[0] : p_data_i[1];
+        iq_reg_id[iq_tail_q]    |= p_valid_i[0] ? p_reg_id_i[0] : p_reg_id_i[1];
+        iq_valid[iq_tail_q]     |= '1;
+        iq_di[iq_tail_q]        |= p_valid_i[0] ? p_di_i[0] : p_di_i[1];
+    end
+    else if(p_valid_i[0] + p_valid_i[1] == 2) begin
+        iq_data[iq_tail_q]      |= p_data_i[0] ;
+        iq_reg_id[iq_tail_q]    |= p_reg_id_i[0];
+        iq_valid[iq_tail_q]     |= '1;
+        iq_di[iq_tail_q]        |= p_di_i[0];
+
+        iq_data[iq_tail_q + 1]  |= p_data_i[1] ;
+        iq_reg_id[iq_tail_q + 1]|= p_reg_id_i[1];
+        iq_valid[iq_tail_q + 1] |= '1;
+        iq_di[iq_tail_q + 1]    |= p_di_i[1];
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
 // 生成执行信号
-assign excute_ready = fifo_entry_ready;
+assign excute_ready = (!excute_valid_q) || fifo_ready;
+assign excute_valid = |entry_ready;
+
+always_ff @(posedge clk) begin
+    if(!rst_n || flush) begin
+        excute_valid_q <= '0;
+    end
+    else begin
+        if(excute_ready) begin
+            excute_valid_q <= excute_valid;
+        end
+        else begin
+            // 上一周期结果有效且FIFO可以接收
+            if(excute_valid_q && fifo_ready) begin
+                excute_valid_q <= '0;
+            end
+        end
+    end
+end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
@@ -163,12 +210,12 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin
         .flush,
 
         .select_i(entry_select[i] & excute_ready),
-        .init_i(entry_init[i] & p_valid_i),
+        .init_i(entry_init[i]),
 
-        .data_i(p_data_i),
-        .data_reg_id_i(p_reg_id_i),
-        .data_valid_i(p_valid_i),
-        .di_i(p_di_i),
+        .data_i(iq_data[i]),
+        .data_reg_id_i(iq_reg_id[i]),
+        .data_valid_i(iq_valid[i]),
+        .di_i(iq_di[i]),
 
         .wkup_data_i(wkup_data_i),
         .wkup_reg_id_i(wkup_reg_id_i),
@@ -183,7 +230,7 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin
         .wkup_hit_q_o(wkup_hit_q[i]),
         .data_o(entry_data[i]),
         .di_o(entry_di[i])
-    );
+);
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
