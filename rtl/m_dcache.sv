@@ -2,9 +2,9 @@
 
 typedef struct packed {
     logic  [3:0]  strb;
-    // inv_parm_e   cacop;
-    // logic  dbar;         // 显式 dbar
-    // logic  llsc;         // LL 指令，需要写权限
+    inv_parm_e   cacop;
+    logic  dbar;            // 显式 dbar
+    logic  llsc;            // LL 指令，需要写权限
     rob_id_t       wid;     // 写回地址
     logic      msigned;     // 有符号拓展
     logic  [1:0] msize;     // 访存大小-1

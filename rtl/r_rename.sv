@@ -154,7 +154,7 @@ arf # (
     .NEED_FORWARD(1)
 ) arf_inst (
     .clk(clk),
-    .rst_n(rst_n && !c_flush_i),
+    .rst_n(rst_n),
     .raddr_i(r_rarid),
     .rdata_o(r_arf_data),
     .waddr_i(c_warid),

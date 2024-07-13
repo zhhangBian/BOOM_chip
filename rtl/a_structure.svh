@@ -146,6 +146,12 @@ typedef struct packed {
     logic         w_reg;
     logic         w_mem;
     logic         c_valid;    // valid
+    // 特殊指令，例如uncached，tlb维护指令，写csr指令
+    // cache维护指令，st指令，只能单条提交
+    // 异常
+    // 1/logic       has_exc,     //有异常
+    // 2/logic       first_commit,//只能提交一条
+    // 3/分支预测相关信息
 } rob_commit_pkg_t;
 
 typedef struct packed {
