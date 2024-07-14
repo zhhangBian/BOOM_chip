@@ -2,9 +2,10 @@
 
 typedef struct packed {
     logic  [3:0]  strb;
+    logic  [3:0] rmask;            // 需要读的字节
     inv_parm_e   cacop;
-    logic  dbar;            // 显式 dbar
-    logic  llsc;            // LL 指令，需要写权限
+    logic         dbar;            // 显式 dbar
+    logic         llsc;            // LL 指令，需要写权限
     rob_id_t       wid;     // 写回地址
     logic      msigned;     // 有符号拓展
     logic  [1:0] msize;     // 访存大小-1
@@ -23,7 +24,8 @@ module dcache #(
     // Cache 规格设置
     parameter int unsigned WAY_NUM = 2,
     parameter int unsigned WORD_SIZE = 32,
-    parameter int unsigned BLOCK_SIZE = 32 * 16, //16个字
+    parameter int unsigned DATA_DEPTH = 256,
+    parameter int unsigned BLOCK_SIZE = 4 * 32, //4个字
     parameter int unsigned SB_SIZE = 4
 ) (
     input clk,
@@ -37,6 +39,11 @@ module dcache #(
 
 
 )
+/*******************************global*********************************/
+logic stall, stall_q;
+always_ff @(posedge clk) begin
+    stall_q <= stall;
+end
 
 iq_lsu_pkg_t iq_lsu_pkg;
 assign iq_lsu_pkg = cpu_lsu_receiver.data;
@@ -62,7 +69,7 @@ mmu #(
 );
 
 
-logic [1 : 0][19 : 0] tag_read;
+cache_tag_t [WAY_NUM - 1 : 0] tag_read;
 //TAG ram
 for (genvar i = 0; i < WAY_NUM; i++) begin
     logic conflict;
@@ -76,7 +83,7 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
     
     dpsram #(
         .DATA_WIDTH($bits(cache_tag_t)),
-        .DATA_DEPTH(512),
+        .DATA_DEPTH(DATA_DEPTH),
         .BYTE_SIZE($bits(cache_tag_t))
     ) tag_sram (
         .clk0(clk),
@@ -85,26 +92,26 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
         .rst_n1(rst_n),
         // 端口 0，只读
         .addr0_i(va[11:4]),
-        .en0_i(!conflict), // 出现冲突时，不使能
+        .en0_i(!conflict),          // 出现冲突时，不使能
         .we0_i('0),
         .wdata0_i('0),
         .rdata0_o(raw_tag0),
         // 端口 1，读写
-        .addr1_i(bus_addr[11:4]), // UNDEFINE
-        .en1_i('1),        // 一直使能
-        .we1_i(bus_we[i]), // 写使能信号 // UNDEFINE
-        .wdata1_i(bus_wtag), //UNDEFINE
+        .addr1_i(bus_addr[11:4]),   // UNDEFINE
+        .en1_i('1),                 // 一直使能
+        .we1_i(bus_we[i]),          // 写使能信号 // UNDEFINE
+        .wdata1_i(bus_wtag),        //UNDEFINE
         .rdata1_o(raw_tag1)
     );
 end
 
-typedef logic [BLOCK_SIZE/WORD_SIZE - 1 : 0][WORD_SIZE - 1 : 0] data_type;
-data_type [1 : 0] data_read;
+typedef logic [(WORD_SIZE/BYTE_SIZE) - 1 : 0][BYTE_SIZE - 1 : 0] data_type;
+data_type [WAY_NUM - 1 : 0] data_read;
 //DATA ram
 for (genvar i = 0; i < WAY_NUM; i++) begin
     logic conflict;
     logic conflict_q;
-    assign conflict = (va[11:4] == bus_addr[11:4]) & bus_we[i];//TODO
+    assign conflict = (va[11:$clog2(WORD_SIZE/BYTE_SIZE)] == w_addr[11:$clog2(WORD_SIZE/BYTE_SIZE)]);
     always_ff @(posedge clk) begin
         conflict_q <= conflict;
     end
@@ -112,8 +119,8 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
     assign data_read[i] = conflict_q ? raw_data1 : raw_data0;
 
     dpsram #(
-        .DATA_WIDTH(BLOCK_SIZE),
-        .DATA_DEPTH(512), // 512 / 1024
+        .DATA_WIDTH(WORD_SIZE),
+        .DATA_DEPTH(DATA_DEPTH * BLOCK_SIZE / WORD_SIZE), 
         .BYTE_SIZE(8)
     ) data_sram (
         .clk0(clk),
@@ -121,13 +128,13 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
         .clk1(clk),
         .rst_n1(rst_n),
         // 端口0
-        .addr0_i(va[11:4]),
+        .addr0_i(va[11:$clog2(WORD_SIZE/BYTE_SIZE)]),
         .en0_i(!conflict),
         .we0_i('0),
         .wdata0_i('0),
         .rdata0_o(raw_data0),
         // 端口1
-        .addr1_i(w_addr[11:4]),
+        .addr1_i(w_addr[11:$clog2(WORD_SIZE/BYTE_SIZE)]),
         .en1_i('1),
         .we1_i(w_strb[i]),
         .wdata1_i(w_wdata),
@@ -135,50 +142,98 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
     );
 end
 
+/********************************M1*********************************/
+
+typedef struct packed {
+    iq_lsu_pkg_t m1_iq_lsu_pkg;
+    logic [31 : 0] p_addr;
+    cache_tag_t [WAY_NUM - 1 : 0] m1_tag_read;
+    data_type   [WAY_NUM - 1 : 0] m1_data_read;
+    // else info
+} m1_pkg_t;
+
+m1_pkg_t m1_front, m1_reg, m1;
+iq_lsu_pkg_t iq_lsu_pkg_q;
+
+always_ff @(posedge clk) begin
+    if (!rst_n || flush_i) begin
+        iq_lsu_pkg_q <= '0;
+        m1_reg       <= '0;
+    end else begin
+        iq_lsu_pkg_q <= iq_lsu_pkg；
+        m1_reg       <= m1;
+    end
+end
+
+always_comb begin
+    m1 = stall_q ? m1_reg : m1_front;
+    m1_front.m1_iq_lsu_pkg = iq_lsu_pkg_q; 
+    m1_front.p_addr        = pa;
+    m1_front.m1_tag_read   = tag_read;
+    m1_front.m1_data_read  = data_read;
+    m1_front.m1_uncached   = !trans_result.mat[0];
+end
+
 // M1 级， 检查hit命中情况，sb_hit, tag_hit
 // 例化 store buffer
 // store指令将数据写入store buffer
+// 例化接口
+handshake_if #(.T(sb_entry_t)) sb_lsu_receiver();
+handshake_if #(.T(sb_entry_t)) sb_lsu_sender();
 sb_entry_t [SB_SIZE - 1 : 0] sb_entry;
+sb_entry_t sb_entry_i, sb_entry_o;
 storebuffer #(
     .SB_SIZE(4)
 ) storebuffer_inst (
     .clk,
     .rst_n,
     .flush_i,
-
     // input   logic [1 : 0] c_w_mem_i,
-
     // output  logic [SB_DEPTH_LEN - 1 : 0] sb_num,
-    // output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o,
     .sb_entry_o(sb_entry),
-
-    // handshake_if.receiver  sb_entry_receiver,
-
-    // handshake_if.sender    sb_fifo_entry_sender
+    .sb_entry_receiver(sb_lsu_receiver.receiver),
+    .sb_entry_sender(sb_lsu_sender.sender)
 );
-
+always_comb begin
+    sb_entry_i.target_addr = m1.p_addr;
+    sb_entry_i.write_data  = m1.m1_iq_lsu_pkg.wdata;
+    sb_entry_i.wstrb       = m1.m1_iq_lsu_pkg.strb;
+    sb_entry_i.valid       = '1;
+    sb_entry_i.commit      = '0;
+end
+assign sb_lsu_receiver.data  = sb_entry_i;
+assign sb_lsu_receiver.valid = |sb_entry_i.wstrb;
+logic m1_hit;
+logic [31          : 0] choose_data;
 logic [1           : 0] tag_hit,  tag_hit_q;
 logic [SB_SIZE - 1 : 0]  sb_hit,   sb_hit_q;
-
 always_comb begin
+    // hit
+    m1_hit = (|tag_hit) | (|sb_hit); // 命中
     // tag hit
     for (genvar i = 0; i < 2 ; i++) begin
-        tag_hit[i] = (tag_read[i].tag == pa[31 : 12]) & tag_read[i].v;
+        tag_hit[i] = (m1.m1_tag_read[i].tag == m1.p_addr[31 : 12]) & m1.m1_tag_read[i].v;
     end
     // sb_hit
     for (genvar i = 0; i < SB_SIZE; i++) begin
-        sb_hit[i] = sb_entry[i].valid & (sb_entry[i].target_addr[31 : 12] == pa[31 : 12]);
+        sb_hit[i] = sb_entry[i].valid 
+        && (sb_entry[i].target_addr[31 : $clog2(WORD_SIZE/BYTE_SIZE)] == m1.p_addr[31 : $clog2(WORD_SIZE/BYTE_SIZE)]);
+        // && (m1.rmask & (sb_entry[i].wstrb | 4{tag_hit[0]} | 4{tag_hit[1]}) == m1.rmask);
     end
-
     // snoop_hit
-
+    // TODO
 end 
+
+/***********************************M2**********************************/
+
+
 
 
 
 // M2 级， 根据命中情况输入状态机，
 // 如果命中或者为store指令，则输出给lsu
-// FSM: IDLE(空闲)， NORMAL(正常工作)，MISS_DIRTY(缺失且选中路脏位为1)，MISS_REFILL(向总线侧发重填请求)，REFILL(开始重填)，WRITE_BACK(SB数据写回)……
+// FSM: IDLE(空闲)， NORMAL(正常工作)，MISS_DIRTY(缺失且选中路脏位为1)，
+// MISS_REFILL(向总线侧发重填请求)，REFILL(开始重填)，WRITE_BACK(SB数据写回)……
 // IDLE和NORMAL之外的状态阻塞之前的指令
 // 当storebuffer有指令需要提交写入CACAHE里，阻塞LSU
 
