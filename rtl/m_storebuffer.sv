@@ -42,7 +42,7 @@ logic w_mem;
 
 assign push = sb_entry_receiver.ready & sb_entry_receiver.valid & !flush_i;
 assign pop  = sb_entry_sender.ready   & sb_entry_sender.valid;
-
+assign sb_oldest_ptr = sb_ptr_tail_q;
 always_comb begin
     sb_cnt      = sb_cnt_q + push - pop;
     sb_ptr_head = sb_ptr_head_q + push;

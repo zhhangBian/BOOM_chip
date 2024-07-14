@@ -6,13 +6,23 @@ typedef struct packed {
     inv_parm_e   cacop;
     logic         dbar;            // 显式 dbar
     logic         llsc;            // LL 指令，需要写权限
-    rob_id_t       wid;     // 写回地址
-    logic      msigned;     // 有符号拓展
-    logic  [1:0] msize;     // 访存大小-1
-    logic [31:0] vaddr;     // 虚拟地址
-    logic [31:0] wdata;     // 写数据
+    rob_id_t       wid;            // 写回地址
+    logic      msigned;            // 有符号拓展
+    logic  [1:0] msize;            // 访存大小-1
+    logic [31:0] vaddr;            // 虚拟地址
+    logic [31:0] wdata;            // 写数据
 } iq_lsu_pkg_t;
 
+// LSU 到 LSU IQ 的响应
+typedef struct packed {
+//   lsu_excp_t   excp;
+//   fetch_excp_t f_excp;
+  logic        uncached;
+  logic        hit;
+  rob_rid_t    wid;     // 写回地址
+  logic[31:0]  paddr;
+  logic[31:0]  rdata;   
+} lsu_iq_resp_t;
 
 typedef struct packed {
     logic [19 : 0] tag;
@@ -36,8 +46,7 @@ module dcache #(
 
     // cpu侧信号
     handshake_if.receiver cpu_lsu_receiver,
-
-
+    output lsu_iq_resp_t  cpu_lsu_resp
 )
 /*******************************global*********************************/
 logic stall, stall_q;
@@ -181,9 +190,36 @@ end
 handshake_if #(.T(sb_entry_t)) sb_lsu_receiver();
 handshake_if #(.T(sb_entry_t)) sb_lsu_sender();
 sb_entry_t [SB_SIZE - 1 : 0] sb_entry;
-sb_entry_t sb_entry_i, sb_entry_o;
+sb_entry_t sb_entry_i;
+logic m1_hit;
+// logic [31          : 0] choose_data;
+logic [1           : 0] tag_hit,  tag_hit_q;
+logic [SB_SIZE - 1 : 0]  sb_hit,   sb_hit_q;
+logic [WORD_SIZE - 1 : 0] m1_sram_data, m1_sb_data, m1_data_o, m1_lsu_data;
+logic [$clog2(SB_SIZE) - 1 : 0] sb_ptr;
+logic [31 : 0] m1_write_data, m1_raw_wdata;
+logic [4  : 0] m1_strb;
+
+always_comb begin
+    m1_raw_wdata = m1.m1_iq_lsu_pkg.wdata; 
+    m1_strb      = m1.m1_iq_lsu_pkg.strb;
+    m1_write_data[7 : 0] =  m1_strb[0] ? m1_raw_wdata[7 : 0] :  m1_data_o[7 : 0];
+    m1_write_data[15: 8] =  m1_strb[1] ? m1_raw_wdata[15: 8] :  m1_data_o[15: 8];
+    m1_write_data[23:16] =  m1_strb[2] ? m1_raw_wdata[23:16] :  m1_data_o[23:16];
+    m1_write_data[31:24] =  m1_strb[3] ? m1_raw_wdata[31:24] :  m1_data_o[31:24];
+end
+always_comb begin
+    sb_entry_i.target_addr = m1.p_addr;
+    sb_entry_i.write_data  = m1_write_data;
+    sb_entry_i.wstrb       = m1_strb;
+    sb_entry_i.valid       = '1;
+    sb_entry_i.commit      = '0;
+end
+assign sb_lsu_receiver.data  = sb_entry_i;
+assign sb_lsu_receiver.valid = |sb_entry_i.wstrb;
+
 storebuffer #(
-    .SB_SIZE(4)
+    .SB_SIZE(SB_SIZE)
 ) storebuffer_inst (
     .clk,
     .rst_n,
@@ -191,38 +227,65 @@ storebuffer #(
     // input   logic [1 : 0] c_w_mem_i,
     // output  logic [SB_DEPTH_LEN - 1 : 0] sb_num,
     .sb_entry_o(sb_entry),
+    .sb_oldest_ptr(sb_ptr),
     .sb_entry_receiver(sb_lsu_receiver.receiver),
     .sb_entry_sender(sb_lsu_sender.sender)
 );
-always_comb begin
-    sb_entry_i.target_addr = m1.p_addr;
-    sb_entry_i.write_data  = m1.m1_iq_lsu_pkg.wdata;
-    sb_entry_i.wstrb       = m1.m1_iq_lsu_pkg.strb;
-    sb_entry_i.valid       = '1;
-    sb_entry_i.commit      = '0;
-end
-assign sb_lsu_receiver.data  = sb_entry_i;
-assign sb_lsu_receiver.valid = |sb_entry_i.wstrb;
-logic m1_hit;
-logic [31          : 0] choose_data;
-logic [1           : 0] tag_hit,  tag_hit_q;
-logic [SB_SIZE - 1 : 0]  sb_hit,   sb_hit_q;
-always_comb begin
-    // hit
-    m1_hit = (|tag_hit) | (|sb_hit); // 命中
+assign m1_hit = (|tag_hit) | (|sb_hit); // 命中
+always_comb begin 
     // tag hit
-    for (genvar i = 0; i < 2 ; i++) begin
+    m1_sram_data = '0;
+    for (integer i = 0; i < WAY_NUM ; i++) begin
         tag_hit[i] = (m1.m1_tag_read[i].tag == m1.p_addr[31 : 12]) & m1.m1_tag_read[i].v;
+        m1_sram_data |= tag_hit[i] ? m1.m1_data_read : '0;
     end
     // sb_hit
-    for (genvar i = 0; i < SB_SIZE; i++) begin
-        sb_hit[i] = sb_entry[i].valid 
-        && (sb_entry[i].target_addr[31 : $clog2(WORD_SIZE/BYTE_SIZE)] == m1.p_addr[31 : $clog2(WORD_SIZE/BYTE_SIZE)]);
-        // && (m1.rmask & (sb_entry[i].wstrb | 4{tag_hit[0]} | 4{tag_hit[1]}) == m1.rmask);
+    m1_sb_data = '0;
+    logic [$clog2(SB_SIZE) - 1 : 0] ptr;
+    for (integer i = 0; i < SB_SIZE; i++) begin
+        ptr = i[$clog2(SB_SIZE) - 1 : 0] + sb_ptr;
+        sb_hit[ptr] = sb_entry[ptr].valid 
+        && (sb_entry[ptr].target_addr[31 : $clog2(WORD_SIZE/BYTE_SIZE)] == m1.p_addr[31 : $clog2(WORD_SIZE/BYTE_SIZE)]);
+        if (sb_hit[ptr]) begin
+            m1_sb_data  = '0;
+            m1_sb_data |= sb_entry[ptr].write_data;
+        end
     end
-    // snoop_hit
+    // choose data
+    m1_data_o = (|sb_hit) ? m1_sb_data : m1_sram_data;
     // TODO
-end 
+end
+// shift
+logic sign;
+always_comb begin
+    // m1_lsu_data
+    m1_lsu_data = '0;
+    sign        = '0;
+    if (m1.m1_iq_lsu_pkg.msized == 2'd0) begin
+        for (integer i = 0; i < 4; i++) begin
+            m1_lsu_data[7 : 0] |= m1.m1_iq_lsu_pkg.rmask[i] ? m1_data_o[8 * i + 7 : 8 * i] : '0;
+            sign               |= m1.m1_iq_lsu_pkg.rmask[i] ? m1_data_o[8 * i + 7]         : '0;
+        end
+        m1_lsu_data[31: 8] |= {24{sign & m1.m1_iq_lsu_pkg.msigned}};
+    end else if (m1.m1_iq_lsu_pkg.msized == 2'd1) begin
+        for (integer i = 0; i < 2; i++) begin
+            m1_lsu_data[15: 0] |= m1.m1_iq_lsu_pkg.rmask[2*i] ? m1_data_o[16 * i + 15 : 16 * i] : '0;
+            sign               |= m1.m1_iq_lsu_pkg.rmask[2*i] ? m1_data_o[16 * i + 15]          : '0;
+        end
+        m1_lsu_data[31:24] |= {16{sign & m1.m1_iq_lsu_pkg.msigned}};
+    end else begin
+        m1_lsu_data = m1_data_o;
+    end
+end
+
+always_comb begin
+    cpu_lsu_resp.uncached = m1.m1_uncached;
+    cpu_lsu_resp.hit      = m1_hit;
+    cpu_lsu_resp.wid      = m1.m1_iq_lsu_pkg.wid;
+    cpu_lsu_resp.paddr    = m1.p_addr;
+    cpu_lsu_resp.rdata    = m1_lsu_data;
+    // exception
+end
 
 /***********************************M2**********************************/
 
