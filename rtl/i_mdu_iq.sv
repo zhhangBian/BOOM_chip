@@ -70,7 +70,7 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= iq_tail;
         free_cnt_q      <= free_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (free_cnt >= 2);
+        entry_ready_o   <= (free_cnt_q >= 2);
     end
 end
 

@@ -125,7 +125,7 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    entry_ready_o <= (free_cnt >= 1);
+    entry_ready_o <= (free_cnt_q >= 1);
 end
 
 always_ff @(posedge clk) begin
