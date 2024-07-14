@@ -182,7 +182,7 @@ always_ff @(posedge clk) begin
         if (r_p_sender.valid & r_p_sender.ready) begin
             r_p_pkg_o <= r_p_pkg_temp;
         end else begin
-            r_p_pkg_o <= r_p_pkg_o;
+            r_p_pkg_o <= '0;
         end
     end
 end
