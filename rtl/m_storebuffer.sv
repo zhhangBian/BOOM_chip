@@ -22,6 +22,7 @@ module storebuffer #(
 
     output  logic [SB_DEPTH_LEN - 1 : 0] sb_num,
     output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o,
+    output  logic [SB_DEPTH_LEN - 1 : 0] sb_oldest_ptr,
 
     handshake_if.receiver  sb_entry_receiver,
 

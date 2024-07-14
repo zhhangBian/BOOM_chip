@@ -85,7 +85,7 @@ logic [1 : 0][`ROB_WIDTH - 1 : 0] dispatch_preg_i;
 logic [1 : 0] dispatch_issue_i;
 always_comb begin
     // P级
-    for (genvar i = 0; i < 2; i++) begin
+    for (integer i = 0; i < 2; i++) begin
         dispatch_inst_i[i].areg  = dispatch_info_i[i].areg;
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
@@ -95,7 +95,7 @@ always_comb begin
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
     end
     // C级
-    for (genvar i = 0; i < 2; i++) begin
+    for (integer i = 0; i < 2; i++) begin
         commit_info_o[i].w_areg = commit_inst_o[i].areg;
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
         commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;
@@ -136,7 +136,7 @@ always_comb begin
     // P级
     rob_dispatch_o[1].rob_data = {dispatch_src1_data_o[1].data, dispatch_src1_data_o[0].data};
     rob_dispatch_o[0].rob_data = {dispatch_src0_data_o[1].data, dispatch_src0_data_o[0].data};
-    for (genvar i = 0; i < 2; i++) begin
+    for (integer i = 0; i < 2; i++) begin
         // cdb
         cdb_preg_i[i] = cdb_info_i[i].w_preg;
         cdb_valid_i[i] = cdb_info_i[i].w_valid;
@@ -176,7 +176,7 @@ logic [1 : 0][1 : 0]    rob_dispatch_complete_cdb_o;
 logic [1 : 0]           cdb_in_complete_o;      // 写的两项对应的结果
 
 always_comb begin
-    for (genvar i = 0 ; i < 2; i++) begin
+    for (integer i = 0 ; i < 2; i++) begin
         rob_dispatch_o[i].rob_complete = ~(rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]);
     end
     commit_info_o[0].c_valid = ~(commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
