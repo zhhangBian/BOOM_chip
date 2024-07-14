@@ -28,13 +28,13 @@ mdu_muler muler(
     .rst_n,
     .flush,
 
-    .req_i,
+    .req_i(req_i),
     .res_o(mul_res_o),
 
-    .valid_i,
+    .valid_i(valid_i),
     .ready_o(mul_read_o),
     .valid_o(mul_valid_o),
-    .ready_i
+    .ready_i(ready_i)
 );
 
 mdu_diver diver(
@@ -42,13 +42,13 @@ mdu_diver diver(
     .rst_n,
     .flush,
 
-    .req_i,
+    .req_i(req_i),
     .res_o(div_res_o),
 
-    .valid_i,
+    .valid_i(valid_i),
     .ready_o(div_ready_o),
     .valid_o(div_valid_o),
-    .ready_i
+    .ready_i(ready_i)
 );
 
 assign res_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?

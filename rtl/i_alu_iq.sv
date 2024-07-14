@@ -36,10 +36,10 @@ module alu_iq # (
     output  word_t          wkup_data_o,
     output  rob_id_t        wkup_reg_id_o,
     output  logic           wkup_valid_o,
+    
     // 区分了wkup和输入到后续FIFO的数据
     output  word_t          result_o,
-
-    // 后续的FIFO是否ready
+    // 与后续FIFO的握手信号
     input   logic           fifo_ready,
     output  logic           excute_valid_o
 );

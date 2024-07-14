@@ -31,15 +31,22 @@ module lsu_iq # (
     input   word_t  [WKUP_COUNT - 1:0] wkup_data_i,
     input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
     input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
-    
-    output  word_t          wkup_data_o,
-    output  rob_id_t        wkup_reg_id_o,
-    output  logic           wkup_valid_o,
-    // 区分了wkup和输入到后续FIFO的数据
-    output  word_t          result_o,
 
-    // 后续的FIFO是否ready
-    input   logic           fifo_ready
+    // 写Cache的握手数据
+    output  logic           iq_lsu_valid_o,
+    input   logic           iq_lsu_ready_i,
+    output  iq_lsu_pkg_t    iq_lsu_requst_o,
+
+    // 读Cache的握手信息
+    input   logic           lsu_iq_valid_i,
+    output  logic           lsu_iq_ready_o,
+    input   lsu_iq_pkg_t    lsu_iq_request_i,
+
+    // 读LSU的读出的数据
+    output  word_t          result_o,
+    // 与后续FIFO的握手信号
+    input   logic           fifo_ready,
+    output  logic           entry_valid_o
 );
 
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
@@ -169,7 +176,7 @@ end
 
 // ------------------------------------------------------------------
 // 生成执行信号
-assign excute_ready = (!excute_valid_q) || fifo_ready;
+assign excute_ready = (!excute_valid_q) || iq_lsu_ready_i;
 assign excute_valid = |entry_ready;
 
 always_ff @(posedge clk) begin
@@ -179,12 +186,6 @@ always_ff @(posedge clk) begin
     else begin
         if(excute_ready) begin
             excute_valid_q <= excute_valid;
-        end
-        else begin
-            // 上一周期结果有效且FIFO可以接收
-            if(excute_valid_q && fifo_ready) begin
-                excute_valid_q <= '0;
-            end
         end
     end
 end
@@ -289,8 +290,36 @@ data_wkup #(
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
+// 匹配给DCache的接口
+iq_lsu_pkg_t    iq_lsu_request;
+lsu_iq_pkg_t    lsu_iq_request;
 
-// 匹配给DCache的接口即可
+assign iq_lsu_valid_o   = excute_valid_q;
+assign lsu_iq_ready_o   = fifo_ready;
+assign entry_valid_o    = lsu_iq_valid_i;
+
+// 配置iq到lsu的信息
+always_comb begin
+    iq_lsu_request          = '0;
+    iq_lsu_request.strb     = select_di_q.strb;
+    iq_lsu_request.rmask    = select_di_q.rmask;
+    iq_lsu_request.cacop    = select_di_q.cacop;
+    iq_lsu_request.dbar     = select_di_q.dbar;
+    iq_lsu_request.llsc     = select_di_q.llsc;
+    iq_lsu_request.wid      = select_di_q.wreg_id;
+    iq_lsu_request.msigned  = select_di_q.msigned;
+    iq_lsu_request.msize    = select_di_q.msize;
+    // 约定0号为数据，1号为地址
+    iq_lsu_request.vaddr    = real_data[1];
+    iq_lsu_request.wdata    = real_data[0];
+end
+
+// 配置lsu到iq的信息，向FIFO输出
+always_comb begin
+    result_o = lsu_iq_request_i.rdata;
+    // TODO：加上提交所需的cache等信息
+end
+
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

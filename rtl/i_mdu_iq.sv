@@ -32,14 +32,12 @@ module mdu_iq # (
     input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
     input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
 
-    output  word_t          wkup_data_o,
-    output  rob_id_t        wkup_reg_id_o,
-    output  logic           wkup_valid_o,
     // 区分了wkup和输入到后续FIFO的数据
     output  word_t          result_o,
 
     // 后续的FIFO是否ready
-    input   logic           fifo_ready
+    input   logic           fifo_ready,
+    output  logic           entry_valid_o
 );
 
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
@@ -169,7 +167,7 @@ end
 
 // ------------------------------------------------------------------
 // 生成执行信号
-assign excute_ready = (!excute_valid_q) || fifo_ready;
+assign excute_ready = (!excute_valid_q) || mdu_ready_i;
 assign excute_valid = |entry_ready;
 
 always_ff @(posedge clk) begin
@@ -179,12 +177,6 @@ always_ff @(posedge clk) begin
     else begin
         if(excute_ready) begin
             excute_valid_q <= excute_valid;
-        end
-        else begin
-            // 上一周期结果有效且FIFO可以接收
-            if(excute_valid_q && fifo_ready) begin
-                excute_valid_q <= '0;
-            end
         end
     end
 end
@@ -293,6 +285,13 @@ data_wkup #(
 mud_i_t req_i;
 mdu_o_t res_o;
 
+logic   mdu_valid_i, mdu_ready_o;
+logic   mdu_valid_o, mdu_ready_i;
+
+assign mdu_valid_i  = excute_valid_q;
+assign entry_valid_o= mdu_valid_o;
+assign mdu_ready_i  = fifo_ready;
+
 always_comb begin
     req_i.data      = select_data_q;
     req_i.op        = op;
@@ -308,7 +307,12 @@ e_mdu mdu (
     .flush,
 
     .req_i(req_i),
-    .res_o(res_o)
+    .res_o(res_o),
+
+    .valid_i(mdu_valid_i),
+    .ready_o(mdu_ready_o),
+    .valid_o(mdu_valid_o),
+    .ready_i(mdu_ready_i),
 );
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
