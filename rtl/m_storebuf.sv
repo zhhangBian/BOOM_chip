@@ -9,8 +9,8 @@ out:|     addr        |     data     |   strb  |    1    |     1    |     1     
     commit   : 有没有提交
     complete : 有没有完成（后续优化）
 */
-// 非阻塞
-module storebuffer_ #(
+
+module storebuffer #(
     parameter int unsigned SB_SIZE = 4, //默认大小为4，后续配置可更改
     parameter int unsigned SB_DEPTH_LEN = $clog2(SB_SIZE)
 ) (
@@ -112,17 +112,5 @@ end
 assign sb_entry_receiver.ready = (sb_cnt_q < SB_SIZE);
 assign sb_entry_sender.valid   = sb_entry_inst[sb_ptr_tail_q].valid & sb_entry_inst[sb_ptr_tail_q].commit; 
 
-
-// sb的数据在commit之后会提交到fifo里面，fifo选择指令提交，若fifo暂时为空，则相当于通路。
-// fifo #(
-//     .DATA_WIDTH($bits(sb_entry_t)),
-//     .DEPTH(SB_SIZE),
-//     .BYPASS(1)
-// ) sb_out_fifo (
-//     .clk,
-//     .rst_n,
-//     .receiver(sb_entry_sender.receiver),
-//     .sender(sb_fifo_entry_sender.sender)
-// )
 
 endmodule

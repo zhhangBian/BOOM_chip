@@ -216,7 +216,34 @@ typedef struct packed {
     logic [3  : 0] wstrb;
     logic          valid;
     logic          commit;
+    logic          uncached;
+    logic [1  : 0] hit;
     // logic          complete;
 } sb_entry_t;
+
+/**************************lsu pkg*************************/
+typedef struct packed {
+    logic  [3:0]  strb;
+    logic  [3:0] rmask;            // 需要读的字节
+    inv_parm_e   cacop;
+    logic         dbar;            // 显式 dbar
+    logic         llsc;            // LL 指令，需要写权限
+    rob_id_t       wid;            // 写回地址
+    logic      msigned;            // 有符号拓展
+    logic  [1:0] msize;            // 访存大小-1
+    logic [31:0] vaddr;            // 虚拟地址
+    logic [31:0] wdata;            // 写数据
+} iq_lsu_pkg_t;
+
+// LSU 到 LSU IQ 的响应
+typedef struct packed {
+//   lsu_excp_t   excp;
+//   fetch_excp_t f_excp;
+  logic        uncached;
+  logic        hit;
+  rob_rid_t    wid;     // 写回地址
+  logic[31:0]  paddr;
+  logic[31:0]  rdata;   
+} lsu_iq_resp_t;
 
 `endif

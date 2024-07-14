@@ -1,30 +1,6 @@
 `include "a_defines.svh"
 
 typedef struct packed {
-    logic  [3:0]  strb;
-    logic  [3:0] rmask;            // 需要读的字节
-    inv_parm_e   cacop;
-    logic         dbar;            // 显式 dbar
-    logic         llsc;            // LL 指令，需要写权限
-    rob_id_t       wid;            // 写回地址
-    logic      msigned;            // 有符号拓展
-    logic  [1:0] msize;            // 访存大小-1
-    logic [31:0] vaddr;            // 虚拟地址
-    logic [31:0] wdata;            // 写数据
-} iq_lsu_pkg_t;
-
-// LSU 到 LSU IQ 的响应
-typedef struct packed {
-//   lsu_excp_t   excp;
-//   fetch_excp_t f_excp;
-  logic        uncached;
-  logic        hit;
-  rob_rid_t    wid;     // 写回地址
-  logic[31:0]  paddr;
-  logic[31:0]  rdata;   
-} lsu_iq_resp_t;
-
-typedef struct packed {
     logic [19 : 0] tag;
     logic          v;
     logic          d;
@@ -43,16 +19,15 @@ module dcache #(
     input flush_i,
 
     input csr_t csr_i,
-
     // cpu侧信号
     handshake_if.receiver cpu_lsu_receiver,
     output lsu_iq_resp_t  cpu_lsu_resp
+    // commit级信号
+    // 请求
 )
 /*******************************global*********************************/
 logic stall, stall_q;
-always_ff @(posedge clk) begin
-    stall_q <= stall;
-end
+logic fsm_stall;
 
 iq_lsu_pkg_t iq_lsu_pkg;
 assign iq_lsu_pkg = cpu_lsu_receiver.data;
@@ -216,7 +191,7 @@ always_comb begin
     sb_entry_i.commit      = '0;
 end
 assign sb_lsu_receiver.data  = sb_entry_i;
-assign sb_lsu_receiver.valid = |sb_entry_i.wstrb;
+assign sb_lsu_receiver.valid = |sb_entry_i.wstrb & !stall;
 
 storebuffer #(
     .SB_SIZE(SB_SIZE)
@@ -278,6 +253,13 @@ always_comb begin
     end
 end
 
+
+assign stall = !sb_lsu_receiver.ready | fsm_stall;
+always_ff @(posedge clk) begin
+    stall_q <= stall;
+end
+assign cpu_lsu_receiver.ready = !stall;
+
 always_comb begin
     cpu_lsu_resp.uncached = m1.m1_uncached;
     cpu_lsu_resp.hit      = m1_hit;
@@ -287,18 +269,55 @@ always_comb begin
     // exception
 end
 
+
 /***********************************M2**********************************/
-
-
-
-
-
 // M2 级， 根据命中情况输入状态机，
 // 如果命中或者为store指令，则输出给lsu
 // FSM: IDLE(空闲)， NORMAL(正常工作)，MISS_DIRTY(缺失且选中路脏位为1)，
 // MISS_REFILL(向总线侧发重填请求)，REFILL(开始重填)，WRITE_BACK(SB数据写回)……
 // IDLE和NORMAL之外的状态阻塞之前的指令
 // 当storebuffer有指令需要提交写入CACAHE里，阻塞LSU
+typedef enum logic[3 : 0] {
+    IDLE,
+    MISS,    // handle miss refill
+    UNLOAD,  // uncached load
+    UNSTORE, // uncached store
+} fsm;
+fsm cur_fsm_q, next_fsm;
+always_ff @(posedge clk) begin
+    if (!rst_n) begin
+        cur_fsm_q <= IDLE;
+    end else begin
+        cur_fsm_q <= next_fsm;
+    end
+end
+always_comb begin
+    case cur_fsm_q
+        IDLE: begin
+            fsm_stall = '0;
+            next_fsm  = IDLE;
+            // 如果有缺失重填请求
+            if (/*miss and refill*/) begin
+                fsm_stall = '1;
+                next_fsm  = MISS;
+            end else if (/*uncached load*/) begin
+                fsm_stall = '1;
+                next_fsm  = UNLOAD;
+            end else if (/*uncached store*/) begin
+                fsm_stall = '1;
+                next_fsm  = UNSTORE;
+            end
+        end
+        MISS: begin
+            // 取tag，判断脏位
+        end
+        UNLOAD: begin
 
+        end
+        UNSTORE: begin
+
+        end
+    endcase
+end
 
 endmodule
