@@ -110,7 +110,7 @@ registers_file_banked #(
     .R_PORT_COUNT(2),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
-    .NEED_RESET(1)
+    .NEED_RESET(0)
 ) rob_inst_table (
     .clk,
     .rst_n(rst_n & !flush_i),
@@ -154,7 +154,7 @@ registers_file_banked #(
     .R_PORT_COUNT(6),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
-    .NEED_RESET(1)
+    .NEED_RESET(0)
 ) rob_data_table (
     .clk,
     .rst_n(rst_n & !flush_i),
@@ -190,7 +190,7 @@ registers_file_banked # (
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
-    .NEED_RESET(1)
+    .NEED_RESET(0)
 ) dispatch_valid_table (
     .clk,
     .rst_n(rst_n & !flush_i),
@@ -210,7 +210,7 @@ registers_file_banked # (
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
-    .NEED_RESET(1)
+    .NEED_RESET(0)
 ) cdb_valid_table (
     .clk,
     .rst_n(rst_n & !flush_i),
