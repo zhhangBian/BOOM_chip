@@ -29,7 +29,7 @@ assign r_p_receiver.ready = (&alu_ready) & lsu_ready & mdu_ready;
 assign r_p_pkg            = r_p_receiver.data;
 r_p_pkg_t   r_p_pkg;
 always_comb begin
-    for (genvar i = 0; i < 2; i++) begin
+    for (integer i = 0; i < 2; i++) begin
         dispatch_rob_o[i].areg      = r_p_pkg.areg[i];
         dispatch_rob_o[i].preg      = r_p_pkg.preg[i];
         dispatch_rob_o[i].src_preg  = {r_p_pkg.src_preg[i * 2 + 1],r_p_pkg.src_preg[i * 2]};
@@ -56,10 +56,10 @@ logic [3 : 0]         rob_data_hit;
 assign rob_data_issue = {rob_dispatch_i[1].rob_data, rob_dispatch_i[0].rob_data};
 assign rob_data_hit   = {rob_dispatch_i[1].rob_complete, rob_dispatch_i[0].rob_complete};
 always_comb begin
-    for (genvar i = 0; i < 4; i++) begin
+    for (integer i = 0; i < 4; i++) begin
         cdb_data_issue[i] = '0;
         cdb_data_hit[i]   = '0;
-        for (genvar j = 0; j < 2; j++) begin
+        for (integer j = 0; j < 2; j++) begin
             if (cdb_dispatch_i[j].w_preg == r_p_pkg.src_preg[i] 
                 && cdb_dispatch_i[j].w_reg == '1) begin
                 cdb_data_issue[i] |= cdb_dispatch_i[j].w_data;
@@ -74,7 +74,7 @@ logic [3 : 0][31: 0] rob_data;
 logic [3 : 0][31: 0] sel_data;
 logic [3 : 0]        data_valid; 
 always_comb begin
-    for (genvar i = 0; i < 4; i++) begin
+    for (integer i = 0; i < 4; i++) begin
         gen_data[i] = r_p_pkg.use_imm[i]? r_p_pkg.data_imm[i[1]] : r_p_pkg.arf_data[i];
         rob_data[i] = cdb_data_hit[i]   ? cdb_data_issue[i] : rob_data_issue[i];
         sel_data[i] = r_p_pkg.data_valid[i] ? gen_data[i] : rob_data[i];
@@ -89,9 +89,9 @@ end
 // lsu : 可同时发两条
 logic [1 : 0][1 : 0] choose_alu;
 always_comb begin
-    for (genvar i = 0; i < 2; i++) begin
+    for (integer i = 0; i < 2; i++) begin
         choose_alu[i] = '0;
-        for (genvar j = 0; j < 2; j++) begin
+        for (integer j = 0; j < 2; j++) begin
             if ((r_p_pkg.alu_type) & (r_p_pkg.preg[j][0] == i[0]) & (r_p_pkg.r_valid[j])) begin
                 choose_alu[i][j[0]] |= '1;
             end
@@ -104,7 +104,7 @@ logic [1 : 0] choose_lsu;
 always_comb begin
     choose_mdu = '0;
     choose_lsu = '0;
-    for (genvar j = 0; j < 2; j++) begin
+    for (integer j = 0; j < 2; j++) begin
         if ((r_p_pkg.mdu_type) & (r_p_pkg.r_valid[j])) begin
             choose_mdu[j[0]] |= '1;
         end
@@ -131,7 +131,7 @@ p_i_pkg_t [3 : 0] p_i_pkg_q; // 握手缓存
 
 
 always_comb begin
-    for (genvar i = 0; i < 4; i++) begin
+    for (integer i = 0; i < 4; i++) begin
         p_i_pkg[i].data = sel_data;
         p_i_pkg[i].preg = r_p_pkg.src_preg;
         p_i_pkg[i].data_valid = data_valid;

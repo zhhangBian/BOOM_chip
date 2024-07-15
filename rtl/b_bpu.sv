@@ -55,7 +55,7 @@ module b_bpu(
     input  logic            ready_i,
     output logic            valid_o,
 
-    input  correct_info_t     correct_info_i, // 后端反馈的修正信息
+    input  correct_info_t    correct_info_i, // 后端反馈的修正信息
 
     output logic [31:0 ]    pc_o, // 指令PC，传递给ICACHE
     output logic [ 1:0 ]    mask_o, // 掩码，表示当前的两条指令中那一条需要被取出来。比如2'b10表明偶数PC需要取，而奇数PC不需要
