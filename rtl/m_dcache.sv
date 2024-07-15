@@ -17,7 +17,7 @@ module dcache #(
     input clk,
     input rst_n,
     input flush_i,
-
+    // 控制信息
     input csr_t csr_i,
     // cpu侧信号
     handshake_if.receiver cpu_lsu_receiver,
