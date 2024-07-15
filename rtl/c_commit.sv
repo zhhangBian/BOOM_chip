@@ -38,5 +38,7 @@ assign commit_request_o[1] = rob_commit_i[0].c_valid
 // cache维护指令
 // dbar, ibar
 
+csr_t csr;
+tlb_entry_t [63 : 0] tlb_entrys;
 
 endmodule

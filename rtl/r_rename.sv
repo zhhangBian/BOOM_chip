@@ -80,7 +80,7 @@ assign r_rarid = d_r_receiver.data.arftable.r_arfid;
 assign r_warid = d_r_receiver.data.arftable.w_arfid;
 assign r_issue = d_r_receiver.data.r_valid & 
                 {d_r_receiver.valid, d_r_receiver.valid} & 
-                {r_p_sender.ready, r_p_sender.ready};
+                {d_r_receiver.ready, d_r_receiver.ready};
 assign r_wrobid = {rob_ptr2_q, rob_ptr1_q};
 
 for (genvar i = 0; i < 4; i++) begin

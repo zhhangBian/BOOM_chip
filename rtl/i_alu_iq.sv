@@ -18,9 +18,9 @@ module alu_iq # (
     // 控制信息
     input   logic   [DISPATCH_CNT - 1:0] choose,
     input   decode_info_t [DISPATCH_CNT - 1:0] p_di_c,
-    input   word_t  [DISPATCH_CNT - 1:0] p_data_c,
-    input   rob_id_t[DISPATCH_CNT - 1:0] p_reg_id_c,
-    input   logic   [DISPATCH_CNT - 1:0] p_valid_c,
+    input   word_t  [DISPATCH_CNT - 1:0][1:0] p_data_c,
+    input   rob_id_t[DISPATCH_CNT - 1:0][1:0] p_reg_id_c,
+    input   logic   [DISPATCH_CNT - 1:0][1:0] p_valid_c,
     // IQ的ready含义是队列未满，可以继续接收指令
     output  logic   entry_ready_o,
 
@@ -45,9 +45,9 @@ module alu_iq # (
 );
 
 decode_info_t   p_di_i;
-word_t          p_data_i;
-rob_id_t        p_reg_id_i;
-logic           p_valid_i;
+word_t [1:0]    p_data_i;
+rob_id_t [1:0]  p_reg_id_i;
+logic [1:0]     p_valid_i;
 
 always_comb begin
     p_di_i      = '0;
@@ -314,15 +314,25 @@ e_jump jump(
 );
 
 assign jump_o   = e_jump_o;
-assign result_o = jump_o ? e_jump_result : e_alu_result;
+
+word_t result, result_q;
+assign result = jump_o ? e_jump_result : e_alu_result;
 
 // 配置wkup的输出信息
 always_ff @(posedge clk) begin
-    e_alu_result_q <= e_alu_result;
+    if(flush || ~rst_n) begin
+        e_alu_result <= '0;
+        result_q     <= '0; 
+    end
+    else begin
+        e_alu_result_q  <= e_alu_result;
+        result_q        <= result;
+    end
 end
 
 assign wkup_data_o = e_alu_result_q;
-assign excute_valid_o = excute_valid;
+assign excute_valid_o = excute_valid_q;
+assign result_o = result_q;
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 endmodule
