@@ -179,8 +179,8 @@ always_comb begin
     for (integer i = 0 ; i < 2; i++) begin
         rob_dispatch_o[i].rob_complete = ~(rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]);
     end
-    commit_info_o[0].c_valid = ~(commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
-    commit_info_o[1].c_valid = ~(commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1);
+    commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
+    commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1);
 end
 
 // P级写
@@ -194,13 +194,13 @@ registers_file_banked # (
 ) dispatch_valid_table (
     .clk,
     .rst_n(rst_n & !flush_i),
-    .raddr_i({dispatch_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
-    .rdata_o({dispatch_in_complete_o, commit_complete_p_o, rob_dispatch_complete_p_o}),
+    .raddr_i({cdb_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
+    .rdata_o({cdb_in_complete_o, commit_complete_p_o, rob_dispatch_complete_p_o}),
 
     .waddr_i(dispatch_preg_i),
     .we_i(dispatch_issue_i),
     // 将相应位置反
-    .wdata_i(~dispatch_in_complete_o)
+    .wdata_i(dispatch_in_complete_o)
 );
 
 // CDB级写
@@ -214,8 +214,8 @@ registers_file_banked # (
 ) cdb_valid_table (
     .clk,
     .rst_n(rst_n & !flush_i),
-    .raddr_i({cdb_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
-    .rdata_o({cdb_in_complete_o, commit_complete_cdb_o, rob_dispatch_complete_cdb_o}),
+    .raddr_i({dispatch_preg_i, tail_ptr1_q, tail_ptr0_q, dispatch_info_i[1].src_preg, dispatch_info_i[0].src_preg}),
+    .rdata_o({dispatch_in_complete_o, commit_complete_cdb_o, rob_dispatch_complete_cdb_o}),
 
     .waddr_i(cdb_preg_i),
     .we_i(cdb_valid_i),
