@@ -147,7 +147,7 @@ for (genvar i = 0; i < REG_COUNT; i += 1) begin
             end
         end
         else begin
-            if(((|cdb_hit[i]) | (wkup_hit[i])) & entry_valid) begin
+            if(((|cdb_hit[i]) | (|wkup_hit[i])) & entry_valid) begin
                 data_ready[i] = '1;
             end
         end

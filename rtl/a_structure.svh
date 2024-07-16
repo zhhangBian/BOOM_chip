@@ -239,11 +239,22 @@ typedef struct packed {
 typedef struct packed {
 //   lsu_excp_t   excp;
 //   fetch_excp_t f_excp;
-  logic        uncached;
-  logic        hit;
-  rob_rid_t    wid;     // 写回地址
-  logic[31:0]  paddr;
-  logic[31:0]  rdata;   
+    logic        uncached;
+    logic        hit;
+    rob_rid_t    wid;     // 写回地址
+    logic[31:0]  paddr;
+    logic[31:0]  rdata;   
 } lsu_iq_resp_t;
+
+// commit与DCache的交互
+typedef struct packed {
+    logic   [31:0]  addr;
+    logic   [31:0]  data;
+    logic   [3:0]   strb;
+} commit_cache_req_t;
+
+typedef struct packed {
+    
+} cache_commit_resp_t;
 
 `endif
