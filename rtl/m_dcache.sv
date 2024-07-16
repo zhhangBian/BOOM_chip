@@ -124,8 +124,11 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         .rdata1_o(rdata1)
     );
 end  
+/**************************HIT DATA***************************/
+logic [31 : 0] tmp_data;
 
 /*************************M1 SB INST**************************/
+logic      [31          : 0] sb_tmp_data; // , sb_w_data;  
 sb_entry_t [SB_SIZE - 1 : 0] sb_entry;
 sb_entry_t                   w_sb_entry, r_sb_entry;
 // sb_entry_t                   top_sb_entry;
@@ -152,18 +155,64 @@ storebuffer #(
 
 /*************************M1 HIT LOGIC************************/
 logic      [WAY_NUM - 1 : 0]  tag_hit;
-logic [3:0][SB_SIZE - 1 : 0]  sb_hit; //one hot
+logic      [31          : 0]  ram_tmp_data;
+logic      [3           : 0]  sb_hit; //one hot
+logic      [3           : 0]  byte_hit; // one hot
 // TAG HIT LOGIC
 always_comb begin
+    tag_hit = '0;
+    ram_tmp_data = '0;
     for (integer i = 0; i < WAY_NUM; i++) begin
-        tag_hit[i] = (tag_ans0[i].tag == ppn);
+        if (tag_ans0[i].tag == ppn) begin
+            tag_hit[i] |= '1;
+            ram_tmp_data  = '0;
+            ram_tmp_data |= data_ans0[i];
+        end
     end
 end
 always_comb begin
     sb_hit = '0;
+    sb_tmp_data = '0;
     for (integer i = 0; i < SB_SIZE; i++) begin
-        if (sb_entry[i].)
+        for (integer j = 0; j < 4; j++) begin
+            if (sb_entry[i].valid & sb_entry[i].wstrb[j] & (sb_entry[i].target_addr[31:2] == pa[31:2])) begin
+                sb_hit[j]     = '0;
+                sb_tmp_data[8*j+7:8*j]  = '0;
+                sb_tmp_data[8*j+7:8*j] |= sb_entry[i].write_data[8*j+7:8*j];
+            end
+        end
     end
 end
+always_comb begin
+    byte_hit = '0;
+    for (integer i = 0; i < 4 ;i++) begin
+        byte_hit[i] |= (|tag_hit) | (sb_hit[i]);
+    end
+end
+assign tmp_data[7 : 0] = sb_hit[0] ? sb_tmp_data[7 : 0] : ram_tmp_data[7 : 0];
+assign tmp_data[15: 8] = sb_hit[1] ? sb_tmp_data[15: 8] : ram_tmp_data[15: 8];
+assign tmp_data[23:16] = sb_hit[2] ? sb_tmp_data[23:16] : ram_tmp_data[23:16];
+assign tmp_data[31:24] = sb_hit[3] ? sb_tmp_data[31:24] : ram_tmp_data[31:24];
+/*************************SB WRITE DATA*********************/
+// SB WRITE DATA
+always_comb begin
+    w_sb_entry.target_addr = paddr;
+    w_sb_entry.write_data  = m1_iq_lsu_pkg.wdata;
+    w_sb_entry.wstrb       = m1_iq_lsu_pkg.strb;
+    w_sb_entry.valid       = '1;
+    w_sb_entry.uncached    = /* TODO MMU结果 */
+    w_sb_entry.hit         = tag_hit;
+end
+/**************************LW VALID*************************/
+logic lw_valid;
+assign lw_valid = ((m1_iq_lsu_pkg.rmask & byte_hit) == m1_iq_lsu_pkg.rmask);
+
+/***************************handshake***********************/
+assign cpu_lsu_receiver.ready = lsu_cpu_sender.ready & sb_entry_receiver.ready & !stall & !flush_i;
+logic valid_q;
+always_ff @(posedge clk) begin
+    valid_q <= cpu_lsu_receiver.valid;
+end
+assign lsu_cpu_sender.valid = valid_q & !stall_q & !flush_i;
 
 endmodule;
