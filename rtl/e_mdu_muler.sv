@@ -59,7 +59,7 @@ always_ff @(posedge clk) begin
   end
 end
 
-assign ready_o = ready_i;
+// assign ready_o = ready_i;
 assign valid_o = valid_s_3;
 assign res_o.reg_addr = reg_addr_s_3;
 
