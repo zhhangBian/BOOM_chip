@@ -32,73 +32,73 @@
 `define _CSR_DMW1      (9'h181)
 
 typedef struct packed {
-  logic [31:0] crmd     ;
-  logic [31:0] prmd     ;
-  logic [31:0] euen     ;
-  logic [31:0] ectl     ;
-  logic [31:0] estat    ;
-  logic [31:0] era      ;
-  logic [31:0] badv     ;
-  logic [31:0] eentry   ;
-  logic [31:0] tlbidx   ;
-  logic [31:0] tlbehi   ;
-  logic [31:0] tlbelo0  ;
-  logic [31:0] tlbelo1  ;
-  logic [31:0] asid     ;
-  logic [31:0] pgdl     ;
-  logic [31:0] pgdh     ;
-  logic [31:0] cpuid    ;
-  logic [31:0] save0    ;
-  logic [31:0] save1    ;
-  logic [31:0] save2    ;
-  logic [31:0] save3    ;
-  logic [31:0] tid      ;
-  logic [31:0] tcfg     ;
-  logic [31:0] tval     ;
-  logic [31:0] ticlr    ;
-  logic [31:2] llbctl   ;
-  logic        llbit    ;
-  logic [31:0] tlbrentry;
-  logic [31:0] dmw0     ;
-  logic [31:0] dmw1     ;
+    logic [31:0] crmd     ;
+    logic [31:0] prmd     ;
+    logic [31:0] euen     ;
+    logic [31:0] ectl     ;
+    logic [31:0] estat    ;
+    logic [31:0] era      ;
+    logic [31:0] badv     ;
+    logic [31:0] eentry   ;
+    logic [31:0] tlbidx   ;
+    logic [31:0] tlbehi   ;
+    logic [31:0] tlbelo0  ;
+    logic [31:0] tlbelo1  ;
+    logic [31:0] asid     ;
+    logic [31:0] pgdl     ;
+    logic [31:0] pgdh     ;
+    logic [31:0] cpuid    ;
+    logic [31:0] save0    ;
+    logic [31:0] save1    ;
+    logic [31:0] save2    ;
+    logic [31:0] save3    ;
+    logic [31:0] tid      ;
+    logic [31:0] tcfg     ;
+    logic [31:0] tval     ;
+    logic [31:0] ticlr    ;
+    logic [31:2] llbctl   ;
+    logic        llbit    ;
+    logic [31:0] tlbrentry;
+    logic [31:0] dmw0     ;
+    logic [31:0] dmw1     ;
 // 浮点部分扩展
 //   logic [31:0] fcsr;
 //   logic         fcc;
 } csr_t;
 
 typedef struct packed {
-  logic [18:0] vppn;
-  // logic [ 5:0] ps  ;
-  logic   huge_page;
-  logic        g   ;
-  logic [ 9:0] asid;
-  logic        e   ;
+    logic [18:0] vppn;
+    // logic [ 5:0] ps  ;
+    logic   huge_page;
+    logic        g   ;
+    logic [ 9:0] asid;
+    logic        e   ;
 } tlb_key_t;
 
 typedef struct packed{
-  logic [19:0] ppn;
-  logic [ 1:0] plv;
-  logic [ 1:0] mat;
-  logic        d  ;
-  logic        v  ;
+    logic [19:0] ppn;
+    logic [ 1:0] plv;
+    logic [ 1:0] mat;
+    logic        d  ;
+    logic        v  ;
 } tlb_value_t;
 
 typedef struct packed {
-  logic                               dmw  ;
-  logic                               found;
-  logic [$clog2(`_WIRED_PARAM_TLB_CNT)-1:0] index;
-  logic [                        5:0] ps   ;
-  tlb_value_t                         value;
+    logic                               dmw  ;
+    logic                               found;
+    logic [$clog2(`_WIRED_PARAM_TLB_CNT)-1:0] index;
+    logic [                        5:0] ps   ;
+    tlb_value_t                         value;
 } tlb_s_resp_t;
 
 typedef struct packed {
-  tlb_key_t         key  ;
-  tlb_value_t [1:0] value;
+    tlb_key_t         key  ;
+    tlb_value_t [1:0] value;
 } tlb_entry_t;
 
 typedef struct packed {
-  logic[`_WIRED_PARAM_TLB_CNT - 1 : 0] tlb_we;
-  tlb_entry_t tlb_w_entry;
+    logic[`_WIRED_PARAM_TLB_CNT - 1 : 0] tlb_we;
+    tlb_entry_t tlb_w_entry;
 } tlb_update_req_t;
 
 //INSTR
