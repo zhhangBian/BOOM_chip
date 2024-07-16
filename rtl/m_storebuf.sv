@@ -15,7 +15,8 @@ module storebuffer #(
     input   clk,
     input   rst_n,
     input   flush_i,
-    output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o,
+    output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o, //按照从旧到新的顺序
+    // output  sb_entry_t                   top_entry_o,
     handshake_if.receiver  sb_entry_receiver,
     handshake_if.sender    sb_entry_sender
 );
@@ -53,7 +54,13 @@ end
 sb_entry_t [SB_SIZE - 1 : 0] sb_entry_inst;
 sb_entry_t                   sb_entry_in;
 
-assign sb_entry_o = sb_entry_inst;
+// assign top_entry_o = sb_entry_inst[sb_ptr_head_q - '1];
+always_comb begin
+    for (integer i = 0; i < SB_SIZE; i++) begin
+        sb_entry_o[i] = sb_entry_inst[i[SB_DEPTH_LEN - 1:0] + sb_ptr_tail_q];
+    end
+end
+
 assign sb_entry_in = sb_entry_receiver.data;
 assign sb_entry_sender.data = sb_entry_inst[sb_ptr_tail_q];
 
