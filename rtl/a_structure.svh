@@ -215,7 +215,7 @@ typedef struct packed {
     logic [31 : 0] write_data;
     logic [3  : 0] wstrb;
     logic          valid;
-    logic          commit;
+    // logic          commit;
     logic          uncached;
     logic [1  : 0] hit;
     // logic          complete;

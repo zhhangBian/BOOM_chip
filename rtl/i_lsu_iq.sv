@@ -17,9 +17,9 @@ module lsu_iq # (
      // 控制信息
     input   logic [1:0]             choose,
     input   decode_info_t [1:0]     p_di_i,
-    input   word_t [1:0][1:0]       p_data_i,
-    input   rob_id_t [1:0][1:0]     p_reg_id_i,
-    input   logic [1:0][1:0]        p_valid_i,
+    input   word_t [1:0][REG_COUNT - 1:0]   p_data_i,
+    input   rob_id_t [1:0][REG_COUNT - 1:0] p_reg_id_i,
+    input   logic [1:0][REG_COUNT - 1:0]    p_valid_i,
     // IQ的ready含义是队列未满，可以继续接收指令
     output  logic                   entry_ready_o,
 
