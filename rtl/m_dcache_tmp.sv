@@ -133,6 +133,7 @@ typedef struct packed {
     logic [31 : 0] p_addr;
     cache_tag_t [WAY_NUM - 1 : 0] m1_tag_read;
     data_type   [WAY_NUM - 1 : 0] m1_data_read;
+    logic          m1_uncached;
     // else info
 } m1_pkg_t;
 

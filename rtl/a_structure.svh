@@ -244,7 +244,7 @@ typedef struct packed {
     rob_rid_t    wid;     // 写回地址
     logic[31:0]  paddr;
     logic[31:0]  rdata;   
-} lsu_iq_resp_t;
+} lsu_iq_pkg_t;
 
 // commit与DCache的交互
 typedef struct packed {

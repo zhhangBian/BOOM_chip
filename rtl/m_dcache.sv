@@ -38,10 +38,26 @@ end
 // cpu传入数据
 iq_lsu_pkg_t iq_lsu_pkg;
 assign iq_lsu_pkg = cpu_lsu_receiver.data;
-
+trans_result_t trans_result;
 // mmu结果 TODO
+mmu #(
+    .TLB_ENTRY_NUM(64),
+    .TLB_SWITCH_OFF(0)
+) (
+    .clk,
+    .rst_n,
+    .flush_i,
+    .va(iq_lsu_pkg.vaddr),
+    .csr(csr_i),
+    .mem_type(), // ?
+    .trans_result_o(trans_result)
+);
 logic [31 : 0] paddr; // 假设从mmu打一拍传来的paddr
 logic [19 : 0] ppn;
+logic          uncache;
+assign paddr = trans_result.pa;
+assign ppn   = paddr[31:12];
+assign uncache = !trans_result.mat[0];
 //tlb传来的异常也应当与其一起
 
 
@@ -176,7 +192,7 @@ always_comb begin
     for (integer i = 0; i < SB_SIZE; i++) begin
         for (integer j = 0; j < 4; j++) begin
             if (sb_entry[i].valid & sb_entry[i].wstrb[j] & (sb_entry[i].target_addr[31:2] == pa[31:2])) begin
-                sb_hit[j]     = '0;
+                sb_hit[j]     |= '1;
                 sb_tmp_data[8*j+7:8*j]  = '0;
                 sb_tmp_data[8*j+7:8*j] |= sb_entry[i].write_data[8*j+7:8*j];
             end
@@ -200,7 +216,7 @@ always_comb begin
     w_sb_entry.write_data  = m1_iq_lsu_pkg.wdata;
     w_sb_entry.wstrb       = m1_iq_lsu_pkg.strb;
     w_sb_entry.valid       = '1;
-    w_sb_entry.uncached    = /* TODO MMU结果 */
+    w_sb_entry.uncached    = uncache/* MMU结果 */
     w_sb_entry.hit         = tag_hit;
 end
 /**************************LW VALID*************************/
@@ -209,10 +225,40 @@ assign lw_valid = ((m1_iq_lsu_pkg.rmask & byte_hit) == m1_iq_lsu_pkg.rmask);
 
 /***************************handshake***********************/
 assign cpu_lsu_receiver.ready = lsu_cpu_sender.ready & sb_entry_receiver.ready & !stall & !flush_i;
+
 logic valid_q;
 always_ff @(posedge clk) begin
     valid_q <= cpu_lsu_receiver.valid;
 end
+
 assign lsu_cpu_sender.valid = valid_q & !stall_q & !flush_i;
 
+lsu_iq_pkg_t lsu_iq_pkg;
+logic  [31 : 0] lw_data;
+always_comb begin
+    lw_data = '0;
+    sign    = '0;
+    if (m1_iq_lsu_pkg.msized == 2'd0) begin
+        for (integer i = 0; i < 4; i++) begin
+            lw_data[7 : 0]     |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7 : 8 * i] : '0;
+            sign               |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7]         : '0;
+        end
+        lw_data[31: 8]         |= {24{sign & m1_iq_lsu_pkg.msigned}};
+    end else if (m1_iq_lsu_pkg.msized == 2'd1) begin
+        for (integer i = 0; i < 2; i++) begin
+            lw_data[15: 0]     |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15 : 16 * i] : '0;
+            sign               |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15]          : '0;
+        end
+        lw_data[31:16]         |= {16{sign & m1_iq_lsu_pkg.msigned}};
+    end else begin
+        lw_data                |= tmp_data;
+    end
+end
+always_comb begin
+    lsu_iq_pkg.uncached = uncache;
+    lsu_iq_pkg.hit      = (lw_valid & (|m1_iq_lsu_pkg.rmask)) | (|tag_hit);
+    lsu_iq_pkg.wid      = m1_iq_lsu_pkg.wid;
+    lsu_iq_pkg.paddr    = paddr;
+    lsu_iq_pkg.rdata    = lw_data; //组合逻辑有点长，后续考虑拆两级流水
+end
 endmodule;
