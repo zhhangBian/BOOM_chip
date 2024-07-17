@@ -53,7 +53,7 @@ module commit #(
     input   cache_commit_resp_t cache_commit_resp_i,
     // 对应地址是否命中
     input   logic   cache_commit_dirty_i,
-    input   tag.    cache_commit_tag_i,     // TODO：返回了tag的信息
+    //input   tag.    cache_commit_tag_i,     // TODO：返回了tag的信息
     // commit与cache的握手信号
     input   logic   commit_cache_ready_i,
     output  logic   commit_cache_valid_o,
@@ -285,7 +285,6 @@ typedef enum logic[4:0] {
 // 3. miss -> 不需要写回通过AXI读相应的内容
 
 ls_fsm_s ls_fsm_q, ls_fsm;
-logic
 
 // 配置与Cache的握手信号
 logic commit_cache_valid, commit_cache_valid_q;
@@ -296,6 +295,9 @@ word_t [CACHE_BLOCK_NUM-1:0] axi_block_data;
 
 logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr, cache_block_len;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr, axi_block_len;
+
+logic [31:0] data_write_addr;
+logic [31:0] cache_dirty_addr;
 
 // 状态转移的组合逻辑
 always_comb begin
@@ -372,7 +374,6 @@ always_comb begin
             end
         end
     end
-    // OK NO PROBLEM!!! GOOD JOB
     else if(ls_fsm_q == S_UNCACHED) begin
         // UnCached只需要发起一次请求即可
         if(axi_commit_valid_i) begin
@@ -392,7 +393,7 @@ always_comb begin
         commit_cache_req.fetch_sb = '0;
 
         // 回到normal状态，取消提交级的阻塞
-        if(cahce_block_ptr == cache_block_len - 1) begin // bug 为什么这里不是等于cache_block_len，虽然也没问题，但是和其他块统一放在大的判断里面更舒服一点
+        if(cahce_block_ptr == cache_block_len) begin
             stall = '0;
         end
     end
@@ -405,7 +406,13 @@ always_comb begin
                 commit_cache_valid = '1;
                 commit_cache_req = commit_cache_req
             end
-            // bug else呢？
+            else begin
+                commit_axi_valid_o = '1;
+                // 对齐一个字的数据
+                commit_axi_req_q.addr = commit_axi_req.addr = commit_axi_req_q.addr + 4;
+                commit_axi_req.strb = '0;
+                commit_axi_req.rmask = '1;
+            end
         end
     end
 
@@ -419,7 +426,7 @@ always_comb begin
 
             commit_axi_req.data = cache_block_data[0];
             // 对齐一块的数据
-            commit_axi_req.addr = rob_commit_i[0].cache_dirty_addr & 32'hfffffff0;
+            commit_axi_req.addr = cache_dirty_addr & 32'hfffffff0;
             commit_axi_req.len = CACHE_BLOCK_NUM;
             commit_axi_req.strb = '1;
             commit_axi_req.rmask = '0;
@@ -441,9 +448,8 @@ always_comb begin
         if(axi_commit_valid_i) begin
             if(axi_block_ptr == axi_block_len) begin
                 commit_axi_valid_o = '1;
-           
                 // 设置相应的AXI数据
-                commit_axi_req.addr = lsu_info[0].addr; // bug 已经flush掉了，lsu_info[0]的数据已经消失掉了，正确做法是拿一个寄存器把信息存下来，在状态机里面用
+                commit_axi_req.addr = data_write_addr;
                 commit_axi_req.len = CACHE_BLOCK_NUM;
                 commit_axi_req.strb = '0;
                 commit_axi_req.rmask = '1;
@@ -482,6 +488,7 @@ always_ff @(posedge clk) begin
     else begin
         // normal状态 且 需要进入Cache状态机
         if(ls_fsm_q == S_NORMAL && is_lsu) begin
+            data_write_addr <= lsu_info[0].addr;
             // 如果是uncached请求，直接发起AXI请求
             if(is_uncached) begin
                 ls_fsm_q <= S_UNCACHED;
@@ -495,6 +502,8 @@ always_ff @(posedge clk) begin
                 // 读出Cache的整块数据，最后写回
                 if(cache_commit_dirty_i) begin
                     ls_fsm_q <= S_CACHE_RD;
+
+                    cache_dirty_addr <= rob_commit_i[0].cache_dirty_addr & 32'hfffffff0;
 
                     cache_block_ptr <= 0;
                     cache_block_len <= CACHE_BLOCK_NUM;
