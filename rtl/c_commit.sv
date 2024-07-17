@@ -261,7 +261,7 @@ logic commit_cache_valid, commit_cache_valid_q;
 assign commit_cache_valid_o = commit_cache_valid_q;
 
 word_t [CACHE_BLOCK_NUM-1:0] cache_block_data;
-word_r [CACHE_BLOCK_NUM-1:0] axi_block_data;
+word_t [CACHE_BLOCK_NUM-1:0] axi_block_data;
 
 logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr, cache_block_len;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr, axi_block_len;
@@ -435,9 +435,9 @@ always_ff @(posedge clk) begin
                     commit_axi_req_q.is_write <= 0;
                     commit_axi_req_q.is_read <= 1;
                 end
-                else begin
-                    // do nothing
-                end
+                
+                commit_axi_req_q.addr <= commit_axi_req_q.addr + 4;
+                commit_axi_req_q.data <= axi_block_data[axi_block_ptr];
             end
         end
 
