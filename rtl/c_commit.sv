@@ -71,6 +71,7 @@ end
 logic [1:0] is_lsu_write, is_lsu_read, is_lsu;
 logic [1:0] is_csr;
 logic [1:0] is_tlb;
+logic [1:0] is_uncached;
 
 // 与DCache的一级流水交互
 iq_lsu_pkg_t [1:0] lsu_info;
@@ -92,7 +93,6 @@ axi_commit_resp_t axi_commit_resp_q;
 
 logic [1:0][3:0] commit_cache_strb;
 logic [1:0][3:0] commit_cache_rmask;
-logic [1:0] is_uncached;
 
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
@@ -175,7 +175,7 @@ end
 
 // 对CSR信息的维护
 always_comb begin
-    
+
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -203,7 +203,9 @@ typedef enum logic[4:0] {
     // 通过AXI总线读出内容
     S_AXI_RD,
     // 写入Cache
-    S_CACHE
+    S_CACHE,
+    // UnCached情况下直接发起AXI请求
+    S_UNCACHED
 } ls_fsm_s;
 // 如果是is_uncached指令，直接发起AXI请求
 // 状态机流程：
@@ -243,8 +245,22 @@ always_ff @(posedge clk) begin
             // 在完成Cache前将提交阻塞
             stall_all <= '1;
 
+            // 如果是uncached请求，直接发起AXI请求
+            if(is_uncached) begin
+                ls_fsm_q <= S_AXI_WB;
+                commit_axi_valid_o <= '1;
+
+                axi_block_len <= 1;
+                axi_block_ptr <= 0;
+                axi_block_data <= lus_info[0].data;
+
+                commit_axi_req_q.addr <= lsu_info[0].addr;
+                commit_axi_req_q.len <= 1;
+                commit_axi_req_q.is_write <= |lsu_info[0].strb;
+                commit_axi_req_q.is_read <= |lsu_info[0].rmask;
+            end
             // Cache命中
-            if(cache_commit_hit_i) begin
+            else if(cache_commit_hit_i) begin
                 ls_fsm_q <= S_CACHE;
                 commit_cache_valid_q <= '1;
                 commit_cache_req_q <= commit_cache_req;
@@ -269,18 +285,30 @@ always_ff @(posedge clk) begin
                 end
                 // 发出AXI请求，直接读出数据
                 else begin
-                    ls_fsm_q <= S_AXI_RD;
-
+                    ls_fsm_q <= S_UNCACHED;
                     commit_axi_valid_o <= '1;
+
                     commit_axi_req_q.addr <= lsu_info[0].addr;
                     commit_axi_req_q.len <= CACHE_BLOCK_NUM;
                     commit_axi_req_q.is_write <= 0;
                     commit_axi_req_q.is_read <= 1;
 
                     axi_block_ptr <= '0;
-                    axi_block_len <= CACHE_BLOCK_NUM;
+                    axi_block_len <= 1;
                     axi_block_data <= '0;
                 end
+            end
+        end
+
+        else if(ls_fsm_q == S_UNCACHED) begin
+            if(axi_commit_valid_i) begin
+                ls_fsm_q <= S_NORMAL;
+                stall_all <= '0;
+
+                commit_axi_valid_o <= '0;
+                cache_block_ptr <= '0;
+                cache_block_len <= '0;
+                cache_block_data <= '0;
             end
         end
 
@@ -291,7 +319,7 @@ always_ff @(posedge clk) begin
                 commit_cache_req_q.data <= cache_block_data[cache_block_ptr + 1];
                 commit_cache_req_q.addr <= commit_cache_req_q.addr + 4;
                 cache_block_ptr <= cache_block_ptr + 1;
-                
+
                 // 回到normal状态，取消提交级的阻塞
                 if(cahce_ptr == cache_block_len - 1) begin
                     ls_fsm_q <= S_NORMAL;
@@ -309,7 +337,7 @@ always_ff @(posedge clk) begin
             if(axi_commit_valid_i) begin
                 axi_block_data[block_ptr] <= axi_commit_resp.data;
                 axi_block_ptr <= axi_block_ptr + 1;
-                
+
                 // AXI请求完成，进行下一步状态
                 if(axi_block_ptr == axi_block_len - 1) begin
                     ls_fsm_q <= S_CACHE;
@@ -336,7 +364,7 @@ always_ff @(posedge clk) begin
                     // 将读出的数据写回
                     ls_fsm_q <= S_AXI_WB;
                     commit_axi_valid_o <= '1;
-                    
+
                     axi_block_len <= CACHE_BLOCK_NUM;
                     axi_block_ptr <= 0;
                     axi_block_data <= cache_block_data;
@@ -424,7 +452,7 @@ _█░░░░░░░░░░█______█_███__█_____███_█_
 ░░░░░░░░░░░█████████░░░░░░░░░░░░░░██
 ░░░░░░░░░░█▒▒▒▒▒▒▒▒███████████████▒▒█
 ░░░░░░░░░█▒▒███████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
-░░░░░░░░░█▒▒▒▒▒▒▒▒▒█████████████████
+░░░░░░░░░█▒▒▒▒▒▒▒▒▒█████████████████          没有bug对吧
 ░░░░░░░░░░████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
 ░░░░░░░░░░░░░░░░░░██████████████████
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
