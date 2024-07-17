@@ -45,27 +45,27 @@ end
 always_comb begin
     case (op)
     `_BW_AND: begin
-        bw_result = r1_i & r0_i;
+        bw_result = r0_i & r1_i;
     end
 
     `_BW_OR: begin
-        bw_result = r1 | r0_i;
+        bw_result = r1 | r1_i;
     end
 
     `_BW_NOR: begin
-        bw_result = ~(r1_i | r0_i);
+        bw_result = ~(r0_i | r1_i);
     end
 
     `_BW_XOR: begin
-        bw_result = r1_i ^ r0_i;
+        bw_result = r0_i ^ r1_i;
     end
 
     `_BW_ANDN: begin
-        bw_result = r1_i & (~r0_i);
+        bw_result = r0_i & (~r1_i);
     end
 
     `_BW_NORN: begin
-        bw_result = r1_i | (~r0_i);
+        bw_result = r0_i | (~r1_i);
     end
 
     default: begin
@@ -78,11 +78,11 @@ end
 always_comb begin
     case (op)
     `_LI_LUI: begin
-        li_result = {r0_i[19:0], 12'0};
+        li_result = {r1_i[19:0], 12'0};
     end
 
     `_LI_PCADDUI: begin
-        li_result = {r0_i[19:0], 12'0} + pc_i;
+        li_result = {r1_i[19:0], 12'0} + pc_i;
     end
 
     default: begin
@@ -95,19 +95,19 @@ end
 always_comb begin
     case (op)
     `_INT_ADD: begin
-        int_result = r1_i + r0_i;
+        int_result = r0_i + r1_i;
     end
 
     `_INT_SUB: begin
-        int_result = r1_i - r0_i;
+        int_result = r0_i - r1_i;
     end
 
     `_INT_SLT: begin
-        int_result = ($signed(r1_i) < $signed(r0_i)) ? 1: 0;
+        int_result = ($signed(r0_i) < $signed(r1_i)) ? 1: 0;
     end
 
     `_INT_SLTU: begin
-        int_result = r1_i < r0_i ? 1 : 0;
+        int_result = r0_i < r1_i ? 1 : 0;
     end
 
     default: begin
@@ -120,19 +120,19 @@ end
 always_comb begin
     case (op)
     `_SFT_SLL: begin
-        sft_result = r1_i >> r0_i[4:0];
+        sft_result = r0_i >> r1_i[4:0];
     end
 
     `_SFT_SRL: begin
-        sft_result = r1_i << r0_i[4:0];
+        sft_result = r0_i << r1_i[4:0];
     end
 
     `_SFT_SLA: begin
-        sft_result = $signed($signed(r1_i) <<< $signed(r0_i[4:0]));
+        sft_result = $signed($signed(r0_i) <<< $signed(r1_i[4:0]));
     end
 
     `_SFT_SRA: begin
-        sft_result = $signed($signed(r1_i) >>> $signed(r0_i[4:0]));
+        sft_result = $signed($signed(r0_i) >>> $signed(r1_i[4:0]));
     end
 
     default: begin
