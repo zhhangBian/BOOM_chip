@@ -314,7 +314,7 @@ always_comb begin
             commit_axi_valid = '1;
             commit_axi_req.data = get_data_mask(
                 lsu_info[0].data, 
-                is_lsu_read[0] ? lsu[0].rmask ? lsu[0].strb);
+                is_lsu_read[0] ? lsu[0].rmask : lsu[0].strb);
             commit_axi_req.addr = lsu_info[0].addr;
             commit_axi_req.len  = 1;
             commit_axi_req.strb = lsu_info[0].strb;
@@ -360,7 +360,7 @@ always_comb begin
             else begin
                 commit_axi_valid_o = '1;
                 // 对齐一个字的数据
-                commit_axi_req_q.addr = lsu_info[0].addr & 32'hfffffffc;
+                commit_axi_req.addr = lsu_info[0].addr & 32'hfffffffc;
                 commit_axi_req.len = CACHE_BLOCK_NUM;
                 commit_axi_req.strb = '0;
                 commit_axi_req.rmask = lsu_info[i].rmask;
