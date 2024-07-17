@@ -325,6 +325,7 @@ always_comb begin
             commit_cache_req.addr = lsu_info[0].addr;
             // TODO way_hit
             commit_cache_req.tag_data = '0;
+            commit_cache_req.tag_we = '0;
             commit_cache_req.data_data = '0;
             commit_cache_req.strb = '0;
             // normal状态下未命中也要提交
@@ -349,6 +350,7 @@ always_comb begin
                 commit_cache_req.addr = rob_commit_i[0].cache_dirty_addr & 32'hfffffff0;
                 // TODO way_hit
                 commit_cache_req.tag_data = '0;
+                commit_cache_req.tag_we = '0;
                 commit_cache_req.data_data = '0;
                 commit_cache_req.strb = '0;
                 // normal状态下未命中也要提交
@@ -368,6 +370,7 @@ always_comb begin
                 commit_cache_req.addr = lsu_info[0].addr;
                 // TODO way_hit
                 commit_cache_req.tag_data = '0;
+                commit_cache_req.tag_we = '0;
                 commit_cache_req.data_data = '0;
                 commit_cache_req.strb = '0;
                 // normal状态下未命中也要提交
@@ -389,6 +392,7 @@ always_comb begin
         commit_cache_req.addr = commit_cache_req_q.addr + 4;
         // way hit
         commit_cache_req.tag_data = get_cache_tag(commit_cache_req.addr, 1, 0);
+        commit_cache_req.tag_we = '1;
         commit_cache_req.tag_we   = '1;
         commit_cache_req.data_data = cache_block_data[cache_block_ptr];
         commit_cache_req.strb = '1;
@@ -438,6 +442,7 @@ always_comb begin
             commit_cache_req.addr = commit_cache_req_q.addr + 4;
             // way hit
             commit_cache_req.tag_data = '0;
+            commit_cache_req.tag_we = '0;
             commit_cache_req.data_data = '0;
             commit_cache_req.strb = '0;
             commit_cache_req.fetch_sb = '0;
