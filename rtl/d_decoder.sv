@@ -1,12 +1,24 @@
 `include "a_decoder.svh"
 
+// 纯组合逻辑，D流水级的时序在顶层模块上，其实也就是在进来的时候打了一拍放到了FIFO中而已。
 module decoder (
-    input  wire             [1:0][31:0] insts_i,
-    input  wire             [1:0]       mask_i,
-    input  wire             [1:0][31:0] pc_i,
-    output decoder_info_t   [1:0]       decode_infos_o,
-    output d_r_pkg_t                    d_r_pkg_o
+    handshake_if.receiver               receiver, // f_d_pkg_t type
+    handshake_if.sender                 sender,
+
+    output decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
 );
+
+// input && output
+logic [1:0]         mask_i;
+logic [1:0][31:0]   pc_i;
+logic [1:0][31:0]   insts_i;
+d_r_pkg_t           d_r_pkg_o;
+
+assign mask_i = receiver.data.preict_info.mask;
+assign pc_i = receiver.data.preict_info.pc;
+assign insts_i = receiver.data.insts;
+
+assign sender.data = d_r_pkg_o;
 
 // 内置两个decoder
 for (genvar i = 0; i < 2; i++) begin

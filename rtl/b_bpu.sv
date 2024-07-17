@@ -48,19 +48,22 @@ endfunction
 
 /* ============================== MODULE BEGIN ============================== */
 
-module b_bpu(
+module bpu(
     input                   clk,
     input                   rst_n,
+    input                   g_flush, // TODO: g_flush is different from reset signal
 
-    input  logic            ready_i,
-    output logic            valid_o,
-
-    input  correct_info_t    correct_info_i, // 后端反馈的修正信息
-
-    output logic [31:0 ]    pc_o, // 指令PC，传递给ICACHE
-    output logic [ 1:0 ]    mask_o, // 掩码，表示当前的两条指令中那一条需要被取出来。比如2'b10表明偶数PC需要取，而奇数PC不需要
-    output predict_info_t   predict_info_o // 预测信息
+    input  correct_info_t   correct_info_i, // 后端反馈的修正信息
+    handshake_if.sender     sender,
 );
+
+logic ready_i;
+logic valid_o;
+predict_info_t predict_info_o;
+
+assign sender.data = predict_info_o; // 预测信息, 组合逻辑输出
+assign sender.valid = valid_o;
+assign ready_i = sender.ready;
 
 /* ============================== PC ============================== */
 logic [31:0 ] pc;
@@ -74,7 +77,8 @@ always_ff @(clk) begin : pc_logic
         pc <= npc;
     end
 end
-assign pc_o = pc;
+
+assign predict_info_o.pc = pc;
 
 /* ============================== BTB ============================== */
 // BTB 应当存储除了正常指令和 ret(JIRL) 类型指令以外的所有分支指令的目标地址
@@ -252,7 +256,7 @@ always_comb begin
     end
 end
 
-assign mask_o = mask;
+assign predict_info_o.mask = mask;
 
 // predict_info_o is with npc_logic
 

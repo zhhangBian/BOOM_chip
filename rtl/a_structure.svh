@@ -12,6 +12,8 @@ typedef enum logic[1:0] {
 } br_type_t;
 
 typedef struct packed {
+    logic [31:0 ]               pc; // 指令PC，传递给ICACHE
+    logic [ 1:0 ]               mask; // 掩码，表示当前的两条指令中那一条需要被取出来。比如2'b10表明偶数PC需要取，而奇数PC不需要
     logic [31:0 ]               target_pc;
     br_type_t                   br_type;
     logic                       taken;
@@ -46,7 +48,7 @@ typedef struct packed {
 
 typedef struct packed {
     logic                           valid;
-    logic  [`BPU_TAG_LEN-1 : 0]  tag;
+    logic  [`BPU_TAG_LEN-1 : 0]     tag;
     logic  [31:0]                   target_pc;
     branch_info_t                   br_info;
 } bpu_btb_entry_t;
@@ -61,6 +63,11 @@ typedef struct packed {
     logic           valid;
     logic  [1:0]    scnt;
 } bpu_pht_entry_t;
+
+typedef struct packed {
+    logic [1:0][31:0]   insts;
+    predict_info_t      predict_info;
+} f_d_pkg_t;
 
 typedef logic [`ARF_WIDTH - 1 :0] arf_id;
 typedef logic [`ROB_WIDTH - 1 :0] rob_id;
