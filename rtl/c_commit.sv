@@ -303,6 +303,7 @@ logic [31:0] cache_dirty_addr;
 always_comb begin
     stall = stall_q;
     commit_cache_req = commit_cache_req_q;
+    commit_cache_req.tag_we = '0;
     commit_axi_req = commit_axi_req_q;
 
     if(ls_fsm_q == S_NORMAL && is_lsu) begin
@@ -388,6 +389,7 @@ always_comb begin
         commit_cache_req.addr = commit_cache_req_q.addr + 4;
         // way hit
         commit_cache_req.tag_data = get_cache_tag(commit_cache_req.addr, 1, 0);
+        commit_cache_req.tag_we   = '1;
         commit_cache_req.data_data = cache_block_data[cache_block_ptr];
         commit_cache_req.strb = '1;
         commit_cache_req.fetch_sb = '0;

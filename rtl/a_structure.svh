@@ -277,7 +277,8 @@ typedef struct packed {
     // 向DCache发送Tag SRAM写请求
     logic   [31:0]  addr;
     logic   [1:0]   way_hit;    // TODO
-    cache_tag_t     tag_data;
+    cache_tag_t     tag_data;   
+    logic           tag_we;     // 写回tag使能信号
     // 向DCache发送Data SRAM请求
     logic   [31:0]  data_data;
     logic   [3:0]   strb;

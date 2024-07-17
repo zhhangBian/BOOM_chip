@@ -36,6 +36,10 @@ always_ff @(posedge clk) begin
     valid_q <= cpu_lsu_receiver.valid;
 end
 
+// commit 传入请求
+commit_cache_req_t commit_cache_req;
+// 传给commit的请求
+cache_commit_resp_t cache_commit_resp;
 // cpu传入数据
 iq_lsu_pkg_t iq_lsu_pkg;
 assign iq_lsu_pkg = cpu_lsu_receiver.data;
@@ -71,7 +75,7 @@ cache_tag_t [WAY_NUM - 1 : 0] tag_ans0, tag_ans1;
 for (genvar i = 0; i < WAY_NUM; i++) begin
     // conflict 逻辑
     logic conflict, conflict_q;
-    assign conflict = (va[11 : TAG_ADDR_LOW] == /* TODO commit请求的写地址*/ );
+    assign conflict = (va[11 : TAG_ADDR_LOW] == commit_cache_req.addr[11 : TAG_ADDR_LOW] /* commit请求的写地址*/ );
     always_ff @(posedge clk) begin
         conflict_q <= conflict;
     end 
@@ -95,10 +99,10 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
         // 1端口
         .clk1(clk),
         .rst_n1(rst_n),
-        .addr1_i(/* TODO commit请求 */),
+        .addr1_i(commit_cache_req.addr[11 : TAG_ADDR_LOW]/* commit请求 */),
         .en1_i('1),
-        .we1_i(/* TODO commit请求 */),
-        .wdata1_i(/* TODO commit请求 */),
+        .we1_i(commit_cache_req.way_hit[i] & commit_cache_req.tag_we/* commit请求 */),
+        .wdata1_i(commit_cache_req.tag_data/* commit请求 */),
         .rdata1_o(rtag1)
     );
 end
@@ -114,7 +118,7 @@ logic [WAY_NUM - 1 : 0][DATA_WIDTH - 1 : 0] data_ans0, data_ans1;
 for (genvar i = 0 ; i < WAY_NUM ; i++) begin
     // conflict 逻辑
     logic conflict, conflict_q;
-    assign conflict = (va[11 : DATA_ADDR_LOW] == /* TODO commit请求的写地址*/ );
+    assign conflict = (va[11 : DATA_ADDR_LOW] == commit_cache_req.addr[11 : DATA_ADDR_LOW]/* commit请求的写地址*/ );
     always_ff @(posedge clk) begin
         conflict_q <= conflict;
     end 
@@ -138,10 +142,10 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         // 1端口
         .clk1(clk),
         .rst_n1(rst_n),
-        .addr1_i(/* TODO commit请求 */),
+        .addr1_i(commit_cache_req.addr[11 : DATA_ADDR_LOW]/* commit请求 */),
         .en1_i('1),
-        .we1_i(/* TODO commit请求 */),
-        .wdata1_i(/* TODO commit请求 */),
+        .we1_i({4{commit_cache_req.way_hit[i]}} & commit_cache_req.strb/* commit请求 */),
+        .wdata1_i(commit_cache_req.data_data/* commit请求 */),
         .rdata1_o(rdata1)
     );
 end  
