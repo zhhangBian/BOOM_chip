@@ -353,7 +353,7 @@ always_comb begin
         commit_cache_req.fetch_sb = '0;
 
         // 回到normal状态，取消提交级的阻塞
-        if(cahce_block_ptr == cache_block_len - 1) begin
+        if(cahce_block_ptr == cache_block_len - 1) begin // bug 为什么这里不是等于cache_block_len，虽然也没问题，但是和其他块统一放在大的判断里面更舒服一点
             stall = '0;
         end
     end
@@ -366,6 +366,7 @@ always_comb begin
                 commit_cache_valid = '1;
                 commit_cache_req = commit_cache_req
             end
+            // bug else呢？
         end
     end
 
@@ -377,7 +378,7 @@ always_comb begin
                 // 将读出的数据写回
                 commit_axi_valid_o = '1;
 
-                commit_axi_req.addr = cache_block_data[0]; // bug 这里不是bug，我没看懂，为什么是addr
+                commit_axi_req.addr = cache_block_data[0]; // bug 这里可能不是bug，我没看懂，为什么是addr，但是data又哪去了
                 commit_axi_req.len = CACHE_BLOCK_NUM;
                 commit_axi_req.is_write = 1;
                 commit_axi_req.is_read = 0;
@@ -400,9 +401,9 @@ always_comb begin
         if(axi_commit_valid_i) begin
             if(axi_block_ptr == axi_block_len) begin
                 commit_axi_valid_o = '1;
-
+           
                 // 设置相应的AXI数据
-                commit_axi_req.addr = lsu_info[0].addr;
+                commit_axi_req.addr = lsu_info[0].addr; // bug 已经flush掉了，lsu_info[0]的数据已经消失掉了，正确做法是拿一个寄存器把信息存下来，在状态机里面用
                 commit_axi_req.len = CACHE_BLOCK_NUM;
                 commit_axi_req.is_write = 0;
                 commit_axi_req.is_read = 1;
@@ -488,7 +489,7 @@ always_ff @(posedge clk) begin
         else if (ls_fsm_q == S_CACHE) begin
             // Cache接受当前的读写请求
             // 回到normal状态，取消提交级的阻塞
-            if(cahce_block_ptr == cache_block_len - 1) begin
+            if(cahce_block_ptr == cache_block_len - 1) begin // bug 这里就应该是等于cache_block_len了吧
                 ls_fsm_q <= S_NORMAL;
 
                 cache_block_ptr <= '0;
