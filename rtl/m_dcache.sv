@@ -165,8 +165,9 @@ hadnshake_if #(.T(sb_entry_t)) sb_entry_sender();
 // handshake
 assign sb_entry_receiver.valid = !flush_i & !stall_q & |m1_iq_lsu_pkg.strb & valid_q;
 assign sb_entry_receiver.data  = w_sb_entry;
-assign sb_entry_sender.ready   = /* TODO commit提交sw指令请求 */
+assign sb_entry_sender.ready   = commit_cache_req.fetch_sb;/* commit提交sw指令请求 */
 assign r_sb_entry              = sb_entry_sender.data; 
+assign sb_entry_sender.data    = r_sb_entry;
 
 storebuffer #(
     .SB_SIZE(SB_SIZE)

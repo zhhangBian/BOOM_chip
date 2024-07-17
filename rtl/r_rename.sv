@@ -33,8 +33,8 @@ always_ff @(posedge clk) begin
     if (!rst_n || c_flush_i) begin
         rob_cnt_q       <= '0;
         rob_ptr1_q      <= '0;
-        rob_ptr2_q      <= '1;
-        rob_available_q <= '1;
+        rob_ptr2_q      <=  1;
+        rob_available_q <=  1;
     end else begin
         rob_cnt_q       <= rob_cnt;
         rob_ptr1_q      <= rob_ptr1;
