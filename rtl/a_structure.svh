@@ -269,13 +269,22 @@ typedef struct packed {
     logic   [31:0]  data;
     logic   [3:0]   strb;
     logic   [3:0]   rmask;
-    logic   fetch_sb;
+    logic   fetch_sb; // 进状态机的时候一定fetch_sb为0
+    // 向DCache发送Tag SRAM写请求
+    logic   [11:2]  tag_addr;
+    logic   [1:0]   way_hit;
+    cache_tag_t     tag_data;
+    // 向DCache发送Data SRAM请求
+    logic   [11:2]  data_addr;
+    logic   [31:0]  data_data;
 } commit_cache_req_t;
 
 typedef struct packed {
     logic   [31:0]  addr;
     logic   [31:0]  data;
     sb_entry_t      sb_entry;
+    // Data SRAM向commit级发送读结果
+    logic   [31:0]  r_data;
 } cache_commit_resp_t;
 
 // commit与AXI的交互
