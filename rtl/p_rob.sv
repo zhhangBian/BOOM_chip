@@ -60,7 +60,7 @@ always_ff @(posedge clk) begin
     if (!rst_n || flush_i) begin
         rob_cnt_q   <= '0;
         tail_ptr0_q <= '0;
-        tail_ptr1_q <= '1;
+        tail_ptr1_q <=  1;
     end else begin
         rob_cnt_q   <= rob_cnt;
         tail_ptr0_q <= tail_ptr0;
