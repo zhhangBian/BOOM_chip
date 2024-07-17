@@ -8,6 +8,7 @@ module commit #(
     input   logic   rst_n,
     // 唯一一处flush的输出
     output  logic   flush,
+    output  logic   stall_o,
 
     // 可能没用
     input   logic   [1:0]   rob_commit_valid_i,
@@ -26,6 +27,7 @@ module commit #(
     // 对应地址是否命中
     input   logic   cache_commit_hit_i,
     input   logic   cache_commit_dirty_i,
+    input   tag.    cache_commit_tag_i,     // TODO：返回了tag的信息
     // commit与cache的握手信号
     input   logic   commit_cache_ready_i,
     output  logic   commit_cache_valid_o,
@@ -46,7 +48,8 @@ module commit #(
 );
 
 // 是否将整个提交阻塞
-logic stall_all;
+logic stall, stall_q;
+assign stall_o = stall;
 assign commit_ready_o = ~stall_all;
 
 assign commit_axi_ready = '1;
@@ -254,7 +257,8 @@ typedef enum logic[4:0] {
 // 2. miss -> 为脏需要写回：先read -> write back -> read
 // 3. miss -> 不需要写回通过AXI读相应的内容
 
-ls_fsm_s ls_fsm_q;
+ls_fsm_s ls_fsm_q, ls_fsm;
+logic 
 
 // 配置与Cache的握手信号
 logic commit_cache_valid, commit_cache_valid_q;
@@ -265,6 +269,38 @@ word_t [CACHE_BLOCK_NUM-1:0] axi_block_data;
 
 logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr, cache_block_len;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr, axi_block_len;
+
+// 状态机转移的时序逻辑
+always_ff @(posedge clk) begin
+    if(~rst_n) begin
+        ls_fsm_q <= S_NORMAL;
+    end
+    else begin
+        ls_fsm_q <= ls_fsm;
+
+        if(ls_fsm_q == S_NORMAL && is_lsu) begin
+            stall_all <= '1;
+        end
+    end
+end
+
+// 状态转移的组合逻辑
+always_comb begin
+    ls_fsm = ls_fsm_q;
+    stall = stall_all;
+
+    
+
+    if(ls_fsm_q == S_NORMAL && is_lsu) begin
+        
+    end
+
+    else begin
+        ls_fsm = ls_fsm_q;
+
+        
+    end
+end
 
 always_ff @(posedge clk) begin
     if(~rst_n) begin

@@ -269,11 +269,13 @@ typedef struct packed {
     logic   [31:0]  data;
     logic   [3:0]   strb;
     logic   [3:0]   rmask;
+    logic   fetch_sb;
 } commit_cache_req_t;
 
 typedef struct packed {
     logic   [31:0]  addr;
     logic   [31:0]  data;
+    sb_entry_t      sb_entry;
 } cache_commit_resp_t;
 
 // commit与AXI的交互
