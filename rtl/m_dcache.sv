@@ -25,14 +25,20 @@ module dcache #(
     handshake_if.receiver cpu_lsu_receiver,
     hadnshake_if.sender   lsu_cpu_sender,
     // commit级信号
-    input logic              stall, // 全局stall信号
+    input logic              stall_i, // 全局stall信号
     input commit_cache_req_t commit_cache_req,
     output cache_commit_resp_t cache_commit_resp
 );
-// globa stall
+// global stall
+wire  stall = stall_i;
 logic stall_q;
 always_ff @(posedge clk) begin
     stall_q <= stall;
+end
+
+logic valid_q;
+always_ff @(posedge clk) begin
+    valid_q <= cpu_lsu_receiver.valid;
 end
 
 // cpu传入数据
@@ -152,7 +158,7 @@ hadnshake_if #(.T(sb_entry_t)) sb_entry_receiver();
 hadnshake_if #(.T(sb_entry_t)) sb_entry_sender();
 
 // handshake
-assign sb_entry_receiver.valid = !flush_i & !stall_q & |m1_iq_lsu_pkg.strb;
+assign sb_entry_receiver.valid = !flush_i & !stall_q & |m1_iq_lsu_pkg.strb & valid_q;
 assign sb_entry_receiver.data  = w_sb_entry;
 assign sb_entry_sender.ready   = /* TODO commit提交sw指令请求 */
 assign r_sb_entry              = sb_entry_sender.data; 
@@ -225,12 +231,6 @@ assign lw_valid = ((m1_iq_lsu_pkg.rmask & byte_hit) == m1_iq_lsu_pkg.rmask);
 
 /***************************handshake***********************/
 assign cpu_lsu_receiver.ready = lsu_cpu_sender.ready & sb_entry_receiver.ready & !stall & !flush_i;
-
-logic valid_q;
-always_ff @(posedge clk) begin
-    valid_q <= cpu_lsu_receiver.valid;
-end
-
 assign lsu_cpu_sender.valid = valid_q & !stall_q & !flush_i;
 
 lsu_iq_pkg_t lsu_iq_pkg;
