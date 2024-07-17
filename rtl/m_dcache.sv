@@ -38,6 +38,11 @@ end
 
 // commit 传入请求
 commit_cache_req_t commit_cache_req;
+logic  commit_way_hit, commit_way_hit_q;
+assign commit_way_hit = commit_cache_req.way_hit;
+always_ff @(posedge clk) begin
+    commit_way_hit_q <= commit_way_hit;
+end
 // 传给commit的请求
 cache_commit_resp_t cache_commit_resp;
 // cpu传入数据
@@ -259,6 +264,16 @@ always_comb begin
         lw_data                |= tmp_data;
     end
 end
+// REFILL LOGIC
+logic  refill_way;
+always_ff @(posedge clk) begin
+    if (!rst_n) begin
+        refill_way <= '0;
+    end else begin
+        refill_way <= !refill_way;
+    end
+end
+// LSU_PKG
 always_comb begin
     lsu_iq_pkg.uncached = uncache;
     lsu_iq_pkg.hit      = (lw_valid & (|m1_iq_lsu_pkg.rmask)) | (|tag_hit);
@@ -266,5 +281,14 @@ always_comb begin
     lsu_iq_pkg.paddr    = paddr;
     lsu_iq_pkg.rdata    = lw_data; //组合逻辑有点长，后续考虑拆两级流水
     lsu_iq_pkg.tlb_exception = tlb_exception;
+    lsu_iq_pkg.refill   = refill_way;
+    lsu_iq_pkg.dirty    = tag_ans0[refill_way].d;
 end
+/*****************************cache2commit***********************/
+always_comb begin
+    cache_commit_resp.addr = paddr;
+    cache_commit_resp.data = data_ans1[commit_way_hit_q[0]];
+    cache_commit_resp.sb_entry = r_sb_entry;
+end
+
 endmodule;

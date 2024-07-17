@@ -265,7 +265,7 @@ typedef struct packed {
     logic[31:0]  paddr;
     logic[31:0]  rdata;  
     tlb_exception_t tlb_exception;
-    logic[1 :0]  refill;
+    logic        refill;
     logic        dirty;
 } lsu_iq_pkg_t;
 
@@ -279,7 +279,7 @@ typedef struct packed {
 typedef struct packed {
     // 向DCache发送Tag SRAM写请求
     logic   [31:0]  addr;
-    logic   [1:0]   way_hit;    // TODO
+    logic           way_hit;    // TODO 读写对应的路
     cache_tag_t     tag_data;   
     logic           tag_we;     // 写回tag使能信号
     // 向DCache发送Data SRAM请求
@@ -290,7 +290,7 @@ typedef struct packed {
 
 typedef struct packed {
     logic   [31:0]  addr;
-    logic   [31:0]  data;
+    // logic   [31:0]  data;
     sb_entry_t      sb_entry;
     // Data SRAM向commit级发送读结果
     logic   [31:0]  r_data;
