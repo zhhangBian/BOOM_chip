@@ -2,6 +2,7 @@
 
 module commit #(
     parameter int CACHE_BLOCK_NUM = 4;
+    parameter int CPU_ID = 0;
 ) (
     input   logic   clk,
     input   logic   rst_n,
@@ -15,6 +16,9 @@ module commit #(
     // 给ROB的输出信号，确定提交相关指令
     output  logic   commit_ready_o,
     output  logic   [1:0]   commit_request_o,
+
+    output  logic   [31:0]  commit_csr_data_o,
+    output  logic   commit_csr_valid_o,
 
     // commit与DCache的接口
     output  commit_cache_req_t  commit_cache_req_o,
@@ -48,6 +52,9 @@ assign commit_ready_o = ~stall_all;
 assign commit_axi_ready = '1;
 assign commit_cache_reday = '1;
 
+logic [31:0] commit_data, commit_data_q;
+assign commit_data_o = commit_data_q;
+
 // 维护一个提交级的时钟
 logic [5:0] timer_64, timer_64_q;
 assign timer_64 = timer_64_q;
@@ -57,24 +64,27 @@ assign timer_64 = timer_64_q;
 // 正常情况都不需要进入状态机，直接提交即可
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0];
-    commit_request_o[0] &= ~is_lsu;
+    // CSR指令、Uncached指令允许提交
+    commit_request_o[0] &= ~(is_lsu & ~is_uncached);
 
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~rob_commit_i[0].first_commit &
                           ~rob_commit_i[1].first_commit;
-    commit_request_o[0] &= ~is_lsu;
 end
 
 // ------------------------------------------------------------------
 // 代表相应的指令属性
 logic [1:0] is_lsu_write, is_lsu_read, is_lsu;
-logic [1:0] is_csr;
-logic [1:0] is_tlb;
 logic [1:0] is_uncached;
+logic [1:0] is_csr;
+logic [1:0] is_cache;
+logic [1:0] is_tlb;
 
 // 与DCache的一级流水交互
 iq_lsu_pkg_t [1:0] lsu_info;
+assign lsu_info[1] = rob_commit_i[1].lsu_info;
+assign lsu_info[0] = rob_commit_i[0].lsu_info;
 
 commit_cache_req_t commit_cache_req, commit_cache_req_q;
 assign commit_cache_req_o = commit_cache_req_q;
@@ -89,17 +99,18 @@ end
 commit_axi_req_t commit_axi_req_q;
 assign commit_axi_req_o = commit_axi_req_q;
 
-axi_commit_resp_t axi_commit_resp_q;
-
-logic [1:0][3:0] commit_cache_strb;
-logic [1:0][3:0] commit_cache_rmask;
-
+// 判断指令类型
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         // 处理后续的竞争逻辑
         is_lsu_write[i] = |lsu_info[i].strb;
         is_lsu_read[i]  = |lsu_info[i].rmask;
         is_lsu[i]       = is_lsu_write[i] | is_lsu_read[i];
+        is_uncached[i]  = lsu_info.is_uncached;
+
+        is_csr[i]       = |rob_commit_i[i].csr_type;
+        is_cache[i]     = |rob_commit_i[i].cache_code;
+        is_tlb[i]       = |rob_commit_i[i].tlb_type;
     end
 end
 
@@ -153,6 +164,8 @@ end
 // ------------------------------------------------------------------
 // 处理CSR逻辑
 csr_t csr, csr_q, csr_init;
+logic [2:0] csr_type = rob_commit_i[0].csr_type;
+logic [13:0] csr_num = rob_commit_i[0].csr_num;
 
 // 维护CSR信息
 always_comb begin
@@ -175,7 +188,35 @@ end
 
 // 对CSR信息的维护
 always_comb begin
+    csr = csr_q;
+    commit_csr_data_o = '0;
+    commit_csr_valid_o = '0;
 
+    case (csr_type)
+        `_CSR_CSRRD: begin
+            commit_csr_valid_o |= '1;
+            // TODO：csr_t的结构需要进一步匹配
+            commit_csr_data_o |= csr_q[csr_num];
+        end 
+
+        `_CSR_CSRWR: begin
+            commit_csr_valid_o |= '1;
+            // TODO：csr_t的结构需要进一步匹配
+            commit_csr_data_o |= csr_q[csr_num];
+            csr[csr_num] = rob_commit_i[0].data_rd;
+        end
+
+        `_CSR_XCHG: begin
+            commit_csr_valid_o |= '1;
+            // TODO：csr_t的结构需要进一步匹配
+            commit_csr_data_o |= csr_q[csr_num];
+            csr[csr_num] = rob_commit_i[0].data_rd & rob_commit_i[0].data_rj;
+        end
+
+        default: begin
+            
+        end
+    endcase
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -335,9 +376,6 @@ always_ff @(posedge clk) begin
         // 发起AXI请求，读出对应地址处的数据
         else if(ls_fsm_q == S_AXI_RD) begin
             if(axi_commit_valid_i) begin
-                axi_block_data[block_ptr] <= axi_commit_resp.data;
-                axi_block_ptr <= axi_block_ptr + 1;
-
                 // AXI请求完成，进行下一步状态
                 if(axi_block_ptr == axi_block_len - 1) begin
                     ls_fsm_q <= S_CACHE;
@@ -348,6 +386,9 @@ always_ff @(posedge clk) begin
                     cache_block_ptr <= 0;
                     cache_block_data <= axi_block_data;
                 end
+
+                axi_block_data[block_ptr] <= axi_commit_resp_i.data;
+                axi_block_ptr <= axi_block_ptr + 1;
             end
         end
 

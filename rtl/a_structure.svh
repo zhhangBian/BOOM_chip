@@ -141,11 +141,27 @@ typedef struct packed {
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
-    logic [31: 0] w_data;
-    logic [4 : 0] w_areg;
-    logic         w_reg;
-    logic         w_mem;
-    logic         c_valid;    // valid
+    // 在CSR指令中复用为rd寄存器的值
+    logic   [31: 0] w_data;
+    logic   [4 : 0] w_areg;
+    logic   w_reg;
+    logic   w_mem;
+    logic   first_commit;
+
+    logic   c_valid;
+
+    logic [31:0] data_rd;
+    logic [31:0] data_rj;
+    
+    iq_lsu_pkg_t lsu_info;
+    logic   uncached;
+    // CSR维护信息
+    logic   [2:0]   csr_type;
+    logic   [13:0]  csr_num;
+    logic   [4:0]   cache_code;
+    logic   [4:0]   tlb_type;
+    logic   [3:0]   tlb_op;
+
     // 特殊指令，例如uncached，tlb维护指令，写csr指令
     // cache维护指令，st指令，只能单条提交
     // 异常
@@ -223,6 +239,7 @@ typedef struct packed {
 
 /**************************lsu pkg*************************/
 typedef struct packed {
+    logic   is_uncached;
     logic  [3:0]  strb;
     logic  [3:0] rmask;            // 需要读的字节
     inv_parm_e   cacop;
