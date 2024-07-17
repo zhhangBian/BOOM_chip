@@ -265,5 +265,6 @@ always_comb begin
     lsu_iq_pkg.wid      = m1_iq_lsu_pkg.wid;
     lsu_iq_pkg.paddr    = paddr;
     lsu_iq_pkg.rdata    = lw_data; //组合逻辑有点长，后续考虑拆两级流水
+    lsu_iq_pkg.tlb_exception = tlb_exception;
 end
 endmodule;

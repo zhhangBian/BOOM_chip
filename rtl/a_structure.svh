@@ -263,7 +263,10 @@ typedef struct packed {
     logic        hit;
     rob_rid_t    wid;     // 写回地址
     logic[31:0]  paddr;
-    logic[31:0]  rdata;   
+    logic[31:0]  rdata;  
+    tlb_exception_t tlb_exception;
+    logic[1 :0]  refill;
+    logic        dirty;
 } lsu_iq_pkg_t;
 
 typedef struct packed {
