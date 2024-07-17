@@ -30,7 +30,8 @@ module dcache #(
     output cache_commit_resp_t cache_commit_resp
 );
 // global stall
-wire  stall = stall_i;
+logic sb_stall;
+wire  stall = stall_i | sb_stall;
 logic stall_q;
 always_ff @(posedge clk) begin
     stall_q <= stall;
@@ -44,7 +45,10 @@ end
 // cpu传入数据
 iq_lsu_pkg_t iq_lsu_pkg;
 assign iq_lsu_pkg = cpu_lsu_receiver.data;
+// MMU类型数据
+wire [1:0] mem_type = |iq_lsu_pkg.strb ? `_MEM_STORE : `_MEM_LOAD;
 trans_result_t trans_result;
+tlb_exception_t tlb_exception;
 // mmu结果 TODO
 mmu #(
     .TLB_ENTRY_NUM(64),
@@ -55,8 +59,9 @@ mmu #(
     .flush_i,
     .va(iq_lsu_pkg.vaddr),
     .csr(csr_i),
-    .mem_type(), // ?
-    .trans_result_o(trans_result)
+    .mmu_mem_type(mem_type), // ? dcache中，只有读和写两种情况:分别是
+    .trans_result_o(trans_result),
+    .tlb_exception_o(tlb_exception)
 );
 logic [31 : 0] paddr; // 假设从mmu打一拍传来的paddr
 logic [19 : 0] ppn;
@@ -170,6 +175,7 @@ storebuffer #(
     .rst_n,
     .flush_i,
     .sb_entry_o(sb_entry),
+    .sb_stall(sb_stall),
     // .top_entry_o(top_sb_entry),
     .sb_entry_receiver(sb_entry_receiver.receiver), // M1 级写握手
     .sb_entry_sender(sb_entry_sender.sender) // 和 commit 握手 传出最旧表项

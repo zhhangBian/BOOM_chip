@@ -1,3 +1,5 @@
+`ifndef _BOOM_MMU_HEAD
+`define _BOOM_MMU_HEAD
 //a_csr.svh里面和tlb相关的内容还有wired的标记，最好删掉
 
 //mmu_mem_type
@@ -53,3 +55,4 @@ typedef struct packed {
     tlb_entry_t tlb_wr_entry;
 } tlb_rdwr_req_t;
 
+`endif

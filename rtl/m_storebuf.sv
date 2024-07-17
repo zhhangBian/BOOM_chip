@@ -16,6 +16,7 @@ module storebuffer #(
     input   rst_n,
     input   flush_i,
     output  sb_entry_t [SB_SIZE - 1 : 0] sb_entry_o, //按照从旧到新的顺序
+    output  sb_stall,
     // output  sb_entry_t                   top_entry_o,
     handshake_if.receiver  sb_entry_receiver,
     handshake_if.sender    sb_entry_sender
@@ -31,6 +32,7 @@ logic push, pop;
 
 assign push = sb_entry_receiver.ready & sb_entry_receiver.valid & !flush_i;
 assign pop  = sb_entry_sender.ready   & sb_entry_sender.valid;
+assign sb_stall = (sb_cnt == SB_SIZE);
 always_comb begin
     sb_cnt      = sb_cnt_q + push - pop;
     sb_ptr_head = sb_ptr_head_q + push;
