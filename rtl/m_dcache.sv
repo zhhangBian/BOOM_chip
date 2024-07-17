@@ -1,11 +1,5 @@
 `include "a_defines.svh"
 
-typedef struct packed {
-    logic [19 : 0] tag;
-    logic          v;
-    logic          d;
-} cache_tag_t;
-
 module dcache #(
     // Cache 规格设置
     parameter int unsigned WAY_NUM = 2,

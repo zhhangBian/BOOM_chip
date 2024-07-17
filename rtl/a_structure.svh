@@ -162,6 +162,9 @@ typedef struct packed {
     logic   [4:0]   tlb_type;
     logic   [3:0]   tlb_op;
 
+    logic   [31:0]  cache_dirty_addr;
+    logic   cache_dirty;
+
     // 特殊指令，例如uncached，tlb维护指令，写csr指令
     // cache维护指令，st指令，只能单条提交
     // 异常
@@ -263,20 +266,22 @@ typedef struct packed {
     logic[31:0]  rdata;   
 } lsu_iq_pkg_t;
 
+typedef struct packed {
+    logic [19 : 0] tag;
+    logic          v;
+    logic          d;
+} cache_tag_t;
+
 // commit与DCache的交互
 typedef struct packed {
-    logic   [31:0]  addr;
-    logic   [31:0]  data;
-    logic   [3:0]   strb;
-    logic   [3:0]   rmask;
-    logic   fetch_sb; // 进状态机的时候一定fetch_sb为0
     // 向DCache发送Tag SRAM写请求
-    logic   [11:2]  tag_addr;
-    logic   [1:0]   way_hit;
+    logic   [31:0]  addr;
+    logic   [1:0]   way_hit;    // TODO
     cache_tag_t     tag_data;
     // 向DCache发送Data SRAM请求
-    logic   [11:2]  data_addr;
     logic   [31:0]  data_data;
+    logic   [3:0]   strb;
+    logic   fetch_sb; // 进状态机的时候一定fetch_sb为0
 } commit_cache_req_t;
 
 typedef struct packed {
@@ -289,6 +294,7 @@ typedef struct packed {
 
 // commit与AXI的交互
 typedef struct packed {
+    logic   [31:0]  data;
     logic   [31:0]  addr;
     logic   [3:0]   len;
     logic   is_write;
