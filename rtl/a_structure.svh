@@ -297,8 +297,8 @@ typedef struct packed {
     logic   [31:0]  data;
     logic   [31:0]  addr;
     logic   [3:0]   len;
-    logic   is_write;
-    logic   is_read;
+    logic   [3:0]   strb;
+    logic   [3:0]   rmask;
 } commit_axi_req_t;
 
 typedef struct packed {

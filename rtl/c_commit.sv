@@ -13,6 +13,20 @@ function cache_tag_t get_cache_tag(
     return cache_tag;
 endfunction
 
+function logic [31:0] get_data_mask(
+    input logic [31:0] data,
+    input logic [3:0] mask
+);
+    logic [31:0] data_mask;
+
+    assign data_mask[7:0]   = mask[0] ? data[7:0]   : '0;
+    assign data_mask[15:8]  = mask[1] ? data[15:8]  : '0;
+    assign data_mask[23:16] = mask[2] ? data[23:16] : '0;
+    assign data_mask[31:24] = mask[3] ? data[31:24] : '0;
+
+    return data_mask;
+endfunction
+
 module commit #(
     parameter int CACHE_BLOCK_NUM = 4;
     parameter int CPU_ID = 0;
@@ -159,7 +173,7 @@ always_comb begin
     else if(|is_lsu) begin
         if(ls_fsm_q == S_NORMAL) begin
             if(!cache_commit_hit) begin
-                if(is_lsu_write && is_uncached) begin
+                if(is_lsu_write[0] && is_uncached) begin
                     flush = '0;
                 end
                 else begin
@@ -290,16 +304,28 @@ always_comb begin
     commit_axi_req = commit_axi_req_q;
 
     if(ls_fsm_q == S_NORMAL && is_lsu) begin
-        stall |= '1; // bug stall后文没有了？
+        stall |= ~cache_commit_hit;
 
         if(is_uncached) begin
             // 配置AXI的相应信息
             commit_axi_valid = '1;
-            commit_axi_req.data = lsu_info[0].data;
+            commit_axi_req.data = get_data_mask(
+                lsu_info[0].data, 
+                is_lsu_read[0] ? lsu[0].rmask ? lsu[0].strb);
             commit_axi_req.addr = lsu_info[0].addr;
             commit_axi_req.len  = 1;
-            commit_axi_req.is_write = |lsu_info[0].strb;
-            commit_axi_req.is_read  = |lsu_info[0].rmask; // bug 掩码信息丢了
+            commit_axi_req.strb = lsu_info[0].strb;
+            commit_axi_req.rmask  = lsu_info[0].rmask;
+
+            // 配置Cache的相应信息
+            commit_cache_valid = '1;
+            commit_cache_req.addr = lsu_info[0].addr;
+            // TODO way_hit
+            commit_cache_req.tag_data = '0;
+            commit_cache_req.data_data = '0;
+            commit_cache_req.strb = '0;
+            // normal状态下未命中也要提交
+            commit_cache_req.fetch_sb = |lsu_info[0].strb;
         end
         else if(cache_commit_hit) begin
             // 配置Cache的相应信息
@@ -309,27 +335,40 @@ always_comb begin
             commit_cache_req.tag_data = '0;
             commit_cache_req.data_data = lsu_info[0].data;
             commit_cache_req.strb = lsu_info[0].strb;
-            commit_cache_req.fetch_sb = |lsu_info[0].strb; // bug 在NORMAL状态下，应当全为|lsu_info[0].strb,而不只是命中的时候
+            commit_cache_req.fetch_sb = |lsu_info[0].strb;
         end
         else begin
             // 读出Cache的整块数据，最后写回
             if(cache_commit_dirty_i) begin
                 // 设置相应的Cache数据
                 commit_cache_valid = '1;
-                commit_cache_req.addr = rob_commit_i[0].cache_dirty_addr; // bug 其实 addr 就是lsu_info.addr，这里得用addr & 32'hfffffff0
+                // 对齐一块的数据
+                commit_cache_req.addr = rob_commit_i[0].cache_dirty_addr & 32'hfffffff0;
                 // TODO way_hit
                 commit_cache_req.tag_data = '0;
                 commit_cache_req.data_data = '0;
                 commit_cache_req.strb = '0;
-                commit_cache_req.fetch_sb = '0;
+                // normal状态下未命中也要提交
+                commit_cache_req.fetch_sb = |lsu_info[0].strb;
             end
             // 发出AXI请求，直接读出数据
             else begin
-                commit_axi_valid_o = '1; // bug 少了写掩码？
-                commit_axi_req_q.addr = lsu_info[0].addr; // bug 其实单字读的时候虽然说大概率是整字，但是也要考虑读半字或一个字节的情况，addr & 32'hfffffffc;后续再偏移
-                commit_axi_req_q.len = CACHE_BLOCK_NUM;
-                commit_axi_req_q.is_write = 0;
-                commit_axi_req_q.is_read = 1;
+                commit_axi_valid_o = '1;
+                // 对齐一个字的数据
+                commit_axi_req_q.addr = lsu_info[0].addr & 32'hfffffffc;
+                commit_axi_req.len = CACHE_BLOCK_NUM;
+                commit_axi_req.strb = '0;
+                commit_axi_req.rmask = lsu_info[i].rmask;
+
+                // 配置Cache的相应信息
+                commit_cache_valid = '1;
+                commit_cache_req.addr = lsu_info[0].addr;
+                // TODO way_hit
+                commit_cache_req.tag_data = '0;
+                commit_cache_req.data_data = '0;
+                commit_cache_req.strb = '0;
+                // normal状态下未命中也要提交
+                commit_cache_req.fetch_sb = |lsu_info[0].strb;
             end
         end
     end
@@ -371,26 +410,27 @@ always_comb begin
 
     // 将需要写回部分的Cache整块数据读出
     else if(ls_fsm_q == S_CACHE_RD) begin
+        // Cache固定延时一排出结果
         // 完成了整块的读出操作
-        if(cache_commit_valid_i) begin // bug cache_commit_valid_i可以删了，没用，固定延时一拍出结果
-            if(cache_block_ptr == cache_block_len) begin
-                // 将读出的数据写回
-                commit_axi_valid_o = '1;
+        if(cache_block_ptr == cache_block_len) begin
+            // 将读出的数据写回
+            commit_axi_valid_o = '1;
 
-                commit_axi_req.addr = cache_block_data[0]; // bug 这里不是bug，我没看懂，为什么是addr
-                commit_axi_req.len = CACHE_BLOCK_NUM;
-                commit_axi_req.is_write = 1;
-                commit_axi_req.is_read = 0;
-            end
-            else begin
-                // 设置下一轮的Cache数据
-                commit_cache_req.addr = commit_cache_req_q.addr + 4;
-                // way hit
-                commit_cache_req.tag_data = '0;
-                commit_cache_req.data_data = '0;
-                commit_cache_req.strb = '0;
-                commit_cache_req.fetch_sb = '0;
-            end
+            commit_axi_req.data = cache_block_data[0];
+            // 对齐一块的数据
+            commit_axi_req.addr = rob_commit_i[0].cache_dirty_addr & 32'hfffffff0;
+            commit_axi_req.len = CACHE_BLOCK_NUM;
+            commit_axi_req.strb = '1;
+            commit_axi_req.rmask = '0;
+        end
+        else begin
+            // 设置下一轮的Cache数据
+            commit_cache_req.addr = commit_cache_req_q.addr + 4;
+            // way hit
+            commit_cache_req.tag_data = '0;
+            commit_cache_req.data_data = '0;
+            commit_cache_req.strb = '0;
+            commit_cache_req.fetch_sb = '0;
         end
     end
 
@@ -402,10 +442,11 @@ always_comb begin
                 commit_axi_valid_o = '1;
 
                 // 设置相应的AXI数据
-                commit_axi_req.addr = lsu_info[0].addr;
+                // 对齐一块的数据
+                commit_axi_req.addr = lsu_info[0].addr & 32'hfffffff0;
                 commit_axi_req.len = CACHE_BLOCK_NUM;
-                commit_axi_req.is_write = 0;
-                commit_axi_req.is_read = 1;
+                commit_axi_req.strb = '0;
+                commit_axi_req.rmask = '1;
             end
             else begin
                 commit_axi_req.addr = commit_axi_req_q.addr + 4;
@@ -441,12 +482,9 @@ always_ff @(posedge clk) begin
     else begin
         // normal状态 且 需要进入Cache状态机
         if(ls_fsm_q == S_NORMAL && is_lsu) begin
-            // 在完成Cache前将提交阻塞
-            stall_all <= '1;
-
             // 如果是uncached请求，直接发起AXI请求
             if(is_uncached) begin
-                ls_fsm_q <= S_AXI_WB; // bug ??? 不应该是S_UNCACHED吗？
+                ls_fsm_q <= S_UNCACHED;
             end
             // Cache命中
             else if(cache_commit_hit) begin
@@ -521,20 +559,19 @@ always_ff @(posedge clk) begin
 
         // 将需要写回部分的Cache整块数据读出
         else if(ls_fsm_q == S_CACHE_RD) begin
+            // Cache固定延时一拍出结果
             // 完成了整块的读出操作
-            if(cache_commit_valid_i) begin
-                if(cache_block_ptr == cache_block_len) begin
-                    // 将读出的数据写回
-                    ls_fsm_q <= S_AXI_WB;
+            if(cache_block_ptr == cache_block_len) begin
+                // 将读出的数据写回
+                ls_fsm_q <= S_AXI_WB;
 
-                    axi_block_len <= CACHE_BLOCK_NUM;
-                    axi_block_ptr <= 0;
-                    axi_block_data <= cache_block_data;
-                end
-                else begin
-                    cache_block_data[cache_block_ptr] <= cache_commit_resp.data;
-                    cache_block_ptr <= cache_block_data + 1;
-                end
+                axi_block_len <= CACHE_BLOCK_NUM;
+                axi_block_ptr <= 0;
+                axi_block_data <= cache_block_data;
+            end
+            else begin
+                cache_block_data[cache_block_ptr] <= cache_commit_resp.data;
+                cache_block_ptr <= cache_block_data + 1;
             end
         end
 
