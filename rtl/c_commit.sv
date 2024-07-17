@@ -542,7 +542,7 @@ always_ff @(posedge clk) begin
         else if (ls_fsm_q == S_CACHE) begin
             // Cache接受当前的读写请求
             // 回到normal状态，取消提交级的阻塞
-            if(cahce_block_ptr == cache_block_len - 1) begin // bug 这里就应该是等于cache_block_len了吧
+            if(cahce_block_ptr == cache_block_len) begin
                 ls_fsm_q <= S_NORMAL;
 
                 cache_block_ptr <= '0;
