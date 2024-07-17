@@ -1,66 +1,71 @@
 `ifndef _BOOM_CSR_HEAD
 `define _BOOM_CSR_HEAD
 
-`define _CSR_CRMD      (9'h  0)
-`define _CSR_PRMD      (9'h  1)
-`define _CSR_EUEN      (9'h  2)
-`define _CSR_ECTL      (9'h  4)
-`define _CSR_ESTAT     (9'h  5)
-`define _CSR_ERA       (9'h  6)
-`define _CSR_BADV      (9'h  7)
-`define _CSR_EENTRY    (9'h  c)
-`define _CSR_TLBIDX    (9'h 10)
-`define _CSR_TLBEHI    (9'h 11)
-`define _CSR_TLBELO0   (9'h 12)
-`define _CSR_TLBELO1   (9'h 13)
-`define _CSR_ASID      (9'h 18)
-`define _CSR_PGDL      (9'h 19)
-`define _CSR_PGDH      (9'h 1a)
-`define _CSR_PGD       (9'h 1b)
-`define _CSR_CPUID     (9'h 20)
-`define _CSR_SAVE0     (9'h 30)
-`define _CSR_SAVE1     (9'h 31)
-`define _CSR_SAVE2     (9'h 32)
-`define _CSR_SAVE3     (9'h 33)
-`define _CSR_TID       (9'h 40)
-`define _CSR_TCFG      (9'h 41)
-`define _CSR_TVAL      (9'h 42)
-`define _CSR_TICLR     (9'h 44)
-`define _CSR_LLBCTL    (9'h 60)
-`define _CSR_TLBRENTRY (9'h 88)
-`define _CSR_DMW0      (9'h180)
-`define _CSR_DMW1      (9'h181)
+`define _CSR_CRMD       (9'h  0)
+`define _CSR_PRMD       (9'h  1)
+`define _CSR_EUEN       (9'h  2)
+`define _CSR_ECTL       (9'h  4)
+`define _CSR_ESTAT      (9'h  5)
+`define _CSR_ERA        (9'h  6)
+`define _CSR_BADV       (9'h  7)
+`define _CSR_EENTRY     (9'h  c)
+`define _CSR_TLBIDX     (9'h 10)
+`define _CSR_TLBEHI     (9'h 11)
+`define _CSR_TLBELO0    (9'h 12)
+`define _CSR_TLBELO1    (9'h 13)
+`define _CSR_ASID       (9'h 18)
+`define _CSR_PGDL       (9'h 19)
+`define _CSR_PGDH       (9'h 1a)
+`define _CSR_PGD        (9'h 1b)
+`define _CSR_CPUID      (9'h 20)
+`define _CSR_SAVE0      (9'h 30)
+`define _CSR_SAVE1      (9'h 31)
+`define _CSR_SAVE2      (9'h 32)
+`define _CSR_SAVE3      (9'h 33)
+`define _CSR_TID        (9'h 40)
+`define _CSR_TCFG       (9'h 41)
+`define _CSR_TVAL       (9'h 42)
+`define _CSR_TICLR      (9'h 44)
+`define _CSR_LLBCTL     (9'h 60)
+`define _CSR_TLBRENTRY  (9'h 88)
+`define _CSR_DMW0       (9'h180)
+`define _CSR_DMW1       (9'h181)
+`define _CSR_END        (9'h182)
+
+`define _CSR_CSRRD      (3'h1)
+`define _CSR_CSRWR      (3'h2)
+`define _CSR_CSRXCHG    (3'h3)
 
 typedef struct packed {
-    logic [31:0] crmd     ;
-    logic [31:0] prmd     ;
-    logic [31:0] euen     ;
-    logic [31:0] ectl     ;
-    logic [31:0] estat    ;
-    logic [31:0] era      ;
-    logic [31:0] badv     ;
-    logic [31:0] eentry   ;
-    logic [31:0] tlbidx   ;
-    logic [31:0] tlbehi   ;
-    logic [31:0] tlbelo0  ;
-    logic [31:0] tlbelo1  ;
-    logic [31:0] asid     ;
-    logic [31:0] pgdl     ;
-    logic [31:0] pgdh     ;
-    logic [31:0] cpuid    ;
-    logic [31:0] save0    ;
-    logic [31:0] save1    ;
-    logic [31:0] save2    ;
-    logic [31:0] save3    ;
-    logic [31:0] tid      ;
-    logic [31:0] tcfg     ;
-    logic [31:0] tval     ;
-    logic [31:0] ticlr    ;
-    logic [31:2] llbctl   ;
-    logic        llbit    ;
+    logic [31:0] crmd;
+    logic [31:0] prmd;
+    logic [31:0] euen;
+    logic [31:0] ectl;
+    logic [31:0] estat;
+    logic [31:0] era;
+    logic [31:0] badv;
+    logic [31:0] eentry;
+    logic [31:0] tlbidx;
+    logic [31:0] tlbehi;
+    logic [31:0] tlbelo0;
+    logic [31:0] tlbelo1;
+    logic [31:0] asid;
+    logic [31:0] pgdl;
+    logic [31:0] pgdh;
+    logic [31:0] cpuid;
+    logic [31:0] save0;
+    logic [31:0] save1;
+    logic [31:0] save2;
+    logic [31:0] save3;
+    logic [31:0] tid;
+    logic [31:0] tcfg;
+    logic [31:0] tval;
+    logic [31:0] ticlr;
+    logic [31:2] llbctl;
+    logic        llbit;
     logic [31:0] tlbrentry;
-    logic [31:0] dmw0     ;
-    logic [31:0] dmw1     ;
+    logic [31:0] dmw0;
+    logic [31:0] dmw1;
 // 浮点部分扩展
 //   logic [31:0] fcsr;
 //   logic         fcc;
@@ -68,31 +73,31 @@ typedef struct packed {
 
 typedef struct packed {
     logic [18:0] vppn;
-    // logic [ 5:0] ps  ;
+    // logic [ 5:0] ps;
     logic   huge_page;
-    logic        g   ;
+    logic        g;
     logic [ 9:0] asid;
-    logic        e   ;
+    logic        e;
 } tlb_key_t;
 
 typedef struct packed{
     logic [19:0] ppn;
     logic [ 1:0] plv;
     logic [ 1:0] mat;
-    logic        d  ;
-    logic        v  ;
+    logic        d;
+    logic        v;
 } tlb_value_t;
 
 typedef struct packed {
-    logic                               dmw  ;
+    logic                               dmw;
     logic                               found;
     logic [$clog2(`_WIRED_PARAM_TLB_CNT)-1:0] index;
-    logic [                        5:0] ps   ;
+    logic [                        5:0] ps;
     tlb_value_t                         value;
 } tlb_s_resp_t;
 
 typedef struct packed {
-    tlb_key_t         key  ;
+    tlb_key_t         key;
     tlb_value_t [1:0] value;
 } tlb_entry_t;
 
