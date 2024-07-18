@@ -38,7 +38,7 @@ end
 
 // commit 传入请求
 commit_cache_req_t commit_cache_req;
-logic  commit_way_hit, commit_way_hit_q;
+logic  [1:0] commit_way_hit, commit_way_hit_q;
 assign commit_way_hit = commit_cache_req.way_hit;
 always_ff @(posedge clk) begin
     commit_way_hit_q <= commit_way_hit;
@@ -287,7 +287,7 @@ end
 /*****************************cache2commit***********************/
 always_comb begin
     cache_commit_resp.addr = paddr;
-    cache_commit_resp.data = data_ans1[commit_way_hit_q[0]];
+    cache_commit_resp.data = commit_way_hit_q[1] ? data_ans1[1] : data_ans1[0];
     cache_commit_resp.sb_entry = r_sb_entry;
 end
 
