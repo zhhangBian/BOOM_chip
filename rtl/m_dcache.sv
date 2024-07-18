@@ -265,12 +265,12 @@ always_comb begin
     end
 end
 // REFILL LOGIC
-logic  refill_way;
+logic [1:0] refill_way;
 always_ff @(posedge clk) begin
     if (!rst_n) begin
-        refill_way <= '0;
+        refill_way <= 2'd01;
     end else begin
-        refill_way <= !refill_way;
+        refill_way <= ~refill_way;
     end
 end
 // LSU_PKG

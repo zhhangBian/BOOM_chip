@@ -258,15 +258,15 @@ typedef struct packed {
 typedef struct packed {
 //   lsu_excp_t   excp;
 //   fetch_excp_t f_excp;
-    logic        uncached;
-    logic        hit;
-    logic[1 :0]  tag_hit;
-    rob_rid_t    wid;     // 写回地址
-    logic[31:0]  paddr;
-    logic[31:0]  rdata;
-    tlb_exception_t tlb_exception;
-    logic        refill;
-    logic        dirty;
+    logic        uncached; // uncached 特性
+    logic        hit;      // 是否命中，总判断 
+    logic[1 :0]  tag_hit;  // tag是否命中
+    rob_rid_t    wid;      // 写回地址
+    logic[31:0]  paddr;    // 物理地址 
+    logic[31:0]  rdata;    // 读出的数据结果
+    tlb_exception_t tlb_exception; // TLB异常
+    logic[1 :0]  refill;           // 选择哪一路重填
+    logic        dirty;            // 是否需要写回
 } lsu_iq_pkg_t;
 
 typedef struct packed {
@@ -278,23 +278,23 @@ typedef struct packed {
 // commit与DCache的交互
 typedef struct packed {
     // 向DCache发送Tag SRAM写请求
-    logic   [31:0]  addr;
-    logic   [1 :0]  way_hit;    // TODO 读写对应的路，两位分别对应两路
-    cache_tag_t     tag_data;
+    logic   [31:0]  addr;       // 地址
+    logic   [1 :0]  way_hit;    // TODO 读写对应的路，两位分别对应两路，对应位表示对应路是否命中
+    cache_tag_t     tag_data;   // 写回tag数据
     logic           tag_we;     // 写回tag使能信号
     // 向DCache发送Data SRAM请求
-    logic   [31:0]  data_data;
-    logic   [3:0]   strb;
+    logic   [31:0]  data_data;  // 写回data的数据
+    logic   [3:0]   strb;       // 写回data的strb
     logic   fetch_sb;           // 进状态机的时候一定fetch_sb为0
 } commit_cache_req_t;
 
 typedef struct packed {
-    logic   [31:0]  addr;
-    // logic   [31:0]  data;
-    sb_entry_t      sb_entry;
+    logic   [31:0]  addr;       // 反馈地址
+    // logic   [31:0]  data;   
+    sb_entry_t      sb_entry;   // 读出的sb_entry
     // Data SRAM向commit级发送读结果
-    logic   [31:0]  data;
-    logic   [31:0]  data_other;
+    logic   [31:0]  data;       // 返回的数据
+    logic   [31:0]  data_other; // 返回的另一路数据，默认当返回两路数据的时候，data为0路，data_other为1路
 } cache_commit_resp_t;
 
 // commit与AXI的交互
