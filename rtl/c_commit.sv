@@ -28,7 +28,7 @@ function logic [31:0] get_data_mask(
 endfunction
 
 function logic [1:0] get_way_hit(
-    input hit
+    input logic hit
 );
     return hit ? 2'b10 : 2'b01;
 endfunction
@@ -128,14 +128,14 @@ end
 always_comb begin
     commit_arf_we_o = '0;
     commit_arf_data_o = '0;
-    commit_arf_addr_o = '0;
+    commit_arf_areg_o = '0;
 
     if(~stall) begin
         commit_arf_we_o[1] = commit_request_o[1] & rob_commit_i[1].w_reg;
         commit_arf_data_o[1] = rob_commit_i[1].w_data;
         commit_arf_areg_o[1] = rob_commit_i[1].w_areg;
     end
-    
+
 
     if(ls_fsm_q == S_NORMAL) begin
         commit_arf_we_o[0] = commit_request_o[0] & rob_commit_i[0].w_reg;
@@ -433,7 +433,7 @@ always_comb begin
                 commit_cache_req.fetch_sb = '0;
             end
         end
-        
+
         else if(is_uncached[0]) begin
             // 配置AXI的相应信息
             commit_axi_valid = '1;
@@ -454,7 +454,7 @@ always_comb begin
             // normal状态下未命中也要提交
             commit_cache_req.fetch_sb = |lsu_info[0].strb;
         end
-        
+
         else if(cache_commit_hit) begin
             // 配置Cache的相应信息
             commit_cache_valid = '1;
@@ -465,7 +465,7 @@ always_comb begin
             commit_cache_req.strb = lsu_info[0].strb;
             commit_cache_req.fetch_sb = |lsu_info[0].strb;
         end
-        
+
         else begin
             // 读出Cache的整块数据，最后写回
             if(cache_commit_dirty) begin
@@ -581,7 +581,7 @@ always_comb begin
         if(axi_commit_valid_i) begin
             if(axi_block_ptr == axi_block_len) begin
                 if(axi_return_back) begin
-                    
+
                 end
                 else begin
                     commit_axi_valid_o = '1;
@@ -619,7 +619,7 @@ always_comb begin
             commit_axi_req.rmask = '0;
         end
         else begin
-            
+
         end
     end
 
@@ -780,7 +780,7 @@ always_ff @(posedge clk) begin
                         axi_block_len <= '0;
                         axi_block_data <= '0;
                     end
-                    else begin  
+                    else begin
                         ls_fsm_q <= S_AXI_RD;
                         // 设置相应的AXI数据
                         axi_block_ptr <= '0;
