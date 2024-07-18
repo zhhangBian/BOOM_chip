@@ -45,8 +45,9 @@ module commit #(
     output  logic   commit_ready_o,
     output  logic   [1:0]   commit_request_o,
 
-    output  logic   [31:0]  commit_csr_data_o,
+    // 将CSR对应位的值写到寄存器中
     output  logic   commit_csr_valid_o,
+    output  logic   [31:0]  commit_csr_data_o,
 
     // commit与DCache的接口
     output  commit_cache_req_t  commit_cache_req_o,
@@ -69,7 +70,7 @@ module commit #(
     input   logic   axi_commit_valid_i,
     output  logic   commit_axi_valid_o,
     input   logic   axi_commit_ready_i,
-    // 其实没有用到
+    // 其实没有用到：对axi的last信号
     input   logic   axi_commit_last_i
 );
 
@@ -86,11 +87,18 @@ assign commit_data_o = commit_data_q;
 
 // 维护一个提交级的时钟
 logic [5:0] timer_64, timer_64_q;
-assign timer_64 = timer_64_q;
 
-// TODO1 选择提交指令，将指令信息（写寄存器，读写内存）
-// 对于正常提交
 // 正常情况都不需要进入状态机，直接提交即可
+// 特殊处理
+// - cache没有命中（在LSU中判断）：进入状态机
+// - 分支预测失败
+// - 写csr指令
+// - 异常处理
+// - tlb维护指令
+// - is_uncached指令
+// - cache维护指令
+// - dbar,ibar
+// 特殊处理均只允许单条提交
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0];
     // CSR指令、Uncached指令允许提交
@@ -104,12 +112,13 @@ end
 
 // ------------------------------------------------------------------
 // 代表相应的指令属性
+logic [1:0] is_exc;
 logic [1:0] is_lsu_write, is_lsu_read, is_lsu;
-logic [1:0] is_uncached;
-logic [1:0] is_csr;
-logic [1:0] is_cache;
-logic [1:0] is_tlb;
-logic cache_commit_hit;
+logic [1:0] is_uncached;    // 指令为Uncached指令
+logic [1:0] is_csr_fix;     // 指令为CSR特权指令
+logic [1:0] is_cache_fix;   // 指令为Cache维护指令
+logic [1:0] is_tlb_fix;     // 指令为TLB维护指令
+logic cache_commit_hit;     // 此周期输入到cache的地址没有命中
 
 // 与DCache的一级流水交互
 iq_lsu_pkg_t [1:0] lsu_info;
@@ -122,49 +131,29 @@ assign commit_cache_req_o = commit_cache_req;
 commit_axi_req_t commit_axi_req_q, commit_axi_req;
 assign commit_axi_req_o = commit_axi_req;
 
-always_comb begin
-    commit_cache_req.data = lsu_info[0].data;
-    commit_cache_req.addr = lsu_info[0].addr;
-    commit_cache_req.strb = lsu_info[0].strb;
-    commit_cache_req.rmask = lsu_info[0].rmask;
-end
-
 // 判断指令类型
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         // 处理后续的竞争逻辑
         is_lsu_write[i] = |lsu_info[i].strb;
         is_lsu_read[i]  = |lsu_info[i].rmask;
+
         is_lsu[i]       = is_lsu_write[i] | is_lsu_read[i];
         is_uncached[i]  = lsu_info.is_uncached;
-
-        is_csr[i]       = |rob_commit_i[i].csr_type;
-        is_cache[i]     = |rob_commit_i[i].cache_code;
-        is_tlb[i]       = |rob_commit_i[i].tlb_type;
+        is_csr_fix[i]       = rob_commit_i[i].is_csr_fix;
+        is_cache_fix[i]     = rob_commit_i[i].is_cache_fix;
+        is_tlb_fix[i]       = rob_commit_i[i].is_tlb_fix;
     end
 end
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-// 信息梳理
-
-// TODO2 特殊处理
-// tlb维护指令
-// is_uncached指令
-// cache维护指令
-// dbar,ibar
-/*******************************/
-// 分支预测失败
-// 写csr指令
-// 异常处理
-
-// 以上所有指令只允许单条提交
-
 // ------------------------------------------------------------------
 // 处理全局flush信息
 always_comb begin
+    // 只要不是现在提交，就刷
     // 此种情况包含了Cache，CSR和TLB维护的情况
-    if(~(|commit_request_o)) begin
+    if(~(|commit_request_o) && ls_fsm == S_NORMAL) begin
         flush = '1;
     end
     else if(is_dbar || is_ibar) begin
@@ -190,7 +179,24 @@ end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
-// 处理CSR逻辑
+// 维护提交级的计时器
+always_ff @(posedge clk) begin
+    if(!rst_n) begin
+        timer_64_q <= '0;
+    end
+    else begin
+        timer_64_q <= timer_64_q + 64'b1;
+    end
+end
+
+always_comb begin
+    timer_64 = timer_64_q;
+end
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ------------------------------------------------------------------
+// CSR特权指令
+// TODO：csr_t的结构需要进一步匹配
 csr_t csr, csr_q, csr_init;
 logic [2:0] csr_type = rob_commit_i[0].csr_type;
 logic [13:0] csr_num = rob_commit_i[0].csr_num;
@@ -198,7 +204,8 @@ logic [13:0] csr_num = rob_commit_i[0].csr_num;
 // 维护CSR信息
 always_comb begin
     csr_init                = '0;
-    csr_init.crmd[`_CRMD_DA]= 1'd1; // 初始化要求非0的 CSR 寄存器值
+    // 初始化要求非0的 CSR 寄存器值
+    csr_init.crmd[`_CRMD_DA]= 1'd1;
     csr_init.asid[31:10]    = 22'h280;
     csr_init.cpuid          = CPU_ID;
     csr_init.tid            = CPU_ID;
@@ -223,20 +230,17 @@ always_comb begin
     case (csr_type)
         `_CSR_CSRRD: begin
             commit_csr_valid_o |= '1;
-            // TODO：csr_t的结构需要进一步匹配
             commit_csr_data_o |= csr_q[csr_num];
         end
 
         `_CSR_CSRWR: begin
             commit_csr_valid_o |= '1;
-            // TODO：csr_t的结构需要进一步匹配
             commit_csr_data_o |= csr_q[csr_num];
             csr[csr_num] = rob_commit_i[0].data_rd;
         end
 
         `_CSR_XCHG: begin
             commit_csr_valid_o |= '1;
-            // TODO：csr_t的结构需要进一步匹配
             commit_csr_data_o |= csr_q[csr_num];
             csr[csr_num] = rob_commit_i[0].data_rd & rob_commit_i[0].data_rj;
         end
@@ -249,12 +253,30 @@ end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
-// 进行tlb 维护，在commit级统一管理TLB，对应有一个ITLB和DTLB的映射
+// TLB维护指令
+// 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
 tlb_entry_t [63 : 0] tlb_entrys;
+
+
+
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-// cache维护指令
+// ------------------------------------------------------------------
+// Cache维护指令：也需要进入状态机
+logic [31:0] cache_va;
+assign cache_va = rob_commit_i[0].data_tj + rob_commit_i[0].data_imm;
+
+logic [4:0] cache_code;
+assign cache_code = rob_commit_i[0].cache_code;
+// code[2:0]指示操作的Cache对象
+logic [2:0] cache_tar;
+assign cache_tar = cache_code[2:0];
+// code[4:3]指示操作类型
+logic [1:0] cache_op;
+assign cache_op = cache_code[4:3];
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 // ------------------------------------------------------------------
@@ -278,9 +300,9 @@ typedef enum logic[4:0] {
 } ls_fsm_s;
 // 如果是is_uncached指令，直接发起AXI请求
 // 状态机流程：
-// 1. normal命中 -> write即可
-// 2. miss -> 为脏需要写回：先read -> write back -> read
-// 3. miss -> 不需要写回通过AXI读相应的内容
+// 1. normal命中 -> write cache即可
+// 2. miss -> 为脏需要写回：先read cache -> axi write back -> axi read -> write cache
+// 3. miss -> 不需要写回，通过AXI读相应的内容
 
 ls_fsm_s ls_fsm_q, ls_fsm;
 
@@ -307,11 +329,37 @@ always_comb begin
     if(ls_fsm_q == S_NORMAL && is_lsu) begin
         stall |= ~cache_commit_hit;
 
-        if(is_uncached) begin
+        // Cache维护指令
+        if(is_cache_fix[0]) begin
+            commit_cache_valid = '1;
+            commit_cache_req.addr = cache_va;
+            commit_cache_req.tag_data = '0;
+            commit_cache_req.tag_we = '0;
+            commit_cache_req.data_data = '0;
+            commit_cache_req.strb = '0;
+            commit_cache_req.fetch_sb = '0;
+
+            if(cache_code == 0) begin
+                commit_cache_req.way_hit = cache_va[0];
+                commit_cache_req.tag_data = '0;
+                commit_cache_req.tag_we = '1;
+            end
+            else if(cache_op == 1) begin
+                commit_cache_req.way_hit = cache_va[0];
+                commit_cache_req.tag_data = get_cache_tag(cache_va, '1, '1);
+                commit_cache_req.tag_we = '1;
+            end
+            else if(cache_op == 2 && cache_commit_hit) begin
+                commit_cache_req.way_hit = cache_va[0];
+                commit_cache_req.tag_data = '0;
+                commit_cache_req.data_data = '0;
+            end
+        end
+        else if(is_uncached[0]) begin
             // 配置AXI的相应信息
             commit_axi_valid = '1;
             commit_axi_req.data = get_data_mask(
-                lsu_info[0].data, 
+                lsu_info[0].data,
                 is_lsu_read[0] ? lsu[0].rmask : lsu[0].strb);
             commit_axi_req.addr = lsu_info[0].addr;
             commit_axi_req.len  = 1;
@@ -321,7 +369,7 @@ always_comb begin
             // 配置Cache的相应信息
             commit_cache_valid = '1;
             commit_cache_req.addr = lsu_info[0].addr;
-            // TODO way_hit
+            commit_cache_req.way_hit = commit_cache_req.addr[0];
             commit_cache_req.tag_data = '0;
             commit_cache_req.tag_we = '0;
             commit_cache_req.data_data = '0;
@@ -333,7 +381,7 @@ always_comb begin
             // 配置Cache的相应信息
             commit_cache_valid = '1;
             commit_cache_req.addr = lsu_info[0].addr;
-            // TODO way_hit
+            commit_cache_req.way_hit = commit_cache_req.addr[0];
             commit_cache_req.tag_data = '0;
             commit_cache_req.data_data = lsu_info[0].data;
             commit_cache_req.strb = lsu_info[0].strb;
@@ -346,7 +394,7 @@ always_comb begin
                 commit_cache_valid = '1;
                 // 对齐一块的数据
                 commit_cache_req.addr = rob_commit_i[0].cache_dirty_addr & 32'hfffffff0;
-                // TODO way_hit
+                commit_cache_req.way_hit = commit_cache_req.addr[0];
                 commit_cache_req.tag_data = '0;
                 commit_cache_req.tag_we = '0;
                 commit_cache_req.data_data = '0;
@@ -366,7 +414,7 @@ always_comb begin
                 // 配置Cache的相应信息
                 commit_cache_valid = '1;
                 commit_cache_req.addr = lsu_info[0].addr;
-                // TODO way_hit
+                commit_cache_req.way_hit = commit_cache_req.addr[0];
                 commit_cache_req.tag_data = '0;
                 commit_cache_req.tag_we = '0;
                 commit_cache_req.data_data = '0;
@@ -494,8 +542,20 @@ always_ff @(posedge clk) begin
         // normal状态 且 需要进入Cache状态机
         if(ls_fsm_q == S_NORMAL && is_lsu) begin
             data_write_addr <= lsu_info[0].addr;
+            
+            // Cache维护指令
+            if(is_cache_fix[0]) begin
+
+                if(cache_code == 0) begin
+                end
+                else if(cache_op == 1) begin
+                end
+                else if(cache_op == 2 && cache_commit_hit) begin
+                    ls_fsm_q <= S_NORMAL;
+                end
+            end
             // 如果是uncached请求，直接发起AXI请求
-            if(is_uncached) begin
+            else if(is_uncached[0]) begin
                 ls_fsm_q <= S_UNCACHED;
             end
             // Cache命中
@@ -611,18 +671,6 @@ always_ff @(posedge clk) begin
         else begin
             ls_fsm_q <= S_NORMAL;
         end
-    end
-end
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-// ------------------------------------------------------------------
-// 维护提交级的计时器
-always_ff @(posedge clk) begin
-    if(!rst_n) begin
-        timer_64_q <= '0;
-    end
-    else begin
-        timer_64_q <= timer_64_q + 64'b1;
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

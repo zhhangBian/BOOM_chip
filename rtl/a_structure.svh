@@ -4,7 +4,7 @@
 /*============================== BPU start ============================== */
 
 // Branch target type
-typedef enum logic[1:0] { 
+typedef enum logic[1:0] {
     BR_NPC, // 正常指令
     BR_IMM, // 立即数跳转指令
     BR_CALL, // LA 中的 BL 指令
@@ -17,7 +17,7 @@ typedef struct packed {
     logic                       taken;
     logic [ 1:0 ]               scnt;
     logic [`BPU_HISTORY_LEN-1:0] history; // 最新的历史放 0 位，旧的历史往高位移
-    // ras_ptr???    
+    // ras_ptr???
 } predict_info_t;
 
 typedef struct packed {
@@ -146,31 +146,30 @@ typedef struct packed {
     logic   [4 : 0] w_areg;
     logic   w_reg;
     logic   w_mem;
-    logic   first_commit;
 
     logic   c_valid;
 
-    logic [31:0] data_rd;
-    logic [31:0] data_rj;
-    
+    logic   [31:0]  data_rd;
+    logic   [31:0]  data_rj;
+    logic   [31:0]  data_imm;
+
+    logic   first_commit;
     iq_lsu_pkg_t lsu_info;
-    logic   uncached;
-    // CSR维护信息
+    logic   is_uncached;
+    logic   [5:0]   exc_code;   // 位宽随便定的，之后调整
+    logic   is_csr_fix;
     logic   [2:0]   csr_type;
     logic   [13:0]  csr_num;
+    logic   is_cache_fix;
     logic   [4:0]   cache_code;
+    logic   is_tlb_fix;
     logic   [4:0]   tlb_type;
     logic   [3:0]   tlb_op;
 
     logic   [31:0]  cache_dirty_addr;
     logic   cache_dirty;
 
-    // 特殊指令，例如uncached，tlb维护指令，写csr指令
-    // cache维护指令，st指令，只能单条提交
-    // 异常
-    // 1/logic       has_exc,     //有异常
-    // 2/logic       first_commit,//只能提交一条
-    // 3/分支预测相关信息
+    // TODO：分支预测信息
 } rob_commit_pkg_t;
 
 typedef struct packed {
@@ -263,7 +262,7 @@ typedef struct packed {
     logic        hit;
     rob_rid_t    wid;     // 写回地址
     logic[31:0]  paddr;
-    logic[31:0]  rdata;  
+    logic[31:0]  rdata;
     tlb_exception_t tlb_exception;
     logic        refill;
     logic        dirty;
@@ -280,12 +279,12 @@ typedef struct packed {
     // 向DCache发送Tag SRAM写请求
     logic   [31:0]  addr;
     logic           way_hit;    // TODO 读写对应的路
-    cache_tag_t     tag_data;   
+    cache_tag_t     tag_data;
     logic           tag_we;     // 写回tag使能信号
     // 向DCache发送Data SRAM请求
     logic   [31:0]  data_data;
     logic   [3:0]   strb;
-    logic   fetch_sb; // 进状态机的时候一定fetch_sb为0
+    logic   fetch_sb;           // 进状态机的时候一定fetch_sb为0
 } commit_cache_req_t;
 
 typedef struct packed {
