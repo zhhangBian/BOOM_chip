@@ -80,13 +80,15 @@ module commit #(
     // commit与ARF的接口
     output  logic   [1:0]   commit_arf_we_o,
     output  word_t  [1:0]   commit_arf_data_o,
-    output  word_t  [1:0]   commit_arf_addr_o
+    output  word_t  [1:0]   commit_arf_areg_o,
 
     // commit与BPU的接口
     output  logic   commit_bpu_predict_right_o,
     output  word_t  commit_bpu_real_pc_o
 );
 
+// ------------------------------------------------------------------
+// 处理指令提交逻辑
 // 是否将整个提交阻塞
 logic stall, stall_q;
 assign stall_o = stall;
@@ -121,6 +123,35 @@ always_comb begin
                           ~rob_commit_i[1].first_commit &
                           commit_ready_o;
 end
+
+// 处理对ARF的接口
+always_comb begin
+    commit_arf_we_o = '0;
+    commit_arf_data_o = '0;
+    commit_arf_addr_o = '0;
+
+    if(~stall) begin
+        commit_arf_we_o[1] = commit_request_o[1] & rob_commit_i[1].w_reg;
+        commit_arf_data_o[1] = rob_commit_i[1].w_data;
+        commit_arf_areg_o[1] = rob_commit_i[1].w_areg;
+    end
+    
+
+    if(ls_fsm_q == S_NORMAL) begin
+        commit_arf_we_o[0] = commit_request_o[0] & rob_commit_i[0].w_reg;
+        commit_arf_data_o[0] = rob_commit_i[0].w_data;
+        commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
+    end
+    else if(ls_fsm_q == S_UNCACHED) begin
+        if(axi_commit_valid_i) begin
+            commit_arf_we_o[0] = |rob_commit_q.lsu_info.strb;
+            commit_arf_data_o[0] = axi_commit_resp_i.data;
+            commit_arf_areg_o[0] = rob_commit_q.w_areg;
+        end
+    end
+    // 其余情况均不提交
+end
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
 // 代表相应的指令属性
@@ -336,6 +367,7 @@ typedef enum logic[4:0] {
 
 ls_fsm_s ls_fsm_q;
 logic axi_return_back;
+rob_commit_pkg_t rob_commit_q;
 
 // 配置与Cache的握手信号
 logic commit_cache_valid, commit_cache_valid_q;
@@ -347,7 +379,6 @@ word_t [CACHE_BLOCK_NUM-1:0] axi_block_data;
 logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr, cache_block_len;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr, axi_block_len;
 
-logic [31:0] data_write_addr;
 logic [31:0] cache_dirty_addr;
 
 // Cache的特性是本周期发出请求，下周期才能得到回应
@@ -402,12 +433,11 @@ always_comb begin
                 commit_cache_req.fetch_sb = '0;
             end
         end
+        
         else if(is_uncached[0]) begin
             // 配置AXI的相应信息
             commit_axi_valid = '1;
-            commit_axi_req.data = get_data_mask(
-                lsu_info[0].data,
-                is_lsu_read[0] ? lsu[0].rmask : lsu[0].strb);
+            commit_axi_req.data = lsu_info[0].data
             commit_axi_req.addr = lsu_info[0].addr;
             commit_axi_req.len  = 1;
             commit_axi_req.strb = lsu_info[0].strb;
@@ -424,6 +454,7 @@ always_comb begin
             // normal状态下未命中也要提交
             commit_cache_req.fetch_sb = |lsu_info[0].strb;
         end
+        
         else if(cache_commit_hit) begin
             // 配置Cache的相应信息
             commit_cache_valid = '1;
@@ -434,6 +465,7 @@ always_comb begin
             commit_cache_req.strb = lsu_info[0].strb;
             commit_cache_req.fetch_sb = |lsu_info[0].strb;
         end
+        
         else begin
             // 读出Cache的整块数据，最后写回
             if(cache_commit_dirty) begin
@@ -554,7 +586,7 @@ always_comb begin
                 else begin
                     commit_axi_valid_o = '1;
                     // 设置相应的AXI数据
-                    commit_axi_req.addr = data_write_addr;
+                    commit_axi_req.addr = rob_commit_q.lsu_info.paddr;
                     commit_axi_req.len = CACHE_BLOCK_NUM;
                     commit_axi_req.strb = '0;
                     commit_axi_req.rmask = '1;
@@ -618,7 +650,7 @@ always_ff @(posedge clk) begin
     else begin
         // normal状态 且 需要进入Cache状态机
         if(ls_fsm_q == S_NORMAL && is_lsu) begin
-            data_write_addr <= lsu_info[0].addr;
+            rob_commit_q <= rob_commit_i;
 
             // Cache维护指令
             if(is_cache_fix[0]) begin
