@@ -2,7 +2,7 @@
 
 //用寄存器存的tlb表项，打一拍出结果
 //目前完成地址翻译，错误码和tlb的读写支持待补充
-module mmu #(
+module old_mmu #(
     parameter TLB_ENTRY_NUM = 64,
     parameter TLB_SWITCH_OFF = 0
 ) (
