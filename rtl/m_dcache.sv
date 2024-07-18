@@ -283,11 +283,13 @@ always_comb begin
     lsu_iq_pkg.tlb_exception = tlb_exception;
     lsu_iq_pkg.refill   = refill_way;
     lsu_iq_pkg.dirty    = tag_ans0[refill_way].d;
+    lsu_iq_pkg.tag_hit  = tag_hit;
 end
 /*****************************cache2commit***********************/
 always_comb begin
     cache_commit_resp.addr = paddr;
-    cache_commit_resp.data = commit_way_hit_q[1] ? data_ans1[1] : data_ans1[0];
+    cache_commit_resp.data = commit_way_hit_q[0] ? data_ans1[0] : data_ans1[1];
+    cache_commit_resp.data_ohter = data_ans1[1];
     cache_commit_resp.sb_entry = r_sb_entry;
 end
 

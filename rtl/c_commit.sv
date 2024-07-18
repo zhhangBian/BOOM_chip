@@ -139,7 +139,7 @@ for(integer i = 0; i < 2; i += 1) begin
         is_lsu_read[i]  = |lsu_info[i].rmask;
 
         is_lsu[i]       = is_lsu_write[i] | is_lsu_read[i];
-        is_uncached[i]  = lsu_info.is_uncached;
+        is_uncached[i]  = lsu_info[i].is_uncached;
         is_csr_fix[i]       = rob_commit_i[i].is_csr_fix;
         is_cache_fix[i]     = rob_commit_i[i].is_cache_fix;
         is_tlb_fix[i]       = rob_commit_i[i].is_tlb_fix;
@@ -266,7 +266,7 @@ tlb_entry_t [63 : 0] tlb_entrys;
 // ------------------------------------------------------------------
 // Cache维护指令：也需要进入状态机
 logic [31:0] cache_va;
-assign cache_va = rob_commit_i[0].data_tj + rob_commit_i[0].data_imm;
+assign cache_va = rob_commit_i[0].data_rj + rob_commit_i[0].data_imm; // data_tj -> data_rj
 
 logic [4:0] cache_code;
 assign cache_code = rob_commit_i[0].cache_code;
@@ -340,12 +340,12 @@ always_comb begin
             commit_cache_req.fetch_sb = '0;
 
             if(cache_code == 0) begin
-                commit_cache_req.way_hit = cache_va[0];
+                commit_cache_req.way_hit = '1;//cache_va[0];->delete
                 commit_cache_req.tag_data = '0;
                 commit_cache_req.tag_we = '1;
             end
             else if(cache_op == 1) begin
-                commit_cache_req.way_hit = cache_va[0];
+                commit_cache_req.way_hit = '1;//cache_va[0];
                 commit_cache_req.tag_data = get_cache_tag(cache_va, '1, '1);
                 commit_cache_req.tag_we = '1;
             end

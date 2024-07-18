@@ -260,6 +260,7 @@ typedef struct packed {
 //   fetch_excp_t f_excp;
     logic        uncached;
     logic        hit;
+    logic[1 :0]  tag_hit;
     rob_rid_t    wid;     // 写回地址
     logic[31:0]  paddr;
     logic[31:0]  rdata;
@@ -292,7 +293,8 @@ typedef struct packed {
     // logic   [31:0]  data;
     sb_entry_t      sb_entry;
     // Data SRAM向commit级发送读结果
-    logic   [31:0]  r_data;
+    logic   [31:0]  data;
+    logic   [31:0]  data_other;
 } cache_commit_resp_t;
 
 // commit与AXI的交互
