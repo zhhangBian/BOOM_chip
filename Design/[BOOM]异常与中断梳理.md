@@ -38,10 +38,10 @@
 
 #### 处理
 处理内容包括：
-1.（全部）将 CSR.CRMD 的 PLV、IE 分别存到 CSR.PRMD 的 PPLV、PIE 中，然后将 CSR.CRMD 的 PLV 置为 0，IE 置为 0；
-2.（全部）将触发例外指令的 PC 值记录到 CSR.ERA 中；
-3.（全部）将例外的ecode和esubcode写入csr.estat对应域中；
-4.（当触发TLBR,ADEF,ALE,PIL,PIS,PIF,PME,PPI例外时），将出错的虚地址（ADEF为PC，TLBR为根据触发例外的地址，其他为访存地址）写入CSR.BADV中；
-5.（当触发 TLB 重填例外、load 操作页无效例外、store 操作页无效例外、取指操作页无效例外、页写允许例外和页特权等级不合规例外时），触发例外的虚地址的[31:13]位被记录到CSR.TLBEHI.VPPN；
-6.（全部）如果是0x3F 0 TLBR TLB 重填例外，跳到CSR.TLBRENTRY，其他跳转到例外入口CSR.EENTRY处取指；
-7.（全部）刷掉流水线。
+1. （全部）将 CSR.CRMD 的 PLV、IE 分别存到 CSR.PRMD 的 PPLV、PIE 中，然后将 CSR.CRMD 的 PLV 置为 0，IE 置为 0；
+2. （全部）将触发例外指令的 PC 值记录到 CSR.ERA 中；
+3. （全部）将例外的ecode和esubcode写入csr.estat对应域中；
+4. （当触发TLBR,ADEF,ALE,PIL,PIS,PIF,PME,PPI例外时），将出错的虚地址（ADEF为PC，TLBR为根据触发例外的地址，其他为访存地址）写入CSR.BADV中；
+5. （当触发 TLB 重填例外、load 操作页无效例外、store 操作页无效例外、取指操作页无效例外、页写允许例外和页特权等级不合规例外时），触发例外的虚地址的[31:13]位被记录到CSR.TLBEHI.VPPN；
+6. （全部）如果是0x3F 0 TLBR TLB 重填例外，跳到CSR.TLBRENTRY，其他跳转到例外入口CSR.EENTRY处取指；
+7. （全部）刷掉流水线。

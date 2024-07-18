@@ -39,7 +39,7 @@ module commit #(
 
     // 可能没用
     input   logic   [1:0]   rob_commit_valid_i,
-    input   rob_commit_pkg_t [1:0] rob_commit_i,
+    input   rob_commit_pkg_t [1:0]  rob_commit_i,
 
     // 给ROB的输出信号，确定提交相关指令
     output  logic   commit_ready_o,
@@ -62,8 +62,8 @@ module commit #(
 
     // commit与AXI的接口
     // 接口好多啊
-    output  commit_axi_req_t  commit_axi_req_o,
-    input   axi_commit_resp_t axi_commit_resp_i,
+    output  commit_axi_req_t    commit_axi_req_o,
+    input   axi_commit_resp_t   axi_commit_resp_i,
     // 按照axi-crossbar的逻辑设计
     output  logic   commit_axi_ready_o,
     input   logic   axi_commit_valid_i,
@@ -168,21 +168,19 @@ always_comb begin
         flush = '1;
     end
     else if(is_dbar || is_ibar) begin
-        flush = '1'
+        flush = '1;
     end
     else if(|is_lsu) begin
         if(ls_fsm_q == S_NORMAL) begin
             if(!cache_commit_hit) begin
-                if(is_lsu_write[0] && is_uncached) begin
-                    flush = '0;
-                end
-                else begin
-                    flush = '1;
-                end
+                flush = '1;
             end
             else begin
                 flush = '0;
             end
+        end
+        else begin
+            flush = '0;
         end
     end
     else begin
