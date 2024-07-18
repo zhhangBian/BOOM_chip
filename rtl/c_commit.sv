@@ -195,6 +195,21 @@ end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
+// 异常处理
+
+
+
+
+
+
+
+
+
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ------------------------------------------------------------------
 // CSR特权指令
 // TODO：csr_t的结构需要进一步匹配
 csr_t csr, csr_q, csr_init;
@@ -254,6 +269,7 @@ end
 
 // ------------------------------------------------------------------
 // TLB维护指令
+// 不管理TLB的映射内容，只管理TLB的维护内容
 // 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
 tlb_entry_t [63 : 0] tlb_entrys;
 
@@ -340,14 +356,18 @@ always_comb begin
             commit_cache_req.fetch_sb = '0;
 
             if(cache_code == 0) begin
-                commit_cache_req.way_hit = '1;//cache_va[0];->delete
+                commit_cache_req.way_hit = lsu_info[0].addr;
                 commit_cache_req.tag_data = '0;
                 commit_cache_req.tag_we = '1;
             end
             else if(cache_op == 1) begin
-                commit_cache_req.way_hit = '1;//cache_va[0];
+                commit_cache_req.addr = commit_cache_req.addr[0] & 32'hfffffff0;
+                commit_cache_req.way_hit = 0;
                 commit_cache_req.tag_data = get_cache_tag(cache_va, '1, '1);
                 commit_cache_req.tag_we = '1;
+                commit_cache_req.data_data = '0;
+                commit_cache_req.strb = '0;
+                commit_cache_req.fetch_sb = '0;
             end
             else if(cache_op == 2 && cache_commit_hit) begin
                 commit_cache_req.way_hit = cache_va[0];
@@ -542,7 +562,7 @@ always_ff @(posedge clk) begin
         // normal状态 且 需要进入Cache状态机
         if(ls_fsm_q == S_NORMAL && is_lsu) begin
             data_write_addr <= lsu_info[0].addr;
-            
+
             // Cache维护指令
             if(is_cache_fix[0]) begin
 
@@ -644,7 +664,7 @@ always_ff @(posedge clk) begin
                 axi_block_data <= cache_block_data;
             end
             else begin
-                cache_block_data[cache_block_ptr] <= cache_commit_resp.data;
+                cache_block_data[cache_block_ptr] <= cache_commit_resp_i.data;
                 cache_block_ptr <= cache_block_data + 1;
             end
         end
