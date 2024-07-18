@@ -73,7 +73,7 @@ handshake_if #(.T(d_r_pkg_t)) fifo_r_handshake();
 
 basic_fifo #(
     .DEPTH(D_AFTER_QUEUE_DEPTH),
-    .BYPASS(1), // 可以BYPASS，因为不充当 d 级的流水寄存器。后端可能需要注意一下
+    .BYPASS(0), // 不允许 BYPASS ，充当前后端之间的流水寄存器
     .T(d_r_pkd_t)
 ) fifo_r_inst (
     .clk(clk),
