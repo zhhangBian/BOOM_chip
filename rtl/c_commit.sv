@@ -248,30 +248,33 @@ end
 
 //都不是寄存器
 logic cur_exception;       //提交的第0条是不是异常指令
-logic cur_tlbr_exception = 1'b0;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
-csr_t csr_exception_update = csr_q;//周期结束时候写入csr_q
+logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
+csr_t csr_exception_update;//周期结束时候写入csr_q
 
 //中断识别
-logic [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECTL_LIE];
-logic int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
+wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECTL_LIE];
+wire int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
 //取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
-logic fetch_excp    = rob_commit_i[0].fetch_exception;
+wire fetch_excp    = rob_commit_i[0].fetch_exception;
 
 //译码异常 下面的信号来自decoder TODO
-logic syscall_excp  = rob_commit_i[0].syscall_inst;
-logic break_excp    = rob_commit_i[0].break_inst;
-logic ine_excp      = rob_commit_i[0].decode_err;
-logic priv_excp     = rob_commit_i[0].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
+wire syscall_excp  = rob_commit_i[0].syscall_inst;
+wire break_excp    = rob_commit_i[0].break_inst;
+wire ine_excp      = rob_commit_i[0].decode_err;
+wire priv_excp     = rob_commit_i[0].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
 
 //执行异常 TODO 访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
-logic execute_excp  = rob_commit_i[0].execute_exception;
+wire execute_excp  = rob_commit_i[0].execute_exception;
 
-logic [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
+wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
 always_comb begin
     /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
     cur_exception = 1'b1;
+    cur_tlbr_exception = 1'b0;//tlbr
+
+    csr_exception_update = csr_q;
 
     csr_exception_update.prmd[`_PRMD_PPLV] = csr_q.crmd[`_CRMD_PLV];
     csr_exception_update.prmd[`_PRMD_PIE]  = csr_q.crmd[`_CRMD_IE];
@@ -292,9 +295,9 @@ always_comb begin
         7'b01?????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].va; //存badv
+            csr_exception_update.badv                    = rob_commit_i[0].pc; //存badv
             if (rob_commit_i[0].exc_code != `_ECODE_ADEF) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].va[31:13];        //tlb例外存vppn
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].pc[31:13];        //tlb例外存vppn
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
@@ -327,9 +330,9 @@ always_comb begin
         7'b0000001: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].va; //存badv
+            csr_exception_update.badv                    = rob_commit_i[0].badva; //存badv
             if (rob_commit_i[0].exc_code != `_ECODE_ALE) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].va[31:13];        //tlb例外存vppn
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badva[31:13];        //tlb例外存vppn
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
@@ -338,7 +341,7 @@ always_comb begin
         /*执行例外，
         TODO 访存级别如果有地址不对齐错误或者tlb错误
         要传execute_excpetion信号和错误号过来，
-        同样需要出错虚地址va，同取指部分的例外*/
+        同样需要出错虚地址badva，同取指部分的例外*/
 
         default: begin
             csr_exception_update = csr_q;
