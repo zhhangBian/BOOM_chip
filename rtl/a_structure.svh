@@ -256,6 +256,15 @@ typedef struct packed {
     logic   fetch_sb;           // 进状态机的时候一定fetch_sb为0
 } commit_cache_req_t;
 
+// commit与ICache的交互
+typedef struct packed {
+    // 向ICache发送SRAM读写请求
+    logic   [31:0]  addr;       // 地址
+    logic   [1 :0]  way_choose; // TODO 读写对应的路，两位分别对应两路，对应位表示对应路是否命中
+    cache_tag_t     tag_data;   // 写回tag数据
+    logic           tag_we;     // 写回tag使能信号
+} commit_fetch_req_t;
+
 typedef struct packed {
     logic   [31:0]  addr;       // 反馈地址
     // logic   [31:0]  data;
@@ -264,6 +273,12 @@ typedef struct packed {
     logic   [31:0]  data;       // 返回的数据
     logic   [31:0]  data_other; // 返回的另一路数据，默认当返回两路数据的时候，data为0路，data_other为1路
 } cache_commit_resp_t;
+
+// commit与Icache的交互反馈
+typedef struct packed {
+    logic   [1 :0]  way_hit;    // 命中结果
+    tlb_exception_t tlb_exception; // TLB异常
+} fetch_commit_resp_t;
 
 // commit与AXI的交互
 typedef struct packed {
