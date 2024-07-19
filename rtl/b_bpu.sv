@@ -17,7 +17,7 @@
  * 有条件跳转指令有：BEQ, BNE, BLT, BGE, BLTU, BGEU, 
  */
 
-`include "a_branch_predict.svh"
+`include "a_defines.svh"
 
 // combination logic
 // this function rely on the value of BPU_BTB_LEN. if the value is
@@ -36,19 +36,13 @@ endfunction
 module bpu(
     input                   clk,
     input                   rst_n,
-    input                   g_flush, // TODO: g_flush is the same as redir signal
+    input                   g_flush,
 
     input  correct_info_t   correct_info_i, // 后端反馈的修正信息
-    handshake_if.sender     sender // predict_info_t type
+    handshake_if.sender     sender // predict_infos_t type
 );
 
 logic ready_i;
-logic valid_o;
-predict_info_t predict_info_o;
-
-assign sender.data = predict_info_o; // 预测信息, 组合逻辑输出
-assign sender.valid = valid_o;
-assign ready_i = sender.ready;
 
 /* ============================== PC ============================== */
 logic [31:0 ] pc;
@@ -207,39 +201,52 @@ end
  */
 logic [1:0] branch;
 logic [1:0] mask;
+logic [1:0][31:0] target_pc;
+logic [31:0] pc_add_4_8;
+assign pc_add_4_8 = {pc[31:3]+'1, 3'b0};
 
 for (genvar i = 0; i < 2; i=i+1) begin
-    // branch[i] 表示第 i 条指令是否要分支
+    // branch[i] 表示第 i 条指令是否要分支出去 TODO: 
     // branch 的可能：
     // 1. !btb_rdata[i].is_cond_br 
     // 2. pht_rdata[i].scnt[1]
     assign branch[i] = btb_valid & (!btb_rdata[i].is_cond_br | pht_rdata[i].scnt[1]);
 end
+assign target_pc[0] = !branch[0] ? {pc[31:3], 3'b100} :
+                        btb_rdata[0].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[0].target_pc;
+assign target_pc[1] = !branch[1] ? pc_add_4_8 :
+                        btb_rdata[1].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[1].target_pc;
 
 assign mask = {!branch[0] | pc[2], !pc[2]};
 always_comb begin
-    // 根据 btb_valid, btb_rdata[i].br_type, branch 来判断npc
-    npc = {pc[31:2] + '1, 2'b0};
-
     if (branch[0] && !pc[2]) begin
-        npc = btb_rdata[0].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[0].target_pc;
+        npc = target_pc[0];
     end
-    else if (branch[1]) begin
-        npc = btb_rdata[1].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[1].target_pc;
+    else begin
+        npc = target_pc[1];
     end
 end
 
-assign predict_info_o.pc                 =  pc;
-assign predict_info_o.mask               =  mask;
-assign predict_info_i.target_pc          =  npc;
+// Output
+predict_infos_t [1:0] predict_infos;
+b_f_pkg_t b_f_pkg;
+
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign predict_info_o.br_type[i]     =  btb_rdata[i].valid ? btb_rdata[i].br_type : BR_NONE;
-    assign predict_info_o.taken[i]       =  branch[i];
-    assign predict_info_o.scnt[i]        =  pht_rdata[i].scnt;
-    assign predict_info_o.need_update[i] =  !btb_rdata[i].valid; // 没有这一项就要 update
-    assign predict_info_o.history[i]     =  bht_rdata[i].history;
+    assign predict_infos[i].target_pc   =  target
+    assign predict_infos[i].br_type     =  btb_rdata[i].valid ? btb_rdata[i].br_type : BR_NONE;
+    assign predict_infos[i].taken       =  branch[i];
+    assign predict_infos[i].scnt        =  pht_rdata[i].scnt;
+    assign predict_infos[i].need_update =  !btb_rdata[i].valid; // 没有这一项就要 update
+    assign predict_infos[i].history     =  bht_rdata[i].history;
 end
 
-// predict_info_o is with npc_logic
+assign b_f_pkg.predict_infos = predict_infos;
+assign b_f_pkg.pc = pc;
+assign b_f_pkg.mask = mask;
+
+// sender logic
+assign sender.valid = 1'b1; // TODO: 一个周期一定能够算出来，因此 valid 一定是 1
+assign ready_i = sender.ready;
+assign sender.data = b_f_pkg; // 预测信息, 组合逻辑输出
 
 endmodule

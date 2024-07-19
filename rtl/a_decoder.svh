@@ -358,8 +358,8 @@ typedef struct packed {
 function logic [31:0] inst_to_data_imm (input logic[31:0] inst, input imm_type_t data_imm_type);
     logic [31:0] ret;
     case (data_imm_type)
-        _IMM_S12:   ret =  {20{inst[21]},  inst[21:10]};
-        _IMM_S20:   ret =  {12{inst[24]},  inst[24:10]};
+        _IMM_S12:   ret =  {{20{inst[21]}},  inst[21:10]};
+        _IMM_S20:   ret =  {{12{inst[24]}},  inst[24:10]};
         _IMM_U5:    ret =  inst[14:10];
         default: 
         _IMM_U12:   ret =  {20'b0,         inst[21:10]};
@@ -370,12 +370,12 @@ endfunction
 function logic [31:0] inst_to_addr_imm (input logic[31:0] inst, input imm_type_t addr_imm_type);
     logic [31:0] ret;
     case (data_imm_type)
-        _ADDR_IMM_S12:   ret =  {20{inst[21]}, inst[21:10]}; // 仅用于store/load指令，低位不补零;
-        _ADDR_IMM_S14:   ret =  {16{inst[23]}, inst[23:10], 2'b0}; // 仅用于原子访存指令，低位补两个0;
-        _ADDR_IMM_S16:   ret =  {14{inst[25]}, inst[25:10], 2'b0}; // 仅用于计算分支offset，低位补两个0;
+        _ADDR_IMM_S12:   ret =  {{20{inst[21]}}, inst[21:10]}; // 仅用于store/load指令，低位不补零;
+        _ADDR_IMM_S14:   ret =  {{16{inst[23]}}, inst[23:10], 2'b0}; // 仅用于原子访存指令，低位补两个0;
+        _ADDR_IMM_S16:   ret =  {{14{inst[25]}}, inst[25:10], 2'b0}; // 仅用于计算分支offset，低位补两个0;
         // _ADDR_IMM_S21:  // 仅用于浮点分支指令使用，也就是暂时不使用
         default: 
-        _ADDR_IMM_S26:   ret =  {4 {inst[ 9]}, inst[ 9:0 ], inst[25:10], 2'b0};
+        _ADDR_IMM_S26:   ret =  {{4 {inst[ 9]}}, inst[ 9:0 ], inst[25:10], 2'b0};
     endcase
     return ret;
 endfunction
