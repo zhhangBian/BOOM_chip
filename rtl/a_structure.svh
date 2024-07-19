@@ -1,23 +1,20 @@
 `ifndef _BOOM_STRUCTURE_HEAD
 `define _BOOM_STRUCTURE_HEAD
 
-/*============================== BPU start ============================== */
+`include "a_branch_predict.svh"
 
 typedef struct packed {
-    logic [31:0]    pc;
-    logic [ 1:0]    mask;
-    predict_info_t  predict_info;
+    logic [31:0]        pc;
+    logic [ 1:0]        mask;
+    predict_info_t [1:0]predict_infos;
 } b_d_pkg_t;
 
 typedef struct packed {
     logic [1:0][31:0]   insts;
     logic [31:0]        pc;
     logic [ 1:0]        mask;
-    predict_info_t      predict_info;
+    predict_info_t [1:0]predict_infos;
 } f_d_pkg_t;
-
-typedef logic [`ARF_WIDTH - 1 :0] arf_id;
-typedef logic [`ROB_WIDTH - 1 :0] rob_id;
 
 typedef logic [`ARF_WIDTH - 1 :0] arf_id_t ;
 typedef logic [`ROB_WIDTH - 1 :0] rob_id_t ;
