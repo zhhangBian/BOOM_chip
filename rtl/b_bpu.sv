@@ -65,8 +65,6 @@ assign sender.data = predict_info_o; // 预测信息, 组合逻辑输出
 assign sender.valid = valid_o;
 assign ready_i = sender.ready;
 
-logic temp;
-
 /* ============================== PC ============================== */
 logic [31:0 ] pc;
 logic [31:0 ] npc; // wire 类型 组合逻辑得出。
