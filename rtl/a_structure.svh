@@ -7,7 +7,7 @@ typedef struct packed {
     logic [31:0]        pc;
     logic [ 1:0]        mask;
     predict_info_t [1:0]predict_infos;
-} b_d_pkg_t;
+} b_f_pkg_t;
 
 typedef struct packed {
     logic [1:0][31:0]   insts;
