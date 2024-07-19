@@ -624,12 +624,12 @@ always_comb begin
                 commit_cache_req.tag_we   = '1;
             end
             else if(cache_op == 1) begin
-                // 将Cache无效化
+                // 将Cache无效化，先读出对应的tag
                 commit_cache_req.tag_data  = '0;
                 commit_cache_req.tag_we    = '1;
             end
             else if(cache_op == 2 && cache_commit_hit) begin
-                // 将Cache无效化
+                // 将Cache无效化，先读出对应的tag
                 commit_cache_req.way_choose   = '0;
                 commit_cache_req.way_choose  |= lsu_info[0].tag_hit;
                 commit_cache_req.tag_data     = '0;
@@ -665,8 +665,8 @@ always_comb begin
                 // 设置相应的Cache数据
                 commit_cache_valid = '1;
                 // 对齐一块的数据
-                commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0; // 对齐
-                commit_cache_req.way_choose = lsu_info[0].refill;               // 对应重填的路
+                commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
+                commit_cache_req.way_choose = lsu_info[0].refill;
                 commit_cache_req.tag_data   = '0;
                 commit_cache_req.tag_we     = '0;
                 commit_cache_req.data_data  = '0;
@@ -677,12 +677,21 @@ always_comb begin
             // 发出AXI请求，直接读出数据
             else begin
                 commit_axi_valid_o          = '1;
-                // 对齐一个块的数据
-                commit_axi_req.addr         = lsu_info[0].paddr & 32'hfffffff0; 
+                // 对齐一个字的数据
+                commit_axi_req.addr         = lsu_info[0].addr & 32'hfffffffc;
                 commit_axi_req.len          = CACHE_BLOCK_NUM;
                 commit_axi_req.strb         = '0;
                 commit_axi_req.rmask        = lsu_info[i].rmask;
                 commit_axi_req.read         = |lsu_info[i].rmask;
+
+                // 配置Cache的相应信息
+                commit_cache_valid          = '1;
+                commit_cache_req.addr       = lsu_info[0].addr;
+                commit_cache_req.way_choose = commit_cache_req.addr[0];
+                commit_cache_req.tag_data   = '0;
+                commit_cache_req.tag_we     = '0;
+                commit_cache_req.data_data  = '0;
+                commit_cache_req.strb       = '0;
                 // normal状态下未命中也要提交
                 commit_cache_req.fetch_sb   = |lsu_info[0].strb;
             end
@@ -690,10 +699,10 @@ always_comb begin
     end
     else if(ls_fsm_q == S_UNCACHED) begin
         // UnCached只需要发起一次请求即可
-        // if (第一次握手成功)  fsm -> uncache_next; valid请求置0和addr置无效，rready置高，等着valid就行
         if(axi_commit_valid_i) begin
             stall              = '0;
             commit_axi_valid_o = '0;
+            // TODO 写寄存器
         end
     end
     // 与Cache进行读写操作
@@ -745,7 +754,6 @@ always_comb begin
                 commit_axi_req.addr   = commit_axi_req_q.addr + 4;
                 commit_axi_req.strb   = '0;
                 commit_axi_req.rmask  = '1;
-                commit_axi_req.read   = '1;
             end
         end
     end
@@ -766,13 +774,13 @@ always_comb begin
         end
         else begin
             // 设置下一轮的Cache数据
-            commit_cache_req.addr      = commit_cache_req_q.addr + 4;
-            // way choose TODO 
-            commit_cache_req.tag_data  = '0;
-            commit_cache_req.tag_we    = '0;
+            commit_cache_req.addr = commit_cache_req_q.addr + 4;
+            // way choose TODO
+            commit_cache_req.tag_data = '0;
+            commit_cache_req.tag_we = '0;
             commit_cache_req.data_data = '0;
-            commit_cache_req.strb      = '0;
-            commit_cache_req.fetch_sb  = '0;
+            commit_cache_req.strb = '0;
+            commit_cache_req.fetch_sb = '0;
         end
     end
 
@@ -799,16 +807,15 @@ always_comb begin
             if(axi_block_ptr == axi_block_len) begin
                 commit_axi_ready_o = '0;
                 if(axi_return_back) begin
-                    //
+
                 end
                 else begin
                     commit_axi_ready_o = '1;
                     // 设置相应的AXI数据
-                    commit_axi_req.addr  = rob_commit_q.lsu_info.paddr & 32'hfffffff0;
+                    commit_axi_req.addr  = rob_commit_q.lsu_info.paddr;
                     commit_axi_req.len   = CACHE_BLOCK_NUM;
                     commit_axi_req.strb  = '0;
                     commit_axi_req.rmask = '1;
-                    commit_axi_req.read  = '1;
                 end
             end
             else begin
