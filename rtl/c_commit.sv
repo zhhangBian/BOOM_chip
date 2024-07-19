@@ -357,6 +357,19 @@ always_comb begin
 
 end
 
+//下面识别rob_commit[1]是不是有例外
+wire a_fetch_excp    = rob_commit_i[1].fetch_exception;
+
+wire a_syscall_excp  = rob_commit_i[1].syscall_inst;
+wire a_break_excp    = rob_commit_i[1].break_inst;
+wire a_ine_excp      = rob_commit_i[1].decode_err;
+wire a_priv_excp     = rob_commit_i[1].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
+
+wire a_execute_excp  = rob_commit_i[1].execute_exception;
+
+wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
+//上面是1表示两条指令的后一条有例外
+
 //下面这个部分暂时这样写，是打一排以后把要写入csr的内容最后写入csr中，
 //要把它和后面的csr维护等内容考虑冒险之后合并在一起。
 //这一部分一定要和后面合在一起重写！！！TODO
