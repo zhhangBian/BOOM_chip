@@ -30,13 +30,11 @@ typedef enum logic[1:0] {
 } br_type_t;
 
 typedef struct packed {
-    logic [31:0 ]                       pc; // 指令 PC ，传递给 ICACHE 。
-    logic [ 1:0 ]                       mask; // 掩码，表示当前的两条指令中那一条需要被取出来。比如2'b10表明偶数PC需要取，而奇数PC不需要
-    logic [31:0 ]                       target_pc;
+    logic [31:0]                        target_pc; // 跳转到的目标 PC 
     br_type_t [1:0]                     br_type;
-    logic [ 1:0 ]                       taken;
-    logic [ 1:0 ]                       scnt;
-    logic [ 1:0 ]                       need_update;
+    logic [ 1:0]                        taken;
+    logic [ 1:0][ 1:0]                  scnt;
+    logic [ 1:0]                        need_update;
     logic [ 1:0][`BPU_HISTORY_LEN-1:0]  history; // 最新的历史放 0 位，旧的历史往高位移
     // ras_ptr???    
 } predict_info_t;
@@ -52,13 +50,13 @@ typedef struct packed { // TODO: 后端不能同时提交两条分支指令
     logic           is_cond_br; // 是否是条件跳转指令。无条件跳转指令仅包括JIRL, B, BL
     br_type_t       branch_type; // 分支类型，用于更新 BTB
     logic           update; // 如果这条指令是分支或者预测成了分支，就要置 1 。
-    logic  [31:0]   target; // 正确的跳转地址，用于更新 BTB
+    logic  [31:0]   target_pc; // 正确的跳转地址，用于更新 BTB
     logic  [`BPU_HISTORY_LEN-1:0] new_history; // 历史记录，最新的历史往 0 位放，旧的历史左移一位。
     logic  [ 1:0]   new_scnt; // 饱和计数器的值。
 } correct_info_t;
 
 typedef struct packed {
-    logic                           valid;
+    logic                           valid; // 这个位和 br_type != BR_NONE 是一致的。
     logic  [`BPU_TAG_LEN-1 : 0]     tag;
     logic  [31:0]                   target_pc;
     br_type_t                       br_type;

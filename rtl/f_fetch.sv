@@ -9,6 +9,7 @@ module f_fetch(
     handshake_if.sender     sender
 );
 // TODO: 需要一个流水寄存器
+// TODO: 地址不对齐异常（优先级高） & tlb 异常
 predict_info_t in = receiver
 
 icache icache_inst #(
