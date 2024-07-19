@@ -163,10 +163,15 @@ typedef struct packed {
 // 控制信息表项
 typedef struct packed {
     // 异常控制信号流，其他控制信号流，后续补充
-    logic exception;
+    exc_info_t exc_info;
     logic bpu_fail;
 } rob_ctrl_entry_t;
 
+typedef struct packed {
+    logic fetch_exception;    //为1表示fetch级有异常
+    logic execute_exception;  //为1表示访存级有异常，当fetch级有异常这个值是什么都行
+    logic [5:0] exc_code;     //fetch级有异常则存fetch级别的异常码，elif访存异常存访存异常码，如果都没有异常则存什么都行
+} exc_info_t;
 
 /**********************dispatch  to  execute  pkg******************/
 typedef struct packed {

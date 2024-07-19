@@ -392,6 +392,9 @@ always_ff @(posedge clk) begin
     if(~rst_n) begin
         csr_q <= csr_init; // 初始化 CSR
     end
+    elif (cur_exception) begin
+        csr_q <= csr_exception_update; //更改：如果有异常更新为异常
+    end
     else begin
         csr_q <= csr;
     end
