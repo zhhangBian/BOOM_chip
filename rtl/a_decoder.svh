@@ -1,6 +1,9 @@
 `ifndef _BOOM_DECODER_HEAD
 `define _BOOM_DECODER_HEAD
 
+`define D_BEFORE_QUEUE_DEPTH 4 // decoder 前的队列深度，共 8 条指令
+`define D_AFTER_QUEUE_DEPTH 8 // decoder 后的队列深度，共 16 条指令
+
 `define _INV_TLB_ALL (4'b1111)
 `define _INV_TLB_MASK_G (4'b1000)
 `define _INV_TLB_MASK_NG (4'b0100)
@@ -18,7 +21,7 @@
 `define _REG_W_NONE (2'b00)
 `define _REG_W_RD (2'b01)
 `define _REG_W_RJD (2'b10)
-`define _REG_W_BL1 (2'b11)
+`define _REG_W_R1 (2'b11)
 `define _IMM_U12 (3'd0)
 `define _IMM_U5 (3'd0)
 `define _IMM_S12 (3'd1)
@@ -337,8 +340,8 @@ typedef struct packed {
     need_fa_t       need_fa;
     priv_inst_t     priv_inst;
     refetch_t       refetch;
-    reg_type_r0_t   reg_type_r0; // RD, RJ, RK, IMM, Zero
-    reg_type_r1_t   reg_type_r1; // RD, RJ, RK, IMM, Zero
+    reg_type_r0_t   reg_type_r0; // 
+    reg_type_r1_t   reg_type_r1; // 
     reg_type_w_t    reg_type_w; // RD, RJD(RJ寄存器，仅RDCNTID指令会用), BL1(R1寄存器), None
     rnd_mode_t      rnd_mode; // 不懂
     slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
@@ -351,5 +354,30 @@ typedef struct packed {
     upd_fcc_t       upd_fcc; // 浮点，更新cf。
     wait_inst_t     wait_inst; // 仅在 IDLE 指令下置1.
 } decode_info_t;
+
+function logic [31:0] inst_to_data_imm (input logic[31:0] inst, input imm_type_t data_imm_type);
+    logic [31:0] ret;
+    case (data_imm_type)
+        _IMM_S12:   ret =  {20{inst[21]},  inst[21:10]};
+        _IMM_S20:   ret =  {12{inst[24]},  inst[24:10]};
+        _IMM_U5:    ret =  inst[14:10];
+        default: 
+        _IMM_U12:   ret =  {20'b0,         inst[21:10]};
+    endcase
+    return ret;
+endfunction
+
+function logic [31:0] inst_to_addr_imm (input logic[31:0] inst, input imm_type_t addr_imm_type);
+    logic [31:0] ret;
+    case (data_imm_type)
+        _ADDR_IMM_S12:   ret =  {20{inst[21]}, inst[21:10]}; // 仅用于store/load指令，低位不补零;
+        _ADDR_IMM_S14:   ret =  {16{inst[23]}, inst[23:10], 2'b0}; // 仅用于原子访存指令，低位补两个0;
+        _ADDR_IMM_S16:   ret =  {14{inst[25]}, inst[25:10], 2'b0}; // 仅用于计算分支offset，低位补两个0;
+        // _ADDR_IMM_S21:  // 仅用于浮点分支指令使用，也就是暂时不使用
+        default: 
+        _ADDR_IMM_S26:   ret =  {4 {inst[ 9]}, inst[ 9:0 ], inst[25:10], 2'b0};
+    endcase
+    return ret;
+endfunction
 
 `endif

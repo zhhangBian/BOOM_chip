@@ -1,14 +1,29 @@
 `include "a_decoder.svh"
 
+// 纯组合逻辑，D流水级的时序在顶层模块上，其实也就是在进来的时候打了一拍放到了FIFO中而已。
 module decoder (
-    input  wire             [1:0][31:0] insts_i,
-    input  wire             [1:0]       mask_i,
-    input  wire             [1:0][31:0] pc_i,
-    output decoder_info_t   [1:0]       decode_infos_o,
-    output d_r_pkg_t                    d_r_pkg_o
+    handshake_if.receiver               receiver, // f_d_pkg_t type
+    handshake_if.sender                 sender, // d_r_pkg_t type
+
+    output decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
 );
 
-// 内置两个decoder
+// input && output
+logic [1:0]         mask_i;
+logic [1:0][31:0]   pc_i;
+logic [1:0][31:0]   insts_i;
+d_r_pkg_t           d_r_pkg_o;
+
+assign mask_i = receiver.data.preict_info.mask;
+assign pc_i = receiver.data.preict_info.pc;
+assign insts_i = receiver.data.insts;
+
+assign sender.data = d_r_pkg_o;
+// 由于这个模块是一个组合逻辑模块，因此只需要将模块前后的 ready 和 valid 接在一起就行，唯一的改变仅在于 data 上
+assign sender.valid = receiver.valid;
+assign receiver.ready = sender.ready;
+
+// 内置两个decoder, decode_infos_o 生成逻辑
 for (genvar i = 0; i < 2; i++) begin
     basic_decoder basic_decoder (
         .ins_i(insts_i[i]),
@@ -23,11 +38,11 @@ assign d_r_pkg_o.pc = pc_i;
 for (genvar i = 0; i < 2; i++) begin
     assign d_r_pkg_o.w_reg[i] = decode_infos_o[i].reg_type_w == _REG_W_NONE;
     assign d_r_pkg_o.w_mem[i] = decode_infos_o[i].mem_type_write;
-    assign d_r_pkg_o.reg_need[(1 << i)    ] = decode_infos_o[i].reg_type_r0 == _REG_ZERO | decode_infos_o[i].reg_type_r0 == _REG_IMM;
-    assign d_r_pkg_o.reg_need[(1 << i) + 1] = decode_infos_o[i].reg_type_r1 == _REG_ZERO | decode_infos_o[i].reg_type_r1 == _REG_IMM;
+    assign d_r_pkg_o.reg_need[2*i    ] = decode_infos_o[i].reg_type_r0 == _REG_ZERO | decode_infos_o[i].reg_type_r0 == _REG_IMM;
+    assign d_r_pkg_o.reg_need[2*i + 1] = decode_infos_o[i].reg_type_r1 == _REG_ZERO | decode_infos_o[i].reg_type_r1 == _REG_IMM;
 
-    assign d_r_pkg_o.use_imm[(1 << i)    ] = decode_infos_o[i].reg_type_r0 == _REG_IMM;
-    assign d_r_pkg_o.use_imm[(1 << i) + 1] = decode_infos_o[i].reg_type_r1 == _REG_IMM;
+    assign d_r_pkg_o.use_imm[2*i    ] = decode_infos_o[i].reg_type_r0 == _REG_IMM;
+    assign d_r_pkg_o.use_imm[2*i + 1] = decode_infos_o[i].reg_type_r1 == _REG_IMM;
 
     assign d_r_pkg_o.alu_type[i] = decode_infos_o[i].alu_inst;
     assign d_r_pkg_o.mdu_type[i] = decode_infos_o[i].mul_inst | decode_infos_o[i].div_inst;
@@ -36,57 +51,48 @@ end
 
 // arftable逻辑
 for (genvar i = 0; i < 2; i++) begin
-    // TODO
+    logic [31:0] inst;
+    assign inst = decode_infos_o[i].inst;
+
+    logic [4:0] rd, rj, rk;
+    assign rd = inst[ 4:0 ]
+    assign rj = inst[ 9:5 ];
+    assign rk = inst[14:10];
+
+    always_comb begin
+        // 第一个读寄存器
+        case (decode_infos_o[i].reg_type_r0)
+        _REG_RD: d_r_pkg_o.arf_table.r_arfid[2*i] = rd;
+        _REG_RJ: d_r_pkg_o.arf_table.r_arfid[2*i] = rj;
+        _REG_RK: d_r_pkg_o.arf_table.r_arfid[2*i] = rk;
+        default: d_r_pkg_o.arf_table.r_arfid[2*i] = '0; // 默认不使用 GR 的时候即为使用 GR[0], 哪怕是使用 IMM 也会传入0
+        endcase
+
+        // 第二个读寄存器
+        case (decode_infos_o[i].reg_type_r0)
+        _REG_RD: d_r_pkg_o.arf_table.r_arfid[2*i+1] = rd;
+        _REG_RJ: d_r_pkg_o.arf_table.r_arfid[2*i+1] = rj;
+        _REG_RK: d_r_pkg_o.arf_table.r_arfid[2*i+1] = rk;
+        default: d_r_pkg_o.arf_table.r_arfid[2*i+1] = '0; // 默认不使用 GR 的时候即为使用 GR[0], 哪怕是使用 IMM 也会传入0
+        endcase
+
+        // 第一个写寄存器
+        case (decode_infos_o[i].reg_type_w)
+        _REG_W_RD: d_r_pkg_o.arf_table.w_arfid[i] = rd;
+        _REG_W_RJ: d_r_pkg_o.arf_table.w_arfid[i] = rj;
+        _REG_W_R1: d_r_pkg_o.arf_table.w_arfid[i] = '1; // 仅出现在 BL 指令中
+        default:   d_r_pkg_o.arf_table.w_arfid[i] = '0; // 默认不写入寄存器的时候即为写入 GR[0]
+        endcase
+    end
 end
 
 // 立即数逻辑
-// TODO: 用 function 替代下面的一坨。学长的function定义在structure中，需要改动。
-logic [1:0][31:0] data_imms;
-logic [1:0][31:0] addr_imms;
 for (genvar i = 0; i < 2; i++) begin
-    logic inst;
+    logic [31:0] inst;
     assign inst = decode_infos_o[i].inst;
 
-    // data_imms 逻辑
-    logic [31:0]    data_imm_s12, 
-                    data_imm_s20,
-                    data_imm_u12;
-                    data_imm_u5;
-
-    assign data_imm_s12 = {20{inst[21]}, inst[21:10]};
-    assign data_imm_s20 = {12{inst[24]}, inst[24:5]};
-    assign data_imm_u12 = {20'b0,        inst[21:10]};
-    assign data_imm_u5  = inst[14:10];
-
-    case (decode_infos_o[i].imm_type)
-        _IMM_S12: data_imms[i] = data_imm_s12;
-        _IMM_S20: data_imms[i] = data_imm_s20;
-        _IMM_U5: data_imms[i] = data_imm_u5;
-        default: 
-        _IMM_U12: data_imms[i] = data_imm_u12;
-    endcase
-
-    // addr_imms 逻辑
-    logic [31:0]    addr_imm_s12, // 仅用于store/load指令，低位不补零;
-                    addr_imm_s14, // 仅用于原子访存指令，低位补两个0;
-                    addr_imm_s16, // 仅用于计算分支offset，低位补两个0;
-                    // addr_imm_s21, // 仅浮点指令使用，暂时不使用
-                    addr_imm_s26; // 仅用于计算分支offset，低位补两个0;
-    
-    assign addr_imm_s12 = {20{inst[21]}, inst[21:10]};
-    assign addr_imm_s14 = {16{inst[23]}, inst[23:10], 2'b0};
-    assign addr_imm_s16 = {14{inst[25]}, inst[25:10], 2'b0};
-    assign addr_imm_s26 = {4 {inst[ 9]}, inst[ 9:0 ], inst[25:10], 2'b0};
-
-    case (decode_infos_o[i].addr_imm_type) 
-        _ADDR_IMM_S12: addr_imms[i] = addr_imm_s12;
-        _ADDR_IMM_S14: addr_imms[i] = addr_imm_s14;
-        _ADDR_IMM_S16: addr_imms[i] = addr_imm_s16;
-        default: 
-        _ADDR_IMM_S26: addr_imms[i] = addr_imm_s26;
-    endcase
+    assign d_r_pkg_o.data_imm[i] = inst_to_data_imm(inst, decode_infos_o[i].imm_type);
+    assign d_r_pkg_o.addr_imm[i] = inst_to_addr_imm(inst, decode_infos_o[i].addr_imm_type);
 end
-assign d_r_pkg_o.data_imm = data_imms;
-assign d_r_pkg_o.addr_imm = addr_imms; // TODO: addr_imm member is not implemented yet. 
 
 endmodule
