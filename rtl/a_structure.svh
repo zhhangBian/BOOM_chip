@@ -195,7 +195,7 @@ typedef struct packed {
     logic   [3  : 0]    wstrb;
     logic               valid;
     // logic               commit;
-    // logic               uncached;
+    logic               uncached;
     logic   [1  : 0]    hit;
     // logic               complete;
 } sb_entry_t;
@@ -231,6 +231,7 @@ typedef struct packed {
     tlb_exception_t tlb_exception; // TLB异常
     logic   [1 :0]  refill;     // 选择哪一路重填
     logic           dirty;      // 是否需要写回
+    logic           hit_dirty;  // 是否命中dirty位
     logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
 } lsu_iq_pkg_t;
 
@@ -244,7 +245,7 @@ typedef struct packed {
 typedef struct packed {
     // 向DCache发送Tag SRAM写请求
     logic   [31:0]  addr;       // 地址
-    logic   [1 :0]  way_hit;    // TODO 读写对应的路，两位分别对应两路，对应位表示对应路是否命中
+    logic   [1 :0]  way_choose;    // TODO 读写对应的路，两位分别对应两路，对应位表示对应路是否命中
     cache_tag_t     tag_data;   // 写回tag数据
     logic           tag_we;     // 写回tag使能信号
     // 向DCache发送Data SRAM请求
@@ -269,6 +270,7 @@ typedef struct packed {
     logic   [3:0]   len;
     logic   [3:0]   strb;
     logic   [3:0]   rmask;
+    logic           read;
 } commit_axi_req_t;
 
 typedef struct packed {
