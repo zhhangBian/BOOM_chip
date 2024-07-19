@@ -229,6 +229,7 @@ typedef struct packed {
     tlb_exception_t tlb_exception; // TLB异常
     logic   [1 :0]  refill;     // 选择哪一路重填
     logic           dirty;      // 是否需要写回
+    logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
 } lsu_iq_pkg_t;
 
 typedef struct packed {
