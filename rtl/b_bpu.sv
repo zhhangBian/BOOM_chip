@@ -66,8 +66,6 @@ always_ff @(clk) begin : pc_logic
     end
 end
 
-assign predict_info_o.pc = pc;
-
 /* ============================== BTB ============================== */
 // BTB 应当存储除了正常指令和 ret(JIRL) 类型指令以外的所有分支指令的目标地址
 bpu_btb_entry_t [1:0]       btb_rdata;
@@ -75,11 +73,17 @@ logic [`BPU_BTB_LEN-1 : 0]  btb_raddr;
 logic [`BPU_BTB_LEN-1 : 0]  btb_waddr;
 logic [1:0]                 btb_tag_match;
 logic                       btb_we;
+logic [1:0]                 btb_valid;
 (* ramstyle = "distributed" *) bpu_btb_entry_t btb [1:0][`BPU_BTB_DEPTH - 1 : 0];
 
 assign btb_raddr = hash(pc);
 assign btb_waddr = hash(correct_info_i.pc);
 assign btb_we = correct_info_i.type_miss | correct_info_i.target_miss;
+
+for (genvar i = 0; i < 2; i++) begin
+    // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
+    assign btb_valid[i] = btb_rdata[i].valid & btb_tag_match[i];
+end
 
 always_comb begin
     for (integer i = 0; i < 2; i++) begin
@@ -168,8 +172,8 @@ always_ff @( clk ) begin
         ras_top_ptr <= ras_w_ptr;
     end
     if (correct_info_i.target_type == BR_RET) begin
-        ras_w_ptr = ras_top_ptr;
-        ras_top_ptr = ras_top_ptr - '1;
+        ras_w_ptr <= ras_top_ptr;
+        ras_top_ptr <= ras_top_ptr - '1;
     end
 end
 
@@ -209,32 +213,37 @@ end
 logic [1:0] branch;
 logic [1:0] mask;
 
-assign branch = {pht_rdata[1].scnt[1], pht_rdata[0].scnt[1]};
+for (genvar i = 0;  < 2; i++) begin
+    // branch[i] 表示第 i 条指令是否要分支
+    // branch 的可能：
+    // 1. !btb_rdata[i].is_cond_br 
+    // 2. pht_rdata[i].scnt[1]
+    assign branch[i] = btb_valid & (!btb_rdata[i].is_cond_br | pht_rdata[i].scnt[1]);
+end
 
 always_comb begin
-    mask = {1'b1, branch[0] && !pc[2]};
+    // 根据 btb_valid, btb_rdata[i].br_type, branch 来判断npc
+    mask = {branch[0] && !pc[2], !pc[2]};
     npc = {pc[31:2] + '1, 2'b0};
-    predict_info_o.target_pc = npc;
-    predict_info_o.br_type = BR_NONE;
-    predict_info_o.taken = '0;
 
-    if (btb_rdata[0].br_info.br_type != BR_NONE && branch[0] && !pc[2]) begin
-        mask = {1'b0, branch[0]};
+    if (branch[0] && !pc[2]) begin
+        mask = {1'b0, 1'b1};
         npc = btb_rdata[0].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[0].target_pc;
     end
-    else if (btb_rdata[1].br_info.br_type != BR_NONE && branch[1]) begin
+    else if (branch[1]) begin
         npc = btb_rdata[1].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[1].target_pc;
     end
 end
 
-assign predict_info_o.mask = mask;
-assign predict_info_i.target_pc = npc;
+assign predict_info_o.pc                 =  pc;
+assign predict_info_o.mask               =  mask;
+assign predict_info_i.target_pc          =  npc;
 for (genvar i = 0; i < 2; i++) begin
-    assign predict_info_o.need_update[i] = btb_tag_match[i] | btb_rdata[i].valid;
-    assign predict_info_o.scnt = pht_rdata[i].scnt;
-    assign predict_info_o.taken = pht_rdata[i].scnt[1];
-    assign predict_info_o.history = bht_rdata[i].history;
-    assign predict_info_o.br_type = btb_rdata[i].br_type;
+    assign predict_info_o.br_type[i]     =  btb_rdata[i].br_type;
+    assign predict_info_o.taken[i]       =  branch[i];
+    assign predict_info_o.scnt[i]        =  pht_rdata[i].scnt;
+    assign predict_info_o.need_update[i] =  !btb_rdata[i].valid; // 没有这一项就要 update
+    assign predict_info_o.history[i]     =  bht_rdata[i].history;
 end
 
 // predict_info_o is with npc_logic
