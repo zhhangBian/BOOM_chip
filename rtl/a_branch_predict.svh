@@ -36,7 +36,7 @@ typedef struct packed {
     br_type_t [1:0]                     br_type;
     logic [ 1:0 ]                       taken;
     logic [ 1:0 ]                       scnt;
-    logic [ 1:0 ]                       tag_match;
+    logic [ 1:0 ]                       need_update;
     logic [ 1:0][`BPU_HISTORY_LEN-1:0]  history; // 最新的历史放 0 位，旧的历史往高位移
     // ras_ptr???    
 } predict_info_t;
@@ -51,24 +51,18 @@ typedef struct packed { // TODO: 后端不能同时提交两条分支指令
     logic           taken; // 是否跳转
     logic           is_cond_br; // 是否是条件跳转指令。无条件跳转指令仅包括JIRL, B, BL
     br_type_t       branch_type; // 分支类型，用于更新 BTB
-    logic           need_update; // 如果这条指令是分支或者预测成了分支，就要置 1 。
+    logic           update; // 如果这条指令是分支或者预测成了分支，就要置 1 。
     logic  [31:0]   target; // 正确的跳转地址，用于更新 BTB
     logic  [`BPU_HISTORY_LEN-1:0] new_history; // 历史记录，最新的历史往 0 位放，旧的历史左移一位。
     logic  [ 1:0]   new_scnt; // 饱和计数器的值。
 } correct_info_t;
 
 typedef struct packed {
-    logic       is_call;
-    logic       is_ret;
-    logic       is_cond_br; // 是否是条件跳转指令
-    br_type_t   br_type;
-} branch_info_t;
-
-typedef struct packed {
     logic                           valid;
     logic  [`BPU_TAG_LEN-1 : 0]     tag;
     logic  [31:0]                   target_pc;
-    branch_info_t                   br_info;
+    br_type_t                       br_type;
+    logic                           is_cond_br;
 } bpu_btb_entry_t;
 
 typedef struct packed {
@@ -78,5 +72,20 @@ typedef struct packed {
 typedef struct packed {
     logic  [1:0]    scnt;
 } bpu_pht_entry_t;
+
+// saturating counter
+function automatic logic [1:0] next_scnt(input logic[1:0] last_scnt, input logic taken);
+    case (last_scnt)
+        default: // strongly not taken
+            // default has to be not taken, brcause don't know target pc?
+            return {1'b0, taken};
+        2'b01: // weakly not taken
+            return {taken, 1'b0};
+        2'b10: // weakly taken
+            return {taken, 1'b1};
+        2'b11: // strongly taken
+            return {1'b1, taken};
+    endcase
+endfunction
 
 `endif

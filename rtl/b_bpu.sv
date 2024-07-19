@@ -19,21 +19,6 @@
 
 `include "a_defines.svh"
 
-// saturating counter
-function automatic logic [1:0] next_scnt(input logic[1:0] last_scnt, input logic taken);
-    case (last_scnt)
-        default: // strongly not taken
-            // default has to be not taken, brcause don't know target pc?
-            return {1'b0, taken};
-        2'b01: // weakly not taken
-            return {taken, 1'b0};
-        2'b10: // weakly taken
-            return {taken, 1'b1};
-        2'b11: // strongly taken
-            return {1'b1, taken};
-    endcase
-endfunction
-
 // combination logic
 // this function rely on the value of BPU_BTB_LEN. if the value is
 // updated, this function need updated as well.
@@ -134,7 +119,7 @@ logic                               bht_we;
 assign bht_raddr = btb_raddr // = hash(pc);
 assign bht_waddr = btb_waddr// = hash(correct_info_i.pc);
 
-assign bht_we = correct_info_i.is_branch;
+assign bht_we = correct_info_i.update;
 
 always_comb begin
     for (integer i = 0; i < 2; i++) begin
@@ -197,7 +182,7 @@ logic [`BPU_PHT_LEN-1 : 0]          pht_waddr;
 logic [1:0][`BPU_PHT_LEN-1 : 0]     pht_raddr; // PHT的两个读地址不相同
 logic                               pht_we;
 
-assign pht_we = correct_info_i.is_branch;
+assign pht_we = correct_info_i.update;
 
 always_comb begin
     for (integer i = 0; i < 2; i++) begin
@@ -223,7 +208,6 @@ end
  */
 logic [1:0] branch;
 logic [1:0] mask;
-logic [31:0] next_npc;
 
 assign branch = {pht_rdata[1].scnt[1], pht_rdata[0].scnt[1]};
 
@@ -237,21 +221,21 @@ always_comb begin
     if (btb_rdata[0].br_info.br_type != BR_NONE && branch[0] && !pc[2]) begin
         mask = {1'b0, branch[0]};
         npc = btb_rdata[0].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[0].target_pc;
-        predict_info_o.br_type = btb_rdata[0].br_info.br_type;
-        predict_info_o.taken = '1;
-        predict_info_o.scnt = pht_rdata[0].scnt;
-        predict_info_o.history = bht_rdata[0].history;
     end
     else if (btb_rdata[1].br_info.br_type != BR_NONE && branch[1]) begin
         npc = btb_rdata[1].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[1].target_pc;
-        predict_info_o.br_type = btb_rdata[1].br_info.br_type;
-        predict_info_o.taken = '1;
-        predict_info_o.scnt = pht_rdata[0].scnt;
-        predict_info_o.history = bht_rdata[0].history;
     end
 end
 
 assign predict_info_o.mask = mask;
+assign predict_info_i.target_pc = npc;
+for (genvar i = 0; i < 2; i++) begin
+    assign predict_info_o.need_update[i] = btb_tag_match[i] | btb_rdata[i].valid;
+    assign predict_info_o.scnt = pht_rdata[i].scnt;
+    assign predict_info_o.taken = pht_rdata[i].scnt[1];
+    assign predict_info_o.history = bht_rdata[i].history;
+    assign predict_info_o.br_type = btb_rdata[i].br_type;
+end
 
 // predict_info_o is with npc_logic
 
