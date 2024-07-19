@@ -81,7 +81,7 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
         .rst_n1(rst_n),
         .addr1_i(commit_cache_req.addr[11 : TAG_ADDR_LOW]/* TODO commit请求 */),
         .en1_i('1),
-        .we1_i(commit_cache_req.way_hit[i] & commit_cache_req.tag_we/* TODO commit请求 */),
+        .we1_i(commit_cache_req.way_choose[i] & commit_cache_req.tag_we/* TODO commit请求 */),
         .wdata1_i(commit_cache_req.tag_data/* TODO commit请求 */),
         .rdata1_o(rtag1)
     );
@@ -118,7 +118,7 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         .rst_n1(rst_n),
         .addr1_i(commit_cache_req.addr[11 : DATA_ADDR_LOW]/*TODO commit请求 */),
         .en1_i('1),
-        .we1_i({4{commit_cache_req.way_hit[i]}} & commit_cache_req.strb/* TODO commit请求 */),
+        .we1_i({4{commit_cache_req.way_choose[i]}} & commit_cache_req.strb/* TODO commit请求 */),
         .wdata1_i(commit_cache_req.data_data/* TODO commit请求 */),
         .rdata1_o(rdata1)
     );

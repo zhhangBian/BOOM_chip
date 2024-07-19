@@ -4,7 +4,7 @@
 `define _CSR_CRMD       (9'h  0)
 `define _CSR_PRMD       (9'h  1)
 `define _CSR_EUEN       (9'h  2)
-`define _CSR_ECTL       (9'h  4)
+`define _CSR_ECFG       (9'h  4)
 `define _CSR_ESTAT      (9'h  5)
 `define _CSR_ERA        (9'h  6)
 `define _CSR_BADV       (9'h  7)
@@ -40,7 +40,7 @@ typedef struct packed {
     logic [31:0] crmd;
     logic [31:0] prmd;
     logic [31:0] euen;
-    logic [31:0] ectl;
+    logic [31:0] ecfg;
     logic [31:0] estat;
     logic [31:0] era;
     logic [31:0] badv;
@@ -73,7 +73,6 @@ typedef struct packed {
 
 typedef struct packed {
     logic [18:0] vppn;
-    // logic [ 5:0] ps;
     logic   huge_page;
     logic        g;
     logic [ 9:0] asid;
@@ -121,10 +120,10 @@ typedef struct packed {
 `define _PRMD_PIE       2
 //EUEN
 `define _EUEN_FPE       0
-//ECTL
-`define _ECTL_LIE       12:0
-`define _ECTL_LIE1      9:0
-`define _ECTL_LIE2      12:11
+//ECFG
+`define _ECFG_LIE       12:0
+`define _ECFG_LIE1      9:0
+`define _ECFG_LIE2      12:11
 //ESTAT
 `define _ESTAT_IS        12:0
 `define _ESTAT_ECODE     21:16

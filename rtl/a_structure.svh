@@ -1,23 +1,20 @@
 `ifndef _BOOM_STRUCTURE_HEAD
 `define _BOOM_STRUCTURE_HEAD
 
-/*============================== BPU start ============================== */
+`include "a_branch_predict.svh"
 
 typedef struct packed {
-    logic [31:0]    pc;
-    logic [ 1:0]    mask;
-    predict_info_t  predict_info;
+    logic [31:0]        pc;
+    logic [ 1:0]        mask;
+    predict_info_t [1:0]predict_infos;
 } b_d_pkg_t;
 
 typedef struct packed {
     logic [1:0][31:0]   insts;
     logic [31:0]        pc;
     logic [ 1:0]        mask;
-    predict_info_t      predict_info;
+    predict_info_t [1:0]predict_infos;
 } f_d_pkg_t;
-
-typedef logic [`ARF_WIDTH - 1 :0] arf_id;
-typedef logic [`ROB_WIDTH - 1 :0] rob_id;
 
 typedef logic [`ARF_WIDTH - 1 :0] arf_id_t ;
 typedef logic [`ROB_WIDTH - 1 :0] rob_id_t ;
@@ -169,10 +166,15 @@ typedef struct packed {
 // 控制信息表项
 typedef struct packed {
     // 异常控制信号流，其他控制信号流，后续补充
-    logic exception;
+    exc_info_t exc_info;
     logic bpu_fail;
 } rob_ctrl_entry_t;
 
+typedef struct packed {
+    logic fetch_exception;    //为1表示fetch级有异常
+    logic execute_exception;  //为1表示访存级有异常，当fetch级有异常这个值是什么都行
+    logic [5:0] exc_code;     //fetch级有异常则存fetch级别的异常码，elif访存异常存访存异常码，如果都没有异常则存什么都行
+} exc_info_t;
 
 /**********************dispatch  to  execute  pkg******************/
 typedef struct packed {
@@ -195,7 +197,7 @@ typedef struct packed {
     logic   [3  : 0]    wstrb;
     logic               valid;
     // logic               commit;
-    // logic               uncached;
+    logic               uncached;
     logic   [1  : 0]    hit;
     // logic               complete;
 } sb_entry_t;
@@ -221,6 +223,7 @@ typedef struct packed {
 //   fetch_excp_t f_excp;
     logic   [3:0]   strb;
     logic   [3:0]   rmask;  // 需要读的字节
+    logic   [31:0]  wdata;      // 需要写的数据
     logic           uncached;   // uncached 特性
     logic           hit;        // 是否命中，总判断
     logic   [1 :0]  tag_hit;    // tag是否命中
@@ -230,6 +233,8 @@ typedef struct packed {
     tlb_exception_t tlb_exception; // TLB异常
     logic   [1 :0]  refill;     // 选择哪一路重填
     logic           dirty;      // 是否需要写回
+    logic           hit_dirty;  // 是否命中dirty位
+    logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
 } lsu_iq_pkg_t;
 
 typedef struct packed {
@@ -242,7 +247,7 @@ typedef struct packed {
 typedef struct packed {
     // 向DCache发送Tag SRAM写请求
     logic   [31:0]  addr;       // 地址
-    logic   [1 :0]  way_hit;    // TODO 读写对应的路，两位分别对应两路，对应位表示对应路是否命中
+    logic   [1 :0]  way_choose;    // TODO 读写对应的路，两位分别对应两路，对应位表示对应路是否命中
     cache_tag_t     tag_data;   // 写回tag数据
     logic           tag_we;     // 写回tag使能信号
     // 向DCache发送Data SRAM请求
@@ -267,6 +272,7 @@ typedef struct packed {
     logic   [3:0]   len;
     logic   [3:0]   strb;
     logic   [3:0]   rmask;
+    logic           read;
 } commit_axi_req_t;
 
 typedef struct packed {
