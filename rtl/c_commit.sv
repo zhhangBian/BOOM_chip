@@ -253,7 +253,6 @@ csr_t csr_exception_update = csr_q;//周期结束时候写入csr_q
 
 //中断识别
 logic [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECTL_LIE];
-//这里的ecfg在宏里面，宏叫做ecfg，要把宏改一下 TODO
 logic int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
 //取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
