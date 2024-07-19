@@ -1,23 +1,20 @@
 `ifndef _BOOM_STRUCTURE_HEAD
 `define _BOOM_STRUCTURE_HEAD
 
-/*============================== BPU start ============================== */
+`include "a_branch_predict.svh"
 
 typedef struct packed {
-    logic [31:0]    pc;
-    logic [ 1:0]    mask;
-    predict_info_t  predict_info;
+    logic [31:0]        pc;
+    logic [ 1:0]        mask;
+    predict_info_t [1:0]predict_infos;
 } b_d_pkg_t;
 
 typedef struct packed {
     logic [1:0][31:0]   insts;
     logic [31:0]        pc;
     logic [ 1:0]        mask;
-    predict_info_t      predict_info;
+    predict_info_t [1:0]predict_infos;
 } f_d_pkg_t;
-
-typedef logic [`ARF_WIDTH - 1 :0] arf_id;
-typedef logic [`ROB_WIDTH - 1 :0] rob_id;
 
 typedef logic [`ARF_WIDTH - 1 :0] arf_id_t ;
 typedef logic [`ROB_WIDTH - 1 :0] rob_id_t ;
@@ -103,6 +100,7 @@ typedef struct packed {
 
     logic   c_valid;
 
+    logic   [31:0]  pc;
     logic   [31:0]  data_rd;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
@@ -121,11 +119,16 @@ typedef struct packed {
     logic   [4:0]   tlb_type;
     logic   [3:0]   tlb_op;
 
-    logic   [31:0]  cache_dirty_addr;
-    logic   cache_dirty;
-
-    // TODO：分支预测信息
+    // 分支预测信息
+    logic   is_branch;
+    predict_info_t  predift_info;
+    branch_info_t   branch_info;
 } rob_commit_pkg_t;
+
+typedef struct packed {
+    logic [31:0] target_pc;
+    br_type_t [1:0] br_type;
+} branch_info_t;
 
 typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0] w_preg;
