@@ -220,6 +220,7 @@ typedef struct packed {
 //   fetch_excp_t f_excp;
     logic   [3:0]   strb;
     logic   [3:0]   rmask;  // 需要读的字节
+    logic   [31:0]  wdata;      // 需要写的数据
     logic           uncached;   // uncached 特性
     logic           hit;        // 是否命中，总判断
     logic   [1 :0]  tag_hit;    // tag是否命中

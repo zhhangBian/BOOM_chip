@@ -286,7 +286,8 @@ always_comb begin
     lsu_iq_pkg.refill   = refill_way;
     lsu_iq_pkg.dirty    = tag_ans0[refill_way].d;
     lsu_iq_pkg.tag_hit  = tag_hit;
-    lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;    
+    lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;
+    lsu_iq_pkg.wdata    = m1_iq_lsu_pkg.wdata;   
 end
 /*****************************cache2commit***********************/
 always_comb begin
