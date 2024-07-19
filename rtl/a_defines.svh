@@ -16,5 +16,6 @@
 `include "a_mdu_defines.svh"
 `include "a_mmu_defines.svh"
 `include "a_exception_defines.svh"
+`include "a_branch_predict.svh"
 
 `endif

@@ -491,6 +491,7 @@ always_comb begin
         /*==================== CACHE ====================*/
         // CACOP
         32'b0000011000??????????????????????: begin
+            decode_info_o.priv_inst = (ins_i[4:3] != 2'b10); // 
             decode_info_o.lsu_inst = 1'd1;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;

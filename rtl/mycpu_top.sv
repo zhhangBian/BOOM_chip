@@ -38,7 +38,7 @@ basic_fifo #(
 
 /*============================== Inst Fetch ==============================*/
 
-handshake_if #(f_d_pkg_t) fifo_f_handshake();
+handshake_if #(f_d_pkg_t) f_fifo_handshake();
 
 f_fetch fetch_inst(
     .receiver(fifo_f_handshake.receiver),
@@ -49,7 +49,7 @@ f_fetch fetch_inst(
 
 // decode 前的队列
 basic_fifo #(
-    .DEPTH(D_BEFORE_QUEUE_DEPTH),
+    .DEPTH(`D_BEFORE_QUEUE_DEPTH),
     .BYPASS(0), // 不允许 bypass ，因为这个 fifo 也充当了 d 级的流水寄存器。
     .T(f_d_pkg_t)
 ) f_fifo_inst (
@@ -72,7 +72,7 @@ handshake_if #(.T(d_r_pkg_t)) fifo_r_handshake();
 // decoder 后的队列
 
 basic_fifo #(
-    .DEPTH(D_AFTER_QUEUE_DEPTH),
+    .DEPTH(`D_AFTER_QUEUE_DEPTH),
     .BYPASS(0), // 不允许 BYPASS ，充当前后端之间的流水寄存器
     .T(d_r_pkd_t)
 ) fifo_r_inst (
