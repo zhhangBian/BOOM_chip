@@ -37,11 +37,14 @@ always_ff @(posedge clk) begin
 end
 
 // commit 传入请求
-commit_cache_req_t commit_cache_req;
-logic  [1:0] commit_way_hit, commit_way_hit_q;
-assign commit_way_hit = commit_cache_req.way_hit;
+// commit_cache_req_t commit_cache_req;
+logic  [1:0] commit_way_choose, commit_way_choose_q;
+logic  [31:0] commit_addr, commit_addr_q;
+assign commit_way_choose = commit_cache_req.way_choose;
+assign commit_addr       = commit_cache_req.addr;
 always_ff @(posedge clk) begin
-    commit_way_hit_q <= commit_way_hit;
+    commit_way_choose_q <= commit_way_choose;
+    commit_addr_q       <= commit_addr;
 end
 // 传给commit的请求
 cache_commit_resp_t cache_commit_resp;
@@ -106,7 +109,7 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
         .rst_n1(rst_n),
         .addr1_i(commit_cache_req.addr[11 : TAG_ADDR_LOW]/* commit请求 */),
         .en1_i('1),
-        .we1_i(commit_cache_req.way_hit[i] & commit_cache_req.tag_we/* commit请求 */),
+        .we1_i(commit_cache_req.way_choose[i] & commit_cache_req.tag_we/* commit请求 */),
         .wdata1_i(commit_cache_req.tag_data/* commit请求 */),
         .rdata1_o(rtag1)
     );
@@ -149,7 +152,7 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         .rst_n1(rst_n),
         .addr1_i(commit_cache_req.addr[11 : DATA_ADDR_LOW]/* commit请求 */),
         .en1_i('1),
-        .we1_i({4{commit_cache_req.way_hit[i]}} & commit_cache_req.strb/* commit请求 */),
+        .we1_i({4{commit_cache_req.way_choose[i]}} & commit_cache_req.strb/* commit请求 */),
         .wdata1_i(commit_cache_req.data_data/* commit请求 */),
         .rdata1_o(rdata1)
     );
@@ -284,15 +287,16 @@ always_comb begin
     lsu_iq_pkg.rdata    = lw_data; //组合逻辑有点长，后续考虑拆两级流水
     lsu_iq_pkg.tlb_exception = tlb_exception;
     lsu_iq_pkg.refill   = refill_way;
-    lsu_iq_pkg.dirty    = tag_ans0[refill_way].d;
+    lsu_iq_pkg.dirty    = refill_way[0] ? tag_ans0[0].d : tag_ans0[1].d;
     lsu_iq_pkg.tag_hit  = tag_hit;
     lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;
-    lsu_iq_pkg.wdata    = m1_iq_lsu_pkg.wdata;   
+    lsu_iq_pkg.hit_dirty   = tag_hit[0] ? tag_ans0[0].d : tag_ans0[1].d; 
+    lsu_iq_pkg.wdata       = m1_iq_lsu_pkg.wdata;   
 end
 /*****************************cache2commit***********************/
 always_comb begin
-    cache_commit_resp.addr = paddr;
-    cache_commit_resp.data = commit_way_hit_q[0] ? data_ans1[0] : data_ans1[1];
+    cache_commit_resp.addr = commit_addr_q;
+    cache_commit_resp.data = commit_way_choose_q[0] ? data_ans1[0] : data_ans1[1];
     cache_commit_resp.data_ohter = data_ans1[1];
     cache_commit_resp.sb_entry = r_sb_entry;
 end
