@@ -67,11 +67,10 @@ module commit #(
     input   axi_commit_resp_t   axi_commit_resp_i,
     // 按照axi-crossbar的逻辑设计
     output  logic   commit_axi_ready_o,
-    input   logic   axi_commit_valid_i,
     output  logic   commit_axi_valid_o,
+    output  logic   commit_axi_last_o,
+    input   logic   axi_commit_valid_i,
     input   logic   axi_commit_ready_i,
-    // 其实没有用到：对axi的last信号
-    input   logic   axi_commit_last_i,
 
     // commit与ARF的接口
     output  logic   [1:0]   commit_arf_we_o,
@@ -89,7 +88,6 @@ logic stall, stall_q;
 assign stall_o = stall;
 assign commit_ready_o = ~stall;
 
-assign commit_axi_ready = '1;
 assign commit_cache_ready = '1;
 
 logic [31:0] commit_data, commit_data_q;
@@ -133,13 +131,13 @@ always_comb begin
 
 
     if(ls_fsm_q == S_NORMAL) begin
-        commit_arf_we_o[0] = commit_request_o[0] & rob_commit_i[0].w_reg;
+        commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
     end
     else if(ls_fsm_q == S_UNCACHED) begin
         if(axi_commit_valid_i) begin
-            commit_arf_we_o[0] = |rob_commit_q.lsu_info.strb;
+            commit_arf_we_o[0]   = |rob_commit_q.lsu_info.rmask;
             commit_arf_data_o[0] = axi_commit_resp_i.data;
             commit_arf_areg_o[0] = rob_commit_q.w_areg;
         end
@@ -279,10 +277,10 @@ end
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         is_correct[i] = (next_pc[i] == target_pc[i]);
-        is_branch[i] = (branch_info[i].br_type == BR_NORMAL) || 
-                       (branch_info[i].br_type == BR_CALL) || 
+        is_branch[i] = (branch_info[i].br_type == BR_NORMAL) ||
+                       (branch_info[i].br_type == BR_CALL) ||
                        (branch_info[i].br_type == BR_RET);
-        taken[i] = ((branch_info[i].br_type == BR_NORMAL) && 
+        taken[i] = ((branch_info[i].br_type == BR_NORMAL) &&
                     (rob_commit_i[i].w_data == 1)) ||
                    (branch_info[i].br_type == BR_CALL) ||
                    (branch_info[i].br_type == BR_RET);
@@ -294,7 +292,7 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].pc = rob_commit_i[i].pc[i];
         correct_info_o[i].redir_addr = cur_exception ? exp_pc : next_pc[i];
 
-        correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) | 
+        correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
                                         (predict_info[i].target_pc != next_pc[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
 
@@ -303,8 +301,8 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].branch_type = branch_info[i].br_type;
 
 
-        correct_info_o[i].update = (predict_info[i].need_update) | 
-                                   (predict_branch[i]) | 
+        correct_info_o[i].update = (predict_info[i].need_update) |
+                                   (predict_branch[i]) |
                                    (is_branch[i]);
         correct_info_o[i].target_pc = next_pc[i];
 
@@ -563,9 +561,7 @@ typedef enum logic[4:0] {
     // 写入Cache
     S_CACHE,
     // UnCached情况下直接发起AXI请求
-    S_UNCACHED,
-    // 将Cache表项无效化
-    S_CACHE_INVALID
+    S_UNCACHED
 } ls_fsm_s;
 // 如果是is_uncached指令，直接发起AXI请求
 // 状态机流程：
@@ -587,6 +583,8 @@ word_t [CACHE_BLOCK_NUM-1:0] axi_block_data;
 logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr, cache_block_len;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr, axi_block_len;
 
+logic axi_wait;
+
 logic [31:0] cache_dirty_addr;
 
 // Cache的特性是本周期发出请求，下周期才能得到回应
@@ -600,6 +598,10 @@ always_comb begin
     commit_cache_req.tag_we      = '0;
     commit_cache_req.fetch_sb    = '0;
     commit_axi_req = commit_axi_req_q;
+
+    commit_axi_req_o = '0;
+    commit_axi_valid_o = '0;
+    commit_axi_ready_o = '0;
 
     if(ls_fsm_q == S_NORMAL && is_lsu) begin
         stall |= ~cache_commit_hit;
@@ -713,17 +715,32 @@ always_comb begin
 
     // 发起AXI请求，读出对应地址处的数据
     else if(ls_fsm_q == S_AXI_RD) begin
+        commit_axi_ready_o          = '0;
+
+        // 初始状态的握手信号
+        if(axi_block_ptr == 0) begin
+            // 接收到信息，不用置高位
+            if(~axi_commit_ready_i) begin
+                // 维持原有的请求信息
+                commit_axi_valid_o          = '1;
+                commit_axi_req.addr         = lsu_info[0].addr & 32'hfffffffc;
+                commit_axi_req.len          = CACHE_BLOCK_NUM;
+                commit_axi_req.strb         = '0;
+                commit_axi_req.rmask        = lsu_info[i].rmask;
+                commit_axi_req.read         = |lsu_info[i].rmask;
+            end
+        end
+
+        // AXI传入一个数据
+        commit_axi_ready_o = '0;
         if(axi_commit_valid_i) begin
             // AXI请求完成，进行下一步状态
             if(axi_block_ptr == axi_block_len) begin
                 commit_cache_valid = '1;
-                // TODO ? 
-                commit_cache_req            = commit_cache_req_q;
-                commit_cache_req.strb       = '1;
-                commit_cache_req.data_data  = cache_block_data[cache_block_ptr];
+                commit_cache_req   = commit_cache_req_q;
             end
             else begin
-                commit_axi_valid_o    = '1;
+                commit_axi_ready_o = '1;
                 // 对齐一个字的数据
                 commit_axi_req.addr   = commit_axi_req_q.addr + 4;
                 commit_axi_req.strb   = '0;
@@ -761,14 +778,31 @@ always_comb begin
 
     // 发起AXI请求，写回对应地址处的数据
     else if (ls_fsm_q == S_AXI_WB) begin
+        commit_axi_valid_o   = '0;
+
+        if(axi_block_ptr == 0) begin
+            if(~axi_commit_ready_i) begin
+                // 握手前维持原有请求不变
+                commit_axi_valid_o   = '1;
+                commit_axi_req.data  = cache_block_data[0];
+                // 对齐一块的数据
+                commit_axi_req.addr  = cache_dirty_addr & 32'hfffffff0;
+                commit_axi_req.len   = CACHE_BLOCK_NUM;
+                commit_axi_req.strb  = '1;
+                commit_axi_req.rmask = '0;
+            end
+        end
+
+        commit_axi_valid_o = '0;
         // AXI写回请求完成，再发送AXI请求进行读出所需处的数据
-        if(axi_commit_valid_i) begin
+        if(axi_commit_ready_i) begin
             if(axi_block_ptr == axi_block_len) begin
+                commit_axi_ready_o = '0;
                 if(axi_return_back) begin
                     //
                 end
                 else begin
-                    commit_axi_valid_o   = '1;
+                    commit_axi_ready_o = '1;
                     // 设置相应的AXI数据
                     commit_axi_req.addr  = rob_commit_q.lsu_info.paddr & 32'hfffffff0;
                     commit_axi_req.len   = CACHE_BLOCK_NUM;
@@ -778,33 +812,10 @@ always_comb begin
                 end
             end
             else begin
-                commit_axi_req.addr = commit_axi_req_q.addr + 4;
+                commit_axi_valid_o = '1;
+                commit_axi_req.addr = commit_axi_req_q.addr;
                 commit_axi_req.data = axi_block_data[axi_block_ptr];
             end
-        end
-    end
-
-    else if(ls_fsm_q == S_CACHE_INVALID) begin
-        if((cache_op_q == 2'd1) || (cache_op_q == 2'd2)) begin
-            // 将无效tag写回
-            // commit_cache_valid = '1;
-            // commit_cache_req.addr = lsu_info[0].addr;
-            // commit_cache_req.way_choose = commit_cache_req.addr[0];
-            // 将tag无效
-            // commit_cache_req.tag_data = get_cache_tag(cache_commit_resp_i.sb_entry.target_addr, '0, '0);
-            // commit_cache_req.tag_we = '1;
-            // commit_cache_req.data_data = '0;
-            // commit_cache_req.strb = '0;
-            // commit_cache_req.fetch_sb = '0;
-            // 发起AXI请求写回Cache内容
-            commit_axi_valid_o = '1;
-            commit_axi_req.addr = cache_commit_resp_i.sb_entry.target_addr & 32'hfffffff0;
-            commit_axi_req.len = CACHE_BLOCK_NUM;
-            commit_axi_req.strb = '1;
-            commit_axi_req.rmask = '0;
-        end
-        else begin
-
         end
     end
 
@@ -822,6 +833,7 @@ always_ff @(posedge clk) begin
 
     if(~rst_n) begin
         ls_fsm_q <=  S_NORMSAL;
+        axi_wait <= '0;
 
         cache_block_data<= '0;
         cache_block_ptr <= '0;
@@ -844,15 +856,27 @@ always_ff @(posedge clk) begin
                 end
                 else if(cache_op == 1) begin
                     if (lsu_info[0].cacop_dirty) begin
-                        ls_fsm_q <= S_CACHE_INVALID;
-                    end else begin
+                        ls_fsm_q <= S_CACHE_RD;
+                        axi_return_back <= '1;
+
+                        cache_block_ptr <= 0;
+                        cache_block_len <= CACHE_BLOCK_NUM;
+                        cache_block_data <= '0;
+                    end
+                    else begin
                         ls_fsm_q <= S_NORMAL;
                     end
                 end
                 else if(cache_op == 2) begin
                     if (lsu_info[0].hit_dirty) begin
-                        ls_fsm_q <= S_CACHE_INVALID;
-                    end else begin
+                        ls_fsm_q <= S_CACHE_RD;
+                        axi_return_back <= '1;
+
+                        cache_block_ptr <= 0;
+                        cache_block_len <= CACHE_BLOCK_NUM;
+                        cache_block_data <= '0;
+                    end
+                    else begin
                         ls_fsm_q <= S_NORMAL;
                     end
                 end
@@ -935,7 +959,7 @@ always_ff @(posedge clk) begin
                     cache_block_data <= axi_block_data;
                 end
                 else begin
-                    axi_block_data[block_ptr] <= axi_commit_resp_i.data;
+                    axi_block_data[axi_block_ptr] <= axi_commit_resp_i.data;
                     axi_block_ptr <= axi_block_ptr + 1;
                 end
             end
@@ -962,8 +986,8 @@ always_ff @(posedge clk) begin
 
         // 发起AXI请求，写回对应地址处的数据
         else if (ls_fsm_q == S_AXI_WB) begin
-            // AXI写回请求完成，再发送AXI请求进行读出所需处的数据
-            if(axi_commit_valid_i) begin
+            if(axi_commit_ready_i) begin
+                // AXI写回请求完成，再发送AXI请求进行读出所需处的数据
                 if(axi_block_ptr == axi_block_len) begin
                     if(axi_return_back) begin
                         ls_fsm_q <= S_NORMAL;
@@ -984,17 +1008,6 @@ always_ff @(posedge clk) begin
                 else begin
                     axi_block_ptr <= axi_block_ptr + 1;
                 end
-            end
-        end
-
-        else if(ls_fsm_q == S_CACHE_INVALID) begin
-            if((cache_op_q == 2'd1) || (cache_op_q == 2'd2)) begin
-                ls_fsm_q <= S_AXI_WB;
-                axi_return_back <= '1;
-
-                axi_block_len <= CACHE_BLOCK_NUM;
-                axi_block_ptr <= 0;
-                axi_block_data <= cache_block_data;
             end
         end
 
