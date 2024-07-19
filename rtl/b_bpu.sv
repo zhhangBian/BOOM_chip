@@ -17,7 +17,7 @@
  * 有条件跳转指令有：BEQ, BNE, BLT, BGE, BLTU, BGEU, 
  */
 
-`include "a_defines.svh"
+`include "a_branch_predict.svh"
 
 // combination logic
 // this function rely on the value of BPU_BTB_LEN. if the value is
@@ -39,7 +39,7 @@ module bpu(
     input                   g_flush, // TODO: g_flush is the same as redir signal
 
     input  correct_info_t   correct_info_i, // 后端反馈的修正信息
-    handshake_if.sender     sender, // predict_info_t type
+    handshake_if.sender     sender // predict_info_t type
 );
 
 logic ready_i;
@@ -69,6 +69,7 @@ end
 /* ============================== BTB ============================== */
 // BTB 应当存储除了正常指令和 ret(JIRL) 类型指令以外的所有分支指令的目标地址
 bpu_btb_entry_t [1:0]       btb_rdata;
+bpu_btb_entry_t             btb_wdata;
 logic [`BPU_BTB_LEN-1 : 0]  btb_raddr;
 logic [`BPU_BTB_LEN-1 : 0]  btb_waddr;
 logic [1:0]                 btb_tag_match;
@@ -78,19 +79,25 @@ logic [1:0]                 btb_valid;
 
 assign btb_raddr = hash(pc);
 assign btb_waddr = hash(correct_info_i.pc);
-assign btb_we = correct_info_i.type_miss | correct_info_i.target_miss;
+assign btb_we = correct_info_i.updata & (correct_info_i.type_miss | correct_info_i.target_miss);
 
-for (genvar i = 0; i < 2; i++) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
     assign btb_valid[i] = btb_rdata[i].valid & btb_tag_match[i];
 end
 
 always_comb begin
-    for (integer i = 0; i < 2; i++) begin
+    for (integer i = 0; i < 2; i=i+1) begin
         btb_rdata[i] = btb[i][btb_raddr];
         btb_tag_match[i] = (btb_rdata[i].tag[`BPU_TAG_LEN-1:0] == get_tag(pc));
     end
 end
+
+assign btb_wdata.target_pc = correct_info_i.target_pc;
+assign btb_wdata.tag = get_tag(correct_info_i.pc);
+assign btb_wdata.br_type = correct_info_i.br_type;
+assign btb_wdata.valid = correct_info_i.br_type != BR_NONE;
+assign btb_wdata.is_cond_br = correct_info_i.is_cond_br;
 
 always_ff @( clk ) begin : btb_logic
     // reset btb to ZERO
@@ -100,9 +107,7 @@ always_ff @( clk ) begin : btb_logic
     end
     // 写入
     else if (btb_we) begin
-        btb[correct_info_i.pc[2]][btb_waddr].target_pc <= correct_info_i.target;
-        btb[correct_info_i.pc[2]][btb_waddr].tag       <= get_tag(correct_info_i.pc);
-        btb[correct_info_i.pc[2]][btb_waddr].br_info   <= correct_info_i.br_type;
+        btb[correct_info_i.pc[2]][btb_waddr].target_pc <= btb_wdata;
     end
 end
 
@@ -120,22 +125,14 @@ logic [`BPU_BTB_LEN-1 : 0]          bht_raddr;
 logic [`BPU_BTB_LEN-1 : 0]          bht_waddr;
 logic                               bht_we;
 
-assign bht_raddr = btb_raddr // = hash(pc);
-assign bht_waddr = btb_waddr// = hash(correct_info_i.pc);
-
+assign bht_raddr = btb_raddr; // = hash(pc);
+assign bht_waddr = btb_waddr; // = hash(correct_info_i.pc);
 assign bht_we = correct_info_i.update;
 
-always_comb begin
-    for (integer i = 0; i < 2; i++) begin
-        // 写入数据逻辑
-        bht_wdata[i].history = correct_info_i.type_miss ? {4'b0, correct_info_i.taken} : // 一条新指令
-                               correct_info_i.target_miss ? {correct_info_i.history[3:0], correct_info_i.taken} : // taken miss
-                               {bht[i][bht_waddr].history[3:0], correct_info_i.taken};
-        bht_wdata[i].is_cond_br = correct_info_i.cond_br;
-        // 读取数据
-        bht_rdata[i] = bht[i][bht_raddr];
-        btb_tag_match[i] = (bht_rdata[i].tag == get_tag(pc));
-    end
+for (genvar i = 0; i < 2; i=i+1) begin
+    assign bht_wdata[i].history = correct_info_i.type_miss ? {{(`BPU_HISTORY_LEN-1){1'b0}}, correct_info_i.taken} :
+                                    {correct_info_i.history[3:0], correct_info_i.taken};
+    assign bht_rdata[i] = bht[i][bht_raddr];
 end
 
 always_ff @( clk ) begin : bht_logic
@@ -188,11 +185,9 @@ logic                               pht_we;
 
 assign pht_we = correct_info_i.update;
 
-always_comb begin
-    for (integer i = 0; i < 2; i++) begin
-        pht_wdata[i].scnt = next_scnt(correct_info_i.scnt, correct_info_i.taken);
-        pht_raddr[i] = {bht_rdata[i].history[`BPU_HISTORY_LEN-1:0], pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
-    end
+for (genvar i = 0; i < 2; i=i+1) begin
+    assign pht_waddr[i].scnt = next_scnt(correct_info_i.scnt, correct_info_i.taken);
+    assign pht_raddr[i] = {bht_rdata[i].history, correct_info_i.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
 end
 
 always_ff @( clk ) begin : pht_logic
@@ -213,7 +208,7 @@ end
 logic [1:0] branch;
 logic [1:0] mask;
 
-for (genvar i = 0;  < 2; i++) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     // branch[i] 表示第 i 条指令是否要分支
     // branch 的可能：
     // 1. !btb_rdata[i].is_cond_br 
@@ -221,13 +216,12 @@ for (genvar i = 0;  < 2; i++) begin
     assign branch[i] = btb_valid & (!btb_rdata[i].is_cond_br | pht_rdata[i].scnt[1]);
 end
 
+assign mask = {!branch[0] | pc[2], !pc[2]};
 always_comb begin
     // 根据 btb_valid, btb_rdata[i].br_type, branch 来判断npc
-    mask = {branch[0] && !pc[2], !pc[2]};
     npc = {pc[31:2] + '1, 2'b0};
 
     if (branch[0] && !pc[2]) begin
-        mask = {1'b0, 1'b1};
         npc = btb_rdata[0].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[0].target_pc;
     end
     else if (branch[1]) begin
@@ -238,8 +232,8 @@ end
 assign predict_info_o.pc                 =  pc;
 assign predict_info_o.mask               =  mask;
 assign predict_info_i.target_pc          =  npc;
-for (genvar i = 0; i < 2; i++) begin
-    assign predict_info_o.br_type[i]     =  btb_rdata[i].br_type;
+for (genvar i = 0; i < 2; i=i+1) begin
+    assign predict_info_o.br_type[i]     =  btb_rdata[i].valid ? btb_rdata[i].br_type : BR_NONE;
     assign predict_info_o.taken[i]       =  branch[i];
     assign predict_info_o.scnt[i]        =  pht_rdata[i].scnt;
     assign predict_info_o.need_update[i] =  !btb_rdata[i].valid; // 没有这一项就要 update

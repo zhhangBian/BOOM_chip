@@ -24,7 +24,7 @@
 // Branch target type
 typedef enum logic[1:0] { 
     BR_NONE, // 正常指令
-    BR_NORMAL, // 立即数跳转指令
+    BR_NORMAL, // 立即数跳转指令, BEQ, BNE, BGT, BGE, BLT, BLE, B
     BR_CALL, // LA 中的 BL 指令
     BR_RET // LA 中的 JIRL 指令
 } br_type_t;
@@ -45,14 +45,14 @@ typedef struct packed { // TODO: 后端不能同时提交两条分支指令
     logic  [31:0]   redir_addr; // 如果跳转错误,后端得到正确的跳转地址之后反馈给前端
 
     logic           target_miss; // 目标地址预测错误，需要更新BTB. taken预测错了也要将target_miss置有效。
-    logic           type_miss; // 类型预测错误，说明一定这条指令一定不在表中，全部更新
+    logic           type_miss; // 类型预测错误，说明一定这条指令一定不在表中，全部更新, 
     logic           taken; // 是否跳转
     logic           is_cond_br; // 是否是条件跳转指令。无条件跳转指令仅包括JIRL, B, BL
     br_type_t       branch_type; // 分支类型，用于更新 BTB
     logic           update; // 如果这条指令是分支或者预测成了分支，就要置 1 。
     logic  [31:0]   target_pc; // 正确的跳转地址，用于更新 BTB
-    logic  [`BPU_HISTORY_LEN-1:0] new_history; // 历史记录，最新的历史往 0 位放，旧的历史左移一位。
-    logic  [ 1:0]   new_scnt; // 饱和计数器的值。
+    logic  [`BPU_HISTORY_LEN-1:0] history; // 历史记录，最新的历史往 0 位放，旧的历史左移一位。
+    logic  [ 1:0]   scnt; // 饱和计数器的值。
 } correct_info_t;
 
 typedef struct packed {
