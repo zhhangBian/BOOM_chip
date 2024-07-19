@@ -51,6 +51,8 @@ cache_commit_resp_t cache_commit_resp;
 // cpu传入数据
 iq_lsu_pkg_t iq_lsu_pkg;
 assign iq_lsu_pkg = cpu_lsu_receiver.data;
+logic [31:0] va;
+assign va = iq_lsu_pkg.vaddr;
 // MMU类型数据
 wire [1:0] mem_type = |iq_lsu_pkg.strb ? `_MEM_STORE : `_MEM_LOAD;
 trans_result_t trans_result;
