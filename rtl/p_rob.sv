@@ -12,7 +12,8 @@ module rob #(
     // output
     output  rob_dispatch_pkg_t [1 : 0] rob_dispatch_o,
     input                      [1 : 0] commit_req, // commit 级根据 rob 的信息判断是否选择指令提交
-    output  rob_commit_pkg_t   [1 : 0] commit_info_o
+    output  rob_commit_pkg_t   [1 : 0] commit_info_o,
+    output                     [1 : 0] commit_valid
 );
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +182,8 @@ always_comb begin
     end
     commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
     commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1);
+    commit_valid[0] = commit_info_o[0].c_valid;
+    commit_valid[1] = commit_info_o[1].c_valid;
 end
 
 // P级写

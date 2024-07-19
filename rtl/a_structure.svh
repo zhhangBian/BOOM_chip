@@ -154,7 +154,8 @@ typedef struct packed {
     logic   [31:0]  data_imm;
 
     logic   first_commit;
-    iq_lsu_pkg_t lsu_info;
+    lsu_iq_pkg_t lsu_info;
+
     logic   is_uncached;
     logic   [5:0]   exc_code;   // 位宽随便定的，之后调整
     logic   is_csr_fix;
@@ -229,44 +230,46 @@ typedef struct packed {
 
 /**********************store buffer pkg******************/
 typedef struct packed {
-    logic [31 : 0] target_addr;
-    logic [31 : 0] write_data;
-    logic [3  : 0] wstrb;
-    logic          valid;
-    // logic          commit;
-    logic          uncached;
-    logic [1  : 0] hit;
-    // logic          complete;
+    logic   [31 : 0]    target_addr;
+    logic   [31 : 0]    write_data;
+    logic   [3  : 0]    wstrb;
+    logic               valid;
+    // logic               commit;
+    // logic               uncached;
+    logic   [1  : 0]    hit;
+    // logic               complete;
 } sb_entry_t;
 
 /**************************lsu pkg*************************/
 typedef struct packed {
     logic   is_uncached;
     logic  [3:0]  strb;
-    logic  [3:0] rmask;            // 需要读的字节
+    logic  [3:0] rmask;     // 需要读的字节
     inv_parm_e   cacop;
-    logic         dbar;            // 显式 dbar
-    logic         llsc;            // LL 指令，需要写权限
-    rob_id_t       wid;            // 写回地址
-    logic      msigned;            // 有符号拓展
-    logic  [1:0] msize;            // 访存大小-1
-    logic [31:0] vaddr;            // 虚拟地址
-    logic [31:0] wdata;            // 写数据
+    logic         dbar;     // 显式 dbar
+    logic         llsc;     // LL 指令，需要写权限
+    rob_id_t       wid;     // 写回地址
+    logic      msigned;     // 有符号拓展
+    logic  [1:0] msize;     // 访存大小-1
+    logic [31:0] vaddr;     // 虚拟地址
+    logic [31:0] wdata;     // 写数据
 } iq_lsu_pkg_t;
 
 // LSU 到 LSU IQ 的响应
 typedef struct packed {
 //   lsu_excp_t   excp;
 //   fetch_excp_t f_excp;
-    logic        uncached; // uncached 特性
-    logic        hit;      // 是否命中，总判断 
-    logic[1 :0]  tag_hit;  // tag是否命中
-    rob_rid_t    wid;      // 写回地址
-    logic[31:0]  paddr;    // 物理地址 
-    logic[31:0]  rdata;    // 读出的数据结果
+    logic   [3:0]   strb;
+    logic   [3:0]   rmask;  // 需要读的字节
+    logic           uncached;   // uncached 特性
+    logic           hit;        // 是否命中，总判断
+    logic   [1 :0]  tag_hit;    // tag是否命中
+    rob_rid_t       wid;        // 写回地址
+    logic   [31:0]  paddr;      // 物理地址
+    logic   [31:0]  rdata;      // 读出的数据结果
     tlb_exception_t tlb_exception; // TLB异常
-    logic[1 :0]  refill;           // 选择哪一路重填
-    logic        dirty;            // 是否需要写回
+    logic   [1 :0]  refill;     // 选择哪一路重填
+    logic           dirty;      // 是否需要写回
 } lsu_iq_pkg_t;
 
 typedef struct packed {
@@ -290,7 +293,7 @@ typedef struct packed {
 
 typedef struct packed {
     logic   [31:0]  addr;       // 反馈地址
-    // logic   [31:0]  data;   
+    // logic   [31:0]  data;
     sb_entry_t      sb_entry;   // 读出的sb_entry
     // Data SRAM向commit级发送读结果
     logic   [31:0]  data;       // 返回的数据
