@@ -196,15 +196,131 @@ end
 
 // ------------------------------------------------------------------
 // 异常处理
+//识别rob_commit_i[0]这一条指令是不是有异常，如果有，修改csr
 
+//cpu要每周期采样中断信号 TODO
 
+//都不是寄存器
+logic cur_exception;       //提交的第0条是不是异常指令
+logic cur_tlbr_exception = 1'b0;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
+csr_t csr_exception_update = csr_q;//周期结束时候写入csr_q
 
+//中断识别
+logic [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECTL_LIE];
+//这里的ecfg在宏里面，宏叫做ecfg，要把宏改一下 TODO
+logic int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
+//取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
+logic fetch_excp    = rob_commit_i[0].fetch_exception;
 
+//译码异常 下面的信号来自decoder TODO
+logic syscall_excp  = rob_commit_i[0].syscall_inst;
+logic break_excp    = rob_commit_i[0].break_inst;
+logic ine_excp      = rob_commit_i[0].decode_err;
+logic priv_excp     = rob_commit_i[0].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
 
+//执行异常 TODO 访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
+logic execute_excp  = rob_commit_i[0].execute_exception;
 
+logic [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
+always_comb begin
+    /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
+    cur_exception = 1'b1;
 
+    csr_exception_update.prmd[`_PRMD_PPLV] = csr_q.crmd[`_CRMD_PLV];
+    csr_exception_update.prmd[`_PRMD_PIE]  = csr_q.crmd[`_CRMD_IE];
+    csr_exception_update.crmd[`_CRMD_PLV]  = '0;
+    csr_exception_update.crmd[`_CRMD_IE]   = '0;
+    /*对应文档的1，进入核心态和关中断*/
+    csr_exception_update.era               = rob_commit_i[0].pc;
+    /*对应2，TODO:要pc，好像没有*/
+
+    //例外的仲裁部分，取最优先的例外将例外号存入csr，对应文档的例外操作3
+    //部分操作包含4和5，即存badv和vppn的部分
+    unique casez (exception)
+        7'b1??????: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INT;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+        end /*中断*/
+
+        7'b01?????: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_exception_update.badv                    = rob_commit_i[0].va; //存badv
+            if (rob_commit_i[0].exc_code != `_ECODE_ADEF) begin
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].va[31:13];        //tlb例外存vppn
+            end
+            if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
+                cur_tlbr_exception = 1'b1;
+            end
+        end
+        /*取指例外 TODO 判断的信号从fetch来，
+        要求fetch如果有例外要传一个fetch_excpetion信号，
+        和一个存到exc_code里面的错误编码,要求在前面仲裁好是地址错还是tlb错
+        （注意，后面如果有访存出错不能把取指错的错误码替掉）
+        以及出错的虚拟地址va*/
+
+        7'b001????: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_SYS;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+        end /*syscall*/
+        7'b0001???: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_BRK;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+        end /*break*/
+        7'b00001??: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INE;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+        end /*ine指令不存在*/
+        7'b000001?: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_IPE;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+        end /*ipe指令等级不合规*/
+        /*译码例外，这几判断的个信号从decoder来*/
+
+        7'b0000001: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_exception_update.badv                    = rob_commit_i[0].va; //存badv
+            if (rob_commit_i[0].exc_code != `_ECODE_ALE) begin
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].va[31:13];        //tlb例外存vppn
+            end
+            if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
+                cur_tlbr_exception = 1'b1;
+            end
+        end
+        /*执行例外，
+        TODO 访存级别如果有地址不对齐错误或者tlb错误
+        要传execute_excpetion信号和错误号过来，
+        同样需要出错虚地址va，同取指部分的例外*/
+
+        default: begin
+            csr_exception_update = csr_q;
+            cur_exception = 1'b0;
+            /*csr_exception_update.prmd[`_PRMD_PPLV] = csr_q.prmd[`_PRMD_PPLV];
+            csr_exception_update.prmd[`_PRMD_PIE]  = csr_q.prmd[`_PRMD_PIE];
+            csr_exception_update.crmd[`_CRMD_PLV]  = csr_q.crmd[`_CRMD_PLV];
+            csr_exception_update.crmd[`_CRMD_IE]   = csr_q.crmd[`_CRMD_IE];
+            csr_exception_update.era               = csr_q.era;*/
+        end
+        /*没有例外，把开始的东西改回去*/
+    endcase
+
+end
+
+//下面这个部分暂时这样写，是打一排以后把要写入csr的内容最后写入csr中，
+//要把它和后面的csr维护等内容考虑冒险之后合并在一起。
+//这一部分一定要和后面合在一起重写！！！TODO
+always_ff @(posedge clk) begin
+    if (rst_n) begin
+        <merge with other code>
+    end
+    else begin
+        csr_q <= csr_exception_update;
+        <merge with other code>
+    end
+end
 
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
