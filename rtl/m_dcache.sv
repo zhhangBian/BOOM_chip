@@ -275,6 +275,8 @@ always_ff @(posedge clk) begin
 end
 // LSU_PKG
 always_comb begin
+    lsu_iq_pkg.strb     = m1_iq_lsu_pkg.strb;
+    lsu_iq_pkg.rmask    = m1_iq_lsu_pkg.rmask;
     lsu_iq_pkg.uncached = uncache;
     lsu_iq_pkg.hit      = (lw_valid & (|m1_iq_lsu_pkg.rmask)) | (|tag_hit);
     lsu_iq_pkg.wid      = m1_iq_lsu_pkg.wid;
