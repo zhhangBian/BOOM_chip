@@ -30,12 +30,12 @@ typedef enum logic[1:0] {
 } br_type_t;
 
 typedef struct packed {
-    logic [31:0]                        target_pc; // 跳转到的目标 PC 
-    br_type_t [1:0]                     br_type;
-    logic [ 1:0]                        taken;
-    logic [ 1:0][ 1:0]                  scnt;
-    logic [ 1:0]                        need_update;
-    logic [ 1:0][`BPU_HISTORY_LEN-1:0]  history; // 最新的历史放 0 位，旧的历史往高位移
+    logic       [31:0]                  target_pc; // 跳转到的目标 PC 
+    br_type_t                           br_type;
+    logic                               taken;
+    logic       [ 1:0]                  scnt;
+    logic                               need_update;
+    logic       [`BPU_HISTORY_LEN-1:0]  history; // 最新的历史放 0 位，旧的历史往高位移
     // ras_ptr???    
 } predict_info_t;
 
