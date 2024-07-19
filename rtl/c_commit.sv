@@ -51,10 +51,6 @@ module commit #(
     output  logic   commit_ready_o,
     output  logic   [1:0]   commit_request_o,
 
-    // 将CSR对应位的值写到寄存器中
-    output  logic   commit_csr_valid_o,
-    output  logic   [31:0]  commit_csr_data_o,
-
     // commit与DCache的接口
     output  commit_cache_req_t  commit_cache_req_o,
     input   cache_commit_resp_t cache_commit_resp_i,
@@ -83,8 +79,7 @@ module commit #(
     output  word_t  [1:0]   commit_arf_areg_o,
 
     // commit与BPU的接口
-    output  logic   commit_bpu_predict_right_o,
-    output  word_t  commit_bpu_real_pc_o
+    output  correct_info_t [1:0]  commit_bpu_correct_info_o
 );
 
 // ------------------------------------------------------------------
@@ -187,11 +182,11 @@ for(integer i = 0; i < 2; i += 1) begin
         is_csr_fix[i]   = rob_commit_i[i].is_csr_fix;
         is_cache_fix[i] = rob_commit_i[i].is_cache_fix;
         is_tlb_fix[i]   = rob_commit_i[i].is_tlb_fix;
+
         cache_commit_hit[i] = lsu_info[i].hit;
         cache_commit_dirty[i] = lsu_info[i].dirty;
     end
 end
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
@@ -220,6 +215,101 @@ always_comb begin
     end
     else begin
         flush = '0;
+    end
+end
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ------------------------------------------------------------------
+// 处理分支预测信息
+// 分支预测是否正确：按照第一条错误的分支指令来
+// 认为分支指令只能单挑提交
+logic [1:0] is_correct;
+word_t [1:0] pc;
+word_t [1:0] next_pc;
+
+predict_info_t [1:0] predict_info;
+assign predict_info[0] = rob_commit_i[0].predict_info;
+assign predict_info[1] = rob_commit_i[1].predict_info;
+
+logic [1:0] predict_branch;
+
+branch_info_t [1:0] branch_info;
+assign branch_info[0] = rob_commit_i[0].branch_info;
+assign branch_info[1] = rob_commit_i[1].branch_info;
+
+logic [1:0] is_branch;
+logic [1:0] taken;
+
+// 异常PC入口
+logic [31:0] exp_pc;
+assign exp_pc = cur_tlbr_exception ? cssr.tlbrentry : csr.eentry ;
+
+// 计算实际跳转的PC
+for(integer i = 0; i < 2; i += 1) begin
+    always_comb begin
+        next_pc[i] = '0;
+        predict_branch[i] = predict_info[i].taken;
+
+        case (branch_info[i].br_type)
+            BR_NONE: begin
+                next_pc[i] |= rob_commit_i[i].pc[i] + 4;
+            end
+
+            // 比较结果由ALU进行计算
+            BR_NORMAL: begin
+                next_pc[i] |= (rob_commit_i[i].w_data == 1) ? rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+            end
+
+            BR_CALL: begin
+                next_pc[i] |= rob_commit_i[i].data_imm;
+            end
+
+            BR_RET: begin
+                next_pc[i] |= rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
+            end
+
+            default: begin
+                next_pc[i] |= rob_commit_i[i].pc[i] + 4;
+            end
+        endcase
+    end
+end
+
+// 计算分支预测是否正确
+for(integer i = 0; i < 2; i += 1) begin
+    always_comb begin
+        is_correct[i] = (next_pc[i] == target_pc[i]);
+        is_branch[i] = (branch_info[i].br_type == BR_NORMAL) || 
+                       (branch_info[i].br_type == BR_CALL) || 
+                       (branch_info[i].br_type == BR_RET);
+        taken[i] = ((branch_info[i].br_type == BR_NORMAL) && 
+                    (rob_commit_i[i].w_data == 1)) ||
+                   (branch_info[i].br_type == BR_CALL) ||
+                   (branch_info[i].br_type == BR_RET);
+    end
+end
+
+for(integer i = 0; i < 2; i += 1) begin
+    always_comb begin
+        correct_info_o[i].pc = rob_commit_i[i].pc[i];
+        correct_info_o[i].redir_addr = cur_exception ? exp_pc : next_pc[i];
+
+        correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) | 
+                                        (predict_info[i].target_pc != next_pc[i]);
+        corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
+
+        correct_info_o[i].taken = taken[i];
+        correct_info_o[i].is_cond_br = (branch_info[i].br_type == BR_NORMAL);
+        correct_info_o[i].branch_type = branch_info[i].br_type;
+
+
+        correct_info_o[i].update = (predict_info[i].need_update) | 
+                                   (predict_branch[i]) | 
+                                   (is_branch[i]);
+        correct_info_o[i].target_pc = next_pc[i];
+
+        correct_info_o[i].history = predict_info[i].history;
+        correct_info_o[i].scnt = predict_info[i].scnt;
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

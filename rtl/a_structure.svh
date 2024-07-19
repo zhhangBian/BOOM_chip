@@ -103,6 +103,7 @@ typedef struct packed {
 
     logic   c_valid;
 
+    logic   [31:0]  pc;
     logic   [31:0]  data_rd;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
@@ -121,11 +122,16 @@ typedef struct packed {
     logic   [4:0]   tlb_type;
     logic   [3:0]   tlb_op;
 
-    logic   [31:0]  cache_dirty_addr;
-    logic   cache_dirty;
-
-    // TODO：分支预测信息
+    // 分支预测信息
+    logic   is_branch;
+    predict_info_t  predift_info;
+    branch_info_t   branch_info;
 } rob_commit_pkg_t;
+
+typedef struct packed {
+    logic [31:0] target_pc;
+    br_type_t [1:0] br_type;
+} branch_info_t;
 
 typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0] w_preg;
