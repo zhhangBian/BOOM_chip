@@ -1,5 +1,8 @@
 `include "a_defines.svh"
 
+// 1. cache维护的cache一整块
+// 2. AXI握手
+
 function cache_tag_t get_cache_tag(
     input logic [31:0] addr,
     input logic v,
@@ -133,13 +136,13 @@ always_comb begin
 
 
     if(ls_fsm_q == S_NORMAL) begin
-        commit_arf_we_o[0] = commit_request_o[0] & rob_commit_i[0].w_reg;
+        commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
     end
     else if(ls_fsm_q == S_UNCACHED) begin
         if(axi_commit_valid_i) begin
-            commit_arf_we_o[0] = |rob_commit_q.lsu_info.strb;
+            commit_arf_we_o[0]   = |rob_commit_q.lsu_info.rmask;
             commit_arf_data_o[0] = axi_commit_resp_i.data;
             commit_arf_areg_o[0] = rob_commit_q.w_areg;
         end
