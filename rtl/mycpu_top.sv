@@ -112,10 +112,33 @@ basic_fifo #(
 
 handshake_if #(f_d_pkg_t) f_fifo_handshake();
 
-i_cache i_cache_inst(
+i_cache # (
+    .WAY_NUM(2), // default
+    .WORD_SIZE(64), // default
+    .DATA_DEPTH(128), // default
+    .BLOCK_SIZE(4 * 64), // default
+) i_cache_inst (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush_i(g_flush),
+    // CSR
+    .csr_i(/* csr_i from backend */)
+    // cpu 侧信号
     .fetch_icache_receiver(fifo_f_handshake.receiver),
     .icache_decoder_sender(f_fifo_handshake.sender)
-)
+    // TODO: axi 信号
+    .addr_valid_o(),
+    .addr_o(),
+    .data_len_o(),
+    .axi_resp_ready_i(),
+    .axi_data_valid_i(),
+    .axi_data_i(),
+    // TODO: 全局信号
+    .commit_cache_req(), // commit维护cache时的请求
+    .cache_commit_resp(), // cache向提交级反馈结果
+    .commit_req_valid_i(), // commit发维护请求需要读（cacop op为2的时候）的时候
+    .commit_resp_ready_o() // 状态处理完毕，即为NORMAL状态时
+);
 
 /*============================== Decoder ==============================*/
 
@@ -129,7 +152,7 @@ basic_fifo #(
     .rst_n(rst_n),
     .receiver(f_fifo_handshake.receiver),
     .sender(fifo_d_handshake.sender)
-)
+);
 
 handshake_if #(.T(d_r_pkg_t)) d_fifo_handshake();
 
@@ -137,7 +160,7 @@ handshake_if #(.T(d_r_pkg_t)) d_fifo_handshake();
 decoder decoder_inst(
     .receiver(fifo_d_handshake.receiver),
     .sender(d_fifo_handshake.sender)
-)
+);
 
 handshake_if #(.T(d_r_pkg_t)) fifo_r_handshake();
 
