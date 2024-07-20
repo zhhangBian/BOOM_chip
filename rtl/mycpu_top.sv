@@ -1,10 +1,16 @@
 `include "a_defines.svh"
 
+`ifdef _VERILATOR
+module core_top (
+    input    [ 7:0] intrpt,
+`endif
+`ifdef _FPGA
 module mycpu_top (
+    input    [ 7:0] ext_int, 
+`endif
     // other axi interface
     input           aclk,
     input           aresetn,
-    input    [ 7:0] intrpt, 
     //AXI interface 
     //read reqest
     output   [ 3:0] arid,
@@ -106,10 +112,33 @@ basic_fifo #(
 
 handshake_if #(f_d_pkg_t) f_fifo_handshake();
 
-i_cache i_cache_inst(
+i_cache # (
+    .WAY_NUM(2), // default
+    .WORD_SIZE(64), // default
+    .DATA_DEPTH(128), // default
+    .BLOCK_SIZE(4 * 64), // default
+) i_cache_inst (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush_i(g_flush),
+    // CSR
+    .csr_i(/* csr_i from backend */)
+    // cpu 侧信号
     .fetch_icache_receiver(fifo_f_handshake.receiver),
     .icache_decoder_sender(f_fifo_handshake.sender)
-)
+    // TODO: axi 信号
+    .addr_valid_o(),
+    .addr_o(),
+    .data_len_o(),
+    .axi_resp_ready_i(),
+    .axi_data_valid_i(),
+    .axi_data_i(),
+    // TODO: 全局信号
+    .commit_cache_req(), // commit维护cache时的请求
+    .cache_commit_resp(), // cache向提交级反馈结果
+    .commit_req_valid_i(), // commit发维护请求需要读（cacop op为2的时候）的时候
+    .commit_resp_ready_o() // 状态处理完毕，即为NORMAL状态时
+);
 
 /*============================== Decoder ==============================*/
 
@@ -123,7 +152,7 @@ basic_fifo #(
     .rst_n(rst_n),
     .receiver(f_fifo_handshake.receiver),
     .sender(fifo_d_handshake.sender)
-)
+);
 
 handshake_if #(.T(d_r_pkg_t)) d_fifo_handshake();
 
@@ -131,7 +160,7 @@ handshake_if #(.T(d_r_pkg_t)) d_fifo_handshake();
 decoder decoder_inst(
     .receiver(fifo_d_handshake.receiver),
     .sender(d_fifo_handshake.sender)
-)
+);
 
 handshake_if #(.T(d_r_pkg_t)) fifo_r_handshake();
 
@@ -219,7 +248,7 @@ axi_crossbar # (
     .m_axi_awlock(awlock),
     .m_axi_awcache(awcache),
     .m_axi_awprot(awprot),
-    .m_axi_awqos(awqos),
+    .m_axi_awqos(/*TODO: 悬空，官方接口不会用到*/),
     .m_axi_awregion(/*TODO: check: 默认参数下只有一个 REGION, 即 0 号 region*/'0),
     .m_axi_awuser(/*TODO: 悬空，在默认参数下不会使用到这个信号*/),
     .m_axi_awvalid(awvalid),

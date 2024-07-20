@@ -92,6 +92,12 @@ typedef struct packed {
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
+    logic    [31:0] target_pc;
+    logic           is_branch;
+    br_type_t [1:0] br_type;
+} branch_info_t;
+
+typedef struct packed {
     // 在CSR指令中复用为rd寄存器的值
     logic   [31: 0] w_data;
     logic   [4 : 0] w_areg;
@@ -101,7 +107,7 @@ typedef struct packed {
     logic   c_valid;
 
     logic   [31:0]  pc;
-    logic   [31:0]  data_rd;
+    logic   [31:0]  data_rk;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
 
@@ -126,12 +132,6 @@ typedef struct packed {
     predict_info_t  predict_info;
     branch_info_t   branch_info;
 } rob_commit_pkg_t;
-
-typedef struct packed {
-    logic    [31:0] target_pc;
-    logic           is_branch;
-    br_type_t [1:0] br_type;
-} branch_info_t;
 
 typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0] w_preg;

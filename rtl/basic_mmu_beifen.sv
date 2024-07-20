@@ -41,9 +41,9 @@ always_comb begin
                 tlb_value_read = tlb_value_q[i][va[22]];   //4MB
             end else begin
                 tlb_value_read = tlb_value_q[i][va[12]];   //4KB
-                end
             end
         end
+    end
 end
 /*===================ok===================*/
 function automatic logic vppn_match(logic [31:0] va, 

@@ -25,13 +25,10 @@ module icache #(
     input    logic             axi_data_valid_i,
     input    logic  [31:0]     axi_data_i,
     // 全局信号
-    input commit_icache_req_t  commit_icache_req,
-    // input commit_fetch_req_t   commit_cache_req, // commit维护cache时的请求
-    // output fetch_commit_resp_t cache_commit_resp // cache向提交级反馈结果
-    input logic                commit_req_valid_i, // commit发维护请求需要读（cacop op的时候）的时候
-    output logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
-    output logic  [1:0]       icache_cacop_flush_o, // 2'b01 tlb_exc, 2'b10 tag_miss, other normal
-    output tlb_exception_t    icache_cacop_tlb_exc
+    input commit_fetch_req_t   commit_cache_req, // commit维护cache时的请求
+    output fetch_commit_resp_t cache_commit_resp, // cache向提交级反馈结果
+    input logic                commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
+    output logic               commit_resp_ready_o // 状态处理完毕，即为NORMAL状态时
 )
 
 commit_fetch_req_t   commit_cache_req;
