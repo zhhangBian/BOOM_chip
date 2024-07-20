@@ -123,7 +123,7 @@ logic [5:0] timer_64, timer_64_q;
 // - cache维护指令
 // - dbar,ibar
 // 特殊处理均只允许单条提交
-//TODO : 最后提交的逻辑，ertn跳转，ibar，idle，rdcntvl，rdcntvh，rdcntid的实现
+//TODO : 最后提交的逻辑，ertn跳转，ibar，idle,rdcnt加入arf写逻辑
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0] & commit_ready_o;
 
@@ -150,6 +150,11 @@ always_comb begin
     if(is_csr_fix[0]) begin
         commit_arf_we_o[0]   = commit_csr_valid_o;
         commit_arf_data_o[0] = commit_csr_data_o;
+        commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
+    end
+    if (TODO isrdcnt) begin
+        commit_arf_we_o[0]   = 1;
+        commit_arf_data_o[0] = rdcnt_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
     end
     else if(ls_fsm_q == S_NORMAL) begin
@@ -351,6 +356,22 @@ end
 always_comb begin
     timer_64 = timer_64_q;
 end
+
+//rdcnt命令
+logic [31:0] rdcnt_data_o;
+
+always_comb begin
+    if (TODO isrdcntvl) begin
+        rdcnt_data_o = timer_64_q[31:0];
+    end
+    if (TODO isrdcntvh) begin
+        rdcnt_data_o = timer_64_q[63:32];
+    end
+    if (TODO rdcntid) begin
+        rdcnt_data_o = csr_q.tid;
+    end
+end
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
