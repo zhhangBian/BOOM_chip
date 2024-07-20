@@ -280,7 +280,7 @@ logic [1:0] taken;
 
 // 异常PC入口
 logic [31:0] exp_pc;
-assign exp_pc = cur_tlbr_exception ? cssr.tlbrentry : csr.eentry ;
+assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 
 // 计算实际跳转的PC
 for(integer i = 0; i < 2; i += 1) begin
