@@ -66,9 +66,6 @@ typedef struct packed {
     logic [31:0] tlbrentry;
     logic [31:0] dmw0;
     logic [31:0] dmw1;
-// 浮点部分扩展
-//   logic [31:0] fcsr;
-//   logic         fcc;
 } csr_t;
 
 typedef struct packed {

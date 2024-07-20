@@ -123,7 +123,7 @@ logic [5:0] timer_64, timer_64_q;
 // - cache维护指令
 // - dbar,ibar
 // 特殊处理均只允许单条提交
-//TODO : 最后提交的逻辑，ertn跳转，ibar，idle,rdcnt加入arf写逻辑
+//TODO : 最后提交的逻辑，ertn跳转，ibar（不实现），idle,cacop的异常没有处理？
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0] & commit_ready_o;
 
@@ -321,7 +321,7 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].redir_addr = cur_exception ? exp_pc : 
                                        (flush & ~is_uncached) ? rob_commit_i[i].pc :
                                        next_pc[i];
-
+//TODO ertn加上
         correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
                                         (predict_info[i].target_pc != next_pc[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
