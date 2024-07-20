@@ -6,8 +6,8 @@
 `include "define.svh"
 
 module f_npc (
-    input clk,
-    input rst_n,
+    input logic clk,
+    input logic rst_n,
     
     input  logic            ready_i,
     output logic            valid_o,

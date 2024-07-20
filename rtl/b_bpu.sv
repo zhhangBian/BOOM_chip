@@ -33,17 +33,22 @@ endfunction
 /* ============================== MODULE BEGIN ============================== */
 
 module bpu(
-    input                   clk,
-    input                   rst_n,
-    input                   g_flush,
+    input wire                  clk,
+    input wire                  rst_n,
+    input wire                  g_flush,
 
-    input  correct_info_t   correct_info_i, // 后端反馈的修正信息
-    handshake_if.sender     sender // predict_infos_t type
+    input  correct_info_t [1:0] correct_infos_i, // 后端反馈的修正信息
+    handshake_if.sender         sender // predict_infos_t type
 );
 
-logic ready_i;
+/* ============================== correct_info ============================== */
+// 每次选中第一条需要update的指令进行update
+correct_info_t correct_info;
+assign correct_info = correct_infos_i[0].update ? correct_infos_i[0] : correct_infos_i[1];
+
 
 /* ============================== PC ============================== */
+logic ready_i;
 logic [31:0 ] pc;
 logic [31:0 ] npc; // wire 类型 组合逻辑得出。
 
@@ -71,8 +76,8 @@ logic [1:0]                 btb_valid;
 (* ramstyle = "distributed" *) bpu_btb_entry_t btb [1:0][`BPU_BTB_DEPTH - 1 : 0];
 
 assign btb_raddr = hash(pc);
-assign btb_waddr = hash(correct_info_i.pc);
-assign btb_we = correct_info_i.updata & (correct_info_i.type_miss | correct_info_i.target_miss);
+assign btb_waddr = hash(correct_info.pc);
+assign btb_we = correct_info.updata & (correct_info.type_miss | correct_info.target_miss);
 
 for (genvar i = 0; i < 2; i=i+1) begin
     // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
@@ -86,10 +91,10 @@ always_comb begin
     end
 end
 
-assign btb_wdata.target_pc = correct_info_i.target_pc;
-assign btb_wdata.tag = get_tag(correct_info_i.pc);
-assign btb_wdata.br_type = correct_info_i.br_type;
-assign btb_wdata.is_branch = correct_info_i.is_branch;
+assign btb_wdata.target_pc = correct_info.target_pc;
+assign btb_wdata.tag = get_tag(correct_info.pc);
+assign btb_wdata.br_type = correct_info.br_type;
+assign btb_wdata.is_branch = correct_info.is_branch;
 
 always_ff @( clk ) begin : btb_logic
     // reset btb to ZERO
@@ -99,7 +104,7 @@ always_ff @( clk ) begin : btb_logic
     end
     // 写入
     else if (btb_we) begin
-        btb[correct_info_i.pc[2]][btb_waddr].target_pc <= btb_wdata;
+        btb[correct_info.pc[2]][btb_waddr].target_pc <= btb_wdata;
     end
 end
 
@@ -118,12 +123,12 @@ logic [`BPU_BTB_LEN-1 : 0]          bht_waddr;
 logic                               bht_we;
 
 assign bht_raddr = btb_raddr; // = hash(pc);
-assign bht_waddr = btb_waddr; // = hash(correct_info_i.pc);
-assign bht_we = correct_info_i.update;
+assign bht_waddr = btb_waddr; // = hash(correct_info.pc);
+assign bht_we = correct_info.update;
 
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign bht_wdata[i].history = correct_info_i.type_miss ? {{(`BPU_HISTORY_LEN-1){1'b0}}, correct_info_i.taken} :
-                                    {correct_info_i.history[3:0], correct_info_i.taken};
+    assign bht_wdata[i].history = correct_info.type_miss ? {{(`BPU_HISTORY_LEN-1){1'b0}}, correct_info.taken} :
+                                    {correct_info.history[3:0], correct_info.taken};
     assign bht_rdata[i] = bht[i][bht_raddr];
 end
 
@@ -132,7 +137,7 @@ always_ff @( clk ) begin : bht_logic
         bht <= '0;
     end
     if (bht_we) begin
-        bht[correct_info_i.pc[2]][bht_waddr] <= bht_wdata[correct_info_i.pc[2]];
+        bht[correct_info.pc[2]][bht_waddr] <= bht_wdata[correct_info.pc[2]];
     end
 end
 
@@ -146,7 +151,7 @@ logic [31:0]                        ras_wdata;
 // RAS 的更新来自两个方面. 首先，如果前端预测到了 CALL 或者 RET 类型指令，则正常入栈出栈
 // 如果后端发现预测信息有误，则也需要更新。
 // 但是为了简单起见先**暂时**一致由后端进行更新，即后端但凡遇到 CALL 或者 RET 就反馈给前端进行更新
-assign ras_wdata = correct_info_i.target_type == BR_CALL ? correct_info_i.pc + 32'd4 : '0;
+assign ras_wdata = correct_info.target_type == BR_CALL ? correct_info.pc + 32'd4 : '0;
 assign ras_rdata = ras[ras_top_ptr];
 
 always_ff @( clk ) begin
@@ -155,12 +160,12 @@ always_ff @( clk ) begin
         ras_top_ptr <= {`BPU_RAS_LEN{1'b1}};
         ras_w_ptr <= '0;
     end
-    if (correct_info_i.target_type == BR_CALL) begin
+    if (correct_info.target_type == BR_CALL) begin
         ras[ras_w_ptr] <= ras_wdata;
         ras_w_ptr <= ras_w_ptr + 1;
         ras_top_ptr <= ras_w_ptr;
     end
-    if (correct_info_i.target_type == BR_RET) begin
+    if (correct_info.target_type == BR_RET) begin
         ras_w_ptr <= ras_top_ptr;
         ras_top_ptr <= ras_top_ptr - 1;
     end
@@ -175,11 +180,11 @@ logic [`BPU_PHT_LEN-1 : 0]          pht_waddr;
 logic [1:0][`BPU_PHT_LEN-1 : 0]     pht_raddr; // PHT的两个读地址不相同
 logic                               pht_we;
 
-assign pht_we = correct_info_i.update;
+assign pht_we = correct_info.update;
 
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign pht_waddr[i].scnt = next_scnt(correct_info_i.scnt, correct_info_i.taken);
-    assign pht_raddr[i] = {bht_rdata[i].history, correct_info_i.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
+    assign pht_waddr[i].scnt = next_scnt(correct_info.scnt, correct_info.taken);
+    assign pht_raddr[i] = {bht_rdata[i].history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
 end
 
 always_ff @( clk ) begin : pht_logic
@@ -187,7 +192,7 @@ always_ff @( clk ) begin : pht_logic
         pht <= '0; // TODO: there is a warning about it
     end
     if (pht_we) begin
-        pht[correct_info_i.pc[2]][pht_waddr] <= pht_wdata[correct_info_i.pc[2]];
+        pht[correct_info.pc[2]][pht_waddr] <= pht_wdata[correct_info.pc[2]];
     end
 end
 
