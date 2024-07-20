@@ -8,7 +8,7 @@ function cache_tag_t get_cache_tag(
     cache_tag_t cache_tag;
     cache_tag.tag = addr[31:20];
     cache_tag.v = v;
-    cache_tag.d = d;.
+    cache_tag.d = d;
 
     return cache_tag;
 endfunction
