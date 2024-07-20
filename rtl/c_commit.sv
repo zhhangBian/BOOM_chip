@@ -529,7 +529,7 @@ always_comb begin
         `_CSR_TCFG:     commit_csr_data_o  |= csr_q.tcfg;
         `_CSR_TVAL:     commit_csr_data_o  |= csr_q.tval;//TODO读计时器
         `_CSR_TICLR:    commit_csr_data_o  |= csr_q.ticlr;
-        `_CSR_LLBCTL:   commit_csr_data_o  |= csr_q.llbctl;//TODO 读llbit
+        `_CSR_LLBCTL:   commit_csr_data_o  |= {csr_q.llbctl[31:1], llbit};//读llbit
         `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
         `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
         `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
@@ -556,12 +556,10 @@ always_comb begin
     endcase
 end
 
-//定义写csr寄存器的行为
+//定义软件写csr寄存器的行为
 `define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
 
-task write_csr();
-    input  [31:0] write_data;
-    input  [13:0] csr_num;
+task write_csr(input [31:0] write_data, input [13:0] csr_num);
     begin
         case (csr_num)
             `_CSR_CRMD: begin
@@ -691,21 +689,24 @@ task write_csr();
 endtask
 
 //当没有例外的时候，针对单条需要刷流水级的csr寄存器值的修改
-//必须包括csr访问指令、tlb维护指令、ertn指令、cpu中断采样、cpu更改tval和置定时器中断
+//必须包括csr访问指令、tlb维护指令、ertn指令
 always_comb begin
     csr = csr_q;
 
     case (csr_type)
+        `_CSR_CSRRD: begin
+            //do nothing
+        end
         `_CSR_CSRWR: begin
-            csr[csr_num]        = rob_commit_i[0].data_rd;
+            write_csr(rob_commit_i[0].data_rd, csr_num);
         end
 
         `_CSR_XCHG: begin
-            csr[csr_num]        = rob_commit_i[0].data_rd & rob_commit_i[0].data_rj;
+            write_csr(rob_commit_i[0].data_rd & rob_commit_i[0].data_rj, csr_num);
         end
 
         default: begin
-
+// TODO tlb and ertn
         end
     endcase
 end
@@ -718,8 +719,181 @@ end
 // TLB维护指令
 // 不管理TLB的映射内容，只管理TLB的维护内容
 // 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
-tlb_entry_t [63 : 0] tlb_entrys;
+tlb_entry_t [`TLB_ENTRY_NUM - 1 : 0] tlb_entries_q;
+//我默认没有实现tlb的初始化，开始的时候由软件用INVTLB 0, r0, r0实现
 
+//拿到维护类型
+wire cur_tlbsrch = rob_commit_i[0].tlbsrch_en;
+wire cur_tlbrd   = rob_commit_i[0].tlbrd_en;
+wire cur_tlbwr   = rob_commit_i[0].tlbwr_en;
+wire cur_tlbfill = rob_commit_i[0].tlbfill_en;
+wire cur_invtlb  = rob_commit_i[0].invtlb_en;
+
+//给下面准备的一些信号
+logic tlb_found;
+csr_t tlb_update_csr;/*对csr的更新*/
+tlb_entry_t tlb_entry/*前面是一个临时变量*/,tlb_update_entry;/*更新进tlb的内容*/
+logic [`TLB_ENTRY_NUM - 1:0] tlb_wr_req;/*更新进tlb的使能位*/
+
+always_comb begin
+    tlb_update_csr = csr_q;
+    tlb_wr_req     = '0;
+
+    if (cur_tlbsrch) begin
+        //下面找对应的表项，同mmu里面的找法
+        tlb_found = 0;
+        for (genvar i = 0; i < `TLB_ENTRY_NUM; i += 1) begin
+            if (tlb_entries_q[i].key.e 
+                && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid))
+                && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
+                    tlb_found = 1;
+                    tlb_update_csr.tlbidx[`_TLBIDX_INDEX] = i; //不知道这里语法有没有问题
+                    tlb_update_csr.tlbidx[`_TLBIDX_NE] = 0;
+                    //写csr
+            end
+        end
+        if (!tlb_found) begin
+            tlb_update_csr.tlbidx[`_TLBIDX_NE] = 1;
+        end
+    end
+
+    if (cur_tlbrd) begin
+        tlb_entry = tlb_entries_q[csr_q.tlbidx[`_TLBIDX_INDEX]];
+        if (tlb_entry.key.e) begin
+            //找到了要存到特定的csr寄存器里面
+            tlb_update_csr.tlbidx[`_TLBIDX_PS]      = tlb_entry.key.huge_page ? 21 : 12;
+
+            tlb_update_csr.tlbehi[`_TLBEHI_VPPN]    = tlb_entry.key.vppn;
+
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_V]  = tlb_entry.value[0].v;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_D]  = tlb_entry.value[0].d;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_PLV]= tlb_entry.value[0].plv;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_MAT]= tlb_entry.value[0].mat;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.value[0].g;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_PPN]= tlb_entry.value[0].ppn;
+
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_V]  = tlb_entry.value[1].v;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_D]  = tlb_entry.value[1].d;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_PLV]= tlb_entry.value[1].plv;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_MAT]= tlb_entry.value[1].mat;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.value[1].g;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_PPN]= tlb_entry.value[1].ppn;
+        end
+    end
+
+    if (cur_tlbwr) begin
+        //把值更新到tlb_update_entry里面
+        load_tlb_update_entry();
+        tlb_wr_req[csr_q.tlbidx[`_TLBIDX_INDEX]] = 1;
+    end
+
+    if (cur_tlbfill) begin
+        load_tlb_update_entry();
+        tlb_wr_req[timer_64_q[$clog2(`TLB_ENTRY_NUM) - 1:0]] = 1;
+        //同上，但是根据计时器的值随机更新一个表项
+    end
+
+    if (cur_invtlb) begin
+        tlb_update_entry       = '0;
+        case (rob_commit_i[0].tlb_op)
+            5'h0: begin
+                tlb_wr_req = '1;
+            end
+            5'h1: begin
+                tlb_wr_req = '1;
+            end
+            5'h2: begin
+                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                    if (tlb_entries_q[i].key.g) begin
+                        tlb_wr_req[i] = 1;
+                    end
+                end
+            end
+            5'h3: begin
+                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                    if (!tlb_entries_q[i].key.g) begin
+                        tlb_wr_req[i] = 1;
+                    end
+                end
+            end
+            5'h4: begin
+                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                    if (!tlb_entries_q[i].key.g && 
+                        tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0]) begin
+                        tlb_wr_req[i] = 1;
+                    end
+                end
+            end
+            5'h5: begin
+                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                    if (!tlb_entries_q[i].key.g && 
+                        tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0] &&
+                        vppn_match(rob_commit_i[0].data_rk, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
+                        tlb_wr_req[i] = 1;
+                    end
+                end
+            end
+            5'h6: begin
+                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                    if ((tlb_entries_q[i].key.g ||
+                        tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0]) &&
+                        vppn_match(rob_commit_i[0].data_rk, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
+                        tlb_wr_req[i] = 1;
+                    end
+                end
+            end
+            default: 
+        endcase
+    end
+end
+
+function automatic logic vppn_match(logic [31:0] va, 
+                                    logic huge_page, logic [18: 0] vppn)
+    if (huge_page) begin
+        return va[31:22] == vppn[18:9]; //this right, TODO change others
+    end else begin
+        return va[31:13] == vppn;
+    end
+endfunction
+
+//把csr寄存器中存储的tlb信息存到某个tlb表项里面，用于tlbwr和tlbfill
+task load_tlb_update_entry();
+        tlb_update_entry.key.vppn      = csr_q.tlbehi[`_TLBEHI_VPPN];
+        tlb_update_entry.key.huge_page = csr_q.tlbidx[`_TLBIDX_PS] == 21;
+        tlb_update_entry.key.g         = csr_q.tlbelo0[`_TLBELO_TLB_G] & csr_q.tlbelo1[`_TLBELO_TLB_G];
+        tlb_update_entry.key.asid      = csr_q.asid[`_ASID];
+
+        tlb_update_entry.value[0].ppn  = csr_q.tlbelo0[`_TLBELO_TLB_PPN];
+        tlb_update_entry.value[0].plv  = csr_q.tlbelo0[`_TLBELO_TLB_PLV];
+        tlb_update_entry.value[0].mat  = csr_q.tlbelo0[`_TLBELO_TLB_MAT];
+        tlb_update_entry.value[0].d    = csr_q.tlbelo0[`_TLBELO_TLB_D];
+        tlb_update_entry.value[0].v    = csr_q.tlbelo0[`_TLBELO_TLB_V];
+
+        tlb_update_entry.value[1].ppn  = csr_q.tlbelo1[`_TLBELO_TLB_PPN];
+        tlb_update_entry.value[1].plv  = csr_q.tlbelo1[`_TLBELO_TLB_PLV];
+        tlb_update_entry.value[1].mat  = csr_q.tlbelo1[`_TLBELO_TLB_MAT];
+        tlb_update_entry.value[1].d    = csr_q.tlbelo1[`_TLBELO_TLB_D];
+        tlb_update_entry.value[1].v    = csr_q.tlbelo1[`_TLBELO_TLB_V];
+
+        if (csr_q.estat[`_ESTAT_ECODE] == `_ECODE_TLBR) begin
+            tlb_update_entry.key.e     = 1;
+        end
+        elif (csr_q.tlbidx[`_TLBIDX_NE]) begin
+            tlb_update_entry.key.e     = 0;
+        end
+        else begin
+            tlb_update_entry.key.e     = 1;
+        end
+endtask
+
+//周期结束的时候更新进tlb，同时也发出去更新mmu里面的tlb
+always_ff @( posedge clk ) begin
+    for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+        if (tlb_wr_req[i]) begin
+            tlb_entries_q[i] <= tlb_update_entry;
+        end
+    end
+end
 
 always_comb begin
     TODO :把csr修改的三大类情况合在一起
