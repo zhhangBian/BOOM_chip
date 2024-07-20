@@ -159,12 +159,12 @@ always_ff @( clk ) begin
     end
     if (correct_info_i.target_type == BR_CALL) begin
         ras[ras_w_ptr] <= ras_wdata;
-        ras_w_ptr <= ras_w_ptr + '1;
+        ras_w_ptr <= ras_w_ptr + 1;
         ras_top_ptr <= ras_w_ptr;
     end
     if (correct_info_i.target_type == BR_RET) begin
         ras_w_ptr <= ras_top_ptr;
-        ras_top_ptr <= ras_top_ptr - '1;
+        ras_top_ptr <= ras_top_ptr - 1;
     end
 end
 
@@ -203,7 +203,7 @@ logic [1:0] branch;
 logic [1:0] mask;
 logic [1:0][31:0] target_pc;
 logic [31:0] pc_add_4_8;
-assign pc_add_4_8 = {pc[31:3]+'1, 3'b0};
+assign pc_add_4_8 = {pc[31:3]+1, 3'b0};
 
 for (genvar i = 0; i < 2; i=i+1) begin
     // branch[i] 表示第 i 条指令是否要分支出去 TODO: 
