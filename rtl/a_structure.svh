@@ -121,12 +121,13 @@ typedef struct packed {
 
     // 分支预测信息
     logic   is_branch;
-    predict_info_t  predift_info;
+    predict_info_t  predict_info;
     branch_info_t   branch_info;
 } rob_commit_pkg_t;
 
 typedef struct packed {
-    logic [31:0] target_pc;
+    logic    [31:0] target_pc;
+    logic           is_branch;
     br_type_t [1:0] br_type;
 } branch_info_t;
 

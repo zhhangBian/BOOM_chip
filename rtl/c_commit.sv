@@ -230,8 +230,8 @@ end
 // 处理分支预测信息
 // 分支预测是否正确：按照第一条错误的分支指令来
 // 认为分支指令只能单挑提交
-logic [1:0] is_correct;
 word_t [1:0] pc;
+word_t [1:0] pc_add_4;
 word_t [1:0] next_pc;
 
 predict_info_t [1:0] predict_info;
@@ -254,29 +254,22 @@ assign exp_pc = cur_tlbr_exception ? cssr.tlbrentry : csr.eentry ;
 // 计算实际跳转的PC
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
-        next_pc[i] = '0;
+        next_pc[i] = rob_commit_i[i].pc[i] + 4;
         predict_branch[i] = predict_info[i].taken;
 
         case (branch_info[i].br_type)
-            BR_NONE: begin
-                next_pc[i] |= rob_commit_i[i].pc[i] + 4;
-            end
-
             // 比较结果由ALU进行计算
+            BR_B:
             BR_NORMAL: begin
-                next_pc[i] |= (rob_commit_i[i].w_data == 1) ? rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                if (rob_commit_i[i].w_data == 1) begin
+                    next_pc[i] |= rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                end
             end
-
             BR_CALL: begin
                 next_pc[i] |= rob_commit_i[i].data_imm;
             end
-
             BR_RET: begin
                 next_pc[i] |= rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
-            end
-
-            default: begin
-                next_pc[i] |= rob_commit_i[i].pc[i] + 4;
             end
         endcase
     end
@@ -285,14 +278,9 @@ end
 // 计算分支预测是否正确
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
-        is_correct[i] = (next_pc[i] == target_pc[i]);
-        is_branch[i] = (branch_info[i].br_type == BR_NORMAL) ||
-                       (branch_info[i].br_type == BR_CALL) ||
-                       (branch_info[i].br_type == BR_RET);
-        taken[i] = ((branch_info[i].br_type == BR_NORMAL) &&
-                    (rob_commit_i[i].w_data == 1)) ||
-                   (branch_info[i].br_type == BR_CALL) ||
-                   (branch_info[i].br_type == BR_RET);
+        is_branch[i] = branch_info[i].is_branch;
+        taken[i] = ((branch_info[i].br_type != BR_NORMAL) ||
+                    (rob_commit_i[i].w_data == 1));
     end
 end
 
@@ -306,14 +294,14 @@ for(integer i = 0; i < 2; i += 1) begin
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
 
         correct_info_o[i].taken = taken[i];
-        correct_info_o[i].is_cond_br = (branch_info[i].br_type == BR_NORMAL);
+        correct_info_o[i].is_branch = branch_info[i].is_branch;
         correct_info_o[i].branch_type = branch_info[i].br_type;
 
 
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-        correct_info_o[i].target_pc = next_pc[i];
+        correct_info_o[i].target_pc = predict_info[i].isbranch ? next_pc[i] : rob_commit_i[i].pc + 4;
 
         correct_info_o[i].history = predict_info[i].history;
         correct_info_o[i].scnt = predict_info[i].scnt;

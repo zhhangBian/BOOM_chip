@@ -23,7 +23,6 @@
 // this function rely on the value of BPU_BTB_LEN. if the value is
 // updated, this function need updated as well.
 function automatic logic [`BPU_BTB_LEN-1:0] hash(input logic[31:0] pc);
-    // 将pc的[17:3] hash 到 [11:3], 将高12位hash成6位，然后与pc的第三位拼接.
     return {pc[17:9 ] ^ pc[11:3]};
 endfunction
 
@@ -77,7 +76,7 @@ assign btb_we = correct_info_i.updata & (correct_info_i.type_miss | correct_info
 
 for (genvar i = 0; i < 2; i=i+1) begin
     // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
-    assign btb_valid[i] = btb_rdata[i].valid & btb_tag_match[i];
+    assign btb_valid[i] = btb_rdata[i].is_branch & btb_tag_match[i];
 end
 
 always_comb begin
@@ -90,8 +89,7 @@ end
 assign btb_wdata.target_pc = correct_info_i.target_pc;
 assign btb_wdata.tag = get_tag(correct_info_i.pc);
 assign btb_wdata.br_type = correct_info_i.br_type;
-assign btb_wdata.valid = correct_info_i.br_type != BR_NONE;
-assign btb_wdata.is_cond_br = correct_info_i.is_cond_br;
+assign btb_wdata.is_branch = correct_info_i.is_branch;
 
 always_ff @( clk ) begin : btb_logic
     // reset btb to ZERO
@@ -210,8 +208,9 @@ for (genvar i = 0; i < 2; i=i+1) begin
     // branch 的可能：
     // 1. !btb_rdata[i].is_cond_br 
     // 2. pht_rdata[i].scnt[1]
-    assign branch[i] = btb_valid & (!btb_rdata[i].is_cond_br | pht_rdata[i].scnt[1]);
+    assign branch[i] = btb_valid[i] & (btb_rdata[i].br_type !=  BR_NORMAL | pht_rdata[i].scnt[1]);
 end
+
 assign target_pc[0] = !branch[0] ? {pc[31:3], 3'b100} :
                         btb_rdata[0].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[0].target_pc;
 assign target_pc[1] = !branch[1] ? pc_add_4_8 :
@@ -232,11 +231,12 @@ predict_infos_t [1:0] predict_infos;
 b_f_pkg_t b_f_pkg;
 
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign predict_infos[i].target_pc   =  target
-    assign predict_infos[i].br_type     =  btb_rdata[i].valid ? btb_rdata[i].br_type : BR_NONE;
+    assign predict_infos[i].target_pc   =  btb_rdata[i].target_pc;
+    assign predict_infos[i].is_branch   =  btb_rdata[i].is_branch;
+    assign predict_infos[i].br_type     =  btb_rdata[i].br_type;
     assign predict_infos[i].taken       =  branch[i];
     assign predict_infos[i].scnt        =  pht_rdata[i].scnt;
-    assign predict_infos[i].need_update =  !btb_rdata[i].valid; // 没有这一项就要 update
+    assign predict_infos[i].need_update =  !btb_tag_match[i]; // 没有这一项就要 update
     assign predict_infos[i].history     =  bht_rdata[i].history;
 end
 
