@@ -42,15 +42,6 @@ always_ff @(posedge clk) begin
         stall_q <= stall;
     end
 end
-logic cacop_stall, cacop_stall_q;
-always_ff @(posedge clk) begin
-    if (!rst_n) begin
-        cacop_stall_q <= '0;
-    end else begin
-        cacop_stall_q <= cacop_stall;
-    end
-end
-
 assign commit_resp_ready_o = !stall;
 // 打一拍整理数据
 
@@ -305,7 +296,6 @@ end
 
 always_comb begin
     stall    = stall_q;
-    cacop_stall = cacop_stall_q;
     fsm_next = fsm_cur;
     req_num  = req_num_q;
     req_ptr  = req_ptr_q;
@@ -344,7 +334,6 @@ always_comb begin
                         commit_cache_req.tag_data              = '0;
                         commit_cache_req.tag_we                = '0;
                         fsm_next                               = F_CACOP;
-                        cacop_stall                            = '1;
                     end
                 endcase
             end else if (!(|tag_hit)) begin
@@ -447,8 +436,7 @@ always_comb begin
                 icache_cacop_flush_o                   = 2'b10;
                 icache_cacop_tlb_exc                   = '0;              
             end else begin
-                icache_cacop_flush_o                   = 2'b10;
-                cacop_stall                            = '0;
+                icache_cacop_flush_o                   = 2'b10; //先刷掉吧
                 fsm_next = F_NORMAL;
             end
         end
