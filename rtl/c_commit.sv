@@ -78,7 +78,7 @@ module commit #(
     output  word_t  [1:0]   commit_arf_areg_o,
 
     // commit与BPU的接口
-    output  correct_info_t [1:0]    commit_bpu_correct_info_o,
+    output  correct_info_t [1:0]    correct_info_o,
 
     // commit与ICache的握手信号
     output  commit_icache_req_t     commit_icache_req_o,
