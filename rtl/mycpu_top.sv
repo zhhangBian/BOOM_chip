@@ -106,9 +106,9 @@ basic_fifo #(
 
 handshake_if #(f_d_pkg_t) f_fifo_handshake();
 
-f_fetch fetch_inst(
-    .receiver(fifo_f_handshake.receiver),
-    .sender(f_fifo_handshake.sender)
+i_cache i_cache_inst(
+    .fetch_icache_receiver(fifo_f_handshake.receiver),
+    .icache_decoder_sender(f_fifo_handshake.sender)
 )
 
 /*============================== Decoder ==============================*/
@@ -118,7 +118,7 @@ basic_fifo #(
     .DEPTH(`D_BEFORE_QUEUE_DEPTH),
     .BYPASS(0), // 不允许 bypass ，因为这个 fifo 也充当了 d 级的流水寄存器。
     .T(f_d_pkg_t)
-) f_fifo_inst (
+) f_d_fifo (
     .clk(clk),
     .rst_n(rst_n),
     .receiver(f_fifo_handshake.receiver),
@@ -141,7 +141,7 @@ basic_fifo #(
     .DEPTH(`D_AFTER_QUEUE_DEPTH),
     .BYPASS(0), // 不允许 BYPASS ，充当前后端之间的流水寄存器
     .T(d_r_pkd_t)
-) fifo_r_inst (
+) d_r_fifo (
     .clk(clk),
     .rst_n(rst_n),
     .receiver(d_fifo_handshake.receiver),
@@ -151,13 +151,13 @@ basic_fifo #(
 /*============================== 2x1 AXI Bridge ==============================*/
 
 axi_crossbar # (
-    S_COUNT         = 2, // 连接两个cache, == 2
-    M_COUNT         = 1, // 连接总线，== 1
-    DATA_WIDTH      = 32, // 数据位宽 官方包是 32 位，需要使用 burst 传输
-    ADDR_WIDTH      = 32, // 地址位宽， 32 位
-    S_ID_WIDTH      = 4, // 官方包是 4 
-    M_ADDR_WIDTH    = {M_COUNT{{M_REGIONS{32'd32}}}}, // ICACHE和DCACHE的数据位宽应该都是32位？TODO: 取决于物理地址宽度
-    M_CONNECT_WRITE = {M_COUNT{2'b01}}, // 设置成仅 DCache 侧可写
+    .S_COUNT(2), // 连接两个cache, == 2
+    .M_COUNT(1), // 连接总线，== 1
+    .DATA_WIDTH(32), // 数据位宽 官方包是 32 位，需要使用 burst 传输
+    .ADDR_WIDTH(32), // 地址位宽， 32 位
+    .S_ID_WIDTH(4), // 官方包是 4 
+    .M_ADDR_WIDTH(32'd32), // ICACHE和DCACHE的数据位宽应该都是32位？TODO: 取决于物理地址宽度
+    .M_CONNECT_WRITE(2'b01), // TODO: 设置成仅 DCache 侧可写
 ) axi_crossbar_2x1_inst (
     .clk(aclk),
     .rst(!aresetn), // TODO: recheck

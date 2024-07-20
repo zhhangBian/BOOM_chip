@@ -8,7 +8,7 @@ function cache_tag_t get_cache_tag(
     cache_tag_t cache_tag;
     cache_tag.tag = addr[31:20];
     cache_tag.v = v;
-    cache_tag.d = d;.
+    cache_tag.d = d;
 
     return cache_tag;
 endfunction
@@ -78,7 +78,15 @@ module commit #(
     output  word_t  [1:0]   commit_arf_areg_o,
 
     // commit与BPU的接口
-    output  correct_info_t [1:0]  commit_bpu_correct_info_o
+    output  correct_info_t [1:0]    correct_info_o,
+
+    // commit与ICache的握手信号
+    output  commit_icache_req_t     commit_icache_req_o,
+    output  logic   commit_icache_ready_o,
+    output  logic   commit_icache_valid_o,
+    input   logic   icache_commit_ready_i,
+    input   logic   icache_commit_valid_i
+    // ICache不用返回实际的数据
 );
 
 // ------------------------------------------------------------------
@@ -87,6 +95,7 @@ module commit #(
 logic stall, stall_q;
 assign stall_o = stall;
 assign commit_ready_o = ~stall;
+assign commit_icache_ready_o = commit_ready_o;
 
 assign commit_cache_ready = '1;
 
@@ -221,8 +230,8 @@ end
 // 处理分支预测信息
 // 分支预测是否正确：按照第一条错误的分支指令来
 // 认为分支指令只能单挑提交
-logic [1:0] is_correct;
 word_t [1:0] pc;
+word_t [1:0] pc_add_4;
 word_t [1:0] next_pc;
 
 predict_info_t [1:0] predict_info;
@@ -245,29 +254,22 @@ assign exp_pc = cur_tlbr_exception ? cssr.tlbrentry : csr.eentry ;
 // 计算实际跳转的PC
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
-        next_pc[i] = '0;
+        next_pc[i] = rob_commit_i[i].pc[i] + 4;
         predict_branch[i] = predict_info[i].taken;
 
         case (branch_info[i].br_type)
-            BR_NONE: begin
-                next_pc[i] |= rob_commit_i[i].pc[i] + 4;
-            end
-
             // 比较结果由ALU进行计算
+            BR_B:
             BR_NORMAL: begin
-                next_pc[i] |= (rob_commit_i[i].w_data == 1) ? rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                if (rob_commit_i[i].w_data == 1) begin
+                    next_pc[i] |= rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                end
             end
-
             BR_CALL: begin
                 next_pc[i] |= rob_commit_i[i].data_imm;
             end
-
             BR_RET: begin
                 next_pc[i] |= rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
-            end
-
-            default: begin
-                next_pc[i] |= rob_commit_i[i].pc[i] + 4;
             end
         endcase
     end
@@ -276,14 +278,9 @@ end
 // 计算分支预测是否正确
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
-        is_correct[i] = (next_pc[i] == target_pc[i]);
-        is_branch[i] = (branch_info[i].br_type == BR_NORMAL) ||
-                       (branch_info[i].br_type == BR_CALL) ||
-                       (branch_info[i].br_type == BR_RET);
-        taken[i] = ((branch_info[i].br_type == BR_NORMAL) &&
-                    (rob_commit_i[i].w_data == 1)) ||
-                   (branch_info[i].br_type == BR_CALL) ||
-                   (branch_info[i].br_type == BR_RET);
+        is_branch[i] = branch_info[i].is_branch;
+        taken[i] = ((branch_info[i].br_type != BR_NORMAL) ||
+                    (rob_commit_i[i].w_data == 1));
     end
 end
 
@@ -297,14 +294,14 @@ for(integer i = 0; i < 2; i += 1) begin
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
 
         correct_info_o[i].taken = taken[i];
-        correct_info_o[i].is_cond_br = (branch_info[i].br_type == BR_NORMAL);
+        correct_info_o[i].is_branch = branch_info[i].is_branch;
         correct_info_o[i].branch_type = branch_info[i].br_type;
 
 
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-        correct_info_o[i].target_pc = next_pc[i];
+        correct_info_o[i].target_pc = predict_info[i].isbranch ? next_pc[i] : rob_commit_i[i].pc + 4;
 
         correct_info_o[i].history = predict_info[i].history;
         correct_info_o[i].scnt = predict_info[i].scnt;
@@ -336,30 +333,33 @@ end
 
 //都不是寄存器
 logic cur_exception;       //提交的第0条是不是异常指令
-logic cur_tlbr_exception = 1'b0;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
-csr_t csr_exception_update = csr_q;//周期结束时候写入csr_q
+logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
+csr_t csr_exception_update;//周期结束时候写入csr_q
 
 //中断识别
-logic [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECTL_LIE];
-logic int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
+wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
+wire int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
 //取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
-logic fetch_excp    = rob_commit_i[0].fetch_exception;
+wire fetch_excp    = rob_commit_i[0].fetch_exception;
 
 //译码异常 下面的信号来自decoder TODO
-logic syscall_excp  = rob_commit_i[0].syscall_inst;
-logic break_excp    = rob_commit_i[0].break_inst;
-logic ine_excp      = rob_commit_i[0].decode_err;
-logic priv_excp     = rob_commit_i[0].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
+wire syscall_excp  = rob_commit_i[0].syscall_inst;
+wire break_excp    = rob_commit_i[0].break_inst;
+wire ine_excp      = rob_commit_i[0].decode_err;
+wire priv_excp     = rob_commit_i[0].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
 
 //执行异常 TODO 访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
-logic execute_excp  = rob_commit_i[0].execute_exception;
+wire execute_excp  = rob_commit_i[0].execute_exception;
 
-logic [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
+wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
 always_comb begin
     /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
     cur_exception = 1'b1;
+    cur_tlbr_exception = 1'b0;//tlbr
+
+    csr_exception_update = csr_q;
 
     csr_exception_update.prmd[`_PRMD_PPLV] = csr_q.crmd[`_CRMD_PLV];
     csr_exception_update.prmd[`_PRMD_PIE]  = csr_q.crmd[`_CRMD_IE];
@@ -380,9 +380,9 @@ always_comb begin
         7'b01?????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].va; //存badv
+            csr_exception_update.badv                    = rob_commit_i[0].pc; //存badv
             if (rob_commit_i[0].exc_code != `_ECODE_ADEF) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].va[31:13];        //tlb例外存vppn
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].pc[31:13];        //tlb例外存vppn
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
@@ -415,9 +415,9 @@ always_comb begin
         7'b0000001: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].va; //存badv
+            csr_exception_update.badv                    = rob_commit_i[0].badva; //存badv
             if (rob_commit_i[0].exc_code != `_ECODE_ALE) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].va[31:13];        //tlb例外存vppn
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badva[31:13];        //tlb例外存vppn
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
@@ -426,7 +426,7 @@ always_comb begin
         /*执行例外，
         TODO 访存级别如果有地址不对齐错误或者tlb错误
         要传execute_excpetion信号和错误号过来，
-        同样需要出错虚地址va，同取指部分的例外*/
+        同样需要出错虚地址badva，同取指部分的例外*/
 
         default: begin
             csr_exception_update = csr_q;
@@ -442,18 +442,19 @@ always_comb begin
 
 end
 
-//下面这个部分暂时这样写，是打一排以后把要写入csr的内容最后写入csr中，
-//要把它和后面的csr维护等内容考虑冒险之后合并在一起。
-//这一部分一定要和后面合在一起重写！！！TODO
-always_ff @(posedge clk) begin
-    if (rst_n) begin
-        <merge with other code>
-    end
-    else begin
-        csr_q <= csr_exception_update;
-        <merge with other code>
-    end
-end
+//下面识别rob_commit[1]是不是有例外
+wire a_fetch_excp    = rob_commit_i[1].fetch_exception;
+
+wire a_syscall_excp  = rob_commit_i[1].syscall_inst;
+wire a_break_excp    = rob_commit_i[1].break_inst;
+wire a_ine_excp      = rob_commit_i[1].decode_err;
+wire a_priv_excp     = rob_commit_i[1].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
+
+wire a_execute_excp  = rob_commit_i[1].execute_exception;
+
+wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
+//上面是1表示两条指令的后一条有例外
+
 
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -462,10 +463,11 @@ end
 // CSR特权指令
 // TODO：csr_t的结构需要进一步匹配
 csr_t csr, csr_q, csr_init;
-logic [2:0] csr_type = rob_commit_i[0].csr_type;
-logic [13:0] csr_num = rob_commit_i[0].csr_num;
+wire  [2:0] csr_type = rob_commit_i[0].csr_type;
+wire [13:0] csr_num = rob_commit_i[0].csr_num;
 
-// 维护CSR信息
+
+// CSR复位
 always_comb begin
     csr_init                = '0;
     // 初始化要求非0的 CSR 寄存器值
@@ -475,7 +477,235 @@ always_comb begin
     csr_init.tid            = CPU_ID;
 end
 
-// 对csr_q的信息维护
+// 从CSR读取的旧值（默认读出来）
+always_comb begin
+    //编号->csr寄存器
+    unique case (csr_num)
+        `_CSR_CRMD:     commit_csr_data_o  |= csr_q.crmd;
+        `_CSR_PRMD:     commit_csr_data_o  |= csr_q.prmd;
+        `_CSR_EUEN:     commit_csr_data_o  |= csr_q.euen;
+        `_CSR_ECFG:     commit_csr_data_o  |= csr_q.ecfg;
+        `_CSR_ESTAT:    commit_csr_data_o  |= csr_q.estat;
+        `_CSR_ERA:      commit_csr_data_o  |= csr_q.era;
+        `_CSR_BADV:     commit_csr_data_o  |= csr_q.badv;
+        `_CSR_EENTRY:   commit_csr_data_o  |= csr_q.eentry;
+        `_CSR_TLBIDX:   commit_csr_data_o  |= csr_q.tlbidx;
+        `_CSR_TLBEHI:   commit_csr_data_o  |= csr_q.tlbehi;
+        `_CSR_TLBELO0:  commit_csr_data_o  |= csr_q.tlbelo0;
+        `_CSR_TLBELO1:  commit_csr_data_o  |= csr_q.tlbelo1;
+        `_CSR_ASID:     commit_csr_data_o  |= csr_q.asid;
+        `_CSR_PGDL:     commit_csr_data_o  |= csr_q.pgdl;
+        `_CSR_PGDH:     commit_csr_data_o  |= csr_q.pgdh;
+        `_CSR_PGD:      commit_csr_data_o  |= csr_q.badv[31] ? csr_q.pgdh : csr_q.pgdl;
+        `_CSR_CPUID:    commit_csr_data_o  |= csr_q.cpuid;
+        `_CSR_SAVE0:    commit_csr_data_o  |= csr_q.save0;
+        `_CSR_SAVE1:    commit_csr_data_o  |= csr_q.save1;
+        `_CSR_SAVE2:    commit_csr_data_o  |= csr_q.save2;
+        `_CSR_SAVE3:    commit_csr_data_o  |= csr_q.save3;
+        `_CSR_TID:      commit_csr_data_o  |= csr_q.tid;
+        `_CSR_TCFG:     commit_csr_data_o  |= csr_q.tcfg;
+        `_CSR_TVAL:     commit_csr_data_o  |= csr_q.tval;//TODO读计时器
+        `_CSR_TICLR:    commit_csr_data_o  |= csr_q.ticlr;
+        `_CSR_LLBCTL:   commit_csr_data_o  |= csr_q.llbctl;//TODO 读llbit
+        `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
+        `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
+        `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
+        default:
+    endcase
+
+    case (csr_type)
+        `_CSR_CSRRD: begin
+            commit_csr_valid_o |= '1;
+        end
+
+        `_CSR_CSRWR: begin
+            commit_csr_valid_o |= '1;
+        end
+
+        `_CSR_XCHG: begin
+            commit_csr_valid_o |= '1;
+        end
+
+        default: begin
+            commit_csr_data_o = '0;
+            commit_csr_valid_o = '0;
+        end
+    endcase
+end
+
+//定义写csr寄存器的行为
+`define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
+
+task write_csr();
+    input  [31:0] write_data;
+    input  [13:0] csr_num;
+    begin
+        case (csr_num)
+            `_CSR_CRMD: begin
+                write_csr_mask(crmd, `_CRMD_PLV);
+                write_csr_mask(crmd, `_CRMD_IE);
+                write_csr_mask(crmd, `_CRMD_DA);
+                write_csr_mask(crmd, `_CRMD_PG);
+                write_csr_mask(crmd, `_CRMD_DATF);
+                write_csr_mask(crmd, `_CRMD_DATM);
+            end
+            `_CSR_PRMD: begin
+                write_csr_mask(prmd, `_PRMD_PIE);
+                write_csr_mask(prmd, `_PRMD_PPLV);
+            end
+            `_CSR_EUEN: begin
+                write_csr_mask(euen, `_EUEN_FPE);
+            end
+            `_CSR_ECFG: begin
+                write_csr_mask(ecfg, `_ECFG_LIE1);
+                write_csr_mask(ecfg, `_ECFG_LIE2);
+            end
+            `_CSR_ESTAT: begin
+                write_csr_mask(estat, `_ESTAT_SOFT_IS);
+            end
+            `_CSR_ERA: begin
+                write_csr_mask(era, 31:0);
+            end
+            `_CSR_BADV: begin
+                write_csr_mask(badv, 31:0);
+            end
+            `_CSR_EENTRY: begin
+                write_csr_mask(eentry, `_EENTRY_VA);
+            end
+            `_CSR_CPUID: begin
+                //do nothing
+            end
+            `_CSR_SAVE0: begin
+                write_csr_mask(save0, 31:0);
+            end
+            `_CSR_SAVE1: begin
+                write_csr_mask(save1, 31:0);
+            end
+            `_CSR_SAVE2: begin
+                write_csr_mask(save2, 31:0);
+            end
+            `_CSR_SAVE3: begin
+                write_csr_mask(save3, 31:0);
+            end
+            `_CSR_LLBCTL: begin
+                if (write_data[`_LLBCT_WCLLB]) begin
+                    csr.llbit = 0;
+                end
+                write_csr_mask(llbctl, `_LLBCT_KLO);
+            end
+            `_CSR_TLBIDX: begin
+                write_csr_mask(tlbidx, `_TLBIDX_INDEX);
+                write_csr_mask(tlbidx, `_TLBIDX_PS);
+                write_csr_mask(tlbidx, `_TLBIDX_NE);
+            end
+            `_CSR_TLBEHI: begin
+                write_csr_mask(tlbehi, `_TLBEHI_VPPN);
+            end
+            `_CSR_TLBELO0: begin
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_V);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_D);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_PLV);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_MAT);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_G);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_PPN);
+            end
+            `_CSR_TLBELO1: begin
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_V);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_D);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_PLV);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_MAT);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_G);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_PPN);
+            end
+            `_CSR_ASID: begin
+                write_csr_mask(asid, `_ASID);
+            end
+            `_CSR_PGDL: begin
+                write_csr_mask(pgdl, `_PGD_BASE);
+            end
+            `_CSR_PGDH: begin
+                write_csr_mask(pgdh, `_PGD_BASE);
+            end
+            `_CSR_PGD: begin
+                //do nothing
+            end
+            `_CSR_TLBRENTRY: begin
+                write_csr_mask(tlbrentry, `_TLBRENTRY_PA);
+            end
+            `_CSR_DMW0: begin
+                write_csr_mask(dmw0, `_DMW_PLV0);
+                write_csr_mask(dmw0, `_DMW_PLV3);
+                write_csr_mask(dmw0, `_DMW_MAT);
+                write_csr_mask(dmw0, `_DMW_PSEG);
+                write_csr_mask(dmw0, `_DMW_VSEG);
+            end
+            `_CSR_DMW1: begin
+                write_csr_mask(dmw1, `_DMW_PLV1);
+                write_csr_mask(dmw1, `_DMW_PLV3);
+                write_csr_mask(dmw1, `_DMW_MAT);
+                write_csr_mask(dmw1, `_DMW_PSEG);
+                write_csr_mask(dmw1, `_DMW_VSEG);
+            end
+            `_CSR_TID: begin
+                write_csr_mask(tid, 31:0);
+            end
+            `_CSR_TCFG: begin
+                write_csr_mask(tcfg, `_TCFG_EN);
+                write_csr_mask(tcfg, `_TCFG_PERIODIC);
+                write_csr_mask(tcfg, `_TCFG_INITVAL);
+            end
+            `_CSR_TVAL: begin
+                //do nothing
+            end
+            `_CSR_TICLR: begin
+                if (write_data[`_TICLR_CLR]) begin
+                    //清除中断标记 TODO
+                end
+            end
+            default: //do nothing
+        endcase
+    end
+endtask
+
+//当没有例外的时候，针对单条需要刷流水级的csr寄存器值的修改
+//必须包括csr访问指令、tlb维护指令、ertn指令、cpu中断采样、cpu更改tval和置定时器中断
+always_comb begin
+    csr = csr_q;
+
+    case (csr_type)
+        `_CSR_CSRWR: begin
+            csr[csr_num]        = rob_commit_i[0].data_rd;
+        end
+
+        `_CSR_XCHG: begin
+            csr[csr_num]        = rob_commit_i[0].data_rd & rob_commit_i[0].data_rj;
+        end
+
+        default: begin
+
+        end
+    endcase
+end
+
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ------------------------------------------------------------------
+// TLB维护指令
+// 不管理TLB的映射内容，只管理TLB的维护内容
+// 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
+tlb_entry_t [63 : 0] tlb_entrys;
+
+
+always_comb begin
+    TODO :把csr修改的三大类情况合在一起
+    else begin
+         比如说 csr_update.estat[`_ESTAT_ECODE] = csr_exception_update[`_ESTAT_ECODE;]
+    end
+end
+
+// 对csr_q的信息维护（TODO 需要和中断、tlb维护指令交互）
 always_ff @(posedge clk) begin
     if(~rst_n) begin
         csr_q <= csr_init; // 初始化 CSR
@@ -487,46 +717,6 @@ always_ff @(posedge clk) begin
         csr_q <= csr;
     end
 end
-
-// 对CSR信息的维护
-always_comb begin
-    csr = csr_q;
-    commit_csr_data_o = '0;
-    commit_csr_valid_o = '0;
-
-    case (csr_type)
-        `_CSR_CSRRD: begin
-            commit_csr_valid_o |= '1;
-            commit_csr_data_o |= csr_q[csr_num];
-        end
-
-        `_CSR_CSRWR: begin
-            commit_csr_valid_o |= '1;
-            commit_csr_data_o |= csr_q[csr_num];
-            csr[csr_num] = rob_commit_i[0].data_rd;
-        end
-
-        `_CSR_XCHG: begin
-            commit_csr_valid_o |= '1;
-            commit_csr_data_o |= csr_q[csr_num];
-            csr[csr_num] = rob_commit_i[0].data_rd & rob_commit_i[0].data_rj;
-        end
-
-        default: begin
-
-        end
-    endcase
-end
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-// ------------------------------------------------------------------
-// TLB维护指令
-// 不管理TLB的映射内容，只管理TLB的维护内容
-// 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
-tlb_entry_t [63 : 0] tlb_entrys;
-
-
-
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -584,6 +774,7 @@ logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr, cache_block_len;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr, axi_block_len;
 
 logic axi_wait;
+logic icache_wait;
 
 logic [31:0] cache_dirty_addr;
 
@@ -608,32 +799,48 @@ always_comb begin
 
         // Cache维护指令
         if(is_cache_fix[0]) begin
-            commit_cache_valid = '1;
-            // 对于Cache维护指令，将维护地址视作目的地址
-            // Cache采用直接映射，故直接赋值即可
-            commit_cache_req.addr         = lsu_info[0].paddr;
-            commit_cache_req.way_choose   = get_way_choose(commit_cache_req.addr[0]); // 直接地址映射模式
-            commit_cache_req.tag_data     = '0;
-            commit_cache_req.tag_we       = '0;
-            commit_cache_req.data_data    = '0;
-            commit_cache_req.strb         = '0;
-            commit_cache_req.fetch_sb     = '0;
+            // 发送Icache请求
+            if(cache_tar == 0) begin
+                // 配置Icache请求
+                // TODO：这里也是PADDR吗
+                commit_icache_req_o.addr = lsu_info[0].paddr;
+                commit_icache_req_o.cache_op = cache_op;
 
-            if(cache_op == 0) begin
-                commit_cache_req.tag_data = '0;
-                commit_cache_req.tag_we   = '1;
+                if(~icache_commit_ready_i && ~icache_wait) begin
+                    commit_icache_valid_o = '1;
+                end
+                else begin
+                    commit_icache_valid_o = '0;
+                end
             end
-            else if(cache_op == 1) begin
-                // 将Cache无效化，先读出对应的tag
-                commit_cache_req.tag_data  = '0;
-                commit_cache_req.tag_we    = '1;
-            end
-            else if(cache_op == 2 && cache_commit_hit) begin
-                // 将Cache无效化，先读出对应的tag
-                commit_cache_req.way_choose   = '0;
-                commit_cache_req.way_choose  |= lsu_info[0].tag_hit;
+            else if(cache_tar == 1) begin
+                commit_cache_valid = '1;
+                // 对于Cache维护指令，将维护地址视作目的地址
+                // Cache采用直接映射，故直接赋值即可
+                commit_cache_req.addr         = lsu_info[0].paddr;
+                commit_cache_req.way_choose   = get_way_choose(commit_cache_req.addr[0]); // 直接地址映射模式
                 commit_cache_req.tag_data     = '0;
-                commit_cache_req.tag_we       = '1;
+                commit_cache_req.tag_we       = '0;
+                commit_cache_req.data_data    = '0;
+                commit_cache_req.strb         = '0;
+                commit_cache_req.fetch_sb     = '0;
+
+                if(cache_op == 0) begin
+                    commit_cache_req.tag_data = '0;
+                    commit_cache_req.tag_we   = '1;
+                end
+                else if(cache_op == 1) begin
+                    // 将Cache无效化，先读出对应的tag
+                    commit_cache_req.tag_data  = '0;
+                    commit_cache_req.tag_we    = '1;
+                end
+                else if(cache_op == 2 && cache_commit_hit) begin
+                    // 将Cache无效化，先读出对应的tag
+                    commit_cache_req.way_choose   = '0;
+                    commit_cache_req.way_choose  |= lsu_info[0].tag_hit;
+                    commit_cache_req.tag_data     = '0;
+                    commit_cache_req.tag_we       = '1;
+                end
             end
         end
 
@@ -702,7 +909,6 @@ always_comb begin
         if(axi_commit_valid_i) begin
             stall              = '0;
             commit_axi_valid_o = '0;
-            // TODO 写寄存器
         end
     end
     // 与Cache进行读写操作
@@ -858,37 +1064,49 @@ always_ff @(posedge clk) begin
 
             // Cache维护指令
             if(is_cache_fix[0]) begin
-                if(cache_op == 0) begin
-                    ls_fsm_q <= S_NORMAL;
-                end
-                else if(cache_op == 1) begin
-                    if (lsu_info[0].cacop_dirty) begin
-                        ls_fsm_q <= S_CACHE_RD;
-                        axi_return_back <= '1;
+                if(cache_tar == 0) begin
+                    if(icache_commit_valid_i) begin
+                        ls_fsm_q <= S_NORMAL;
+                        icache_wait <= '0;
+                    end
 
-                        cache_block_ptr <= 0;
-                        cache_block_len <= CACHE_BLOCK_NUM;
-                        cache_block_data <= '0;
+                    if(icache_commit_ready_i) begin
+                        icache_wait <= '1;
+                    end
+                end
+                else if(cache_tar == 1) begin
+                    if(cache_op == 0) begin
+                        ls_fsm_q <= S_NORMAL;
+                    end
+                    else if(cache_op == 1) begin
+                        if (lsu_info[0].cacop_dirty) begin
+                            ls_fsm_q <= S_CACHE_RD;
+                            axi_return_back <= '1;
+
+                            cache_block_ptr <= 0;
+                            cache_block_len <= CACHE_BLOCK_NUM;
+                            cache_block_data <= '0;
+                        end
+                        else begin
+                            ls_fsm_q <= S_NORMAL;
+                        end
+                    end
+                    else if(cache_op == 2) begin
+                        if (lsu_info[0].hit_dirty) begin
+                            ls_fsm_q <= S_CACHE_RD;
+                            axi_return_back <= '1;
+
+                            cache_block_ptr <= 0;
+                            cache_block_len <= CACHE_BLOCK_NUM;
+                            cache_block_data <= '0;
+                        end
+                        else begin
+                            ls_fsm_q <= S_NORMAL;
+                        end
                     end
                     else begin
                         ls_fsm_q <= S_NORMAL;
                     end
-                end
-                else if(cache_op == 2) begin
-                    if (lsu_info[0].hit_dirty) begin
-                        ls_fsm_q <= S_CACHE_RD;
-                        axi_return_back <= '1;
-
-                        cache_block_ptr <= 0;
-                        cache_block_len <= CACHE_BLOCK_NUM;
-                        cache_block_data <= '0;
-                    end
-                    else begin
-                        ls_fsm_q <= S_NORMAL;
-                    end
-                end
-                else begin
-                    ls_fsm_q <= S_NORMAL;
                 end
 
                 cache_code_q <= cache_code;

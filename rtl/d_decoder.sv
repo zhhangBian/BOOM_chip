@@ -80,7 +80,7 @@ for (genvar i = 0; i < 2; i++) begin
         case (decode_infos_o[i].reg_type_w)
         _REG_W_RD: d_r_pkg_o.arf_table.w_arfid[i] = rd;
         _REG_W_RJ: d_r_pkg_o.arf_table.w_arfid[i] = rj;
-        _REG_W_R1: d_r_pkg_o.arf_table.w_arfid[i] = '1; // 仅出现在 BL 指令中
+        _REG_W_R1: d_r_pkg_o.arf_table.w_arfid[i] = 1; // 仅出现在 BL 指令中
         default:   d_r_pkg_o.arf_table.w_arfid[i] = '0; // 默认不写入寄存器的时候即为写入 GR[0]
         endcase
     end
