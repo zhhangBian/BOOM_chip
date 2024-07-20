@@ -88,22 +88,9 @@ typedef struct packed{
 } tlb_value_t;
 
 typedef struct packed {
-    logic                               dmw;
-    logic                               found;
-    logic [$clog2(`_WIRED_PARAM_TLB_CNT)-1:0] index;
-    logic [                        5:0] ps;
-    tlb_value_t                         value;
-} tlb_s_resp_t;
-
-typedef struct packed {
     tlb_key_t         key;
     tlb_value_t [1:0] value;
 } tlb_entry_t;
-
-typedef struct packed {
-    logic[`_WIRED_PARAM_TLB_CNT - 1 : 0] tlb_we;
-    tlb_entry_t tlb_w_entry;
-} tlb_update_req_t;
 
 //INSTR
 `define _INSTR_RJ       9:5
