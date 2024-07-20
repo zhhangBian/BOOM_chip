@@ -38,7 +38,7 @@ always_comb begin
         && vppn_match(va, tlb_key_q[i].huge_page, tlb_key_q[i].vppn)) begin
             tlb_found = 1;
             if (tlb_key_q[i].huge_page) begin
-                tlb_value_read = tlb_value_q[i][va[22]];   //4MB
+                tlb_value_read = tlb_value_q[i][va[21]];   //4MB,2MB，TODO ？
             end else begin
                 tlb_value_read = tlb_value_q[i][va[12]];   //4KB
             end
@@ -49,7 +49,7 @@ end
 function automatic logic vppn_match(logic [31:0] va, 
                                     logic huge_page, logic [18: 0] vppn)//位宽好像错了
     if (huge_page) begin
-        return va[31:23] == vppn[18:10]; //???is this right
+        return va[31:22] == vppn[18:9]; //ok
     end else begin
         return va[31:13] == vppn;
     end

@@ -123,6 +123,7 @@ logic [5:0] timer_64, timer_64_q;
 // - cache维护指令
 // - dbar,ibar
 // 特殊处理均只允许单条提交
+//TODO : 最后提交的逻辑，ertn跳转，ibar，idle，rdcntvl，rdcntvh，rdcntid的实现
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0] & commit_ready_o;
 
@@ -146,12 +147,12 @@ always_comb begin
     end
 
 
-    if(is_csr_fix) begin
+    if(is_csr_fix[0]) begin
         commit_arf_we_o[0]   = commit_csr_valid_o;
         commit_arf_data_o[0] = commit_csr_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
     end
-    if(ls_fsm_q == S_NORMAL) begin
+    else if(ls_fsm_q == S_NORMAL) begin
         commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
@@ -356,8 +357,6 @@ end
 // 异常处理
 //识别rob_commit_i[0]这一条指令是不是有异常，如果有，修改csr
 
-//cpu要每周期采样中断信号 TODO
-
 //都不是寄存器
 logic cur_exception;       //提交的第0条是不是异常指令
 logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
@@ -488,7 +487,6 @@ wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_
 
 // ------------------------------------------------------------------
 // CSR特权指令
-// TODO：csr_t的结构需要进一步匹配
 csr_t csr, csr_q, csr_init;
 wire  [2:0] csr_type = rob_commit_i[0].csr_type;
 wire [13:0] csr_num = rob_commit_i[0].csr_num;
@@ -531,7 +529,7 @@ always_comb begin
         `_CSR_SAVE3:    commit_csr_data_o  |= csr_q.save3;
         `_CSR_TID:      commit_csr_data_o  |= csr_q.tid;
         `_CSR_TCFG:     commit_csr_data_o  |= csr_q.tcfg;
-        `_CSR_TVAL:     commit_csr_data_o  |= csr_q.tval;//TODO读计时器
+        `_CSR_TVAL:     commit_csr_data_o  |= csr_q.tval;//读定时器
         `_CSR_TICLR:    commit_csr_data_o  |= csr_q.ticlr;
         `_CSR_LLBCTL:   commit_csr_data_o  |= {csr_q.llbctl[31:1], llbit};//读llbit
         `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
@@ -559,6 +557,8 @@ always_comb begin
         end
     endcase
 end
+
+logic timer_interrupt_clear;
 
 //定义软件写csr寄存器的行为
 `define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
@@ -684,7 +684,7 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num);
             end
             `_CSR_TICLR: begin
                 if (write_data[`_TICLR_CLR]) begin
-                    //清除中断标记 TODO
+                    timer_interrupt_clear = 1;
                 end
             end
             default: //do nothing
@@ -696,6 +696,7 @@ endtask
 //必须包括csr访问指令、tlb维护指令、ertn指令
 always_comb begin
     csr = csr_q;
+    timer_interrupt_clear = 0;
 
     case (csr_type)
         `_CSR_CSRRD: begin
@@ -709,8 +710,7 @@ always_comb begin
             write_csr(rob_commit_i[0].data_rd & rob_commit_i[0].data_rj, csr_num);
         end
 
-        default: begin
-// TODO tlb and ertn
+        default: begin//do nothing
         end
     endcase
 end
@@ -906,23 +906,68 @@ always_ff @( posedge clk ) begin
     end
 end
 
+//下面这个组合逻辑内部顺序不要更改
 always_comb begin
-    TODO :把csr修改的三大类情况合在一起
-    else begin
-         比如说 csr_update.estat[`_ESTAT_ECODE] = csr_exception_update[`_ESTAT_ECODE;]
+    if (rob_commit_i[0].is_tlb_fix) begin
+        csr_update = tlb_update_csr;
     end
+    if (rob_commit_i[0].is_csr_fix) begin
+        csr_update = csr;
+    end
+    if (TODO ertn指令) begin
+        csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
+        csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
+        if (csr_q.llbctl[`_LLBCT_KLO]) begin
+            csr_update.llbctl[`_LLBCT_KLO] = 0;
+        end
+        else begin
+            csr_update.llbit = 0;
+        end
+    end
+    if (is_ll[0]) begin
+        csr_update.llbit = 1;
+    end
+    //TODO more instructions that modify csr(include llbit/timer etc.)
+    //like ll/sc ertn
+
+    //下面这个放在这里，是因为中断/异常的优先级最高
+    if(cur_exception) begin
+        csr_update = csr_exception_update;
+    end
+
+    //上面那些每周期规定只有一条，因此没有交叉冒险的情况
+
+    //下面这个放在这里，是因为cpu每个周期都要更新一些软件不能更新的东西
+    //如果放在前面会被覆盖掉，放在后面，由于是软件不能改的位，不会把前面的覆盖掉
+    csr_update.estat[`_ESTAT_HARD_IS]  = hard_is; //TODO从外面连过来
+    csr_update.estat[`_ESTAT_TIMER_IS] = 0;
+    if (csr_q.tcfg[`_TCFG_EN]) begin
+        if (csr_q.tval != 0) begin
+            csr_update.tval = csr_update.tval - 1;
+        end
+        elif (csr_q.tcfg[`_TCFG_PERIODIC]) begin
+            csr_update.estat[`_ESTAT_TIMER_IS] = 1;
+            csr_update.tval = {csr_q.tcfg[`_TCFG_INITVAL], 2'b0};
+        end
+        else begin
+            csr_update.estat[`_ESTAT_TIMER_IS] = 1;
+        end
+    end
+
+    //这个优先级最高，如果clear了就将其写入
+    if (!cur_exception && timer_interrupt_clear) begin
+        csr_update.estat[`_ESTAT_TIMER_IS] = 0;
+    end
+
 end
 
-// 对csr_q的信息维护（TODO 需要和中断、tlb维护指令交互）
+// 对csr_q的信息维护
 always_ff @(posedge clk) begin
     if(~rst_n) begin
         csr_q <= csr_init; // 初始化 CSR
     end
-    elif (cur_exception) begin
-        csr_q <= csr_exception_update; //更改：如果有异常更新为异常
-    end
     else begin
-        csr_q <= csr;
+        csr_q <= csr_update;
     end
 end
 

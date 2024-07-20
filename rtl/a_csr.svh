@@ -127,6 +127,8 @@ typedef struct packed {
 //ESTAT
 `define _ESTAT_IS        12:0
 `define _ESTAT_SOFT_IS   1:0
+`define _ESTAT_HARD_IS   9:2
+`define _ESTAT_TIMER_IS  11
 `define _ESTAT_ECODE     21:16
 `define _ESTAT_ESUBCODE  30:22
 //EENTRY

@@ -125,7 +125,7 @@ typedef struct packed {
     logic   [4:0]   cache_code;
     logic   is_tlb_fix;
     logic   [4:0]   tlb_type;
-    logic   [3:0]   tlb_op;
+    logic   [4:0]   tlb_op;
 
     // 分支预测信息
     logic   is_branch;
