@@ -80,6 +80,10 @@ module commit #(
     // commit与BPU的接口
     output  correct_info_t [1:0]    correct_info_o,
 
+    //commit与两个外部tlb/mmu的接口
+    output  csr_t            csr_o,
+    output  tlb_write_req_t  tlb_write_req_o,
+
     // commit与ICache的握手信号
     output  commit_icache_req_t     commit_icache_req_o,
     // ICache返回TLB异常
@@ -719,7 +723,7 @@ end
 // TLB维护指令
 // 不管理TLB的映射内容，只管理TLB的维护内容
 // 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
-tlb_entry_t [`TLB_ENTRY_NUM - 1 : 0] tlb_entries_q;
+tlb_entry_t [`_TLB_ENTRY_NUM - 1 : 0] tlb_entries_q;
 //我默认没有实现tlb的初始化，开始的时候由软件用INVTLB 0, r0, r0实现
 
 //拿到维护类型
@@ -733,7 +737,7 @@ wire cur_invtlb  = rob_commit_i[0].invtlb_en;
 logic tlb_found;
 csr_t tlb_update_csr;/*对csr的更新*/
 tlb_entry_t tlb_entry/*前面是一个临时变量*/,tlb_update_entry;/*更新进tlb的内容*/
-logic [`TLB_ENTRY_NUM - 1:0] tlb_wr_req;/*更新进tlb的使能位*/
+logic [`_TLB_ENTRY_NUM - 1:0] tlb_wr_req;/*更新进tlb的使能位*/
 
 always_comb begin
     tlb_update_csr = csr_q;
@@ -742,7 +746,7 @@ always_comb begin
     if (cur_tlbsrch) begin
         //下面找对应的表项，同mmu里面的找法
         tlb_found = 0;
-        for (genvar i = 0; i < `TLB_ENTRY_NUM; i += 1) begin
+        for (genvar i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
             if (tlb_entries_q[i].key.e 
                 && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid))
                 && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
@@ -789,7 +793,7 @@ always_comb begin
 
     if (cur_tlbfill) begin
         load_tlb_update_entry();
-        tlb_wr_req[timer_64_q[$clog2(`TLB_ENTRY_NUM) - 1:0]] = 1;
+        tlb_wr_req[timer_64_q[$clog2(`_TLB_ENTRY_NUM) - 1:0]] = 1;
         //同上，但是根据计时器的值随机更新一个表项
     end
 
@@ -803,21 +807,21 @@ always_comb begin
                 tlb_wr_req = '1;
             end
             5'h2: begin
-                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (tlb_entries_q[i].key.g) begin
                         tlb_wr_req[i] = 1;
                     end
                 end
             end
             5'h3: begin
-                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (!tlb_entries_q[i].key.g) begin
                         tlb_wr_req[i] = 1;
                     end
                 end
             end
             5'h4: begin
-                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (!tlb_entries_q[i].key.g && 
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0]) begin
                         tlb_wr_req[i] = 1;
@@ -825,7 +829,7 @@ always_comb begin
                 end
             end
             5'h5: begin
-                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (!tlb_entries_q[i].key.g && 
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0] &&
                         vppn_match(rob_commit_i[0].data_rk, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
@@ -834,7 +838,7 @@ always_comb begin
                 end
             end
             5'h6: begin
-                for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if ((tlb_entries_q[i].key.g ||
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0]) &&
                         vppn_match(rob_commit_i[0].data_rk, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
@@ -886,9 +890,16 @@ task load_tlb_update_entry();
         end
 endtask
 
+//纯组合逻辑输出
+always_comb begin
+    csr_o = csr_q;
+    tlb_write_req_o.tlb_write_req   = tlb_wr_req;
+    tlb_write_req_o.tlb_write_entry = tlb_update_entry;
+end
+
 //周期结束的时候更新进tlb，同时也发出去更新mmu里面的tlb
 always_ff @( posedge clk ) begin
-    for (genvar i = 0; i < `TLB_ENTRY_NUM; i = i + 1) begin
+    for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
         if (tlb_wr_req[i]) begin
             tlb_entries_q[i] <= tlb_update_entry;
         end

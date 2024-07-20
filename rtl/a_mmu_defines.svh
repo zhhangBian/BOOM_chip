@@ -50,9 +50,8 @@ typedef struct packed {
 } tlb_exception_t;
 
 typedef struct packed {
-    logic [`_TLB_ENTRY_NUM - 1 : 0] tlb_rd_index;
-    logic [`_TLB_ENTRY_NUM - 1 : 0] tlb_wr_index;
-    tlb_entry_t tlb_wr_entry;
-} tlb_rdwr_req_t;
+    logic [`_TLB_ENTRY_NUM - 1 : 0] tlb_write_req;
+    tlb_entry_t tlb_write_entry;
+} tlb_write_req_t;
 
 `endif
