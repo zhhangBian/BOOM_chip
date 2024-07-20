@@ -55,7 +55,7 @@ logic [1 :0] mask;
 predict_info_t predict_info;
 
 assign b_f_pkg = fetch_icache_receiver.data;
-assign pc      = b_f_pkg.pc
+assign pc      = b_f_pkg.pc & 32'hfffffff8; //对齐
 assign mask    = b_f_pkg.mask;
 assign predict_info = b_f_pkg.predict_infos;
 
@@ -181,7 +181,7 @@ logic [WAY_NUM - 1 : 0][DATA_WIDTH - 1 : 0] data_ans0, data_ans1;
 for (genvar i = 0 ; i < WAY_NUM ; i++) begin
     // conflict 逻辑
     logic conflict, conflict_q;
-    assign conflict = (pc[11 : DATA_ADDR_LOW] == real_addr[11 : DATA_ADDR_LOW]/*commit请求的写地址*/ );
+    assign conflict = (pc[11 : DATA_ADDR_LOW] == refill_addr[11 : DATA_ADDR_LOW]/*commit请求的写地址*/ );
     always_ff @(posedge clk) begin
         conflict_q <= conflict;
     end 
@@ -240,7 +240,7 @@ f_d_pkg_t f_d_pkg;
 logic [1:0][31:0] insts, insts_q; //insts,传入后面的两条指令
 always_comb begin
     f_d_pkg.insts   =  insts; //TODO
-    f_d_pkg.pc      =  b_f_pkg_q.pc; //TODO ATTENTION:后面要分两个PC
+    f_d_pkg.pc      =  b_f_pkg_q.pc & 32'hfffffff8; //TODO ATTENTION:后面要分两个PC
     f_d_pkg.mask    =  b_f_pkg_q.mask;
     f_d_pkg.predict_infos = b_f_pkg_q.predict_infos;
 end
@@ -256,6 +256,9 @@ end
 assign icache_decoder_sender.data  = f_d_pkg;
 assign icache_decoder_sender.valid = !stall & |f_d_pkg.mask & !flush_i;
 assign fetch_icache_receiver.ready = !stall ;
+
+// exception
+
 
 // fsm , NORMAL -> REFILL(ONLY AXI -> SRAM) -> FINISH -> NORMAL
 // defination for axi handshake
@@ -408,7 +411,7 @@ always_comb begin
                 temp_data_block[req_ptr[0]] = axi_data_i;
                 // refill TODO
                 req_ptr = req_ptr_q + 1;
-                if (!req_ptr[0] & req_ptr[2:0] == b_f_pkg_q.pc[4:2] + 'd2) begin
+                if (!req_ptr[0] & req_ptr[2:1] == b_f_pkg_q.pc[4:3] + 'd2) begin
                     insts = temp_data_block;
                 end
                 if (!req_ptr[0]) begin
