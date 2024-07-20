@@ -25,11 +25,17 @@ module icache #(
     input    logic             axi_data_valid_i,
     input    logic  [31:0]     axi_data_i,
     // 全局信号
-    input commit_fetch_req_t   commit_cache_req, // commit维护cache时的请求
-    output fetch_commit_resp_t cache_commit_resp // cache向提交级反馈结果
-    input logic                commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
-    output logic               commit_resp_ready_o // 状态处理完毕，即为NORMAL状态时
+    input commit_icache_req_t  commit_icache_req,
+    // input commit_fetch_req_t   commit_cache_req, // commit维护cache时的请求
+    // output fetch_commit_resp_t cache_commit_resp // cache向提交级反馈结果
+    input logic                commit_req_valid_i, // commit发维护请求需要读（cacop op的时候）的时候
+    output logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
+    output logic  [1:0]       icache_cacop_flush_o, // 2'b01 tlb_exc, 2'b10 tag_miss, other normal
+    output tlb_exception_t    icache_cacop_tlb_exc
 )
+
+commit_fetch_req_t   commit_cache_req;
+fetch_commit_resp_t  cache_commit_resp;
 
 logic stall, stall_q;
 always_ff @(posedge clk) begin
@@ -248,8 +254,8 @@ end
 // TODO icache_decoder_sender.valid
 // TODO fetch_icache_receiver.ready
 assign icache_decoder_sender.data  = f_d_pkg;
-assign icache_decoder_sender.valid = !stall & |f_d_pkg.mask ;
-assign fetch_icache_receiver.ready = !stall;
+assign icache_decoder_sender.valid = !stall & |f_d_pkg.mask & !flush_i;
+assign fetch_icache_receiver.ready = !stall ;
 
 // fsm , NORMAL -> REFILL(ONLY AXI -> SRAM) -> FINISH -> NORMAL
 // defination for axi handshake
@@ -264,6 +270,7 @@ typedef enum logic [4:0] {
     F_UNCACHE_S, // uncache握手成功
     F_MISS,      // 缺失
     F_MISS_S,    // miss握手成功
+    F_CACOP,
 } fsm_state;
 
 fsm_state fsm_cur, fsm_next;
@@ -300,13 +307,31 @@ always_comb begin
     refill_tag      = '0;
     refill_we       = '0;
     refill_tag_we   = '0;
+    commit_cache_req = '0;
+    icache_cacop_flush_o = '0;
     case(fsm_cur) 
         F_NORMAL:begin
             temp_data_block = '0;
             refill_we       = '0;
             insts = tag_hit[0] ? data_ans0[0] : data_ans0[1];
             stall = '0; // 解除stall状态
-            if (!(|tag_hit)) begin
+            if (commit_req_valid_i) begin
+                case(commit_icache_req.cache_op)
+                    0, 1: begin
+                        commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
+                        commit_cache_req.way_choose            = commit_icache_req.addr[0] ? 2'b10 : 2'b01;
+                        commit_cache_req.tag_data              = '0;
+                        commit_cache_req.tag_we                = '1;
+                    end
+                    2: begin
+                        commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
+                        commit_cache_req.way_choose            = commit_icache_req.addr[0] ? 2'b10 : 2'b01;
+                        commit_cache_req.tag_data              = '0;
+                        commit_cache_req.tag_we                = '0;
+                        fsm_next                               = F_CACOP;
+                    end
+                endcase
+            end else if (!(|tag_hit)) begin
                 stall |= '1; // 阻塞
                 fsm_next = F_MISS;
                 req_num  = 8;
@@ -383,14 +408,30 @@ always_comb begin
                 end
                 if (!req_ptr[0]) begin
                     // TODO 写入
-                    refill_addr  =  (paddr_q & 32'hffffffe0) | ((req_ptr - 'd2) << 2);
-                    refill_data  =  temp_data_block;
-                    refill_we    =  refill_way[paddr_q[11:5]] ? 2'b10 : 2'b01;
+                    refill_addr      =  (paddr_q & 32'hffffffe0) | ((req_ptr - 'd2) << 2);
+                    refill_data      =  temp_data_block;
+                    refill_we        =  refill_way[paddr_q[11:5]] ? 2'b10 : 2'b01;
                     refill_tag.tag   =  paddr_q[31:12];
                     refill_tag.d     =  '0;
                     refill_tag.v     =  '1;
                     refill_tag_we    =  refill_we;
                 end
+            end
+        end
+        F_CACOP: begin
+            fsm_next = F_NORMAL;
+            if (cache_commit_resp.tlb_exception.ecode != '0) begin
+                icache_cacop_flush_o                   = 2'b01；
+                icache_cacop_tlb_exc                   = cache_commit_resp.tlb_exception
+            end else if (|cache_commit_resp.way_hit) begin
+                commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
+                commit_cache_req.way_choose            = cache_commit_resp.way_hit;
+                commit_cache_req.tag_data              = '0;
+                commit_cache_req.tag_we                = '1;
+                icache_cacop_flush_o                   = 2'b10;
+                icache_cacop_tlb_exc                   = '0;              
+            end else begin
+                fsm_next = F_NORMAL;
             end
         end
         default:begin
@@ -399,14 +440,5 @@ always_comb begin
         end
     endcase
 end
-// send need      : addr valid -> next state(receiving handshake signal)
-// receive signal : valid = 0 -> wait for the data
-// data comes     : according to our structure, we all need 8 rounds
-// data2sram      : write data to sram
-// back2nonrmal   : to normal and stall = 0
-// ps: when the data coming is which the instruction in 
-//     block needs, then we must keep the insts in regs.
-
-
 
 endmodule
