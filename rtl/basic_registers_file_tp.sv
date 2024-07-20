@@ -30,7 +30,8 @@ module registers_file_tp #(
             .NEED_RESET(NEED_RESET),
             .RESET_VAL(RESET_VAL)
         ) regcore_ff (
-            `_WIRED_GENERAL_CONN,
+            .clk(clk),
+            .rst_n(rst_n),
             .waddr_i,
             .we_i,
             .wdata_i,
@@ -41,7 +42,7 @@ module registers_file_tp #(
 
     // Read port generation
     for(genvar i = 0 ; i < R_PORT_COUNT ; i++) begin
-        assign rdata_o[i] = (NEED_FORWARD && we_i[1] && raddr_i[i] == waddr_i[1]) ? wdata_i[1] : 
+        assign rdata_o[i] = (NEED_FORWARD && we_i[1] && raddr_i[i] == waddr_i[1]) ? wdata_i[1] :
                             (NEED_FORWARD && we_i[0] && raddr_i[i] == waddr_i[0]) ? wdata_i[0] :
                                                regfiles[raddr_i[i]];
     end
