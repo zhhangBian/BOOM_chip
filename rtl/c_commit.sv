@@ -123,7 +123,7 @@ logic [5:0] timer_64, timer_64_q;
 // - cache维护指令
 // - dbar,ibar
 // 特殊处理均只允许单条提交
-//TODO : 最后提交的逻辑，ertn跳转，ibar，idle，rdcntvl，rdcntvh，rdcntid的实现
+//TODO : 最后提交的逻辑，ertn跳转，ibar（不实现），idle,cacop的异常没有处理？
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0] & commit_ready_o;
 
@@ -148,8 +148,13 @@ always_comb begin
 
 
     if(is_csr_fix[0]) begin
-        commit_arf_we_o[0]   = commit_csr_valid_o;
+        commit_arf_we_o[0]   = 1;
         commit_arf_data_o[0] = commit_csr_data_o;
+        commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
+    end
+    if (TODO isrdcnt) begin
+        commit_arf_we_o[0]   = 1;
+        commit_arf_data_o[0] = rdcnt_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
     end
     else if(ls_fsm_q == S_NORMAL) begin
@@ -275,7 +280,7 @@ logic [1:0] taken;
 
 // 异常PC入口
 logic [31:0] exp_pc;
-assign exp_pc = cur_tlbr_exception ? cssr.tlbrentry : csr.eentry ;
+assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 
 // 计算实际跳转的PC
 for(integer i = 0; i < 2; i += 1) begin
@@ -316,7 +321,7 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].redir_addr = cur_exception ? exp_pc : 
                                        (flush & ~is_uncached) ? rob_commit_i[i].pc :
                                        next_pc[i];
-
+//TODO ertn加上
         correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
                                         (predict_info[i].target_pc != next_pc[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
@@ -351,6 +356,22 @@ end
 always_comb begin
     timer_64 = timer_64_q;
 end
+
+//rdcnt命令
+logic [31:0] rdcnt_data_o;
+
+always_comb begin
+    if (TODO isrdcntvl) begin
+        rdcnt_data_o = timer_64_q[31:0];
+    end
+    if (TODO isrdcntvh) begin
+        rdcnt_data_o = timer_64_q[63:32];
+    end
+    if (TODO rdcntid) begin
+        rdcnt_data_o = csr_q.tid;
+    end
+end
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
@@ -502,9 +523,12 @@ always_comb begin
     csr_init.tid            = CPU_ID;
 end
 
+logic [31:0] commit_csr_data_o;
+
 // 从CSR读取的旧值（默认读出来）
 always_comb begin
     //编号->csr寄存器
+    commit_csr_data_o  = '0;
     unique case (csr_num)
         `_CSR_CRMD:     commit_csr_data_o  |= csr_q.crmd;
         `_CSR_PRMD:     commit_csr_data_o  |= csr_q.prmd;
@@ -531,30 +555,11 @@ always_comb begin
         `_CSR_TCFG:     commit_csr_data_o  |= csr_q.tcfg;
         `_CSR_TVAL:     commit_csr_data_o  |= csr_q.tval;//读定时器
         `_CSR_TICLR:    commit_csr_data_o  |= csr_q.ticlr;
-        `_CSR_LLBCTL:   commit_csr_data_o  |= {csr_q.llbctl[31:1], llbit};//读llbit
+        `_CSR_LLBCTL:   commit_csr_data_o  |= {csr_q.llbctl[31:1], csr_q.llbit};//读llbit
         `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
         `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
         `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
         default:
-    endcase
-
-    case (csr_type)
-        `_CSR_CSRRD: begin
-            commit_csr_valid_o |= '1;
-        end
-
-        `_CSR_CSRWR: begin
-            commit_csr_valid_o |= '1;
-        end
-
-        `_CSR_XCHG: begin
-            commit_csr_valid_o |= '1;
-        end
-
-        default: begin
-            commit_csr_data_o = '0;
-            commit_csr_valid_o = '0;
-        end
     endcase
 end
 
@@ -734,7 +739,6 @@ wire cur_tlbfill = rob_commit_i[0].tlbfill_en;
 wire cur_invtlb  = rob_commit_i[0].invtlb_en;
 
 //给下面准备的一些信号
-logic tlb_found;
 csr_t tlb_update_csr;/*对csr的更新*/
 tlb_entry_t tlb_entry/*前面是一个临时变量*/,tlb_update_entry;/*更新进tlb的内容*/
 logic [`_TLB_ENTRY_NUM - 1:0] tlb_wr_req;/*更新进tlb的使能位*/
@@ -745,19 +749,15 @@ always_comb begin
 
     if (cur_tlbsrch) begin
         //下面找对应的表项，同mmu里面的找法
-        tlb_found = 0;
+        tlb_update_csr.tlbidx[`_TLBIDX_NE] = 1;
         for (genvar i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
             if (tlb_entries_q[i].key.e 
                 && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid))
                 && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
-                    tlb_found = 1;
                     tlb_update_csr.tlbidx[`_TLBIDX_INDEX] = i; //不知道这里语法有没有问题
                     tlb_update_csr.tlbidx[`_TLBIDX_NE] = 0;
                     //写csr
             end
-        end
-        if (!tlb_found) begin
-            tlb_update_csr.tlbidx[`_TLBIDX_NE] = 1;
         end
     end
 
@@ -766,6 +766,7 @@ always_comb begin
         if (tlb_entry.key.e) begin
             //找到了要存到特定的csr寄存器里面
             tlb_update_csr.tlbidx[`_TLBIDX_PS]      = tlb_entry.key.huge_page ? 21 : 12;
+            tlb_update_csr.tlbidx[`_TLBIDX_NE]      = 0;
 
             tlb_update_csr.tlbehi[`_TLBEHI_VPPN]    = tlb_entry.key.vppn;
 
@@ -782,6 +783,16 @@ always_comb begin
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_MAT]= tlb_entry.value[1].mat;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.value[1].g;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_PPN]= tlb_entry.value[1].ppn;
+        end
+        else begin
+            tlb_update_csr.tlbidx[`_TLBIDX_NE]      = 1;
+            tlb_update_csr.tlbidx[`_TLBIDX_PS]      = '0;
+
+            tlb_update_csr.asid[`_ASID]             = '0;
+
+            tlb_update_csr.tlbehi                   = '0;
+            tlb_update_csr.tlbelo0                  = '0;
+            tlb_update_csr.tlbelo1                  = '0;
         end
     end
 
@@ -1529,43 +1540,3 @@ end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 endmodule
-
-/* 不出bug
-__________████████_____██████
-_________█░░░░░░░░██_██░░░░░░█
-________█░░░░░░░░░░░█░░░░░░░░░█
-_______█░░░░░░░███░░░█░░░░░░░░░█
-_______█░░░░███░░░███░█░░░████░█
-______█░░░██░░░░░░░░███░██░░░░██
-_____█░░░░░░░░░░░░░░░░░█░░░░░░░░███
-____█░░░░░░░░░░░░░██████░░░░░████░░█
-____█░░░░░░░░░█████░░░████░░██░░██░░█
-___██░░░░░░░███░░░░░░░░░░█░░░░░░░░███
-__█░░░░░░░░░░░░░░█████████░░█████████
-_█░░░░░░░░░░█████_████___████_█████___█
-_█░░░░░░░░░░█______█_███__█_____███_█___█
-█░░░░░░░░░░░░█___████_████____██_██████
-░░░░░░░░░░░░░█████████░░░████████░░░█
-░░░░░░░░░░░░░░░░█░░░░░█░░░░░░░░░░░░█
-░░░░░░░░░░░░░░░░░░░░██░░░░█░░░░░░██
-░░░░░░░░░░░░░░░░░░██░░░░░░░███████
-░░░░░░░░░░░░░░░░██░░░░░░░░░░█░░░░░█
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
-░░░░░░░░░░░█████████░░░░░░░░░░░░░░██
-░░░░░░░░░░█▒▒▒▒▒▒▒▒███████████████▒▒█
-░░░░░░░░░█▒▒███████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
-░░░░░░░░░█▒▒▒▒▒▒▒▒▒█████████████████          没有bug对吧
-░░░░░░░░░░████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█
-░░░░░░░░░░░░░░░░░░██████████████████
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
-██░░░░░░░░░░░░░░░░░░░░░░░░░░░██
-▓██░░░░░░░░░░░░░░░░░░░░░░░░██
-▓▓▓███░░░░░░░░░░░░░░░░░░░░█
-▓▓▓▓▓▓███░░░░░░░░░░░░░░░██
-▓▓▓▓▓▓▓▓▓███████████████▓▓█
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█
-    */
