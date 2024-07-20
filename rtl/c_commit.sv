@@ -275,7 +275,7 @@ assign exp_pc = cur_tlbr_exception ? cssr.tlbrentry : csr.eentry ;
 // 计算实际跳转的PC
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
-        next_pc[i] = rob_commit_i[i].pc[i] + 4;
+        next_pc[i] = rob_commit_i[i].pc + 4;
         predict_branch[i] = predict_info[i].taken;
 
         case (branch_info[i].br_type)
@@ -307,8 +307,10 @@ end
 
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
-        correct_info_o[i].pc = rob_commit_i[i].pc[i];
-        correct_info_o[i].redir_addr = cur_exception ? exp_pc : next_pc[i];
+        correct_info_o[i].pc = rob_commit_i[i].pc;
+        correct_info_o[i].redir_addr = cur_exception ? exp_pc : 
+                                       (flush & ~is_uncached) ? rob_commit_i[i].pc :
+                                       next_pc[i];
 
         correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
                                         (predict_info[i].target_pc != next_pc[i]);
@@ -317,7 +319,6 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].taken = taken[i];
         correct_info_o[i].is_branch = branch_info[i].is_branch;
         correct_info_o[i].branch_type = branch_info[i].br_type;
-
 
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
