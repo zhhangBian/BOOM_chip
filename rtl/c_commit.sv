@@ -342,7 +342,7 @@ logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常�
 csr_t csr_exception_update;//周期结束时候写入csr_q
 
 //中断识别
-wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECTL_LIE];
+wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
 wire int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
 //取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
@@ -460,18 +460,6 @@ wire a_execute_excp  = rob_commit_i[1].execute_exception;
 wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
 //上面是1表示两条指令的后一条有例外
 
-//下面这个部分暂时这样写，是打一排以后把要写入csr的内容最后写入csr中，
-//要把它和后面的csr维护等内容考虑冒险之后合并在一起。
-//这一部分一定要和后面合在一起重写！！！TODO
-always_ff @(posedge clk) begin
-    if (rst_n) begin
-        <merge with other code>
-    end
-    else begin
-        csr_q <= csr_exception_update;
-        <merge with other code>
-    end
-end
 
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -480,10 +468,11 @@ end
 // CSR特权指令
 // TODO：csr_t的结构需要进一步匹配
 csr_t csr, csr_q, csr_init;
-logic [2:0] csr_type = rob_commit_i[0].csr_type;
-logic [13:0] csr_num = rob_commit_i[0].csr_num;
+wire  [2:0] csr_type = rob_commit_i[0].csr_type;
+wire [13:0] csr_num = rob_commit_i[0].csr_num;
 
-// 维护CSR信息
+
+// CSR复位
 always_comb begin
     csr_init                = '0;
     // 初始化要求非0的 CSR 寄存器值
@@ -493,7 +482,92 @@ always_comb begin
     csr_init.tid            = CPU_ID;
 end
 
-// 对csr_q的信息维护
+// 从CSR读取的旧值（默认读出来）
+always_comb begin
+    //编号->csr寄存器
+    unique case (csr_num)
+        `_CSR_CRMD:     commit_csr_data_o  |= csr_q.crmd;
+        `_CSR_PRMD:     commit_csr_data_o  |= csr_q.prmd;
+        `_CSR_EUEN:     commit_csr_data_o  |= csr_q.euen;
+        `_CSR_ECFG:     commit_csr_data_o  |= csr_q.ecfg;
+        `_CSR_ESTAT:    commit_csr_data_o  |= csr_q.estat;
+        `_CSR_ERA:      commit_csr_data_o  |= csr_q.era;
+        `_CSR_BADV:     commit_csr_data_o  |= csr_q.badv;
+        `_CSR_EENTRY:   commit_csr_data_o  |= csr_q.eentry;
+        `_CSR_TLBIDX:   commit_csr_data_o  |= csr_q.tlbidx;
+        `_CSR_TLBEHI:   commit_csr_data_o  |= csr_q.tlbehi;
+        `_CSR_TLBELO0:  commit_csr_data_o  |= csr_q.tlbelo0;
+        `_CSR_TLBELO1:  commit_csr_data_o  |= csr_q.tlbelo1;
+        `_CSR_ASID:     commit_csr_data_o  |= csr_q.asid;
+        `_CSR_PGDL:     commit_csr_data_o  |= csr_q.pgdl;
+        `_CSR_PGDH:     commit_csr_data_o  |= csr_q.pgdh;
+        `_CSR_PGD:      commit_csr_data_o  |= csr_q.badv[31] ? csr_q.pgdh : csr_q.pgdl;
+        `_CSR_CPUID:    commit_csr_data_o  |= csr_q.cpuid;
+        `_CSR_SAVE0:    commit_csr_data_o  |= csr_q.save0;
+        `_CSR_SAVE1:    commit_csr_data_o  |= csr_q.save1;
+        `_CSR_SAVE2:    commit_csr_data_o  |= csr_q.save2;
+        `_CSR_SAVE3:    commit_csr_data_o  |= csr_q.save3;
+        `_CSR_TID:      commit_csr_data_o  |= csr_q.tid;
+        `_CSR_TCFG:     commit_csr_data_o  |= csr_q.tcfg;
+        `_CSR_TVAL:     commit_csr_data_o  |= csr_q.tval;//TODO读计时器
+        `_CSR_TICLR:    commit_csr_data_o  |= csr_q.ticlr;
+        `_CSR_LLBCTL:   commit_csr_data_o  |= csr_q.llbctl;//TODO 读llbit
+        `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
+        `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
+        `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
+        default: 
+    endcase
+
+    case (csr_type)
+        `_CSR_CSRRD: begin
+            commit_csr_valid_o |= '1;
+        end
+
+        `_CSR_CSRWR: begin
+            commit_csr_valid_o |= '1;
+        end
+
+        `_CSR_XCHG: begin
+            commit_csr_valid_o |= '1;
+        end
+
+        default: begin
+            commit_csr_data_o = '0;
+            commit_csr_valid_o = '0;
+        end
+    endcase
+end
+
+
+//当没有例外的时候，针对单条需要刷流水级的csr寄存器值的修改
+//必须包括csr访问指令、tlb维护指令、ertn指令、cpu中断采样、cpu更改tval和置定时器中断
+always_comb begin
+    csr = csr_q;
+
+    case (csr_type)
+        `_CSR_CSRWR: begin
+            csr[csr_num]        = rob_commit_i[0].data_rd;
+        end
+
+        `_CSR_XCHG: begin
+            csr[csr_num]        = rob_commit_i[0].data_rd & rob_commit_i[0].data_rj;
+        end
+
+        default: begin
+
+        end
+    endcase
+end
+
+task write_csr();
+    input  [31:0] write_data;
+    input  [13:0] csr_num;
+    begin  
+        TODO
+    end  
+endtask
+
+// 对csr_q的信息维护（TODO 需要和中断、tlb维护指令交互）
 always_ff @(posedge clk) begin
     if(~rst_n) begin
         csr_q <= csr_init; // 初始化 CSR
@@ -506,35 +580,6 @@ always_ff @(posedge clk) begin
     end
 end
 
-// 对CSR信息的维护
-always_comb begin
-    csr = csr_q;
-    commit_csr_data_o = '0;
-    commit_csr_valid_o = '0;
-
-    case (csr_type)
-        `_CSR_CSRRD: begin
-            commit_csr_valid_o |= '1;
-            commit_csr_data_o |= csr_q[csr_num];
-        end
-
-        `_CSR_CSRWR: begin
-            commit_csr_valid_o |= '1;
-            commit_csr_data_o |= csr_q[csr_num];
-            csr[csr_num] = rob_commit_i[0].data_rd;
-        end
-
-        `_CSR_XCHG: begin
-            commit_csr_valid_o |= '1;
-            commit_csr_data_o |= csr_q[csr_num];
-            csr[csr_num] = rob_commit_i[0].data_rd & rob_commit_i[0].data_rj;
-        end
-
-        default: begin
-
-        end
-    endcase
-end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
