@@ -339,7 +339,7 @@ typedef struct packed {
     mul_inst_t      mul_inst;
     need_fa_t       need_fa;
     priv_inst_t     priv_inst;
-    refetch_t       refetch;
+    refetch_t       refetch; // CSR, CACOP, ERTN, IDLE, TLB-relate, DBAR, IBAR, RDCNTVL.W, RD
     reg_type_r0_t   reg_type_r0; // 
     reg_type_r1_t   reg_type_r1; // 
     reg_type_w_t    reg_type_w; // RD, RJD(RJ寄存器，仅RDCNTID指令会用), BL1(R1寄存器), None

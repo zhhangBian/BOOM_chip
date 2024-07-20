@@ -1,10 +1,16 @@
 `include "a_defines.svh"
 
+`ifdef _VERILATOR
+module core_top (
+    input    [ 7:0] intrpt,
+`endif
+`ifdef _FPGA
 module mycpu_top (
+    input    [ 7:0] ext_int, 
+`endif
     // other axi interface
     input           aclk,
     input           aresetn,
-    input    [ 7:0] intrpt, 
     //AXI interface 
     //read reqest
     output   [ 3:0] arid,
@@ -219,7 +225,7 @@ axi_crossbar # (
     .m_axi_awlock(awlock),
     .m_axi_awcache(awcache),
     .m_axi_awprot(awprot),
-    .m_axi_awqos(awqos),
+    .m_axi_awqos(/*TODO: 悬空，官方接口不会用到*/),
     .m_axi_awregion(/*TODO: check: 默认参数下只有一个 REGION, 即 0 号 region*/'0),
     .m_axi_awuser(/*TODO: 悬空，在默认参数下不会使用到这个信号*/),
     .m_axi_awvalid(awvalid),
