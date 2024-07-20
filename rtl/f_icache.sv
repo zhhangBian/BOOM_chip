@@ -327,7 +327,7 @@ always_comb begin
                     end
                     2: begin
                         commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
-                        commit_cache_req.way_choose            = commit_icache_req.addr[0] ? 2'b10 : 2'b01;
+                        commit_cache_req.way_choose            = '0;
                         commit_cache_req.tag_data              = '0;
                         commit_cache_req.tag_we                = '0;
                         fsm_next                               = F_CACOP;
