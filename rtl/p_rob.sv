@@ -1,7 +1,6 @@
 `include "a_defines.svh"
 
-module rob #(
-)(
+module rob # () (
     // input
     input   logic clk,
     input   logic rst_n,

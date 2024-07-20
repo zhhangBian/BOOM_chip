@@ -297,7 +297,7 @@ typedef struct packed {
 typedef struct packed {
     logic           decode_err; // 出现未知指令
     addr_imm_type_t addr_imm_type; // 地址是S12, S14, S16还是S26
-    alu_grand_op_t  alu_grand_op; // alu大类，分别来源于算术运算、逻辑运算、位移运算以及其他（LU12I, PCADDU12I, PC+4(link)）
+    alu_grand_op_t  grand_op; // alu大类，分别来源于算术运算、逻辑运算、位移运算以及其他（LU12I, PCADDU12I, PC+4(link)）
     alu_inst_t      alu_inst; // 是否是需要使用alu的指令
     alu_op_t        alu_op; // alu子类，在不同大类下有不同含义
     bceqz_t         bceqz; // 是否否是bceqz指令
@@ -309,23 +309,7 @@ typedef struct packed {
     dbarrier_t      dbarrier; // 是否是 DBAR 指令
     div_inst_t      div_inst; // 是否是除法指令
     ertn_inst_t     ertn_inst; // 是否是 ertn 指令
-    /* Float point control signals
-    fbranch_inst_t  fbranch_inst; // 是否是浮点分支指令
-    fclass_t        fclass; // 是否是fclass指令
-    fcmp_t          fcmp; // 是否是FCMP.cond.S指令
-    fcsr2gr_t       fcsr2gr; // 是否是
-    fcsr_upd_t      fcsr_upd; // TODO：未使用
-    fpd_inst_t      fpd_inst; // 不懂
-    fpu_inst_t      fpu_inst; // 不懂
-    fpu_mode_t      fpu_mode; // 不懂
-    fpu_op_t        fpu_op; // 不懂
-    fr0_t           fr0; // 不懂
-    fr1_t           fr1; // 不懂
-    fr2_t           fr2; // 不懂
-    fsel_t          fsel; // 不懂
-    fw_t            fw; // 不懂
-    gr2fcsr_t       gr2fcsr; // 不懂
-    */
+
     imm_type_t      imm_type; // 立即数类型 _IMM_...
     inst_t          inst; // 指令本身
     invtlb_en_t     invtlb_en; // 是否是invtlb指令
