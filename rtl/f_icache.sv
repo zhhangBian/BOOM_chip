@@ -9,9 +9,9 @@ module icache #(
     parameter int unsigned TAG_ADDR_LOW = 12 - $clog2(DATA_DEPTH),
     parameter int unsigned DATA_ADDR_LOW = $clog2(WORD_SIZE / 8)
 ) (
-    input clk,
-    input rst_n,
-    input flush_i, 
+    input logic clk,
+    input logic rst_n,
+    input logic flush_i, 
     // 控制信息CSR
     input csr_t csr_i,
     // cpu侧信号

@@ -2,9 +2,9 @@
 
 module p_dispatch #(    
 ) (
-    input clk,
-    input rst_n,
-    input flush_i,
+    input logic clk,
+    input logic rst_n,
+    input logic flush_i,
     input cdb_dispatch_pkg_t    [1 : 0] cdb_dispatch_i,
     input rob_dispatch_pkg_t    [1 : 0] rob_dispatch_i,
     

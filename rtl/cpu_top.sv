@@ -1,8 +1,8 @@
 `include "a_defines.svh"
 
 module mycpu_top (
-    input clk,
-    input rst_n,
+    input logic clk,
+    input logic rst_n,
 
     // other axi interface
 );

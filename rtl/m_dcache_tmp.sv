@@ -14,9 +14,9 @@ module bad_dcache #(
     parameter int unsigned BLOCK_SIZE = 4 * 32, //4个字
     parameter int unsigned SB_SIZE = 4
 ) (
-    input clk,
-    input rst_n,
-    input flush_i,
+    input logic clk,
+    input logic rst_n,
+    input logic flush_i,
     // 控制信息
     input csr_t csr_i,
     // cpu侧信号

@@ -3,8 +3,8 @@
 ## 输入的信息：
 
 ```asm
-input rst_n;
-input clk;
+input logic rst_n;
+input logic clk;
 ```
 
 * 当前指令的指令地址、寄存器编号和数据信息:
