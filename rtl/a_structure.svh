@@ -101,7 +101,7 @@ typedef struct packed {
     logic   c_valid;
 
     logic   [31:0]  pc;
-    logic   [31:0]  data_rd;
+    logic   [31:0]  data_rk;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
 

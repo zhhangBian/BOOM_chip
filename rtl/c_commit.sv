@@ -323,7 +323,8 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-        correct_info_o[i].target_pc = predict_info[i].isbranch ? next_pc[i] : rob_commit_i[i].pc + 4;
+        correct_info_o[i].target_pc = predict_info[i].isbranch ? next_pc[i] : 
+                                      rob_commit_i[i].pc + 4;
 
         correct_info_o[i].history = predict_info[i].history;
         correct_info_o[i].scnt = predict_info[i].scnt;
