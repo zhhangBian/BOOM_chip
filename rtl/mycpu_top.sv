@@ -83,6 +83,8 @@ parameter int CDB_COUNT = 2;
 parameter int WKUP_COUNT = 2;
 
 logic flush; // wire, 全局 flush 信号
+logic stall;
+csr_t csr;
 
 /*============================== Branch Predicting ==============================*/
 
@@ -430,7 +432,7 @@ commit # () commit(
     .rst_n(rst_n),
     .flush(flush),
     // 给Dcache使用
-    .stall_o(),
+    .stall_o(stall),
 
     .rob_commit_valid_i(),
     .rob_commit_i(),
@@ -458,7 +460,7 @@ commit # () commit(
 
     .correct_info_o(),
     
-    .csr_o(),
+    .csr_o(csr),
     .tlb_write_req_o(),
 
     .commit_icache_req_o(),
@@ -474,9 +476,9 @@ dcache # () dcache(
     .clk(clk),
     .rst_n(rst_n),
     .flush_i(flush),
-    .stall_i(),
+    .stall_i(stall),
 
-    .csr_i(),
+    .csr_i(csr),
     .cpu_lsu_receiver(),
     .lsu_cpu_sender(),
 
@@ -497,7 +499,6 @@ axi_crossbar # (
 ) axi_crossbar_2x1_inst (
     .clk(aclk),
     .rst(!aresetn), // TODO: recheck
-
     /*
      * AXI slave interfaces
      */
