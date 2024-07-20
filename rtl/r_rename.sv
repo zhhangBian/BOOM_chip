@@ -17,7 +17,6 @@ module r_rename #(
     // 是否有指令退休
     input  logic [1 :0] c_retire_i,
     input  retire_pkg_t [1 :0] c_retire_info_i,
-    output c_flush_ack_o
     // …… TODO: C级其他信号
 );
 

@@ -16,7 +16,7 @@ module p_dispatch #(
     handshake_if.sender              p_alu_sender_1,
     handshake_if.sender              p_lsu_sender,
     handshake_if.sender              p_mdu_sender,
-)
+);
 
 // handshake signal
 logic  lsu_ready, mdu_ready;

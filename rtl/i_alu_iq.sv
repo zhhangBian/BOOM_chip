@@ -84,7 +84,7 @@ logic [half_IQ_SIZE:0][$bits(IQ_SIZE):0]    aging_select_1;
 logic [$bits(IQ_SIZE):0]                    aging_select;
 
 always_comb begin
-    aging_select_1[0] = ({entry_ready[1], aging_q[1]} > {entry_ready[1], aging_q[0]}) ? 1 : 0;
+    aging_select_1[0] = ({entry_ready[1], aging_q[1]} > {entry_ready[0], aging_q[0]}) ? 1 : 0;
     aging_select_1[1] = ({entry_ready[3], aging_q[3]} > {entry_ready[2], aging_q[2]}) ? 3 : 2;
     // 根据aging选出发射的指令
     aging_select = ({entry_ready[aging_select_1[0]], aging_q[aging_select_1[0]]} >
