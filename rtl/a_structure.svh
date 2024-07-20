@@ -175,6 +175,11 @@ typedef struct packed {
     logic execute_exception;  //为1表示访存级有异常，当fetch级有异常这个值是什么都行
     logic [5:0] exc_code;     //fetch级有异常则存fetch级别的异常码，elif访存异常存访存异常码，如果都没有异常则存什么都行
     logic [31:0] badva;       //如果访存出现例外把地址存到这里
+    logic syscall_inst;
+    logic break_inst;
+    logic decode_err;
+    logic priv_inst;
+    //上面这四个之前忘记加了，来自译码级，要求指令无效时为0（？ TODO)
 } exc_info_t;
 
 /**********************dispatch  to  execute  pkg******************/

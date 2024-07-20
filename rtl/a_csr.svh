@@ -126,12 +126,13 @@ typedef struct packed {
 `define _ECFG_LIE2      12:11
 //ESTAT
 `define _ESTAT_IS        12:0
+`define _ESTAT_SOFT_IS   1:0
 `define _ESTAT_ECODE     21:16
 `define _ESTAT_ESUBCODE  30:22
 //EENTRY
 `define _EENTRY_VA       31:6
 //TLBIDX
-`define _TLBIDX_INDEX     $clog2(`_WIRED_PARAM_TLB_CNT)-1:0
+`define _TLBIDX_INDEX     $clog2(64)-1:0 //64是tlb表项，最好用宏
 `define _TLBIDX_PS        29:24
 `define _TLBIDX_NE        31
 //TLBEHI
