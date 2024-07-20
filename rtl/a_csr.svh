@@ -132,7 +132,7 @@ typedef struct packed {
 //EENTRY
 `define _EENTRY_VA       31:6
 //TLBIDX
-`define _TLBIDX_INDEX     $clog2(TLB_ENTRY_NUM)-1:0 //64是tlb表项，最好用宏
+`define _TLBIDX_INDEX     $clog2(`_TLB_ENTRY_NUM)-1:0 //64是tlb表项，最好用宏
 `define _TLBIDX_PS        29:24
 `define _TLBIDX_NE        31
 //TLBEHI
@@ -189,6 +189,6 @@ typedef struct packed {
 `define _ESUBCODE_ADEF  9'h0
 `define _ESUBCODE_ADEM  9'h1
 
-`define TLB_ENTRY_NUM   64
+`define _TLB_ENTRY_NUM   64
 
 `endif
