@@ -296,4 +296,9 @@ typedef struct packed {
     logic   [31:0]  data;
 } axi_commit_resp_t;
 
+typedef struct packed {
+    logic   [31:0]  addr;
+    logic   [2:0]   cache_op;
+} commit_icache_req_t;
+
 `endif

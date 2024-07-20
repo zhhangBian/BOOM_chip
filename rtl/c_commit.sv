@@ -78,7 +78,15 @@ module commit #(
     output  word_t  [1:0]   commit_arf_areg_o,
 
     // commit与BPU的接口
-    output  correct_info_t [1:0]  commit_bpu_correct_info_o
+    output  correct_info_t [1:0]    commit_bpu_correct_info_o,
+
+    // commit与ICache的握手信号
+    output  commit_icache_req_t     commit_icache_req_o,
+    output  logic   commit_icache_ready_o,
+    output  logic   commit_icache_valid_o,
+    input   logic   icache_commit_ready_i,
+    input   logic   icache_commit_valid_i
+    // ICache不用返回实际的数据
 );
 
 // ------------------------------------------------------------------
@@ -87,6 +95,7 @@ module commit #(
 logic stall, stall_q;
 assign stall_o = stall;
 assign commit_ready_o = ~stall;
+assign commit_icache_ready_o = commit_ready_o;
 
 assign commit_cache_ready = '1;
 
@@ -513,7 +522,7 @@ always_comb begin
         `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
         `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
         `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
-        default: 
+        default:
     endcase
 
     case (csr_type)
@@ -560,9 +569,9 @@ end
 task write_csr();
     input  [31:0] write_data;
     input  [13:0] csr_num;
-    begin  
+    begin
         TODO
-    end  
+    end
 endtask
 
 // 对csr_q的信息维护（TODO 需要和中断、tlb维护指令交互）
@@ -645,6 +654,7 @@ logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr, cache_block_len;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr, axi_block_len;
 
 logic axi_wait;
+logic icache_wait;
 
 logic [31:0] cache_dirty_addr;
 
@@ -669,32 +679,48 @@ always_comb begin
 
         // Cache维护指令
         if(is_cache_fix[0]) begin
-            commit_cache_valid = '1;
-            // 对于Cache维护指令，将维护地址视作目的地址
-            // Cache采用直接映射，故直接赋值即可
-            commit_cache_req.addr         = lsu_info[0].paddr;
-            commit_cache_req.way_choose   = get_way_choose(commit_cache_req.addr[0]); // 直接地址映射模式
-            commit_cache_req.tag_data     = '0;
-            commit_cache_req.tag_we       = '0;
-            commit_cache_req.data_data    = '0;
-            commit_cache_req.strb         = '0;
-            commit_cache_req.fetch_sb     = '0;
+            // 发送Icache请求
+            if(cache_tar == 0) begin
+                // 配置Icache请求
+                // TODO：这里也是PADDR吗
+                commit_icache_req_o.addr = lsu_info[0].paddr;
+                commit_icache_req_o.cache_op = cache_op;
 
-            if(cache_op == 0) begin
-                commit_cache_req.tag_data = '0;
-                commit_cache_req.tag_we   = '1;
+                if(~icache_commit_ready_i && ~icache_wait) begin
+                    commit_icache_valid_o = '1;
+                end
+                else begin
+                    commit_icache_valid_o = '0;
+                end
             end
-            else if(cache_op == 1) begin
-                // 将Cache无效化，先读出对应的tag
-                commit_cache_req.tag_data  = '0;
-                commit_cache_req.tag_we    = '1;
-            end
-            else if(cache_op == 2 && cache_commit_hit) begin
-                // 将Cache无效化，先读出对应的tag
-                commit_cache_req.way_choose   = '0;
-                commit_cache_req.way_choose  |= lsu_info[0].tag_hit;
+            else if(cache_tar == 1) begin
+                commit_cache_valid = '1;
+                // 对于Cache维护指令，将维护地址视作目的地址
+                // Cache采用直接映射，故直接赋值即可
+                commit_cache_req.addr         = lsu_info[0].paddr;
+                commit_cache_req.way_choose   = get_way_choose(commit_cache_req.addr[0]); // 直接地址映射模式
                 commit_cache_req.tag_data     = '0;
-                commit_cache_req.tag_we       = '1;
+                commit_cache_req.tag_we       = '0;
+                commit_cache_req.data_data    = '0;
+                commit_cache_req.strb         = '0;
+                commit_cache_req.fetch_sb     = '0;
+
+                if(cache_op == 0) begin
+                    commit_cache_req.tag_data = '0;
+                    commit_cache_req.tag_we   = '1;
+                end
+                else if(cache_op == 1) begin
+                    // 将Cache无效化，先读出对应的tag
+                    commit_cache_req.tag_data  = '0;
+                    commit_cache_req.tag_we    = '1;
+                end
+                else if(cache_op == 2 && cache_commit_hit) begin
+                    // 将Cache无效化，先读出对应的tag
+                    commit_cache_req.way_choose   = '0;
+                    commit_cache_req.way_choose  |= lsu_info[0].tag_hit;
+                    commit_cache_req.tag_data     = '0;
+                    commit_cache_req.tag_we       = '1;
+                end
             end
         end
 
@@ -763,7 +789,6 @@ always_comb begin
         if(axi_commit_valid_i) begin
             stall              = '0;
             commit_axi_valid_o = '0;
-            // TODO 写寄存器
         end
     end
     // 与Cache进行读写操作
@@ -919,37 +944,49 @@ always_ff @(posedge clk) begin
 
             // Cache维护指令
             if(is_cache_fix[0]) begin
-                if(cache_op == 0) begin
-                    ls_fsm_q <= S_NORMAL;
-                end
-                else if(cache_op == 1) begin
-                    if (lsu_info[0].cacop_dirty) begin
-                        ls_fsm_q <= S_CACHE_RD;
-                        axi_return_back <= '1;
+                if(cache_tar == 0) begin
+                    if(icache_commit_valid_i) begin
+                        ls_fsm_q <= S_NORMAL;
+                        icache_wait <= '0;
+                    end
 
-                        cache_block_ptr <= 0;
-                        cache_block_len <= CACHE_BLOCK_NUM;
-                        cache_block_data <= '0;
+                    if(icache_commit_ready_i) begin
+                        icache_wait <= '1;
+                    end
+                end
+                else if(cache_tar == 1) begin
+                    if(cache_op == 0) begin
+                        ls_fsm_q <= S_NORMAL;
+                    end
+                    else if(cache_op == 1) begin
+                        if (lsu_info[0].cacop_dirty) begin
+                            ls_fsm_q <= S_CACHE_RD;
+                            axi_return_back <= '1;
+
+                            cache_block_ptr <= 0;
+                            cache_block_len <= CACHE_BLOCK_NUM;
+                            cache_block_data <= '0;
+                        end
+                        else begin
+                            ls_fsm_q <= S_NORMAL;
+                        end
+                    end
+                    else if(cache_op == 2) begin
+                        if (lsu_info[0].hit_dirty) begin
+                            ls_fsm_q <= S_CACHE_RD;
+                            axi_return_back <= '1;
+
+                            cache_block_ptr <= 0;
+                            cache_block_len <= CACHE_BLOCK_NUM;
+                            cache_block_data <= '0;
+                        end
+                        else begin
+                            ls_fsm_q <= S_NORMAL;
+                        end
                     end
                     else begin
                         ls_fsm_q <= S_NORMAL;
                     end
-                end
-                else if(cache_op == 2) begin
-                    if (lsu_info[0].hit_dirty) begin
-                        ls_fsm_q <= S_CACHE_RD;
-                        axi_return_back <= '1;
-
-                        cache_block_ptr <= 0;
-                        cache_block_len <= CACHE_BLOCK_NUM;
-                        cache_block_data <= '0;
-                    end
-                    else begin
-                        ls_fsm_q <= S_NORMAL;
-                    end
-                end
-                else begin
-                    ls_fsm_q <= S_NORMAL;
                 end
 
                 cache_code_q <= cache_code;
