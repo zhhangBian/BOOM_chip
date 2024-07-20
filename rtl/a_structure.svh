@@ -108,6 +108,8 @@ typedef struct packed {
     logic   first_commit;
     lsu_iq_pkg_t lsu_info;
 
+    logic   is_ll;
+    logic   is_sc;
     logic   is_uncached;
     logic   [5:0]   exc_code;   // 位宽随便定的，之后调整
     logic   is_csr_fix;

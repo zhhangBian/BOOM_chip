@@ -142,6 +142,11 @@ always_comb begin
     end
 
 
+    if(is_csr_fix) begin
+        commit_arf_we_o[0]   = commit_csr_valid_o;
+        commit_arf_data_o[0] = commit_csr_data_o;
+        commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
+    end
     if(ls_fsm_q == S_NORMAL) begin
         commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
@@ -160,7 +165,6 @@ end
 
 // ------------------------------------------------------------------
 // 代表相应的指令属性
-logic [1:0] is_exc;
 logic [1:0] is_lsu_write, is_lsu_read, is_lsu;
 logic [1:0] is_uncached;    // 指令为Uncached指令
 logic [1:0] is_csr_fix;     // 指令为CSR特权指令
@@ -168,6 +172,8 @@ logic [1:0] is_cache_fix;   // 指令为Cache维护指令
 logic [1:0] is_tlb_fix;     // 指令为TLB维护指令
 logic [1:0] cache_commit_hit; // 此周期输入到cache的地址没有命中
 logic [1:0] cache_commit_dirty;
+logic [1:0] is_ll;
+logic [1:0] is_sc;
 
 // 与DCache的一级流水交互
 lsu_iq_pkg_t [1:0] lsu_info;
@@ -198,6 +204,9 @@ for(integer i = 0; i < 2; i += 1) begin
 
         cache_commit_hit[i] = lsu_info[i].hit;
         cache_commit_dirty[i] = lsu_info[i].dirty;
+
+        is_ll[i]        = rob_commit_i[i].is_ll;
+        is_sc[i]        = rob_commit_i[i].is_sc;
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -792,6 +801,9 @@ logic icache_wait;
 
 logic [31:0] cache_dirty_addr;
 
+logic ll_bit;
+assign ll_bit = csr_q.llbctl;
+
 // Cache的特性是本周期发出请求，下周期才能得到回应
 sb_ebtry_t sb_entry, sb_entry_q;
 assign sb_entry = cache_commit_resp_i.sb_entry;
@@ -869,14 +881,16 @@ always_comb begin
         end
 
         else if(cache_commit_hit) begin
-            // 配置Cache的相应信息
-            commit_cache_valid = '1;
-            commit_cache_req.addr         = lsu_info[0].paddr;
-            commit_cache_req.way_choose   = lsu_info[0].tag_hit;
-            commit_cache_req.tag_data     = '0;
-            commit_cache_req.data_data    = lsu_info[0].wdata;
-            commit_cache_req.strb         = lsu_info[0].strb;
-            commit_cache_req.fetch_sb     = |lsu_info[0].strb;
+            if((is_sc && ll_bit) || ~is_sc) begin
+                // 配置Cache的相应信息
+                commit_cache_valid = '1;
+                commit_cache_req.addr         = lsu_info[0].paddr;
+                commit_cache_req.way_choose   = lsu_info[0].tag_hit;
+                commit_cache_req.tag_data     = '0;
+                commit_cache_req.data_data    = lsu_info[0].wdata;
+                commit_cache_req.strb         = lsu_info[0].strb;
+                commit_cache_req.fetch_sb     = |lsu_info[0].strb;
+            end
         end
 
         else begin
