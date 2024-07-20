@@ -536,6 +536,139 @@ always_comb begin
     endcase
 end
 
+//定义写csr寄存器的行为
+`define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
+
+task write_csr();
+    input  [31:0] write_data;
+    input  [13:0] csr_num;
+    begin
+        case (csr_num)
+            `_CSR_CRMD: begin
+                write_csr_mask(crmd, `_CRMD_PLV);
+                write_csr_mask(crmd, `_CRMD_IE);
+                write_csr_mask(crmd, `_CRMD_DA);
+                write_csr_mask(crmd, `_CRMD_PG);
+                write_csr_mask(crmd, `_CRMD_DATF);
+                write_csr_mask(crmd, `_CRMD_DATM);
+            end
+            `_CSR_PRMD: begin
+                write_csr_mask(prmd, `_PRMD_PIE);
+                write_csr_mask(prmd, `_PRMD_PPLV);
+            end
+            `_CSR_EUEN: begin
+                write_csr_mask(euen, `_EUEN_FPE);
+            end
+            `_CSR_ECFG: begin
+                write_csr_mask(ecfg, `_ECFG_LIE1);
+                write_csr_mask(ecfg, `_ECFG_LIE2);
+            end
+            `_CSR_ESTAT: begin
+                write_csr_mask(estat, `_ESTAT_SOFT_IS);
+            end
+            `_CSR_ERA: begin
+                write_csr_mask(era, 31:0);
+            end
+            `_CSR_BADV: begin
+                write_csr_mask(badv, 31:0);
+            end
+            `_CSR_EENTRY: begin
+                write_csr_mask(eentry, `_EENTRY_VA);
+            end
+            `_CSR_CPUID: begin
+                //do nothing
+            end
+            `_CSR_SAVE0: begin
+                write_csr_mask(save0, 31:0);
+            end
+            `_CSR_SAVE1: begin
+                write_csr_mask(save1, 31:0);
+            end
+            `_CSR_SAVE2: begin
+                write_csr_mask(save2, 31:0);
+            end
+            `_CSR_SAVE3: begin
+                write_csr_mask(save3, 31:0);
+            end
+            `_CSR_LLBCTL: begin
+                if (write_data[`_LLBCT_WCLLB]) begin
+                    csr.llbit = 0;
+                end
+                write_csr_mask(llbctl, `_LLBCT_KLO);
+            end
+            `_CSR_TLBIDX: begin
+                write_csr_mask(tlbidx, `_TLBIDX_INDEX);
+                write_csr_mask(tlbidx, `_TLBIDX_PS);
+                write_csr_mask(tlbidx, `_TLBIDX_NE);
+            end
+            `_CSR_TLBEHI: begin
+                write_csr_mask(tlbehi, `_TLBEHI_VPPN);
+            end
+            `_CSR_TLBELO0: begin
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_V);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_D);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_PLV);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_MAT);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_G);
+                write_csr_mask(tlbelo0, `_TLBELO_TLB_PPN);
+            end
+            `_CSR_TLBELO1: begin
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_V);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_D);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_PLV);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_MAT);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_G);
+                write_csr_mask(tlbelo1, `_TLBELO_TLB_PPN);
+            end
+            `_CSR_ASID: begin
+                write_csr_mask(asid, `_ASID);
+            end
+            `_CSR_PGDL: begin
+                write_csr_mask(pgdl, `_PGD_BASE);
+            end
+            `_CSR_PGDH: begin
+                write_csr_mask(pgdh, `_PGD_BASE);
+            end
+            `_CSR_PGD: begin
+                //do nothing
+            end
+            `_CSR_TLBRENTRY: begin
+                write_csr_mask(tlbrentry, `_TLBRENTRY_PA);
+            end
+            `_CSR_DMW0: begin
+                write_csr_mask(dmw0, `_DMW_PLV0);
+                write_csr_mask(dmw0, `_DMW_PLV3);
+                write_csr_mask(dmw0, `_DMW_MAT);
+                write_csr_mask(dmw0, `_DMW_PSEG);
+                write_csr_mask(dmw0, `_DMW_VSEG);
+            end
+            `_CSR_DMW1: begin
+                write_csr_mask(dmw1, `_DMW_PLV1);
+                write_csr_mask(dmw1, `_DMW_PLV3);
+                write_csr_mask(dmw1, `_DMW_MAT);
+                write_csr_mask(dmw1, `_DMW_PSEG);
+                write_csr_mask(dmw1, `_DMW_VSEG);
+            end
+            `_CSR_TID: begin
+                write_csr_mask(tid, 31:0);
+            end
+            `_CSR_TCFG: begin
+                write_csr_mask(tcfg, `_TCFG_EN);
+                write_csr_mask(tcfg, `_TCFG_PERIODIC);
+                write_csr_mask(tcfg, `_TCFG_INITVAL);
+            end
+            `_CSR_TVAL: begin
+                //do nothing
+            end
+            `_CSR_TICLR: begin
+                if (write_data[`_TICLR_CLR]) begin
+                    //清除中断标记 TODO
+                end
+            end
+            default: //do nothing
+        endcase
+    end
+endtask
 
 //当没有例外的时候，针对单条需要刷流水级的csr寄存器值的修改
 //必须包括csr访问指令、tlb维护指令、ertn指令、cpu中断采样、cpu更改tval和置定时器中断
@@ -557,13 +690,23 @@ always_comb begin
     endcase
 end
 
-task write_csr();
-    input  [31:0] write_data;
-    input  [13:0] csr_num;
-    begin  
-        TODO
-    end  
-endtask
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ------------------------------------------------------------------
+// TLB维护指令
+// 不管理TLB的映射内容，只管理TLB的维护内容
+// 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
+tlb_entry_t [63 : 0] tlb_entrys;
+
+
+always_comb begin
+    TODO :把csr修改的三大类情况合在一起
+    else begin
+         比如说 csr_update.estat[`_ESTAT_ECODE] = csr_exception_update[`_ESTAT_ECODE;]
+    end
+end
 
 // 对csr_q的信息维护（TODO 需要和中断、tlb维护指令交互）
 always_ff @(posedge clk) begin
@@ -577,17 +720,6 @@ always_ff @(posedge clk) begin
         csr_q <= csr;
     end
 end
-
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-// ------------------------------------------------------------------
-// TLB维护指令
-// 不管理TLB的映射内容，只管理TLB的维护内容
-// 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
-tlb_entry_t [63 : 0] tlb_entrys;
-
-
-
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
