@@ -552,7 +552,7 @@ always_comb begin
         `_CSR_TCFG:     commit_csr_data_o  |= csr_q.tcfg;
         `_CSR_TVAL:     commit_csr_data_o  |= csr_q.tval;//读定时器
         `_CSR_TICLR:    commit_csr_data_o  |= csr_q.ticlr;
-        `_CSR_LLBCTL:   commit_csr_data_o  |= {csr_q.llbctl[31:1], llbit};//读llbit
+        `_CSR_LLBCTL:   commit_csr_data_o  |= {csr_q.llbctl[31:1], csr_q.llbit};//读llbit
         `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
         `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
         `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
