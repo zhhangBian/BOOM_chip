@@ -82,11 +82,12 @@ module commit #(
 
     // commit与ICache的握手信号
     output  commit_icache_req_t     commit_icache_req_o,
+    // ICache返回TLB异常
+    input   fetch_commit_resp_t     icache_commit_resp_i,
     output  logic   commit_icache_ready_o,
     output  logic   commit_icache_valid_o,
     input   logic   icache_commit_ready_i,
     input   logic   icache_commit_valid_i
-    // ICache不用返回实际的数据
 );
 
 // ------------------------------------------------------------------
@@ -177,6 +178,9 @@ assign commit_cache_req_o = commit_cache_req;
 commit_axi_req_t commit_axi_req_q, commit_axi_req;
 assign commit_axi_req_o = commit_axi_req;
 
+commit_icache_req_t commit_icache_req_q, commit_icache_req;
+assign commit_icache_req_o = commit_icache_req;
+
 // 判断指令类型
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
@@ -207,9 +211,15 @@ always_comb begin
     else if(is_dbar || is_ibar) begin
         flush = '1;
     end
+    else if((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) begin
+        flush = '1;
+    end
     else if(|is_lsu) begin
         if(ls_fsm_q == S_NORMAL) begin
             if(!cache_commit_hit) begin
+                flush = '1;
+            end
+            else if(is_uncached[0]) begin
                 flush = '1;
             end
             else begin
@@ -751,7 +761,9 @@ typedef enum logic[4:0] {
     // 写入Cache
     S_CACHE,
     // UnCached情况下直接发起AXI请求
-    S_UNCACHED
+    S_UNCACHED,
+    // 等待ICache请求完成
+    S_ICACHE
 } ls_fsm_s;
 // 如果是is_uncached指令，直接发起AXI请求
 // 状态机流程：
@@ -788,9 +800,8 @@ always_comb begin
     commit_cache_req = commit_cache_req_q;
     commit_cache_req.tag_we      = '0;
     commit_cache_req.fetch_sb    = '0;
-    commit_axi_req = commit_axi_req_q;
 
-    commit_axi_req_o = '0;
+    commit_axi_req = commit_axi_req_q;
     commit_axi_valid_o = '0;
     commit_axi_ready_o = '0;
 
@@ -802,9 +813,8 @@ always_comb begin
             // 发送Icache请求
             if(cache_tar == 0) begin
                 // 配置Icache请求
-                // TODO：这里也是PADDR吗
-                commit_icache_req_o.addr = lsu_info[0].paddr;
-                commit_icache_req_o.cache_op = cache_op;
+                commit_icache_req.addr = lsu_info[0].paddr;
+                commit_icache_req.cache_op = cache_op;
 
                 if(~icache_commit_ready_i && ~icache_wait) begin
                     commit_icache_valid_o = '1;
@@ -813,6 +823,7 @@ always_comb begin
                     commit_icache_valid_o = '0;
                 end
             end
+
             else if(cache_tar == 1) begin
                 commit_cache_valid = '1;
                 // 对于Cache维护指令，将维护地址视作目的地址
@@ -904,6 +915,7 @@ always_comb begin
             end
         end
     end
+
     else if(ls_fsm_q == S_UNCACHED) begin
         // UnCached只需要发起一次请求即可
         if(axi_commit_valid_i) begin
@@ -911,6 +923,7 @@ always_comb begin
             commit_axi_valid_o = '0;
         end
     end
+
     // 与Cache进行读写操作
     else if (ls_fsm_q == S_CACHE) begin
         // Cache接受当前的读写请求
@@ -1032,6 +1045,15 @@ always_comb begin
         end
     end
 
+    else if(ls_fsm_q == S_ICACHE) begin
+        if(~icache_wait) begin
+            commit_icache_valid_o = '1;
+        end
+        else begin
+            commit_icache_valid_o = '0;
+        end
+    end
+
     // 对于不应该出现的异常情况
     else begin
         stall = '0;
@@ -1066,11 +1088,12 @@ always_ff @(posedge clk) begin
             if(is_cache_fix[0]) begin
                 if(cache_tar == 0) begin
                     if(icache_commit_valid_i) begin
-                        ls_fsm_q <= S_NORMAL;
+                        ls_fsm_q <= S_ICACHE;
                         icache_wait <= '0;
                     end
 
                     if(icache_commit_ready_i) begin
+                        ls_fsm_q <= S_ICACHE;
                         icache_wait <= '1;
                     end
                 end
@@ -1233,6 +1256,18 @@ always_ff @(posedge clk) begin
                 else begin
                     axi_block_ptr <= axi_block_ptr + 1;
                 end
+            end
+        end
+
+        else if(ls_fsm_q == S_ICACHE) begin
+            // 完成了ICache请求
+            if(icache_commit_valid_i) begin
+                ls_fsm_q <= S_NORMAL;
+                icache_wait <= '0;
+            end
+
+            if(icache_commit_ready_i) begin
+                icache_wait <= '1;
             end
         end
 
