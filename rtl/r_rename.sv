@@ -29,7 +29,7 @@ rob_id_t  rob_ptr1_q, rob_ptr2_q;
 
 
 always_ff @(posedge clk) begin
-    if (!rst_n || c_flush_i) begin
+    if (!rst_n || c_flush_i) begin // 如果flush,则全都清空 ok!
         rob_cnt_q       <= '0;
         rob_ptr1_q      <= '0;
         rob_ptr2_q      <=  1;
@@ -49,8 +49,10 @@ always_comb begin
     rob_available = (rob_cnt_q <= 60);
 end
 
-assign d_r_receiver.ready = rob_available_q & !c_flush_i & r_p_sender.ready;
+assign d_r_receiver.ready = rob_available_q & !c_flush_i & r_p_sender.ready; 
+// 和前模块握手的ready信号当且仅当rob能继续进指令，且非flush，且后模块也ready
 assign r_p_sender.valid   = '1;
+// 始终允许向后模块发送指令，区分指令有效仅依靠于r_valid
 
 // rat entry
 typedef struct packed {
@@ -72,7 +74,7 @@ assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}} & {d_r_receiver.data.
 rat_entry_t  [3 :0] cr_result;
 rat_entry_t  [1 :0] cw_result; 
 rat_entry_t  [1 :0] c_new;
-arf_id_t       [1 :0] c_warid;
+arf_id_t     [1 :0] c_warid;
 logic        [1 :0] c_we;
 
 assign r_rarid = d_r_receiver.data.arftable.r_arfid;
@@ -169,7 +171,7 @@ assign r_p_sender.data = r_p_pkg_o;
 logic   [3 : 0]  r_p_arfdata_valid;
 for (genvar i = 0; i < 4; i++) begin
     r_p_arfdata_valid[i] = '0;
-    if (r_rename_result[i].check == cr_result[i].check) begin
+    if (r_rename_result[i] == cr_result[i]) begin
         r_p_arfdata_valid[i] |= '1;
     end
 end
@@ -201,7 +203,7 @@ always_comb begin
     r_p_pkg_temp.check     = {r_rename_new[1].check, r_rename_new[0].check};
     r_p_pkg_temp.use_imm   = d_r_pkg_i.use_imm;
     r_p_pkg_temp.data_imm  = d_r_pkg_i.data_imm;
-    r_p_pkg_temp.data_valid= ~d_r_pkg_i.reg_need | r_p_arfdata_valid;
+    r_p_pkg_temp.data_valid= (~d_r_pkg_i.reg_need) | r_p_arfdata_valid;
 end
 
 

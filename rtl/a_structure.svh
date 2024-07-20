@@ -191,6 +191,7 @@ typedef struct packed {
     rob_id_t [3 :0]       preg; // 四个源操作数对应的preg id
     logic    [3 :0]       data_valid; //四个源操作数是否已经有效
     logic    [1 :0]       inst_choose;//选择送进来的哪条指令[1:0]分别对应传进来的两条指令
+    logic    [1 :0]       r_valid; // 指令是否有效
     // 控制信号，包括：
     // alu计算类型，jump类型
     // mdu计算类型

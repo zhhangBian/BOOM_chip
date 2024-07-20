@@ -55,7 +55,7 @@ always_comb begin
     p_reg_id_i  = '0;
     p_valid_i   = '0;
 
-    for(genvar i = 0; i < DISPATCH_CNT; i += 1) begin
+    for(integer i = 0; i < DISPATCH_CNT; i += 1) begin
         if(choose[i]) begin
             p_di_i      |= p_di_c[i];
             p_data_i    |= p_data_c[i];
@@ -102,14 +102,17 @@ always_ff @(posedge clk) begin
             aging_q[i] <= '0;
         end
         else begin
-            if(entry_ready[i]) begin
-                aging_q[i] <= (aging_q[i] == 0) ? 1 :
-                              (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
-                              aging_q[i] : (aging_q[i] << 1);
-            end
-            else begin
-                aging_q[i] <= '0;
-            end
+            aging_q[i] <= (aging_q[i] == 0) ? 1 :
+                          (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
+                          aging_q[i] : (aging_q[i] << 1);
+            // if(entry_ready[i]) begin
+            //     aging_q[i] <= (aging_q[i] == 0) ? 1 :
+            //                   (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
+            //                   aging_q[i] : (aging_q[i] << 1);
+            // end
+            // else begin
+            //     aging_q[i] <= '0;
+            // end
         end
     end
 end
@@ -139,7 +142,7 @@ end
 
 always_comb begin
     entry_init[i] = '0;
-    for(genvar  i = 0; i < IQ_SIZE; i += 1) begin
+    for(integer  i = 0; i < IQ_SIZE; i += 1) begin
         if(entry_empty_q[i]) begin
             entry_init[i] = 1;
             break;
@@ -196,7 +199,7 @@ word_t  [IQ_SIZE - 1:0][1:0]    entry_data;
 decode_info_t [IQ_SIZE - 1:0]   entry_di;
 logic   [IQ_SIZE - 1:0][REG_COUNT - 1:0][WKUP_COUNT - 1:0] wkup_hit_q;
 
-for(genvar i = 0; i < IQ_SIZE; i += 1) begin
+for(genvar i = 0; i < IQ_SIZE; i += 1) begin : gen_iq_entry
     iq_entry # (
         .REG_COUNT(REG_COUNT),
         .CDB_COUNT(CDB_COUNT),
@@ -248,7 +251,7 @@ always_comb begin
     wkup_valid_o        = '0,
     wkup_reg_id         = '0;
 
-    for(genvar i = 0; i < IQ_SIZE; i += 1) begin
+    for(integer i = 0; i < IQ_SIZE; i += 1) begin
         // 如果发射对应指令
         if(entry_select[i]) begin
             select_di       |= entry_di[i];
