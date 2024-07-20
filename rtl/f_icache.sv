@@ -247,6 +247,8 @@ always_ff @(posedge clk) begin
 end
 // TODO icache_decoder_sender.valid
 // TODO fetch_icache_receiver.ready
+assign icache_decoder_sender.data  = f_d_pkg;
+assign icache_decoder_sender.valid = !stall & |f_d_pkg.mask ;
 assign fetch_icache_receiver.ready = !stall;
 
 // fsm , NORMAL -> REFILL(ONLY AXI -> SRAM) -> FINISH -> NORMAL
@@ -262,7 +264,6 @@ typedef enum logic [4:0] {
     F_UNCACHE_S, // uncache握手成功
     F_MISS,      // 缺失
     F_MISS_S,    // miss握手成功
-    F_REFILL,    // 开始重填  
 } fsm_state;
 
 fsm_state fsm_cur, fsm_next;
