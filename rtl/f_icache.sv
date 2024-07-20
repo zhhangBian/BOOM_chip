@@ -205,7 +205,7 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         // 1端口
         .clk1(clk),
         .rst_n1(rst_n),
-        .addr1_i(real_addr[11 : DATA_ADDR_LOW]),
+        .addr1_i(refill_addr[11 : DATA_ADDR_LOW]),
         .en1_i('1),
         .we1_i(refill_we),
         .wdata1_i(refill_data),
@@ -310,6 +310,9 @@ always_comb begin
     commit_cache_req = '0;
     icache_cacop_flush_o = '0;
     icache_cacop_tlb_exc = '0;
+    addr_o          = '0;
+    addr_valid_o    = '0;
+    data_len_o      = '0;
     case(fsm_cur) 
         F_NORMAL:begin
             temp_data_block = '0;
@@ -341,7 +344,7 @@ always_comb begin
                 // TODO 请求地址和valid_o
                 addr_o    = paddr & 32'hffffffe0; // 块对齐，一个块8个字
                 addr_valid_o = '1;
-                addr_len_o   = req_num;
+                data_len_o   = req_num;
             end else if (uncache) begin
                 stall |= '1;
                 fsm_next = F_UNCACHE;
@@ -350,14 +353,14 @@ always_comb begin
                 // TODO 请求地址和valid_o，默认传入pc最后三位为0
                 addr_o    = b_f_pkg_q.mask[0] ? paddr : (paddr | 32'h00000004);
                 addr_valid_o = '1;
-                addr_len_o   = (b_f_pkg_q.mask == 2'b11) ? 2 : (|b_f_pkg_q.mask) ? 1 : 0;
+                data_len_o   = (b_f_pkg_q.mask == 2'b11) ? 2 : (|b_f_pkg_q.mask) ? 1 : 0;
             end
         end
         F_UNCACHE:begin
             // 如果axi握手成功，axi_resp_ready_i
             if (axi_resp_ready_i) begin
                 fsm_next = F_UNCACHE_S;
-                req_ptr  = '0;
+                // req_ptr  = '0;
                 temp_data_block = '0;
                 // TODO 关闭请求
                 addr_valid_o = '0;
@@ -376,7 +379,7 @@ always_comb begin
             else if (axi_data_valid_i) begin
                 // TODO data in
                 temp_data_block[req_ptr[0]] = axi_data_i;
-                req_ptr  = req_ptr + 1;
+                req_ptr  = req_ptr_q + 1;
             end
         end
         F_MISS:begin
@@ -404,8 +407,8 @@ always_comb begin
                 // TODO data in
                 temp_data_block[req_ptr[0]] = axi_data_i;
                 // refill TODO
-                req_ptr = req_ptr + 1;
-                if (req_ptr[2:0] == b_f_pkg_q.pc[4:2] + 'd2) begin
+                req_ptr = req_ptr_q + 1;
+                if (!req_ptr[0] & req_ptr[2:0] == b_f_pkg_q.pc[4:2] + 'd2) begin
                     insts = temp_data_block;
                 end
                 if (!req_ptr[0]) begin

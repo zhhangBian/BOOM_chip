@@ -84,6 +84,8 @@ module commit #(
     output  commit_icache_req_t     commit_icache_req_o,
     // ICache返回TLB异常
     input   tlb_exception_t         icache_commit_tlb_exp_i,
+    // 2'b01 tlb_exc, 2'b10 tag_miss, other normal
+    input   logic [1:0]             icache_commit_tlb_miss_i,
     output  logic   commit_icache_ready_o,
     output  logic   commit_icache_valid_o,
     input   logic   icache_commit_ready_i,
