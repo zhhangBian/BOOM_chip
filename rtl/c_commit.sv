@@ -83,7 +83,7 @@ module commit #(
     // commit与ICache的握手信号
     output  commit_icache_req_t     commit_icache_req_o,
     // ICache返回TLB异常
-    input   fetch_commit_resp_t     icache_commit_resp_i,
+    input   tlb_exception_t         icache_commit_tlb_exp_i,
     output  logic   commit_icache_ready_o,
     output  logic   commit_icache_valid_o,
     input   logic   icache_commit_ready_i,

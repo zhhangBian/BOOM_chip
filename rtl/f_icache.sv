@@ -309,6 +309,7 @@ always_comb begin
     refill_tag_we   = '0;
     commit_cache_req = '0;
     icache_cacop_flush_o = '0;
+    icache_cacop_tlb_exc = '0;
     case(fsm_cur) 
         F_NORMAL:begin
             temp_data_block = '0;
@@ -322,6 +323,7 @@ always_comb begin
                         commit_cache_req.way_choose            = commit_icache_req.addr[0] ? 2'b10 : 2'b01;
                         commit_cache_req.tag_data              = '0;
                         commit_cache_req.tag_we                = '1;
+                        icache_cacop_flush_o                   = 2'b10;
                     end
                     2: begin
                         commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
@@ -421,7 +423,7 @@ always_comb begin
         F_CACOP: begin
             fsm_next = F_NORMAL;
             if (cache_commit_resp.tlb_exception.ecode != '0) begin
-                icache_cacop_flush_o                   = 2'b01；
+                icache_cacop_flush_o                   = 2'b01;
                 icache_cacop_tlb_exc                   = cache_commit_resp.tlb_exception
             end else if (|cache_commit_resp.way_hit) begin
                 commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
