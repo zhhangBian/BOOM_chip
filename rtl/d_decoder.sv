@@ -5,7 +5,7 @@ module decoder (
     handshake_if.receiver               receiver, // f_d_pkg_t type
     handshake_if.sender                 sender, // d_r_pkg_t type
 
-    output decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
+    output d_decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
 );
 
 // input && output

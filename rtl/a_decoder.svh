@@ -353,7 +353,7 @@ typedef struct packed {
     tlbwr_en_t      tlbwr_en;
     upd_fcc_t       upd_fcc; // 浮点，更新cf。
     wait_inst_t     wait_inst; // 仅在 IDLE 指令下置1.
-} decode_info_t;
+} d_decode_info_t;
 
 function logic [31:0] inst_to_data_imm (input logic[31:0] inst, input imm_type_t data_imm_type);
     logic [31:0] ret;
