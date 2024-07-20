@@ -1079,8 +1079,9 @@ end
 // 状态机转移的时序逻辑
 always_ff @(posedge clk) begin
     stall_q <= stall;
-    commit_cache_req_q <= commit_cache_req;
-    commit_axi_req_q <= commit_axi_req;
+    commit_cache_req_q  <= commit_cache_req;
+    commit_axi_req_q    <= commit_axi_req;
+    commit_icache_req_q <= commit_icache_req;
 
     if(~rst_n) begin
         ls_fsm_q <=  S_NORMSAL;
