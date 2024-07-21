@@ -24,54 +24,53 @@
 
 module basic_decoder (
     input logic[31:0]       ins_i, // input data include **ONLY ONE** 32-bit instructions.
-    output decode_info_t    decode_info_o // output data include **ONLY ONE** decode information
+    output d_decode_info_t    decode_info_o // output data include **ONLY ONE** decode information
 );
 always_comb begin
-    decode_info_o.decode_err = 1'b0; // 有修改
-    decode_info_o.ertn_inst = 1'd0;
-    decode_info_o.priv_inst = 1'd0;
-    decode_info_o.wait_inst = 1'd0;
-    decode_info_o.syscall_inst = 1'd0;
+    decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
+    decode_info_o.alu_grand_op = 2'd0;
+    decode_info_o.alu_inst = 1'd0;
+    decode_info_o.alu_op = 2'd0;
     decode_info_o.break_inst = 1'd0;
+    decode_info_o.cmp_type = 4'd0;
     decode_info_o.csr_op_type = `_CSR_CSRNONE;
-    decode_info_o.csr_rdcnt = 2'd0;
+    decode_info_o.dbar_inst = 1'd0;
+    decode_info_o.decode_err = 1'b0; // 有修改
+    decode_info_o.div_inst = 1'd0;
+    decode_info_o.ertn_inst = 1'd0;
+    decode_info_o.idle_inst = 1'd0;
+    decode_info_o.imm_type = `_IMM_U12;
+    decode_info_o.inst = ins_i;
+    decode_info_o.invtlb_en = 1'd0;
+    decode_info_o.ll_inst = 1'd0;
+    decode_info_o.lsu_inst = 1'd0;
+    decode_info_o.jump_inst = 1'd0;
+    decode_info_o.mem_cacop = 1'd0;
+    decode_info_o.mem_read = 1'd0;
+    decode_info_o.mem_type = 3'd0;
+    decode_info_o.mem_write = 1'd0;
+    decode_info_o.mul_inst = 1'd0;
+    decode_info_o.need_fa = 1'd0;
+    decode_info_o.priv_inst = 1'd0;
     decode_info_o.rdcnt_inst = 1'd0;
     decode_info_o.rdcntvl_inst = 1'd0;
     decode_info_o.rdcntvh_inst = 1'd0;
     decode_info_o.rdcntid_inst = 1'd0;
-    decode_info_o.tlbsrch_en = 1'd0;
-    decode_info_o.tlbrd_en = 1'd0;
-    decode_info_o.tlbwr_en = 1'd0;
-    decode_info_o.tlbfill_en = 1'd0;
-    decode_info_o.invtlb_en = 1'd0;
-    decode_info_o.bceqz = 1'd0;
-    decode_info_o.bcnez = 1'd0;
-    decode_info_o.inst = ins_i;
-    decode_info_o.alu_inst = 1'd0;
-    decode_info_o.mul_inst = 1'd0;
-    decode_info_o.div_inst = 1'd0;
-    decode_info_o.lsu_inst = 1'd0;
+    decode_info_o.refetch = 1'd0;
     decode_info_o.reg_type_r0 = `_REG_ZERO;
     decode_info_o.reg_type_r1 = `_REG_ZERO;
     decode_info_o.reg_type_w = `_REG_W_NONE;
-    decode_info_o.imm_type = `_IMM_U5;
-    decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
-    decode_info_o.slot0 = 1'd0;
-    decode_info_o.refetch = 1'd0;
-    decode_info_o.need_fa = 1'd0;
-    decode_info_o.alu_grand_op = 2'd0;
-    decode_info_o.alu_op = 2'd0;
-    decode_info_o.target_type = 1'd0;
-    decode_info_o.cmp_type = 4'd0;
-    decode_info_o.jump_inst = 1'd0;
-    decode_info_o.mem_type = 3'd0;
-    decode_info_o.mem_write = 1'd0;
-    decode_info_o.mem_read = 1'd0;
-    decode_info_o.mem_cacop = 1'd0;
-    decode_info_o.ll_inst = 1'd0;
     decode_info_o.sc_inst = 1'd0;
-    decode_info_o.dbar_inst = 1'd0;
+    decode_info_o.slot0 = 1'd0;
+    decode_info_o.syscall_inst = 1'd0;
+    decode_info_o.target_type = 1'd0;
+    decode_info_o.tlbfill_en = 1'd0;
+    decode_info_o.tlbrd_en = 1'd0;
+    decode_info_o.tlbsrch_en = 1'd0;
+    decode_info_o.tlbwr_en = 1'd0;
     /*
+    decode_info_o.bceqz = 1'd0;
+    decode_info_o.bcnez = 1'd0;
     decode_info_o.fpu_op = 4'd0;
     decode_info_o.fpu_mode = 1'd0;
     decode_info_o.rnd_mode = 4'd0;
@@ -626,7 +625,7 @@ always_comb begin
         // IDLE
         32'b00000110010010001???????????????: begin
             decode_info_o.priv_inst = 1'd1;
-            decode_info_o.wait_inst = 1'd1;
+            decode_info_o.idle_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -674,7 +673,6 @@ always_comb begin
         32'b0000000000000000011001??????????: begin
             decode_info_o.rdcnt_inst = 1'd1;
             decode_info_o.rdcntvh_inst = 1'd1;
-            decode_info_o.csr_rdcnt = `_RDCNT_VHIGH;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.slot0 = 1'd1;
