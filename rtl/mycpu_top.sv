@@ -234,6 +234,14 @@ logic [1:0][31:0] cdb_data;
 logic [1:0][5 :0] cdb_reg_id;
 logic [1:0]       cdb_valid;
 
+// TODO 增加receiver接口
+handshake_if #(.T(cdb_info_t)) fu_cdb  [3 : 0] ();
+handshake_if #(.T(cdb_info_t)) fu_fifo [3 : 0] ();
+cdb_info_t fu_cdb_data [3 : 0];
+for (integer i = 0; i < 4; i++) begin
+    assign fu_fifo[i].data = fu_cdb_data[i];
+end
+
 alu_iq #(
     .CDB_CONUT(),
     .WKUP_COUNT()
@@ -264,13 +272,11 @@ alu_iq #(
     .wkup_valid_o(),
 
     .result_o(),
-    .fifo_ready(),
-    .excute_valid_o()
+    .fifo_ready(fu_fifo[0].ready),
+    .excute_valid_o(fu_fifo[0].valid)
 );
 
-// TODO 增加receiver接口
-handshake_if #(.T(cdb_info_t)) fu_cdb [3 : 0] ();
-// handshake_if #(.T(cdb_info_t)) alu_0_cdb();
+
 
 fifo # (
     .BYPASS(0),
@@ -278,7 +284,7 @@ fifo # (
 ) alu_iq_fifo_0 (
     .clk(clk),
     .rst_n(rst_n),
-    .receiver(),
+    .receiver(fu_fifo[0].receiver),
     .sender(fu_cdb[0].sender)
 );
 
@@ -312,8 +318,8 @@ alu_iq #(
     .wkup_valid_o(),
 
     .result_o(),
-    .fifo_ready(),
-    .excute_valid_o()
+    .fifo_ready(fu_fifo[1].ready),
+    .excute_valid_o(fu_fifo[1].valid)
 );
 
 // handshake_if #(.T(cdb_info_t)) alu_1_cdb();
@@ -324,7 +330,7 @@ fifo # (
 ) alu_iq_fifo_1 (
     .clk(clk),
     .rst_n(rst_n),
-    .receiver(),
+    .receiver(fu_fifo[1].receiver),
     .sender(fu_cdb[1].sender)
 );
 
@@ -362,8 +368,8 @@ lsu_iq # (
     .lsu_iq_resp_i(),
 
     .result_o(),
-    .fifo_ready(),
-    .excute_valid_o()
+    .fifo_ready(fu_fifo[2].ready),
+    .excute_valid_o(fu_fifo[2].valid)
 );
 
 // handshake_if #(.T(cdb_info_t)) lsu_cdb();
@@ -374,7 +380,7 @@ fifo # (
 ) lsu_iq_fifo (
     .clk(clk),
     .rst_n(rst_n),
-    .receiver(),
+    .receiver(fu_fifo[2].receiver),
     .sender(fu_cdb[2].sender)
 );
 
@@ -404,8 +410,8 @@ mdu_iq # (
     .wkup_valid_i(),
 
     .result_o(),
-    .fifo_ready(),
-    .excute_valid_o()
+    .fifo_ready(fu_fifo[3].ready),
+    .excute_valid_o(fu_fifo[3].valid)
 );
 
 // handshake_if #(.T(cdb_info_t)) mdu_cdb();
@@ -416,7 +422,7 @@ fifo # (
 ) mdu_iq_fifo (
     .clk(clk),
     .rst_n(rst_n),
-    .receiver(),
+    .receiver(fu_fifo[3].receiver),
     .sender(fu_cdb[3].sender)
 );
 
