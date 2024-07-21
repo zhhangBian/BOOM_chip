@@ -264,6 +264,7 @@ end
 word_t [1:0] pc;
 word_t [1:0] pc_add_4;
 word_t [1:0] next_pc;
+word_t [1:0] real_target;
 
 predict_info_t [1:0] predict_info;
 assign predict_info[0] = rob_commit_i[0].predict_info;
@@ -292,15 +293,18 @@ for(integer i = 0; i < 2; i += 1) begin
             // 比较结果由ALU进行计算
             BR_B:
             BR_NORMAL: begin
+                real_target = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
                 if (rob_commit_i[i].w_data == 1) begin
-                    next_pc[i] |= rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                    next_pc[i] = real_target; // TODO: check
                 end
             end
             BR_CALL: begin
-                next_pc[i] |= rob_commit_i[i].data_imm;
+                real_target = rob_commit_i[i].data_imm;
+                next_pc[i] = rob_commit_i[i].data_imm;
             end
             BR_RET: begin
-                next_pc[i] |= rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
+                real_target = rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
+                next_pc[i] = real_target; // TODO: check
             end
         endcase
     end
@@ -323,8 +327,7 @@ for(integer i = 0; i < 2; i += 1) begin
                                        (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc
                                        next_pc[i];//刷掉流水，执行下一条（pc + 4)
 //前面的跳转只允许所提交的第0条指令的重定位，分支预测失败？TODO
-        correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
-                                        (predict_info[i].target_pc != next_pc[i]);
+        correct_info_o[i].target_miss = (predict_info[i].target_pc != real_target[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
 
         correct_info_o[i].taken = taken[i];
@@ -334,8 +337,7 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-        correct_info_o[i].target_pc = predict_info[i].isbranch ? next_pc[i] : 
-                                      rob_commit_i[i].pc + 4;
+        correct_info_o[i].target_pc = real_target[i] : 
 
         correct_info_o[i].history = predict_info[i].history;
         correct_info_o[i].scnt = predict_info[i].scnt;
