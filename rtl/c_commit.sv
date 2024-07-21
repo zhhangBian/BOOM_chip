@@ -123,7 +123,7 @@ logic [5:0] timer_64, timer_64_q;
 // - cache维护指令
 // - dbar,ibar
 // 特殊处理均只允许单条提交
-//TODO : 最后提交的逻辑，ibar（不实现），idle,cacop的异常没有处理？
+//TODO : 最后提交的逻辑，ibar（不实现）,cacop的异常没有处理
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0] & commit_ready_o;
 
