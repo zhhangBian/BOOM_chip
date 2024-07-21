@@ -127,6 +127,8 @@ typedef struct packed {
     logic   [4:0]   cache_code;
     logic   is_tlb_fix;
 
+    logic   flush_inst;
+
     logic   fetch_exception;
     logic   syscall_inst;
     logic   break_inst;

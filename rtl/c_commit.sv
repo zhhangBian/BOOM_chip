@@ -142,7 +142,7 @@ always_comb begin
         commit_arf_areg_o[1] = rob_commit_i[1].arf_id;
         commit_arf_preg_o[1] = rob_commit_i[1].rob_id;
     end
-//上面，下面这个提交不太对TODO
+//上面我觉得stall可以删掉 TODO 下面可以放进normal
 
     if(is_csr_fix[0]) begin
         commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
@@ -150,7 +150,7 @@ always_comb begin
         commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
         commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
     end
-    if (rdcnt_en[0]) begin
+    else if (rdcnt_en[0]) begin
         commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
         commit_arf_data_o[0] = rdcnt_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
@@ -159,7 +159,7 @@ always_comb begin
     //csr指令和rdcnt指令的提交，已完成
 
     else if(ls_fsm_q == S_NORMAL) begin
-        commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
+        commit_arf_we_o[0]   = commit_request_o[0] & & !cur_exception & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
         commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
         commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
@@ -227,39 +227,51 @@ end
 // ------------------------------------------------------------------
 // 处理全局flush信息
 // TODO
+
+logic [1:0] commit_flush_info;
+
 always_comb begin
-    // 只要不是现在提交，就刷
-    // 此种情况包含了Cache，CSR和TLB维护的情况
-    if(~(commit_request_o[0]) && ls_fsm_q == S_NORMAL) begin
-        flush = '1;
+    commit_flush_info = '0;
+
+    if (cur_exception) begin
+        commit_flush_info = 2'b01;
     end
-    else if(is_dbar || is_ibar) begin
-        flush = '1;
+    //异常则flush
+
+    else if (commit_request_o[0]) begin
+        if (rob_commit_i[0].flush_inst) begin
+            commit_flush_info = 2'b01;
+        end//一定会flush的指令
+        else if (~predict_success[0])begin
+            commit_flush_info = 2'b01;
+        end//分支预测失败
+        else if (commit_request_o[1] & ~predict_success[1]) begin
+            commit_flush_info = 2'b10;
+        end//第一条成功但第二条失败了
     end
-    else if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) || 
+
+    if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) || 
             ((ls_fsm_q == S_NORMAL) && commit_icache_valid_o && 
               icache_commit_valid_i && icache_commit_ready_i)) begin
-        flush = '1;
-    end
+        commit_flush_info = 2'b01;
+    end //TODO  ICACOP指令
+
     else if(|is_lsu) begin
         if(ls_fsm_q == S_NORMAL) begin
-            if(!cache_commit_hit) begin
-                flush = '1;
+            if(!&cache_commit_hit) begin
+                flush = '1; //TODO 存储指令，等待完成
             end
             else if(is_uncached[0]) begin
-                flush = '1;
-            end
-            else begin
-                flush = '0;
+                commit_flush_info = 2'b01;
             end
         end
-        else begin
-            flush = '0;
-        end
-    end
-    else begin
-        flush = '0;
-    end
+    end //TODO 存储指令，等待完成
+
+    if (wait_for_int_q) begin
+        commit_flush_info = 2'b01;
+    end//idle持续flush
+
+    flush = |commit_flush_info;
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -284,6 +296,7 @@ assign branch_info[1] = rob_commit_i[1].branch_info;
 
 logic [1:0] is_branch;
 logic [1:0] taken;
+logic [1:0] predict_success;
 
 // 异常PC入口
 logic [31:0] exp_pc;
@@ -325,6 +338,7 @@ for(integer i = 0; i < 2; i += 1) begin
         is_branch[i] = branch_info[i].is_branch;
         taken[i] = ((branch_info[i].br_type != BR_NORMAL) ||
                     (rob_commit_i[i].w_data == 1));
+        predict_success[i] = predict_info[i].next_pc == next_pc;
     end
 end
 
@@ -333,6 +347,7 @@ assign redir_addr_o = cur_exception ? exp_pc : //异常入口
                     (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
                     (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc TODO ?
                     next_pc[i];//刷掉流水，执行下一条
+//TODO 去i化
 
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
@@ -348,7 +363,7 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-                                   //TODO 如果是由0发出的flush，则1不update
+                                   //TODO 如果是由0发出的flush，则1不update，valid
         correct_info_o[i].target_pc = real_target[i];
 
         correct_info_o[i].history = predict_info[i].history;
