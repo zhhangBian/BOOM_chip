@@ -36,16 +36,16 @@ assign d_r_pkg.r_valid = mask;
 assign d_r_pkg.pc = pc;
 
 for (genvar i = 0; i < 2; i++) begin
-    assign d_r_pkg.w_reg[i] = decode_infos_o[i].reg_type_w == _REG_W_NONE;
-    assign d_r_pkg.w_mem[i] = decode_infos_o[i].mem_type_write;
-    assign d_r_pkg.reg_need[2*i    ] = decode_infos_o[i].reg_type_r0 == _REG_ZERO | decode_infos_o[i].reg_type_r0 == _REG_IMM;
-    assign d_r_pkg.reg_need[2*i + 1] = decode_infos_o[i].reg_type_r1 == _REG_ZERO | decode_infos_o[i].reg_type_r1 == _REG_IMM;
+    assign d_r_pkg.w_reg[i] = |decode_infos_o[i].reg_type_w;
+    assign d_r_pkg.w_mem[i] = |decode_infos_o[i].mem_type_write;
+    assign d_r_pkg.reg_need[2*i    ] = decode_infos_o[i].reg_type_r0 != `_REG_ZERO & decode_infos_o[i].reg_type_r0 != `_REG_IMM;
+    assign d_r_pkg.reg_need[2*i + 1] = decode_infos_o[i].reg_type_r1 != `_REG_ZERO & decode_infos_o[i].reg_type_r1 != `_REG_IMM;
 
-    assign d_r_pkg.use_imm[2*i    ] = decode_infos_o[i].reg_type_r0 == _REG_IMM;
-    assign d_r_pkg.use_imm[2*i + 1] = decode_infos_o[i].reg_type_r1 == _REG_IMM;
+    assign d_r_pkg.use_imm[2*i    ] = decode_infos_o[i].reg_type_r0 == `_REG_IMM;
+    assign d_r_pkg.use_imm[2*i + 1] = decode_infos_o[i].reg_type_r1 == `_REG_IMM;
 
     assign d_r_pkg.alu_type[i] = decode_infos_o[i].alu_inst;
-    assign d_r_pkg.mdu_type[i] = decode_infos_o[i].mul_inst | decode_infos_o[i].div_inst;
+    assign d_r_pkg.mdu_type[i] = decode_infos_o[i].mdu_inst;
     assign d_r_pkg.lsu_type[i] = decode_infos_o[i].lsu_inst;
 end
 
