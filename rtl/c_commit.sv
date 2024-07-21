@@ -123,7 +123,7 @@ logic [5:0] timer_64, timer_64_q;
 // - cache维护指令
 // - dbar,ibar
 // 特殊处理均只允许单条提交
-//TODO : 最后提交的逻辑，ertn跳转，ibar（不实现），idle,cacop的异常没有处理？
+//TODO : 最后提交的逻辑，ibar（不实现），idle,cacop的异常没有处理？
 always_comb begin
     commit_request_o[0] = rob_commit_valid_i[0] & commit_ready_o;
 
@@ -318,10 +318,11 @@ end
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_i[i].pc;
-        correct_info_o[i].redir_addr = cur_exception ? exp_pc : 
-                                       (flush & ~is_uncached) ? rob_commit_i[i].pc :
-                                       next_pc[i];
-//TODO ertn加上
+        correct_info_o[i].redir_addr = cur_exception ? exp_pc : //异常入口
+                                       (TODO ertn指令) : csr_q.era : //异常返回
+                                       (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc
+                                       next_pc[i];//刷掉流水，执行下一条（pc + 4)
+//前面的跳转只允许所提交的第0条指令的重定位，分支预测失败？TODO
         correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
                                         (predict_info[i].target_pc != next_pc[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
@@ -745,6 +746,7 @@ logic [`_TLB_ENTRY_NUM - 1:0] tlb_wr_req;/*更新进tlb的使能位*/
 
 always_comb begin
     tlb_update_csr = csr_q;
+    tlb_update_entry = '0;
     tlb_wr_req     = '0;
 
     if (cur_tlbsrch) begin
