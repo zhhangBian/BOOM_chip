@@ -39,7 +39,7 @@ module alu_iq # (
     output  logic           wkup_valid_o,
     
     // 区分了wkup和输入到后续FIFO的数据
-    output  iq_o_t          result_o,
+    output  cdb_info_t      result_o,
     output  decode_info_t   di_o,
     // 与后续FIFO的握手信号
     input   logic           fifo_ready,
@@ -344,10 +344,10 @@ always_comb begin
     wkup_data_o = e_alu_result_q;
     excute_valid_o = excute_valid_q;
     
-    result_o.data = result_q;
-    result_o.preg = select_di_qq.preg;
-    result_o.w_reg = select_di_qq.wreg;
-    result_o.inst_valid = select_di_qq.inst_valid;
+    result_o.w_data  = result_q;
+    result_o.rob_id  = select_di_qq.wreg_id;
+    result_o.w_reg   = select_di_qq.wreg;
+    result_o.r_valid = select_di_qq.inst_valid;
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
