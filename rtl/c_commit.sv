@@ -117,7 +117,7 @@ logic [5:0] timer_64, timer_64_q;
 // 特殊处理均只允许单条提交
 //TODO : 最后提交的逻辑，flush的逻辑，部分接线，ibar（不实现）
 always_comb begin
-    commit_request_o[0] = rob_commit_valid_i[0];
+    commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
 
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
