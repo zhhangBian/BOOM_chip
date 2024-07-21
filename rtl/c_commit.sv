@@ -43,6 +43,9 @@ module commit #(
     output  logic   flush,
     output  logic   stall_o,
 
+    //外部中断接入
+    input   logic   [7:0]  hard_is_i,
+
     // 可能没用
     input   logic   [1:0]   rob_commit_valid_i,
     input   rob_commit_pkg_t [1:0]  rob_commit_i,
@@ -73,6 +76,7 @@ module commit #(
 
     // commit与BPU的接口
     output  correct_info_t [1:0]    correct_info_o,
+    output  logic [31:0]            redir_addr_o,
 
     //commit与两个外部tlb/mmu的接口
     output  csr_t            csr_o,
@@ -122,7 +126,7 @@ always_comb begin
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~rob_commit_i[0].first_commit &
-                          ~rob_commit_i[1].first_commit;
+                          ~rob_commit_i[1].first_commit;//TODO first_commit信号产生
 end
 
 // 处理对ARF的接口
@@ -138,7 +142,7 @@ always_comb begin
         commit_arf_areg_o[1] = rob_commit_i[1].arf_id;
         commit_arf_preg_o[1] = rob_commit_i[1].rob_id;
     end
-//上面这个提交不太对TODO
+//上面，下面这个提交不太对TODO
 
     if(is_csr_fix[0]) begin
         commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
@@ -321,14 +325,16 @@ for(integer i = 0; i < 2; i += 1) begin
     end
 end
 
+//flush的时候才有意义，所以可以省掉一些逻辑
+assign redir_addr_o = cur_exception ? exp_pc : //异常入口
+                    (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
+                    (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc TODO ?
+                    next_pc[i];//刷掉流水，执行下一条
+
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_i[i].pc;
-        correct_info_o[i].redir_addr = cur_exception ? exp_pc : //异常入口
-                                       (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
-                                       (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc
-                                       next_pc[i];//刷掉流水，执行下一条（pc + 4)
-        //前面的跳转只允许所提交的第0条指令的重定位，分支预测失败？TODO
+
         correct_info_o[i].target_miss = (predict_info[i].target_pc != real_target[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
 
@@ -339,7 +345,8 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-        correct_info_o[i].target_pc = real_target[i] : 
+                                   //TODO 如果是由0发出的flush，则1不update
+        correct_info_o[i].target_pc = real_target[i];
 
         correct_info_o[i].history = predict_info[i].history;
         correct_info_o[i].scnt = predict_info[i].scnt;
@@ -393,16 +400,16 @@ csr_t csr_exception_update;//周期结束时候写入csr_q
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
 wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
-//取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
+//取指异常  判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
 wire fetch_excp    = commit_request_o[0] & rob_commit_i[0].fetch_exception;
 
-//译码异常 下面的信号来自decoder TODO
+//译码异常 下面的信号来自decoder 
 wire syscall_excp  = commit_request_o[0] & rob_commit_i[0].syscall_inst;
 wire break_excp    = commit_request_o[0] & rob_commit_i[0].break_inst;
 wire ine_excp      = commit_request_o[0] & rob_commit_i[0].decode_err;
 wire priv_excp     = commit_request_o[0] & rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 
-//执行异常 TODO 访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
+//执行异常  访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
 wire execute_excp  = commit_request_o[0] & rob_commit_i[0].execute_exception;
 
 //icache的维护指令出现tlb异常
@@ -423,7 +430,7 @@ always_comb begin
     csr_exception_update.crmd[`_CRMD_IE]   = '0;
     /*对应文档的1，进入核心态和关中断*/
     csr_exception_update.era               = rob_commit_i[0].pc;
-    /*对应2，TODO:要pc，如果在状态机里面要去其他地方拿*/
+    /*对应2，TODO:要pc，如果在状态机里面要去其他地方拿!!!*/
 
     //例外的仲裁部分，取最优先的例外将例外号存入csr，对应文档的例外操作3
     //部分操作包含4和5，即存badv和vppn的部分
@@ -444,7 +451,7 @@ always_comb begin
                 cur_tlbr_exception = 1'b1;
             end
         end
-        /*取指例外 TODO 判断的信号从fetch来，
+        /*取指例外 判断的信号从fetch来，
         要求fetch如果有例外要传一个fetch_excpetion信号，
         和一个存到exc_code里面的错误编码,要求在前面仲裁好是地址错还是tlb错
         （注意，后面如果有访存出错不能把取指错的错误码替掉）
@@ -491,7 +498,7 @@ always_comb begin
             end
         end
         /*执行例外，
-        TODO 访存级别如果有地址不对齐错误或者tlb错误
+        访存级别如果有地址不对齐错误或者tlb错误
         要传execute_excpetion信号和错误号过来，
         同样需要出错虚地址badva，同取指部分的例外*/
 
@@ -974,7 +981,7 @@ always_comb begin
 
     //下面这个放在这里，是因为cpu每个周期都要更新一些软件不能更新的东西
     //如果放在前面会被覆盖掉，放在后面，由于是软件不能改的位，不会把前面的覆盖掉
-    csr_update.estat[`_ESTAT_HARD_IS]  = hard_is; //TODO从外面连过来
+    csr_update.estat[`_ESTAT_HARD_IS]  = hard_is_i; //从外面连过来中断
 
     //下面维护定时器
     csr_update.estat[`_ESTAT_TIMER_IS] = 0;
