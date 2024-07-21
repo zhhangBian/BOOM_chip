@@ -42,7 +42,8 @@ typedef struct packed {
 
 typedef struct packed { // TODO: 后端不能同时提交两条分支指令
     logic  [31:0]   pc;
-    logic  [31:0]   redir_addr; // 如果跳转错误,后端得到正确的跳转地址之后反馈给前端
+    logic           flush; // TODO: 放到 correct_info 外面
+    logic  [31:0]   redir_addr; // TODO: 放到 correct_info 外面 如果跳转错误,后端得到正确的跳转地址之后反馈给前端
 
     logic           target_miss; // TODO:目标地址预测错误，需要更新BTB. taken预测错了也要将target_miss置有效。TODO: 暂时可能用不上
     logic           type_miss; // TODO:类型预测错误，说明一定这条指令一定不在表中，全部更新 TODO: 暂时可能用不上
