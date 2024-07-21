@@ -39,6 +39,18 @@ typedef struct packed {
     logic  [1 :0]     alu_type; // 指令类型
     logic  [1 :0]     mdu_type;
     logic  [1 :0]     lsu_type;
+    predict_info_t [1 :0] predict_infos;
+    // control info, temp, 根据需要自己调整
+    logic             if_jump; // 是否跳转
+    logic     [2:0]   grand_op; 
+    logic     [2:0]   op;
+    logic     [3:0]   rmask; // 读掩码
+    logic     [3:0]   strb;  // 写掩码
+    logic             cacop; // 是否cache操作
+    logic             dbar;
+    logic             llsc;
+    logic             msigned; // 是否符号拓展（ld指令）
+    logic     [1:0]   msize;   // 读字节数目 - 1
 } d_r_pkg_t;
 
 typedef struct packed {
@@ -57,6 +69,7 @@ typedef struct packed {
     logic  [3 :0]       use_imm; // 指令是否使用立即数
     logic  [3 :0]       data_valid; // 对应数据是否为有效，要么不需要使用该数据，要么已经准备好
     logic  [1 :0][31:0] data_imm; // 立即数
+    predict_info_t [1 :0] predict_infos;
 } r_p_pkg_t;
 
 typedef struct packed {
@@ -179,6 +192,8 @@ typedef struct packed {
     rob_id_t rob_id;   // rob_id
     word_t   w_data;   // 写的数据
     // else information for control
+    predict_info_t predict_info;
+
 } cdb_info_t;
 
 /**********************rob pkg**********************/

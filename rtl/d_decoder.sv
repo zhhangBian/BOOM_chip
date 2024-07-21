@@ -5,7 +5,7 @@ module decoder (
     handshake_if.receiver               receiver, // f_d_pkg_t type
     handshake_if.sender                 sender, // d_r_pkg_t type
 
-    output d_decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
+    // output d_decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
 );
 
 // TODO: csr_num not handled!!!!!!!!!!!
@@ -26,7 +26,7 @@ assign sender.valid = receiver.valid;
 assign receiver.ready = sender.ready;
 
 // 内置两个decoder, decode_infos_o 生成逻辑
-for (genvar i = 0; i < 2; i++) begin
+for (integer i = 0; i < 2; i++) begin
     basic_decoder basic_decoder (
         .ins_i(insts_i[i]),
         .decode_info_o(decode_infos_o[i])
@@ -36,12 +36,14 @@ end
 // d_r_pkg 逻辑
 assign d_r_pkg.r_valid = mask;
 assign d_r_pkg.pc = pc;
+// 2024/07/22 ADD
+assign d_r_pkg.predict_infos = receiver.data.predict_infos;
 
-for (genvar i = 0; i < 2; i++) begin
+for (integer i = 0; i < 2; i++) begin
     assign d_r_pkg.w_reg[i] = |decode_infos_o[i].reg_type_w;
     assign d_r_pkg.w_mem[i] = |decode_infos_o[i].mem_type_write;
-    assign d_r_pkg.reg_need[2*i    ] = decode_infos_o[i].reg_type_r0 != `_REG_ZERO & decode_infos_o[i].reg_type_r0 != `_REG_IMM;
-    assign d_r_pkg.reg_need[2*i + 1] = decode_infos_o[i].reg_type_r1 != `_REG_ZERO & decode_infos_o[i].reg_type_r1 != `_REG_IMM;
+    assign d_r_pkg.reg_need[2*i    ] = decode_infos_o[i].reg_type_r0 != `_REG_ZERO; // & decode_infos_o[i].reg_type_r0 != `_REG_IMM;
+    assign d_r_pkg.reg_need[2*i + 1] = decode_infos_o[i].reg_type_r1 != `_REG_ZERO; // & decode_infos_o[i].reg_type_r1 != `_REG_IMM;
 
     assign d_r_pkg.use_imm[2*i    ] = decode_infos_o[i].reg_type_r0 == `_REG_IMM;
     assign d_r_pkg.use_imm[2*i + 1] = decode_infos_o[i].reg_type_r1 == `_REG_IMM;
@@ -52,7 +54,7 @@ for (genvar i = 0; i < 2; i++) begin
 end
 
 // arftable逻辑
-for (genvar i = 0; i < 2; i++) begin
+for (integer i = 0; i < 2; i++) begin
     logic [31:0] inst;
     assign inst = decode_infos_o[i].inst;
 
@@ -89,7 +91,7 @@ for (genvar i = 0; i < 2; i++) begin
 end
 
 // 立即数逻辑
-for (genvar i = 0; i < 2; i++) begin
+for (integer i = 0; i < 2; i++) begin
     logic [31:0] inst;
     assign inst = decode_infos_o[i].inst;
 

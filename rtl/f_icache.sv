@@ -397,12 +397,12 @@ always_comb begin
         end
         F_UNCACHE:begin
             // 如果axi握手成功，axi_resp_ready_i
+            addr_valid_o = '1;
             if (axi_resp_ready_i) begin
                 fsm_next = F_UNCACHE_S;
                 // req_ptr  = '0;
                 temp_data_block = '0;
                 // TODO 关闭请求
-                addr_valid_o = '0;
             end
         end
         F_UNCACHE_S:begin
@@ -423,12 +423,12 @@ always_comb begin
         end
         F_MISS:begin
             // 如果axi握手成功，axi_resp_ready_i
+            addr_valid_o = '0;
             if (axi_resp_ready_i) begin
                 fsm_next = F_MISS_S;
                 req_ptr  = '0;
                 temp_data_block = '0;
                 // TODO 关闭请求
-                addr_valid_o = '0;
             end
         end
         F_MISS_S:begin

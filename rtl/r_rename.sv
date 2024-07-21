@@ -204,6 +204,8 @@ always_comb begin
     r_p_pkg_temp.use_imm   = d_r_pkg_i.use_imm;
     r_p_pkg_temp.data_imm  = d_r_pkg_i.data_imm;
     r_p_pkg_temp.data_valid= (~d_r_pkg_i.reg_need) | r_p_arfdata_valid;
+    // 2024/07/22 ADD
+    r_p_pkg_temp.predict_infos = d_r_pkg_i.predict_infos;
 end
 
 
