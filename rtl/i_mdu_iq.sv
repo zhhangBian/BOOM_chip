@@ -34,7 +34,7 @@ module mdu_iq # (
     input   logic   [WKUP_COUNT - 1:0]  wkup_valid_i,
 
     // 区分了wkup和输入到后续FIFO的数据
-    output  iq_o_t          result_o,
+    output  cdb_info_t      result_o,
     output  decode_info_t   di_o,
     // 后续的FIFO是否ready
     input   logic           fifo_ready,
@@ -298,10 +298,10 @@ always_comb begin
     req_i.op        = op;
     req_i.reg_id    = wkup_reg_id;
 
-    result_o.data = res_o.data;
-    result_o.preg = res_o.reg_id;
-    result_o.w_reg = select_di_qq.wreg;
-    result_o.inst_valid = '1;
+    result_o.w_data   = res_o.data;
+    result_o.rob_id   = res_o.reg_id;
+    result_o.w_reg    = select_di_q.wreg;
+    result_o.r_valid  = select_di_q.inst_valid;
 end
 
 e_mdu mdu (

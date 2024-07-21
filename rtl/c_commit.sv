@@ -407,7 +407,10 @@ wire priv_excp     = rob_commit_valid_i[0] & rob_commit_i[0].priv_inst && (csr_q
 //执行异常 TODO 访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
 wire execute_excp  = rob_commit_valid_i[0] & rob_commit_i[0].execute_exception;
 
-wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
+//icache的维护指令出现tlb异常
+wire cacop_excep   = |icache_commit_tlb_exp_i;
+
+wire [7:0] exception = {int_excep, fetch_excp, cacop_excep, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
 always_comb begin
     /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
@@ -427,12 +430,12 @@ always_comb begin
     //例外的仲裁部分，取最优先的例外将例外号存入csr，对应文档的例外操作3
     //部分操作包含4和5，即存badv和vppn的部分
     unique casez (exception)
-        7'b1??????: begin
+        8'b1???????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INT;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*中断*/
 
-        7'b01?????: begin
+        8'b01??????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
             csr_exception_update.badv                    = rob_commit_i[0].pc; //存badv
@@ -449,25 +452,36 @@ always_comb begin
         （注意，后面如果有访存出错不能把取指错的错误码替掉）
         以及出错的虚拟地址va*/
 
-        7'b001????: begin
+        //cacop
+        8'b001?????: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = icache_commit_tlb_exp_i.exc_code;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_exception_update.badv                    = ; //TODO 存badv
+            csr_exception_update.tlbehi[`_TLBEHI_VPPN]   = ;  //TODO 一定是tlb异常，tlb例外存vppn
+            if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
+                cur_tlbr_exception = 1'b1;
+            end
+        end
+
+        8'b001????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_SYS;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*syscall*/
-        7'b0001???: begin
+        8'b0001???: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_BRK;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*break*/
-        7'b00001??: begin
+        8'b00001??: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INE;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*ine指令不存在*/
-        7'b000001?: begin
+        8'b000001?: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_IPE;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*ipe指令等级不合规*/
         /*译码例外，这几判断的个信号从decoder来*/
 
-        7'b0000001: begin
+        8'b0000001: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
             csr_exception_update.badv                    = rob_commit_i[0].badva; //存badv

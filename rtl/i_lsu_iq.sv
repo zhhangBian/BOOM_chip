@@ -44,7 +44,7 @@ module lsu_iq # (
     input   lsu_iq_pkg_t    lsu_iq_resp_i,
 
     // 读LSU的读出的数据
-    output  iq_o_t          result_o,
+    output  cdb_info_t      result_o,
     output  decode_info_t   di_o,
     // 与后续FIFO的握手信号
     input   logic           fifo_ready,
@@ -319,10 +319,10 @@ end
 
 // 配置lsu到iq的信息，向FIFO输出
 always_comb begin
-    result_o.data = lsu_iq_resp_i.rdata;
-    result_o.preg = select_di_q.preg;
-    result_o.w_reg = select_di_q.wreg;
-    result_o.inst_valid = select_di_q.inst_valid;
+    result_o.w_data   = lsu_iq_resp_i.rdata;
+    result_o.rob_id   = select_di_q.wreg_id;
+    result_o.w_reg    = select_di_q.wreg;
+    result_o.r_valid  = select_di_q.inst_valid;
     // TODO：di_q
     // TODO：加上提交所需的cache等信息
 end
