@@ -15,8 +15,8 @@ module icache #(
     // 控制信息CSR
     input csr_t csr_i,
     // cpu侧信号
-    handshake_if.receiver    fetch_icache_receiver,
-    hadnshake_if.sender      icache_decoder_sender,
+    handshake_if.receiver       fetch_icache_receiver,
+    hadnshake_if.sender         icache_decoder_sender,
     // axi信号
     output  logic               addr_valid_o,
     output  logic  [31:0]       addr_o,
@@ -376,6 +376,11 @@ always_comb begin
                 addr_o    = paddr & 32'hffffffe0; // 块对齐，一个块8个字
                 addr_valid_o = '1;
                 data_len_o   = req_num;
+                if (axi_resp_ready_i) begin
+                    fsm_next = F_MISS_S;
+                    temp_data_block = '0;
+                    addr_valid_o    = '0;
+                end
             end else if (uncache) begin
                 stall |= '1;
                 fsm_next = F_UNCACHE;
@@ -385,6 +390,11 @@ always_comb begin
                 addr_o    = b_f_pkg_q.mask[0] ? paddr : (paddr | 32'h00000004);
                 addr_valid_o = '1;
                 data_len_o   = (b_f_pkg_q.mask == 2'b11) ? 2 : (|b_f_pkg_q.mask) ? 1 : 0;
+                if (axi_resp_ready_i) begin
+                    fsm_next = F_UNCACHE_S;
+                    temp_data_block = '0;
+                    addr_valid_o    = '0;
+                end
             end
         end
         F_UNCACHE:begin
