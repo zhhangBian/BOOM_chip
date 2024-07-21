@@ -242,9 +242,13 @@ for (integer i = 0; i < 4; i++) begin
     assign fu_fifo[i].data = fu_cdb_data[i];
 end
 
+logic [WKUP_COUNT - 1 : 0][31:0] wkup_data;
+logic [WKUP_COUNT - 1 : 0][5 :0] wkup_reg_id;
+logic [WKUP_COUNT - 1 : 0]       wkup_valid;
+
 alu_iq #(
-    .CDB_CONUT(),
-    .WKUP_COUNT()
+    .CDB_CONUT(CDB_CONUT),
+    .WKUP_COUNT(WKUP_COUNT)
 ) i_alu_iq_0 (
     .clk(clk),
     .rst_n(rst_n),
@@ -263,15 +267,15 @@ alu_iq #(
     .cdb_reg_id_i(cdb_reg_id), // cdb传入的物理寄存器编号
     .cdb_valid_i(cdb_valid), // cdb要写寄存器
 
-    .wkup_data_i(),
-    .wkup_reg_id_i(),
-    .wkup_valid_i(),
+    .wkup_data_i(wkup_data),
+    .wkup_reg_id_i(wkup_reg_id),
+    .wkup_valid_i(wkup_valid),
 
-    .wkup_data_o(),
-    .wkup_reg_id_o(),
-    .wkup_valid_o(),
+    .wkup_data_o(wkup_data[0]),
+    .wkup_reg_id_o(wkup_reg_id[0]),
+    .wkup_valid_o(wkup_valid[0]),
 
-    .result_o(),
+    .result_o(fu_cdb_data[0]),
     .fifo_ready(fu_fifo[0].ready),
     .excute_valid_o(fu_fifo[0].valid)
 );
@@ -289,8 +293,8 @@ fifo # (
 );
 
 alu_iq #(
-    .CDB_CONUT(),
-    .WKUP_COUNT()
+    .CDB_CONUT(CDB_CONUT),
+    .WKUP_COUNT(WKUP_COUNT)
 ) i_alu_iq_1 (
     .clk(clk),
     .rst_n(rst_n),
@@ -309,15 +313,15 @@ alu_iq #(
     .cdb_reg_id_i(cdb_reg_id),
     .cdb_valid_i(cdb_valid),
 
-    .wkup_data_i(),
-    .wkup_reg_id_i(),
-    .wkup_valid_i(),
+    .wkup_data_i(wkup_data),
+    .wkup_reg_id_i(wkup_reg_id),
+    .wkup_valid_i(wkup_valid),
 
-    .wkup_data_o(),
-    .wkup_reg_id_o(),
-    .wkup_valid_o(),
+    .wkup_data_o(wkup_data[1]),
+    .wkup_reg_id_o(wkup_reg_id[1]),
+    .wkup_valid_o(wkup_valid[1]),
 
-    .result_o(),
+    .result_o(fu_cdb_data[1]),
     .fifo_ready(fu_fifo[1].ready),
     .excute_valid_o(fu_fifo[1].valid)
 );
@@ -355,9 +359,9 @@ lsu_iq # (
     .cdb_reg_id_i(cdb_reg_id),
     .cdb_valid_i(cdb_valid),
 
-    .wkup_data_i(),
-    .wkup_reg_id_i(),
-    .wkup_valid_i(),
+    .wkup_data_i(wkup_data),
+    .wkup_reg_id_i(wkup_reg_id),
+    .wkup_valid_i(wkup_valid),
 
     .iq_lsu_valid_o(),
     .iq_lsu_ready_i(),
@@ -367,7 +371,7 @@ lsu_iq # (
     .lsu_iq_ready_o(),
     .lsu_iq_resp_i(),
 
-    .result_o(),
+    .result_o(fu_cdb_data[2]),
     .fifo_ready(fu_fifo[2].ready),
     .excute_valid_o(fu_fifo[2].valid)
 );
@@ -405,11 +409,11 @@ mdu_iq # (
     .cdb_reg_id_i(cdb_reg_id),
     .cdb_valid_i(cdb_valid),
 
-    .wkup_data_i(),
-    .wkup_reg_id_i(),
-    .wkup_valid_i(),
+    .wkup_data_i(wkup_data),
+    .wkup_reg_id_i(wkup_reg_id),
+    .wkup_valid_i(wkup_valid),
 
-    .result_o(),
+    .result_o(fu_cdb_data[3]),
     .fifo_ready(fu_fifo[3].ready),
     .excute_valid_o(fu_fifo[3].valid)
 );
