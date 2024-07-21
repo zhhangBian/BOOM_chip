@@ -3,7 +3,7 @@
 
 module mdu_iq # (
     // 设置IQ共有4个表项
-    parameter int IQ_SIZE = 4,
+    parameter int IQ_SIZE = 8,
     parameter int PTR_LEN = $clog2(IQ_SIZE),
     parameter int IQ_ID = 0,
     parameter int REG_COUNT  = 2,
@@ -15,22 +15,23 @@ module mdu_iq # (
     input   logic           flush,
 
     // 控制信息
-    input   logic [1:0]             choose,
-    input   decode_info_t [1:0]     p_di_i,
-    input   word_t [1:0][REG_COUNT - 1:0]   p_data_i,
-    input   rob_id_t [1:0][REG_COUNT - 1:0] p_reg_id_i,
-    input   logic [1:0][REG_COUNT - 1:0]    p_valid_i,
+    input   logic           other_ready,
+    input   logic   [1:0]   choose,
+    input   decode_info_t   [1:0] p_di_i,
+    input   word_t  [1:0][REG_COUNT - 1:0]  p_data_i,
+    input   rob_id_t[1:0][REG_COUNT - 1:0]  p_reg_id_i,
+    input   logic   [1:0][REG_COUNT - 1:0]  choose,
     // IQ的ready含义是队列未满，可以继续接收指令
-    output  logic                   entry_ready_o,
+    output  logic           entry_ready_o,
 
     // CDB数据前递
-    input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
-    input   rob_id_t[CDB_COUNT - 1:0] cdb_reg_id_i,
-    input   logic   [CDB_COUNT - 1:0] cdb_valid_i,
+    input   word_t  [CDB_COUNT - 1:0]   cdb_data_i,
+    input   rob_id_t[CDB_COUNT - 1:0]   cdb_reg_id_i,
+    input   logic   [CDB_COUNT - 1:0]   cdb_valid_i,
 
-    input   word_t  [WKUP_COUNT - 1:0] wkup_data_i,
-    input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
-    input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
+    input   word_t  [WKUP_COUNT - 1:0]  wkup_data_i,
+    input   rob_id_t[WKUP_COUNT - 1:0]  wkup_reg_id_i,
+    input   logic   [WKUP_COUNT - 1:0]  wkup_valid_i,
 
     // 区分了wkup和输入到后续FIFO的数据
     output  word_t          result_o,
@@ -68,7 +69,7 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= iq_tail;
         free_cnt_q      <= free_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (free_cnt_q >= 2);
+        entry_ready_o   <= (free_cnt >= 2);
     end
 end
 
@@ -77,7 +78,7 @@ always_comb begin
     iq_head = iq_head_q;
     // 只能一条条发射
     if(excute_ready & excute_valid) begin
-        iq_head += 1;
+        iq_head = iq_head_q + 1;
     end
 end
 
@@ -86,13 +87,13 @@ always_comb begin
     iq_tail = iq_tail_q;
     // 上一拍允许这一拍进入
     if(entry_ready_o) begin
-        iq_tail += p_valid_i[0] + p_valid_i[1];
+        iq_tail = iq_tail_q + choose[0] + choose[1];
     end
 end
 
 // 存在IQ中的指令数
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i[0] + p_valid_i[1] + (excute_ready & excute_valid);
+    free_cnt = free_cnt_q - (choose[0] + choose[1]) + (excute_ready & excute_valid);
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -114,12 +115,12 @@ end
 
 always_comb begin
     entry_init = '0;
-    if(^p_valid_i) begin
-        entry_init[iq_tail_q] |= '1;
+    if(^choose) begin
+        entry_init[iq_tail_q]     |= other_ready;
     end
-    else if(&p_valid_i) begin
-        entry_init[iq_tail_q] |= '1;
-        entry_init[iq_tail_q + 1] |= '1;
+    else if(&choose) begin
+        entry_init[iq_tail_q]     |= other_ready;
+        entry_init[iq_tail_q + 1] |= other_ready;
     end
 end
 
@@ -145,21 +146,21 @@ always_comb begin
     iq_valid    = '0;
     iq_di       = '0;
 
-    if(^p_valid_i) begin
-        iq_data[iq_tail_q]      |= p_valid_i[0] ? p_data_i[0] : p_data_i[1];
-        iq_reg_id[iq_tail_q]    |= p_valid_i[0] ? p_reg_id_i[0] : p_reg_id_i[1];
-        iq_valid[iq_tail_q]     |= '1;
-        iq_di[iq_tail_q]        |= p_valid_i[0] ? p_di_i[0] : p_di_i[1];
+    if(^choose) begin
+        iq_data[iq_tail_q]      |= choose[0] ? p_data_i[0] : p_data_i[1];
+        iq_reg_id[iq_tail_q]    |= choose[0] ? p_reg_id_i[0] : p_reg_id_i[1];
+        iq_valid[iq_tail_q]     |= choose[0] ? p_valid_i[0] : p_valid_i[1];
+        iq_di[iq_tail_q]        |= choose[0] ? p_di_i[0] : p_di_i[1];
     end
-    else if(&p_valid_i) begin
+    else if(&choose) begin
         iq_data[iq_tail_q]      |= p_data_i[0] ;
         iq_reg_id[iq_tail_q]    |= p_reg_id_i[0];
-        iq_valid[iq_tail_q]     |= '1;
+        iq_valid[iq_tail_q]     |= p_valid_i[0];
         iq_di[iq_tail_q]        |= p_di_i[0];
 
         iq_data[iq_tail_q + 1]  |= p_data_i[1] ;
         iq_reg_id[iq_tail_q + 1]|= p_reg_id_i[1];
-        iq_valid[iq_tail_q + 1] |= '1;
+        iq_valid[iq_tail_q + 1] |= p_valid_i[1];
         iq_di[iq_tail_q + 1]    |= p_di_i[1];
     end
 end

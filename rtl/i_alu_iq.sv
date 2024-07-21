@@ -16,22 +16,23 @@ module alu_iq # (
     input   logic           flush,
 
     // 控制信息
-    input   logic   [DISPATCH_CNT - 1:0] choose,
-    input   decode_info_t [DISPATCH_CNT - 1:0] p_di_c,
+    input   logic           other_ready,
+    input   logic           [DISPATCH_CNT - 1:0]    choose,
+    input   decode_info_t   [DISPATCH_CNT - 1:0]    p_di_c,
     input   word_t  [DISPATCH_CNT - 1:0][REG_COUNT - 1:0] p_data_c,
     input   rob_id_t[DISPATCH_CNT - 1:0][REG_COUNT - 1:0] p_reg_id_c,
     input   logic   [DISPATCH_CNT - 1:0][REG_COUNT - 1:0] p_valid_c,
     // IQ的ready含义是队列未满，可以继续接收指令
-    output  logic   entry_ready_o,
+    output  logic           entry_ready_o,
 
     // CDB数据前递
-    input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
-    input   rob_id_t[CDB_COUNT - 1:0] cdb_reg_id_i,
-    input   logic   [CDB_COUNT - 1:0] cdb_valid_i,
+    input   word_t  [CDB_COUNT - 1:0]   cdb_data_i,
+    input   rob_id_t[CDB_COUNT - 1:0]   cdb_reg_id_i,
+    input   logic   [CDB_COUNT - 1:0]   cdb_valid_i,
 
-    input   word_t  [WKUP_COUNT - 1:0] wkup_data_i,
-    input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
-    input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
+    input   word_t  [WKUP_COUNT - 1:0]  wkup_data_i,
+    input   rob_id_t[WKUP_COUNT - 1:0]  wkup_reg_id_i,
+    input   logic   [WKUP_COUNT - 1:0]  wkup_valid_i,
     
     output  word_t          wkup_data_o,
     output  rob_id_t        wkup_reg_id_o,
@@ -124,11 +125,11 @@ logic [$bits(IQ_SIZE):0] free_cnt;
 logic [$bits(IQ_SIZE):0] free_cnt_q;
 
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i + (excute_ready & excute_valid);
+    free_cnt = free_cnt_q - (|choose) + (excute_ready & excute_valid);
 end
 
 always_ff @(posedge clk) begin
-    entry_ready_o <= (free_cnt_q >= 1);
+    entry_ready_o <= (free_cnt >= 1);
 end
 
 always_ff @(posedge clk) begin
@@ -144,7 +145,7 @@ always_comb begin
     entry_init[i] = '0;
     for(integer  i = 0; i < IQ_SIZE; i += 1) begin
         if(entry_empty_q[i]) begin
-            entry_init[i] = 1;
+            entry_init[i] = other_ready;
             break;
         end
     end
@@ -159,7 +160,7 @@ always_ff @(posedge clk) begin
             if(entry_select[i]) begin
                 entry_empty_q[i] <= 1;
             end
-            else if(entry_init[i] & p_valid_i) begin
+            else if(entry_init[i] & (|choose)) begin
                 entry_empty_q[i] <= 0;
             end
         end
@@ -210,7 +211,7 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin : gen_iq_entry
         .flush,
 
         .select_i(entry_select[i] & excute_ready),
-        .init_i(entry_init[i] & p_valid_i),
+        .init_i(entry_init[i] & (|choose)),
 
         .data_i(p_data_i),
         .data_reg_id_i(p_reg_id_i),
