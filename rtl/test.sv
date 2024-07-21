@@ -3,8 +3,8 @@
 module boom_top #(
     parameter type T = logic[31:0]
 ); (
-    input clk,
-    input rst_n
+    input logic clk,
+    input logic rst_n
 );
 
 type T1 = logic[31:0];

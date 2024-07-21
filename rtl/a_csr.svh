@@ -67,9 +67,6 @@ typedef struct packed {
     logic [31:0] tlbrentry;
     logic [31:0] dmw0;
     logic [31:0] dmw1;
-// 浮点部分扩展
-//   logic [31:0] fcsr;
-//   logic         fcc;
 } csr_t;
 
 typedef struct packed {
@@ -89,22 +86,9 @@ typedef struct packed{
 } tlb_value_t;
 
 typedef struct packed {
-    logic                               dmw;
-    logic                               found;
-    logic [$clog2(`_WIRED_PARAM_TLB_CNT)-1:0] index;
-    logic [                        5:0] ps;
-    tlb_value_t                         value;
-} tlb_s_resp_t;
-
-typedef struct packed {
     tlb_key_t         key;
     tlb_value_t [1:0] value;
 } tlb_entry_t;
-
-typedef struct packed {
-    logic[`_WIRED_PARAM_TLB_CNT - 1 : 0] tlb_we;
-    tlb_entry_t tlb_w_entry;
-} tlb_update_req_t;
 
 //INSTR
 `define _INSTR_RJ       9:5
@@ -127,12 +111,15 @@ typedef struct packed {
 `define _ECFG_LIE2      12:11
 //ESTAT
 `define _ESTAT_IS        12:0
+`define _ESTAT_SOFT_IS   1:0
+`define _ESTAT_HARD_IS   9:2
+`define _ESTAT_TIMER_IS  11
 `define _ESTAT_ECODE     21:16
 `define _ESTAT_ESUBCODE  30:22
 //EENTRY
 `define _EENTRY_VA       31:6
 //TLBIDX
-`define _TLBIDX_INDEX     $clog2(`_WIRED_PARAM_TLB_CNT)-1:0
+`define _TLBIDX_INDEX     $clog2(`_TLB_ENTRY_NUM)-1:0 //64是tlb表项，最好用宏
 `define _TLBIDX_PS        29:24
 `define _TLBIDX_NE        31
 //TLBEHI
@@ -188,5 +175,7 @@ typedef struct packed {
 
 `define _ESUBCODE_ADEF  9'h0
 `define _ESUBCODE_ADEM  9'h1
+
+`define _TLB_ENTRY_NUM   64
 
 `endif

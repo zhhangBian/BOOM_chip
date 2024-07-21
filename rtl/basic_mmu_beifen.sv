@@ -14,7 +14,7 @@ module mmu #(
     input  csr_t                  csr,
     input  wire  [1:0]            mmu_mem_type,  //类型，定义见a_mmu_defines // 
     // 维护
-    //input  tlb_rdwr_req_t  tlb_rdwr_req,   //tlb维护的请求，包括读/写的index，见a_mmu_defines
+    input  tlb_write_req_t  tlb_write_req_i,   //tlb维护的请求，包括写的独热码，见a_mmu_defines
 
     output trans_result_t trans_result_o,    //包含pa，mat，valid，见a_mmu_defines
     output tlb_exception_t tlb_exception_o,  //tlb相关的例外，例外代码的编号在a_csr里面，默认为零，只有在result里面valid为0的时候这个错误码才有意义
@@ -38,35 +38,30 @@ always_comb begin
         && vppn_match(va, tlb_key_q[i].huge_page, tlb_key_q[i].vppn)) begin
             tlb_found = 1;
             if (tlb_key_q[i].huge_page) begin
-                tlb_value_read = tlb_value_q[i][va[22]];   //4MB
+                tlb_value_read = tlb_value_q[i][va[21]];   //4MB,2MB，TODO ？
             end else begin
                 tlb_value_read = tlb_value_q[i][va[12]];   //4KB
-                end
             end
         end
+    end
 end
 /*===================ok===================*/
 function automatic logic vppn_match(logic [31:0] va, 
                                     logic huge_page, logic [18: 0] vppn)//位宽好像错了
     if (huge_page) begin
-        return va[31:23] == vppn[18:10]; //???is this right
+        return va[31:22] == vppn[18:9]; //ok
     end else begin
         return va[31:13] == vppn;
     end
 endfunction
 
-//tlb读写请求
+//tlb写请求
 always_ff @(posedge clk) begin
     for (genvar i = 0; i < TLB_ENTRY_NUM; i += 1) begin
-        if (tlb_rdwr_req.tlb_wr_index[i]) begin
-            tlb_key_q[i]      <= tlb_rdwr_req.tlb_wr_entry.key;
-            tlb_value_q[i][0] <= tlb_rdwr_req.tlb_wr_entry.value[0];
-            tlb_value_q[i][1] <= tlb_rdwr_req.tlb_wr_entry.value[1];
-        end
-        if (tlb_rdwr_req.tlb_rd_index[i]) begin
-            tlb_entry_o.key      <= tlb_key_q[i];
-            tlb_entry_o.value[0] <= tlb_value_q[i][0];
-            tlb_entry_o.value[1] <= tlb_value_q[i][1];
+        if (tlb_write_req_i.tlb_write_req[i]) begin
+            tlb_key_q[i]      <= tlb_write_req_i.tlb_write_entry.key;
+            tlb_value_q[i][0] <= tlb_write_req_i.tlb_write_entry.value[0];
+            tlb_value_q[i][1] <= tlb_write_req_i.tlb_write_entry.value[1];
         end
     end
 end

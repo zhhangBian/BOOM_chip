@@ -1,7 +1,6 @@
 `include "a_defines.svh"
 
-module rob #(
-)(
+module rob # () (
     // input
     input   logic clk,
     input   logic rst_n,
@@ -178,7 +177,7 @@ logic [1 : 0]           cdb_in_complete_o;      // 写的两项对应的结果
 
 always_comb begin
     for (integer i = 0 ; i < 2; i++) begin
-        rob_dispatch_o[i].rob_complete = ~(rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]);
+        rob_dispatch_o[i].rob_complete = (rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]); //debug
     end
     commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
     commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1);

@@ -35,12 +35,12 @@ module lsu_iq # (
     // 写Cache的握手数据
     output  logic           iq_lsu_valid_o,
     input   logic           iq_lsu_ready_i,
-    output  iq_lsu_pkg_t    iq_lsu_requst_o,
+    output  iq_lsu_pkg_t    iq_lsu_req_o,
 
     // 读Cache的握手信息
     input   logic           lsu_iq_valid_i,
     output  logic           lsu_iq_ready_o,
-    input   lsu_iq_pkg_t    lsu_iq_request_i,
+    input   lsu_iq_pkg_t    lsu_iq_resp_i,
 
     // 读LSU的读出的数据
     output  word_t          result_o,
@@ -294,6 +294,7 @@ data_wkup #(
 iq_lsu_pkg_t    iq_lsu_request;
 lsu_iq_pkg_t    lsu_iq_request;
 
+assign iq_lsu_req_o = iq_lsu_request;
 assign iq_lsu_valid_o   = excute_valid_q;
 assign lsu_iq_ready_o   = fifo_ready;
 assign entry_valid_o    = lsu_iq_valid_i;
@@ -310,13 +311,13 @@ always_comb begin
     iq_lsu_request.msigned  = select_di_q.msigned;
     iq_lsu_request.msize    = select_di_q.msize;
     // 约定0号为数据，1号为地址
-    iq_lsu_request.vaddr    = real_data[1];
+    iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
     iq_lsu_request.wdata    = real_data[0];
 end
 
 // 配置lsu到iq的信息，向FIFO输出
 always_comb begin
-    result_o = lsu_iq_request_i.rdata;
+    result_o = lsu_iq_resp_i.rdata;
     // TODO：加上提交所需的cache等信息
 end
 

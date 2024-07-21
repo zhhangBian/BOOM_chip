@@ -79,7 +79,12 @@ module mycpu_top (
 `endif
 );
 
-logic g_flush; // wire, 全局 flush 信号
+parameter int CDB_COUNT = 2;
+parameter int WKUP_COUNT = 2;
+
+logic flush; // wire, 全局 flush 信号
+logic stall;
+csr_t csr;
 
 /*============================== Branch Predicting ==============================*/
 
@@ -88,9 +93,9 @@ handshake_if #(b_f_pkg_t) b_fifo_handshake();
 bpu bpu_inst(
     .clk(clk),
     .rst_n(rst_n),
-    .g_flush(g_flush),
+    .g_flush(flush),
 
-    .correct_info_i(/* TODO: correct info from backend */),
+    .correct_infos_i(TODO),
     .sender(b_fifo_handshake.sender)
 );
 
@@ -103,7 +108,7 @@ basic_fifo #(
     .T(b_f_pkg_t)
 ) b_f_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & ~flush),
     .receiver(b_fifo_handshake.receiver),
     .sender(fifo_f_handshake.sender)
 );
@@ -120,9 +125,9 @@ i_cache # (
 ) i_cache_inst (
     .clk(clk),
     .rst_n(rst_n),
-    .flush_i(g_flush),
+    .flush_i(flush),
     // CSR
-    .csr_i(/* csr_i from backend */)
+    .csr_i(/* csr_i from backend */ TODO)
     // cpu 侧信号
     .fetch_icache_receiver(fifo_f_handshake.receiver),
     .icache_decoder_sender(f_fifo_handshake.sender)
@@ -177,6 +182,310 @@ basic_fifo #(
     .sender(fifo_r_handshake.sender)
 );
 
+/*============================== Rename ==============================*/
+
+handshake_if #(.T(r_p_pkg_t)) r_p_handshake();
+
+logic [1:0] c_retire;
+retire_pkg_t [1:0] c_retire_infos;
+
+rename # () rename (
+    .clk(clk),
+    .rst_n(rst_n),
+    .c_flush_i(flush),
+
+    .d_r_receiver(fifo_r_handshake.receiver),
+    .r_p_sender(r_p_handshake.sender),
+
+    .c_retire_i(c_retire),
+    .c_retire_info_i(c_retire_infos)
+);
+
+handshake_if #(.T(p_i_pkg_t)) p_alu_handshake_0();
+handshake_if #(.T(p_i_pkg_t)) p_alu_handshake_1();
+handshake_if #(.T(p_i_pkg_t)) p_lsu_handshake();
+handshake_if #(.T(p_i_pkg_t)) p_mdu_handshake();
+
+p_dispatch # () p_dispatch(
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush_i(flush),
+
+    .cdb_dispatch_i(),
+    .rob_dispatch_i(),
+
+    .dispatch_rob_o(),
+
+    .r_p_receiver(r_p_handshake.receiver),
+
+    .p_alu_sender_0(p_alu_handshake_0.sender),
+    .p_alu_sender_1(p_alu_handshake_1.sender),
+    .p_lsu_sender(p_lsu_handshake.sender),
+    .p_mdu_sender(p_mdu_handshake.sender)
+);
+
+alu_iq #(
+    .CDB_CONUT(),
+    .WKUP_COUNT()
+) i_alu_iq_0 (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush(flush),
+
+    .choose(),
+    .p_di_c(),
+    .p_data_c(),
+    .p_reg_id_c(),
+
+    .entry_ready_o(),
+
+    .cdb_data_i(),
+    .cdb_reg_id_i(),
+    .cdb_valid_i(),
+
+    .wkup_data_i(),
+    .wkup_reg_id_i(),
+    .wkup_valid_i(),
+
+    .wkup_data_o(),
+    .wkup_reg_id_o(),
+    .wkup_valid_o(),
+
+    .result_o(),
+    .fifo_ready(),
+    .excute_valid_o()
+);
+
+handshake_if #(.T(TODO)) alu_0_cdb();
+
+fifo # (
+    .BYPASS(0),
+    .T(TODO)
+) alu_iq_fifo_0 (
+    .clk(clk),
+    .rst_n(rst_n),
+    .receiver(),
+    .sender(alu_0_cdb.sender)
+);
+
+alu_iq #(
+    .CDB_CONUT(),
+    .WKUP_COUNT()
+) i_alu_iq_1 (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush(flush),
+
+    .choose(),
+    .p_di_c(),
+    .p_data_c(),
+    .p_reg_id_c(),
+
+    .entry_ready_o(),
+
+    .cdb_data_i(),
+    .cdb_reg_id_i(),
+    .cdb_valid_i(),
+
+    .wkup_data_i(),
+    .wkup_reg_id_i(),
+    .wkup_valid_i(),
+
+    .wkup_data_o(),
+    .wkup_reg_id_o(),
+    .wkup_valid_o(),
+
+    .result_o(),
+    .fifo_ready(),
+    .excute_valid_o()
+);
+
+handshake_if #(.T(TODO)) alu_1_cdb();
+
+fifo # (
+    .BYPASS(0),
+    .T(TODO)
+) alu_iq_fifo_1 (
+    .clk(clk),
+    .rst_n(rst_n),
+    .receiver(),
+    .sender(alu_1_cdb.sender)
+);
+
+lsu_iq # (
+    .CDB_COUNT(CDB_COUNT),
+    .WKUP_COUNT(WKUP_COUNT)
+) i_lsu_iq (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush(flush),
+
+    .choose(),
+    .p_di_i(),
+    .p_data_i(),
+    .p_reg_id_i(),
+
+    .entry_ready_o(),
+
+    .cdb_data_i(),
+    .cdb_reg_id_i(),
+    .cdb_valid_i(),
+
+    .wkup_data_i(),
+    .wkup_reg_id_i(),
+    .wkup_valid_i(),
+
+    .iq_lsu_valid_o(),
+    .iq_lsu_ready_i(),
+    .iq_lsu_req_o(),
+
+    .lsu_iq_valid_i(),
+    .lsu_iq_ready_o(),
+    .lsu_iq_resp_i(),
+
+    .result_o(),
+    .fifo_ready(),
+    .excute_valid_o()
+);
+
+handshake_if #(.T(TODO)) lsu_cdb();
+
+fifo # (
+    .BYPASS(0),
+    .T(TODO)
+) lsu_iq_fifo (
+    .clk(clk),
+    .rst_n(rst_n),
+    .receiver(),
+    .sender(lsu_cdb.sender)
+);
+
+mdu_iq # (
+    .CDB_COUNT(CDB_COUNT),
+    .WKUP_COUNT(WKUP_COUNT)
+) i_mdu_iq (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush(flush),
+
+    .choose(),
+    .p_di_i(),
+    .p_data_i(),
+    .p_reg_id_i(),
+
+    .entry_ready_o(),
+
+    .cdb_data_i(),
+    .cdb_reg_id_i(),
+    .cdb_valid_i(),
+
+    .wkup_data_i(),
+    .wkup_reg_id_i(),
+    .wkup_valid_i(),
+
+    .result_o(),
+    .fifo_ready(),
+    .excute_valid_o()
+);
+
+handshake_if #(.T(TODO)) mdu_cdb();
+
+fifo # (
+    .BYPASS(0),
+    .T(TODO)
+) mdu_iq_fifo (
+    .clk(clk),
+    .rst_n(rst_n),
+    .receiver(),
+    .sender(mdu_cdb.sender)
+);
+
+cdb_rob_pkg_t [1:0] cdb_info;
+
+cdb #(
+    .PORT_COUNT(4)
+) cdb (
+    .(clk),
+    .(rst_n),
+    .(flush),
+
+    .fifo_handshake(),
+    .cdb_data_o(cdb_info)
+);
+
+rob # () rob (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush_i(flush),
+
+    .dispatch_info_i(),
+    .cdb_ifno_i(cdb_info),
+
+    .rob_dispatch_o(),
+    .commit_req(),
+    .commit_info_o(),
+    .commit_valid()
+);
+
+commit # () commit(
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush(flush),
+    // 给Dcache使用
+    .stall_o(stall),
+
+    .rob_commit_valid_i(),
+    .rob_commit_i(),
+
+    .commit_ready_o(),
+    .commit_request_o(),
+
+    .commit_cache_req_o(),
+    .cache_commit_resp_i(),
+    .commit_cache_ready_i(),
+    .commit_cache_valid_o(),
+    .cache_commit_valid_i(),
+    .cache_commit_ready_o(),
+
+    .commit_axi_req_o(),
+    .axi_commit_resp_i(),
+    .commit_axi_ready_i(),
+    .commit_axi_valid_o(),
+    .axi_commit_valid_i(),
+    .axi_commit_ready_o(),
+
+    .commit_arf_we_o(),
+    .commit_arf_data_o(),
+    .commit_arf_areg_o(),
+
+    .correct_info_o(),
+    
+    .csr_o(csr),
+    .tlb_write_req_o(),
+
+    .commit_icache_req_o(),
+    .icache_commit_tlb_exp_i(),
+    .icache_commit_tlb_miss_i(),
+    .commit_icache_ready_o(),
+    .commit_icache_valid_o(),
+    .icache_commit_ready_i(),
+    .icache_commit_valid_i()
+);
+
+dcache # () dcache(
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush_i(flush),
+    .stall_i(stall),
+
+    .csr_i(csr),
+    .cpu_lsu_receiver(),
+    .lsu_cpu_sender(),
+
+    .commit_cache_req(),
+    .cache_commit_resp()
+);
+
 /*============================== 2x1 AXI Bridge ==============================*/
 
 axi_crossbar # (
@@ -190,7 +499,6 @@ axi_crossbar # (
 ) axi_crossbar_2x1_inst (
     .clk(aclk),
     .rst(!aresetn), // TODO: recheck
-
     /*
      * AXI slave interfaces
      */
@@ -287,3 +595,43 @@ axi_crossbar # (
 );
 
 endmodule
+
+/* 不出bug
+____________________████████████████__________████████████
+__________________██░░░░░░░░░░░░░░░░████__████░░░░░░░░░░░░██
+________________██░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░██
+______________██░░░░░░░░░░░░░░██████░░░░░░██░░░░░░░░░░░░░░░░░░██
+______________██░░░░░░░░██████░░░░░░██████░░██░░░░░░████████░░██
+____________██░░░░░░████░░░░░░░░░░░░░░░░██████░░████░░░░░░░░████
+__________██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░██████
+________██░░░░░░░░░░░░░░░░░░░░░░░░░░████████████░░░░░░░░░░████████░░░░██
+________██░░░░░░░░░░░░░░░░░░██████████░░░░░░████████░░░░████░░░░████░░░░██
+______████░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░░░░░░░██████
+____██░░░░░░░░░░░░░░░░░░░░░░░░░░░░██████████████████░░░░██████████████████
+__██░░░░░░░░░░░░░░░░░░░░██████████__████████______████████__██████████______██
+__██░░░░░░░░░░░░░░░░░░░░██____________██__██████____██__________██████__██______██
+██░░░░░░░░░░░░░░░░░░░░░░░░██______████████__████████________████__████████████
+░░░░░░░░░░░░░░░░░░░░░░░░░░██████████████████░░░░░░████████████████░░░░░░██
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░██░░░░░░░░░░░░░░░░░░░░░░░░██
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░██░░░░░░░░░░░░████
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░██████████████
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████░░░░░░░░░░░░░░░░░░░░██░░░░░░░░░░██
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+░░░░░░░░░░░░░░░░░░░░░░██████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░████
+░░░░░░░░░░░░░░░░░░░░██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██████████████████████████████▒▒▒▒██
+░░░░░░░░░░░░░░░░░░██▒▒▒▒██████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██
+░░░░░░░░░░░░░░░░░░██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██████████████████████████████████          没有bug对吧
+░░░░░░░░░░░░░░░░░░░░████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████████████████████████████████████
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████
+▓▓████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████
+▓▓▓▓▓▓██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+▓▓▓▓▓▓▓▓▓▓▓▓██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██████████████████████████████▓▓▓▓██
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓████
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██
+*/

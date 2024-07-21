@@ -2,9 +2,9 @@
 
 module p_dispatch #(    
 ) (
-    input clk,
-    input rst_n,
-    input flush_i,
+    input logic clk,
+    input logic rst_n,
+    input logic flush_i,
     input cdb_dispatch_pkg_t    [1 : 0] cdb_dispatch_i,
     input rob_dispatch_pkg_t    [1 : 0] rob_dispatch_i,
     
@@ -16,7 +16,7 @@ module p_dispatch #(
     handshake_if.sender              p_alu_sender_1,
     handshake_if.sender              p_lsu_sender,
     handshake_if.sender              p_mdu_sender,
-)
+);
 
 // handshake signal
 logic  lsu_ready, mdu_ready;
@@ -92,7 +92,7 @@ always_comb begin
     for (integer i = 0; i < 2; i++) begin
         choose_alu[i] = '0;
         for (integer j = 0; j < 2; j++) begin
-            if ((r_p_pkg.alu_type) & (r_p_pkg.preg[j][0] == i[0]) & (r_p_pkg.r_valid[j])) begin
+            if ((r_p_pkg.alu_type[j]) & (r_p_pkg.preg[j][0] == i[0]) & (r_p_pkg.r_valid[j])) begin
                 choose_alu[i][j[0]] |= '1;
             end
         end
@@ -105,10 +105,10 @@ always_comb begin
     choose_mdu = '0;
     choose_lsu = '0;
     for (integer j = 0; j < 2; j++) begin
-        if ((r_p_pkg.mdu_type) & (r_p_pkg.r_valid[j])) begin
+        if ((r_p_pkg.mdu_type[j]) & (r_p_pkg.r_valid[j])) begin
             choose_mdu[j[0]] |= '1;
         end
-        if ((r_p_pkg.lsu_type) & (r_p_pkg.r_valid[j])) begin
+        if ((r_p_pkg.lsu_type[j]) & (r_p_pkg.r_valid[j])) begin
             choose_lsu[j[0]] |= '1;
         end
     end
@@ -135,6 +135,7 @@ always_comb begin
         p_i_pkg[i].data = sel_data;
         p_i_pkg[i].preg = r_p_pkg.src_preg;
         p_i_pkg[i].data_valid = data_valid;
+        p_i_pkg[i].r_valid    = r_p_pkg.r_valid;
         // 控制信号TODO
     end
     p_i_pkg[0].inst_choose = choose_alu[0];
