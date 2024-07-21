@@ -3,7 +3,7 @@
 
 module lsu_iq # (
     // 设置IQ共有4个表项
-    parameter int IQ_SIZE = 4,
+    parameter int IQ_SIZE = 8,
     parameter int PTR_LEN = $clog2(IQ_SIZE),
     parameter int IQ_ID = 0,
     parameter int REG_COUNT  = 2,
@@ -77,7 +77,7 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= iq_tail;
         free_cnt_q      <= free_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (free_cnt_q >= 2);
+        entry_ready_o   <= (free_cnt >= 2);
     end
 end
 
@@ -86,7 +86,7 @@ always_comb begin
     iq_head = iq_head_q;
     // 只能一条条发射
     if(excute_ready & excute_valid) begin
-        iq_head += 1;
+        iq_head = iq_head_q + 1;
     end
 end
 
@@ -95,7 +95,7 @@ always_comb begin
     iq_tail = iq_tail_q;
     // 上一拍允许这一拍进入
     if(entry_ready_o) begin
-        iq_tail += choose[0] + choose[1];
+        iq_tail = iq_tail_q + choose[0] + choose[1];
     end
 end
 
