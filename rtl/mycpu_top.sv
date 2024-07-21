@@ -234,11 +234,12 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(), 
-    .p_di_c(), //两条指令各自的译码信息
-    .p_data_c(), //从P级传入的两条指令各自的两个data数值
-    .p_reg_id_c(), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
-    .p_valid_c(),   // 实际上不是握手的valid信号，而是r_valid，指令有效信号，含义是|p_alu_handshake_0.data.inst_choose（有一个指令选中iq则允许写入）
+    .choose(p_alu_handshake_0.data.inst_choose), 
+    .p_di_c(), //两条指令各自的译码信息  TODO
+    .p_data_c(p_alu_handshake_0.data.data), //从P级传入的两条指令各自的两个data数值
+    .p_reg_id_c(p_alu_handshake_0.data.preg), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
+    .ohter_
+    .p_valid_c((|p_alu_handshake_0.data.inst_choose)),   // 实际上不是握手的valid信号，而是r_valid，指令有效信号，含义是|p_alu_handshake_0.data.inst_choose（有一个指令选中iq则允许写入）
 
     .entry_ready_o(), // ready信号
 

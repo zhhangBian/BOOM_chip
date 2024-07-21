@@ -34,10 +34,10 @@ always_comb begin
         dispatch_rob_o[i].preg      = r_p_pkg.preg[i];
         dispatch_rob_o[i].src_preg  = {r_p_pkg.src_preg[i * 2 + 1],r_p_pkg.src_preg[i * 2]};
         dispatch_rob_o[i].pc        = r_p_pkg.pc[i];
-        dispatch_rob_o[i].issue     = r_p_pkg.r_valid[i];
+        dispatch_rob_o[i].issue     = r_p_pkg.r_valid[i] & r_p_receiver.ready;
         dispatch_rob_o[i].w_reg     = r_p_pkg.w_reg[i];
         dispatch_rob_o[i].w_mem     = r_p_pkg.w_mem[i];
-        dispatch_rob_o[i].check   = r_p_pkg.check[i];
+        dispatch_rob_o[i].check     = r_p_pkg.check[i];
     end
 end
 
@@ -144,37 +144,41 @@ always_comb begin
     p_i_pkg[3].inst_choose = choose_lsu;
 end
 
-always_ff @(posedge clk) begin
-    // alu_sender0
-    if (p_alu_sender_0.valid & p_alu_sender_0.ready) begin
-        p_i_pkg_q[0] <= p_i_pkg[0];
-    end else begin
-        p_i_pkg_q[0] <= '0;
-    end
-    // alu_sender1
-    if (p_alu_sender_1.valid & p_alu_sender_1.ready) begin
-        p_i_pkg_q[1] <= p_i_pkg[1];
-    end else begin
-        p_i_pkg_q[1] <= '0;
-    end
-    // mdu_sender
-    if (p_mdu_sender.valid & p_mdu_sender.ready) begin
-        p_i_pkg_q[2] <= p_i_pkg[2];
-    end else begin
-        p_i_pkg_q[2] <= '0;
-    end
-    // lsu_sender
-    if (p_lsu_sender.valid & p_lsu_sender.ready) begin
-        p_i_pkg_q[3] <= p_i_pkg[3];
-    end else begin
-        p_i_pkg_q[3] <= '0;
-    end
-end
+// always_ff @(posedge clk) begin
+//     // alu_sender0
+//     if (p_alu_sender_0.valid & p_alu_sender_0.ready) begin
+//         p_i_pkg_q[0] <= p_i_pkg[0];
+//     end else begin
+//         p_i_pkg_q[0] <= '0;
+//     end
+//     // alu_sender1
+//     if (p_alu_sender_1.valid & p_alu_sender_1.ready) begin
+//         p_i_pkg_q[1] <= p_i_pkg[1];
+//     end else begin
+//         p_i_pkg_q[1] <= '0;
+//     end
+//     // mdu_sender
+//     if (p_mdu_sender.valid & p_mdu_sender.ready) begin
+//         p_i_pkg_q[2] <= p_i_pkg[2];
+//     end else begin
+//         p_i_pkg_q[2] <= '0;
+//     end
+//     // lsu_sender
+//     if (p_lsu_sender.valid & p_lsu_sender.ready) begin
+//         p_i_pkg_q[3] <= p_i_pkg[3];
+//     end else begin
+//         p_i_pkg_q[3] <= '0;
+//     end
+// end
 
-assign p_alu_sender_0.data = p_i_pkg_q[0];
-assign p_alu_sender_1.data = p_i_pkg_q[1];
-assign p_mdu_sender.data   = p_i_pkg_q[2];
-assign p_lsu_sender.data   = p_i_pkg_q[3];
+assign p_alu_sender_0.data = p_i_pkg[0];
+assign p_alu_sender_1.data = p_i_pkg[1];
+assign p_mdu_sender.data   = p_i_pkg[2];
+assign p_lsu_sender.data   = p_i_pkg[3];
+assign p_alu_sender_0.valid = r_p_receiver.ready & (|choose_alu[0]);
+assign p_alu_sender_1.valid = r_p_receiver.ready & (|choose_alu[1]);
+assign p_mdu_sender.valid   = r_p_receiver.ready & (|choose_mdu);
+assign p_lsu_sender.valid   = r_p_receiver.ready & (|choose_lsu);
 
 
 
