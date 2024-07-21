@@ -298,7 +298,10 @@ always_comb begin
     req_i.op        = op;
     req_i.reg_id    = wkup_reg_id;
 
-    result_o        = res_o.data;
+    result_o.data = res_o.data;
+    result_o.preg = res_o.reg_id;
+    result_o.w_reg = select_di_qq.wreg;
+    result_o.inst_valid = '1;
 end
 
 e_mdu mdu (

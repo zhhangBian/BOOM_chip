@@ -346,10 +346,9 @@ always_comb begin
     
     result_o.data = result_q;
     result_o.preg = select_di_qq.preg;
-    result_o.w_reg = select_di_qq
+    result_o.w_reg = select_di_qq.wreg;
+    result_o.inst_valid = select_di_qq.inst_valid;
 end
-
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 endmodule

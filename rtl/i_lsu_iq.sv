@@ -319,7 +319,10 @@ end
 
 // 配置lsu到iq的信息，向FIFO输出
 always_comb begin
-    result_o = lsu_iq_resp_i.rdata;
+    result_o.data = lsu_iq_resp_i.rdata;
+    result_o.preg = select_di_q.preg;
+    result_o.w_reg = select_di_q.wreg;
+    result_o.inst_valid = select_di_q.inst_valid;
     // TODO：di_q
     // TODO：加上提交所需的cache等信息
 end
