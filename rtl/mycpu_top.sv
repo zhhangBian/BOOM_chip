@@ -93,7 +93,8 @@ handshake_if #(b_f_pkg_t) b_fifo_handshake();
 bpu bpu_inst(
     .clk(clk),
     .rst_n(rst_n),
-    .g_flush(flush),
+    .flush_i(flush),
+    .redir_addr_i(redir_addr),
 
     .correct_infos_i(TODO),
     .sender(b_fifo_handshake.sender)

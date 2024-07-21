@@ -35,7 +35,9 @@ endfunction
 module bpu(
     input wire                  clk,
     input wire                  rst_n,
-    input wire                  g_flush,
+
+    input wire                  flush_i,
+    input wire [31:0]           redir_addr_i,
 
     input  correct_info_t [1:0] correct_infos_i, // 后端反馈的修正信息
     handshake_if.sender         sender // predict_infos_t type
@@ -56,8 +58,8 @@ always_ff @(clk) begin : pc_logic
     if (!rst_n) begin
         pc <= `BPU_INIT_PC;
     end
-    else if (g_flush) begin // TODO: might remove redir signal
-        pc <= redir_addr;
+    else if (flush_i) begin // TODO: might remove redir signal
+        pc <= redir_addr_i;
     end
     else if (ready_i) begin
         pc <= npc;
