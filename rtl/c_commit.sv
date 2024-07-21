@@ -54,7 +54,6 @@ module commit #(
     // commit与DCache的接口
     output  commit_cache_req_t  commit_cache_req_o,
     input   cache_commit_resp_t cache_commit_resp_i,
-    //input   tag.    cache_commit_tag_i,     // TODO：返回了tag的信息
     // commit与cache的握手信号
     input   logic   commit_cache_ready_i,
     output  logic   commit_cache_valid_o,
@@ -225,7 +224,7 @@ end
 
 // ------------------------------------------------------------------
 // 处理全局flush信息
-TODO
+// TODO
 always_comb begin
     // 只要不是现在提交，就刷
     // 此种情况包含了Cache，CSR和TLB维护的情况
@@ -1156,8 +1155,7 @@ always_comb begin
                 end
                 else if(cache_op == 2 && cache_commit_hit) begin
                     // 将Cache无效化，先读出对应的tag
-                    commit_cache_req.way_choose   = '0;
-                    commit_cache_req.way_choose  |= lsu_info[0].tag_hit;
+                    commit_cache_req.way_choose   = lsu_info[0].tag_hit;
                     commit_cache_req.tag_data     = '0;
                     commit_cache_req.tag_we       = '1;
                 end
@@ -1216,7 +1214,7 @@ always_comb begin
                 // 配置Cache的相应信息
                 commit_cache_valid          = '1;
                 commit_cache_req.addr       = lsu_info[0].addr;
-                commit_cache_req.way_choose = commit_cache_req.addr[0];
+                commit_cache_req.way_choose = lsu_info[0].refill;
                 commit_cache_req.tag_data   = '0;
                 commit_cache_req.tag_we     = '0;
                 commit_cache_req.data_data  = '0;
@@ -1237,18 +1235,19 @@ always_comb begin
 
     // 与Cache进行读写操作
     else if (ls_fsm_q == S_CACHE) begin
-        // Cache接受当前的读写请求
-        commit_cache_req.addr      = commit_cache_req_q.addr + 4;
-        // TODO way_choose
-        commit_cache_req.tag_data  = get_cache_tag(commit_cache_req.addr, 1, 0);
-        commit_cache_req.tag_we    = '1;
-        commit_cache_req.data_data = cache_block_data[cache_block_ptr];
-        commit_cache_req.strb      = '1;
-        commit_cache_req.fetch_sb  = '0;
-        // TODO ? 判断是否应该放在前面，如果不满足则不应该继续写Cache
         // 回到normal状态，取消提交级的阻塞
         if(cahce_block_ptr == cache_block_len) begin
             stall = '0;
+        end
+        else begin
+            // Cache接受当前的读写请求
+            commit_cache_req.addr      = commit_cache_req_q.addr + 4;
+            commit_cache_req_q.way_choose = commit_cache_req_q.way_choose;
+            commit_cache_req.tag_data  = get_cache_tag(commit_cache_req.addr, 1, 0);
+            commit_cache_req.tag_we    = '1;
+            commit_cache_req.data_data = cache_block_data[cache_block_ptr];
+            commit_cache_req.strb      = '1;
+            commit_cache_req.fetch_sb  = '0;
         end
     end
 
@@ -1305,7 +1304,7 @@ always_comb begin
         else begin
             // 设置下一轮的Cache数据
             commit_cache_req.addr = commit_cache_req_q.addr + 4;
-            // way choose TODO
+            commit_cache_req.way_choose = commit_cache_req_q.way_choose;
             commit_cache_req.tag_data = '0;
             commit_cache_req.tag_we = '0;
             commit_cache_req.data_data = '0;
