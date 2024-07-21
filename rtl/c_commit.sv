@@ -321,10 +321,10 @@ for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_i[i].pc;
         correct_info_o[i].redir_addr = cur_exception ? exp_pc : //异常入口
-                                       (TODO ertn指令) : csr_q.era : //异常返回
+                                       (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
                                        (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc
                                        next_pc[i];//刷掉流水，执行下一条（pc + 4)
-//前面的跳转只允许所提交的第0条指令的重定位，分支预测失败？TODO
+//TODO
         correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
                                         (predict_info[i].target_pc != next_pc[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
@@ -364,13 +364,14 @@ end
 logic [31:0] rdcnt_data_o;
 
 always_comb begin
-    if (TODO isrdcntvl) begin
+    rdcnt_data_o = '0;
+    if (rob_commit_i[0].rdcntvl_en) begin
         rdcnt_data_o = timer_64_q[31:0];
     end
-    if (TODO isrdcntvh) begin
+    else if (rob_commit_i[0].rdcntvh_en) begin
         rdcnt_data_o = timer_64_q[63:32];
     end
-    if (TODO rdcntid) begin
+    else if (rob_commit_i[0].rdcntid_en) begin
         rdcnt_data_o = csr_q.tid;
     end
 end
@@ -388,7 +389,7 @@ csr_t csr_exception_update;//周期结束时候写入csr_q
 
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
-wire int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
+wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
 //取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
 wire fetch_excp    = rob_commit_valid_i[0] & rob_commit_i[0].fetch_exception;
@@ -513,7 +514,7 @@ wire another_exception    = rob_commit_valid_i[1] & |{a_fetch_excp, a_syscall_ex
 // CSR特权指令
 csr_t csr, csr_q, csr_init;
 wire  [1:0] csr_type = rob_commit_i[0].csr_type;
-wire [13:0] csr_num = rob_commit_i[0].csr_num;
+wire [13:0] csr_num  = rob_commit_i[0].csr_num;
 //TODO fetch from imm
 
 // CSR复位
@@ -765,7 +766,7 @@ always_comb begin
         end
     end
 
-    if (cur_tlbrd) begin
+    else if (cur_tlbrd) begin
         tlb_entry = tlb_entries_q[csr_q.tlbidx[`_TLBIDX_INDEX]];
         if (tlb_entry.key.e) begin
             //找到了要存到特定的csr寄存器里面
@@ -800,19 +801,19 @@ always_comb begin
         end
     end
 
-    if (cur_tlbwr) begin
+    else if (cur_tlbwr) begin
         //把值更新到tlb_update_entry里面
         load_tlb_update_entry();
         tlb_wr_req[csr_q.tlbidx[`_TLBIDX_INDEX]] = 1;
     end
 
-    if (cur_tlbfill) begin
+    else if (cur_tlbfill) begin
         load_tlb_update_entry();
         tlb_wr_req[timer_64_q[$clog2(`_TLB_ENTRY_NUM) - 1:0]] = 1;
         //同上，但是根据计时器的值随机更新一个表项
     end
 
-    if (cur_invtlb) begin
+    else if (cur_invtlb) begin
         tlb_update_entry       = '0;
         unique case (rob_commit_i[0].tlb_op)
             5'h0: begin
@@ -867,13 +868,13 @@ always_comb begin
 
     if (!rob_commit_valid_i[0]) begin
         tlb_wr_req = '0;
-    end//无效rob表项则上面全部不用
+    end//无效rob表项则上面全部不用，不知道这样加会不会逻辑更复杂😭
 end
 
 function automatic logic vppn_match(logic [31:0] va, 
                                     logic huge_page, logic [18: 0] vppn)
     if (huge_page) begin
-        return va[31:22] == vppn[18:9]; //this right, TODO change others
+        return va[31:22] == vppn[18:9]; //this right
     end else begin
         return va[31:13] == vppn;
     end
@@ -901,7 +902,7 @@ task load_tlb_update_entry();
         if (csr_q.estat[`_ESTAT_ECODE] == `_ECODE_TLBR) begin
             tlb_update_entry.key.e     = 1;
         end
-        elif (csr_q.tlbidx[`_TLBIDX_NE]) begin
+        else if (csr_q.tlbidx[`_TLBIDX_NE]) begin
             tlb_update_entry.key.e     = 0;
         end
         else begin
@@ -931,10 +932,10 @@ always_comb begin
         if (rob_commit_i[0].is_tlb_fix) begin
             csr_update = tlb_update_csr;
         end
-        if (rob_commit_i[0].is_csr_fix) begin
+        else if (rob_commit_i[0].is_csr_fix) begin
             csr_update = csr;
         end
-        if (TODO ertn指令) begin
+        else if (rob_commit_i[0].ertn_en) begin
             csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
             csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
             if (csr_q.llbctl[`_LLBCT_KLO]) begin
@@ -944,7 +945,7 @@ always_comb begin
                 csr_update.llbit = 0;
             end
         end
-        if (is_ll[0]) begin
+        else if (is_ll[0]) begin
             csr_update.llbit = 1;
         end
     end
@@ -966,7 +967,7 @@ always_comb begin
         if (csr_q.tval != 0) begin
             csr_update.tval = csr_update.tval - 1;
         end
-        elif (csr_q.tcfg[`_TCFG_PERIODIC]) begin
+        else if (csr_q.tcfg[`_TCFG_PERIODIC]) begin
             csr_update.estat[`_ESTAT_TIMER_IS] = 1;
             csr_update.tval = {csr_q.tcfg[`_TCFG_INITVAL], 2'b0};
         end
@@ -989,6 +990,34 @@ always_ff @(posedge clk) begin
     end
     else begin
         csr_q <= csr_update;
+    end
+end
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+// -------------------------------------------------------------------
+
+//idle指令
+logic wait_for_int_q, wait_for_int;
+
+always_comb begin
+    wait_for_int = wait_for_int_q;
+    if (wait_for_int) begin
+        wait_for_int = ~int_excep;
+    end
+    else begin
+        wait_for_int = cur_exception ? 0 : rob_commit_i[0].idle_en;
+    end
+end
+//当处于等待状态时，一直flush，要求rob来的所有指令都不valid！
+
+always_ff @( posedge clk ) begin
+    if (~rst_n) begin
+        wait_for_int_q <= 0;
+    end
+    else begin
+        wait_for_int_q <= wait_for_int;
     end
 end
 
