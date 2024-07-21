@@ -257,6 +257,14 @@ typedef struct packed {
 } lsu_iq_pkg_t;
 
 typedef struct packed {
+    logic   [31:0]  data;
+    logic   [5:0]   preg;
+    logic           w_reg;
+    logic           inst_valid;
+    // ...
+} iq_o_t;
+
+typedef struct packed {
     logic [19 : 0] tag;
     logic          v;
     logic          d;

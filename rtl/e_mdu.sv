@@ -6,8 +6,10 @@ module mdu (
     input   wire    flush,
 
     // 需要的操作数
-    input   mdu_i_t req_i,
-    output  mdu_o_t res_o,
+    input   mdu_i_t         req_i,
+    input   decode_info_t   di_i,
+    output  mdu_o_t         res_o,
+    output  decode_info_t   di_o,
 
     input   logic   valid_i,
     output  logic   ready_o,
@@ -59,5 +61,19 @@ assign ready_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op ==
 
 assign valid_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
                 mul_valid_o : div_valid_o;
+
+decode_info_t di_q;
+assign di_o = di_q;
+always_ff @(posedge clk) begin
+    if(~rst_n || flush) begin
+        di_q <= 0;
+    end
+    else if(valid_i && ready_o) begin
+        di_q <= di_i;
+    end
+    else begin
+        di_q <= di_q;
+    end
+end
 
 endmodule

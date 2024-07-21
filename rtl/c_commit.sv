@@ -234,7 +234,9 @@ always_comb begin
     else if(is_dbar || is_ibar) begin
         flush = '1;
     end
-    else if((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) begin
+    else if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) || 
+            ((ls_fsm_q == S_NORMAL) && commit_icache_valid_o && 
+              icache_commit_valid_i && icache_commit_ready_i)) begin
         flush = '1;
     end
     else if(|is_lsu) begin
@@ -320,10 +322,11 @@ end
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_i[i].pc;
-        correct_info_o[i].redir_addr = cur_exception ? exp_pc : //异常入口
-                                       (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
-                                       (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc
-                                       next_pc[i];//刷掉流水，执行下一条（pc + 4)
+        correct_info_o[i].redir_addr = 
+            cur_exception ? exp_pc : //异常入口
+            (rob_commit_i[0].ertn_en) ? csr_q.era : //异常返回
+            (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc
+            next_pc[i];//刷掉流水，执行下一条（pc + 4)
 //TODO
         correct_info_o[i].target_miss = (predect_branch[i] ^ is_branch[i]) |
                                         (predict_info[i].target_pc != next_pc[i]);
@@ -1101,7 +1104,7 @@ always_comb begin
     commit_axi_valid_o = '0;
     commit_axi_ready_o = '0;
 
-    if(ls_fsm_q == S_NORMAL && is_lsu) begin
+    if(ls_fsm_q == S_NORMAL && is_lsu && (~cur_exception)) begin
         stall |= ~cache_commit_hit;
 
         // Cache维护指令
@@ -1111,13 +1114,7 @@ always_comb begin
                 // 配置Icache请求
                 commit_icache_req.addr = lsu_info[0].paddr;
                 commit_icache_req.cache_op = cache_op;
-
-                if(~icache_commit_ready_i && ~icache_wait) begin
-                    commit_icache_valid_o = '1;
-                end
-                else begin
-                    commit_icache_valid_o = '0;
-                end
+                commit_icache_valid_o = '1;
             end
 
             else if(cache_tar == 1) begin
@@ -1386,14 +1383,19 @@ always_ff @(posedge clk) begin
             // Cache维护指令
             if(is_cache_fix[0]) begin
                 if(cache_tar == 0) begin
-                    if(icache_commit_valid_i) begin
+                    if(icache_commit_ready_i) begin
+                        if(icache_commit_valid_i) begin
+                            ls_fsm_q <= S_NORMAL;
+                            icache_wait <= '0;
+                        end
+                        else begin
+                            ls_fsm_q <= S_ICACHE;
+                            icache_wait <= '1;
+                        end
+                    end
+                    else begin
                         ls_fsm_q <= S_ICACHE;
                         icache_wait <= '0;
-                    end
-
-                    if(icache_commit_ready_i) begin
-                        ls_fsm_q <= S_ICACHE;
-                        icache_wait <= '1;
                     end
                 end
                 else if(cache_tar == 1) begin

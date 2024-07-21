@@ -39,7 +39,8 @@ module alu_iq # (
     output  logic           wkup_valid_o,
     
     // 区分了wkup和输入到后续FIFO的数据
-    output  word_t          result_o,
+    output  iq_o_t          result_o,
+    output  decode_info_t   di_o,
     // 与后续FIFO的握手信号
     input   logic           fifo_ready,
     output  logic           excute_valid_o
@@ -237,7 +238,7 @@ end
 
 // ------------------------------------------------------------------
 // 填入发射指令所需的执行信息：下一个周期填入执行单元
-decode_info_t   select_di, select_di_q;
+decode_info_t   select_di, select_di_q, select_di_qq;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
@@ -266,8 +267,13 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    if(excute_ready) begin
+    if(~rst_n || flush) begin
+        select_di_q <= '0;
+        select_di_qq <= '0;
+    end
+    else if(excute_ready) begin
         select_di_q <= select_di;
+        select_di_qq <= select_di_q;
     end
 end
 
@@ -334,9 +340,16 @@ always_ff @(posedge clk) begin
     end
 end
 
-assign wkup_data_o = e_alu_result_q;
-assign excute_valid_o = excute_valid_q;
-assign result_o = result_q;
+always_comb begin
+    wkup_data_o = e_alu_result_q;
+    excute_valid_o = excute_valid_q;
+    
+    result_o.data = result_q;
+    result_o.preg = select_di_qq.preg;
+    result_o.w_reg = select_di_qq
+end
+
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 endmodule
