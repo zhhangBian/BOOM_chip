@@ -107,6 +107,7 @@ typedef struct packed {
     logic   c_valid;
 
     logic   [31:0]  pc;
+    logic   [31:0]  data_rd;
     logic   [31:0]  data_rk;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
@@ -124,8 +125,32 @@ typedef struct packed {
     logic   is_cache_fix;
     logic   [4:0]   cache_code;
     logic   is_tlb_fix;
-    logic   [4:0]   tlb_type;
+
+    logic   fetch_exception;
+    logic   syscall_inst;
+    logic   break_inst;
+    logic   decode_err;
+    logic   priv_inst; //要求：不包含hit类cacop
+    logic   execute_exception;
+
+    logic   [31:0] badva;
+
+    logic   rdcntvh_en;
+    logic   rdcntvl_en;
+    logic   rdcntid_en;
+    logic   ertn_en;
+    logic   idle_en;
+
+    logic   tlbsrch_en;
+    logic   tlbrd_en;
+    logic   tlbwr_en;
+    logic   tlbfill_en;
+    logic   invtlb_en;
+
     logic   [4:0]   tlb_op;
+
+    logic   [1:0]   csr_type;
+    logic   [13:0]  csr_num;
 
     // 分支预测信息
     logic   is_branch;
