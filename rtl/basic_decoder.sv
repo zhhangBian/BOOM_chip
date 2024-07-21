@@ -30,7 +30,7 @@ always_comb begin
     decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
     decode_info_o.alu_grand_op = 2'd0;
     decode_info_o.alu_inst = 1'd0;
-    decode_info_o.alu_op = 2'd0;
+    decode_info_o.alu_op = 3'd0;
     decode_info_o.break_inst = 1'd0;
     decode_info_o.cmp_type = 4'd0;
     decode_info_o.csr_op_type = `_CSR_CSRNONE;
@@ -97,8 +97,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_INT;
-            decode_info_o.alu_op = `_ALU_STYPE_ADD;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
+            decode_info_o.alu_op = `_INT_ADD;
         end
         // SUB.W
         32'b00000000000100010???????????????: begin
@@ -106,8 +106,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_INT;
-            decode_info_o.alu_op = `_ALU_STYPE_SUB;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
+            decode_info_o.alu_op = `_INT_SUB;
         end
         // SLT
         32'b00000000000100100???????????????: begin
@@ -115,8 +115,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_INT;
-            decode_info_o.alu_op = `_ALU_STYPE_SLT;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
+            decode_info_o.alu_op = `_INT_SLT;
         end
         // SLTU
         32'b00000000000100101???????????????: begin
@@ -124,8 +124,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_INT;
-            decode_info_o.alu_op = `_ALU_STYPE_SLTU;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
+            decode_info_o.alu_op = `_INT_SLTU;
         end
         // NOR
         32'b00000000000101000???????????????: begin
@@ -133,8 +133,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_BW;
-            decode_info_o.alu_op = `_ALU_STYPE_NOR;
+            decode_info_o.alu_grand_op = `_GRAND_OP_BW;
+            decode_info_o.alu_op = `_BW_NOR;
         end
         // AND
         32'b00000000000101001???????????????: begin
@@ -142,8 +142,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_BW;
-            decode_info_o.alu_op = `_ALU_STYPE_AND;
+            decode_info_o.alu_grand_op = `_GRAND_OP_BW;
+            decode_info_o.alu_op = `_BW_AND;
         end
         // OR
         32'b00000000000101010???????????????: begin
@@ -151,8 +151,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_BW;
-            decode_info_o.alu_op = `_ALU_STYPE_OR;
+            decode_info_o.alu_grand_op = `_GRAND_OP_BW;
+            decode_info_o.alu_op = `_BW_OR;
         end
         // XOR
         32'b00000000000101011???????????????: begin
@@ -160,8 +160,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_BW;
-            decode_info_o.alu_op = `_ALU_STYPE_XOR;
+            decode_info_o.alu_grand_op = `_GRAND_OP_BW;
+            decode_info_o.alu_op = `_BW_XOR;
         end
         // SLL.W
         32'b00000000000101110???????????????: begin
@@ -169,8 +169,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_SFT;
-            decode_info_o.alu_op = `_ALU_STYPE_SLL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_SFT_SLL;
         end
         // SRL.W
         32'b00000000000101111???????????????: begin
@@ -178,8 +178,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_SFT;
-            decode_info_o.alu_op = `_ALU_STYPE_SRL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `SFT_SRL;
         end
         // SRA.W
         32'b00000000000110000???????????????: begin
@@ -187,8 +187,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_SFT;
-            decode_info_o.alu_op = `_ALU_STYPE_SRA;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_SFT_SRA;
         end
         /*==================== 算术 + 立即数 ====================*/
         // SLLI.W
@@ -198,8 +198,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_U5;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_SFT;
-            decode_info_o.alu_op = `_ALU_STYPE_SLL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_SFT_SLL;
         end
         // SRLI.W
         32'b00000000010001001???????????????: begin
@@ -208,8 +208,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_U5;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_SFT;
-            decode_info_o.alu_op = `_ALU_STYPE_SRL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_SFT_SRL;
         end
         // SRAI.W
         32'b00000000010010001???????????????: begin
@@ -218,8 +218,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_U5;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_SFT;
-            decode_info_o.alu_op = `_ALU_STYPE_SRA;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_SFT_SRA;
         end
         // LU12I.W
         32'b0001010?????????????????????????: begin
@@ -227,8 +227,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_IMM;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_S20;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_LI;
-            decode_info_o.alu_op = `_ALU_STYPE_LUI;
+            decode_info_o.alu_grand_op = `_GRAND_OP_LI;
+            decode_info_o.alu_op = `_LI_LUI;
         end
         // PCADDU12I
         32'b0001110?????????????????????????: begin
@@ -236,8 +236,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_IMM;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_S20;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_LI;
-            decode_info_o.alu_op = `_ALU_STYPE_PCADDUI;
+            decode_info_o.alu_grand_op = `_GRAND_OP_LI;
+            decode_info_o.alu_op = `_LI_PCADDUI;
         end
         // SLTI
         32'b0000001000??????????????????????: begin
@@ -246,8 +246,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_S12;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_INT;
-            decode_info_o.alu_op = `_ALU_STYPE_SLT;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_INT_SLT;
         end
         // SLTUI
         32'b0000001001??????????????????????: begin
@@ -256,8 +256,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_S12;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_INT;
-            decode_info_o.alu_op = `_ALU_STYPE_SLTU;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_INT_SLTU;
         end
         // ADDI.W
         32'b0000001010??????????????????????: begin
@@ -266,8 +266,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_S12;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_INT;
-            decode_info_o.alu_op = `_ALU_STYPE_ADD;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
+            decode_info_o.alu_op = `_INT_ADD;
         end
         // ANDI
         32'b0000001101??????????????????????: begin
@@ -276,8 +276,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_U12;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_BW;
-            decode_info_o.alu_op = `_ALU_STYPE_AND;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
+            decode_info_o.alu_op = `_INT_ADD;
         end
         // ORI
         32'b0000001110??????????????????????: begin
@@ -286,8 +286,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_U12;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_BW;
-            decode_info_o.alu_op = `_ALU_STYPE_OR;
+            decode_info_o.alu_grand_op = `_GRAND_OP_BW;
+            decode_info_o.alu_op = `_BW_OR;
         end
         // XORI
         32'b0000001111??????????????????????: begin
@@ -296,8 +296,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_U12;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_BW;
-            decode_info_o.alu_op = `_ALU_STYPE_XOR;
+            decode_info_o.alu_grand_op = `_GRAND_OP_BW;
+            decode_info_o.alu_op = `_BW_XOR;
         end
         /*==================== 乘除指令 ====================*/
         // MUL.W
@@ -306,7 +306,7 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_op = `_MDU_TYPE_MULL;
+            decode_info_o.alu_op = `_MDU_MUL;
         end
         // MULH.W
         32'b00000000000111001???????????????: begin
@@ -314,7 +314,7 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_op = `_MDU_TYPE_MULH;
+            decode_info_o.alu_op = `_MDU_MULH;
         end
         // MULH.WU
         32'b00000000000111010???????????????: begin
@@ -322,7 +322,7 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_op = `_MDU_TYPE_MULHU;
+            decode_info_o.alu_op = `_MDU_MULHU;
         end
         // DIV.W
         32'b00000000001000000???????????????: begin
@@ -330,7 +330,7 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_op = `_MDU_TYPE_DIV;
+            decode_info_o.alu_op = `_MDU_DIV;
         end
         // MOD.W
         32'b00000000001000001???????????????: begin
@@ -338,7 +338,7 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_op = `_MDU_TYPE_MOD;
+            decode_info_o.alu_op = `_MDU_MOD;
         end
         // DIV.WU
         32'b00000000001000010???????????????: begin
@@ -346,7 +346,7 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_op = `_MDU_TYPE_DIVU;
+            decode_info_o.alu_op = `_MDU_DIVU;
         end
         // MOD.WU
         32'b00000000001000011???????????????: begin
@@ -354,7 +354,7 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.alu_op = `_MDU_TYPE_MODU;
+            decode_info_o.alu_op = `_MDU_MODU;
         end
         /*==================== 分支指令 ====================*/
         // JIRL
@@ -365,7 +365,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.alu_grand_op = `_ALU_GTYPE_LI;
-            decode_info_o.alu_op = `_ALU_STYPE_PCPLUS4;
+            decode_info_o.alu_op = `_INT_ADD;
             decode_info_o.target_type = `_TARGET_ABS;
             decode_info_o.cmp_type = `_CMP_NOCONDITION;
             decode_info_o.jump_inst = 1'd1;
@@ -386,7 +386,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.alu_grand_op = `_ALU_GTYPE_LI;
-            decode_info_o.alu_op = `_ALU_STYPE_PCPLUS4;
+            decode_info_o.alu_op = `_INT_ADD;
             decode_info_o.target_type = `_TARGET_REL;
             decode_info_o.cmp_type = `_CMP_NOCONDITION;
             decode_info_o.jump_inst = 1'd1;
@@ -399,7 +399,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
-            decode_info_o.cmp_type = `_CMP_E;
+            decode_info_o.alu_op = `_COM_EQ;
             decode_info_o.jump_inst = 1'd1;
         end
         // BNE
@@ -410,7 +410,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
-            decode_info_o.cmp_type = `_CMP_NE;
+            decode_info_o.alu_op = `_COM_NE;
             decode_info_o.jump_inst = 1'd1;
         end
         // BLT
@@ -421,7 +421,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
-            decode_info_o.cmp_type = `_CMP_LT;
+            decode_info_o.alu_op = `_COM_LT;
             decode_info_o.jump_inst = 1'd1;
         end
         // BGE
@@ -432,7 +432,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
-            decode_info_o.cmp_type = `_CMP_GE;
+            decode_info_o.alu_op = `_COM_GE;
             decode_info_o.jump_inst = 1'd1;
         end
         // BLTU
@@ -443,7 +443,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
-            decode_info_o.cmp_type = `_CMP_LTU;
+            decode_info_o.alu_op = `_COM_LTU;
             decode_info_o.jump_inst = 1'd1;
         end
         // BGEU
@@ -454,7 +454,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
-            decode_info_o.cmp_type = `_CMP_GEU;
+            decode_info_o.alu_op = `_COM_GEU;
             decode_info_o.jump_inst = 1'd1;
         end
         /*==================== CSR ====================*/
