@@ -41,7 +41,7 @@ always_comb begin
     decode_info_o.idle_inst = 1'd0;
     decode_info_o.imm_type = `_IMM_U12;
     decode_info_o.inst = ins_i;
-    decode_info_o.invtlb_en = 1'd0;
+    decode_info_o.invtlb_inst = 1'd0;
     decode_info_o.ll_inst = 1'd0;
     decode_info_o.lsu_inst = 1'd0;
     decode_info_o.jump_inst = 1'd0;
@@ -64,10 +64,10 @@ always_comb begin
     decode_info_o.slot0 = 1'd0;
     decode_info_o.syscall_inst = 1'd0;
     decode_info_o.target_type = 1'd0;
-    decode_info_o.tlbfill_en = 1'd0;
-    decode_info_o.tlbrd_en = 1'd0;
-    decode_info_o.tlbsrch_en = 1'd0;
-    decode_info_o.tlbwr_en = 1'd0;
+    decode_info_o.tlbfill_inst = 1'd0;
+    decode_info_o.tlbrd_inst = 1'd0;
+    decode_info_o.tlbsrch_inst = 1'd0;
+    decode_info_o.tlbwr_inst = 1'd0;
     /*
     decode_info_o.bceqz = 1'd0;
     decode_info_o.bcnez = 1'd0;
@@ -639,7 +639,7 @@ always_comb begin
         // INVTLB
         32'b00000110010010011???????????????: begin
             decode_info_o.priv_inst = 1'd1;
-            decode_info_o.invtlb_en = 1'd1;
+            decode_info_o.invtlb_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
@@ -688,7 +688,7 @@ always_comb begin
         // TLBSRCH
         32'b0000011001001000001010??????????: begin
             decode_info_o.priv_inst = 1'd1;
-            decode_info_o.tlbsrch_en = 1'd1;
+            decode_info_o.tlbsrch_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -696,7 +696,7 @@ always_comb begin
         // TLBBRD
         32'b0000011001001000001011??????????: begin
             decode_info_o.priv_inst = 1'd1;
-            decode_info_o.tlbrd_en = 1'd1;
+            decode_info_o.tlbrd_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -704,7 +704,7 @@ always_comb begin
         // TLBBWR
         32'b0000011001001000001100??????????: begin
             decode_info_o.priv_inst = 1'd1;
-            decode_info_o.tlbwr_en = 1'd1;
+            decode_info_o.tlbwr_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -712,7 +712,7 @@ always_comb begin
         // TLBFILL
         32'b0000011001001000001101??????????: begin
             decode_info_o.priv_inst = 1'd1;
-            decode_info_o.tlbfill_en = 1'd1;
+            decode_info_o.tlbfill_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
