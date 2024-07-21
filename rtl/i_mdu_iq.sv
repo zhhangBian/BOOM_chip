@@ -15,22 +15,23 @@ module mdu_iq # (
     input   logic           flush,
 
     // 控制信息
-    input   logic [1:0]             choose,
-    input   decode_info_t [1:0]     p_di_i,
-    input   word_t [1:0][REG_COUNT - 1:0]   p_data_i,
-    input   rob_id_t [1:0][REG_COUNT - 1:0] p_reg_id_i,
-    input   logic [1:0][REG_COUNT - 1:0]    choose,
+    input   logic           other_ready,
+    input   logic   [1:0]   choose,
+    input   decode_info_t   [1:0] p_di_i,
+    input   word_t  [1:0][REG_COUNT - 1:0]  p_data_i,
+    input   rob_id_t[1:0][REG_COUNT - 1:0]  p_reg_id_i,
+    input   logic   [1:0][REG_COUNT - 1:0]  choose,
     // IQ的ready含义是队列未满，可以继续接收指令
-    output  logic                   entry_ready_o,
+    output  logic           entry_ready_o,
 
     // CDB数据前递
-    input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
-    input   rob_id_t[CDB_COUNT - 1:0] cdb_reg_id_i,
-    input   logic   [CDB_COUNT - 1:0] cdb_valid_i,
+    input   word_t  [CDB_COUNT - 1:0]   cdb_data_i,
+    input   rob_id_t[CDB_COUNT - 1:0]   cdb_reg_id_i,
+    input   logic   [CDB_COUNT - 1:0]   cdb_valid_i,
 
-    input   word_t  [WKUP_COUNT - 1:0] wkup_data_i,
-    input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
-    input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
+    input   word_t  [WKUP_COUNT - 1:0]  wkup_data_i,
+    input   rob_id_t[WKUP_COUNT - 1:0]  wkup_reg_id_i,
+    input   logic   [WKUP_COUNT - 1:0]  wkup_valid_i,
 
     // 区分了wkup和输入到后续FIFO的数据
     output  word_t          result_o,
@@ -115,11 +116,11 @@ end
 always_comb begin
     entry_init = '0;
     if(^choose) begin
-        entry_init[iq_tail_q] |= '1;
+        entry_init[iq_tail_q]     |= other_ready;
     end
     else if(&choose) begin
-        entry_init[iq_tail_q] |= '1;
-        entry_init[iq_tail_q + 1] |= '1;
+        entry_init[iq_tail_q]     |= other_ready;
+        entry_init[iq_tail_q + 1] |= other_ready;
     end
 end
 
