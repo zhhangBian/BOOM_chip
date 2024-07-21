@@ -19,7 +19,7 @@ module lsu_iq # (
     input   decode_info_t [1:0]     p_di_i,
     input   word_t [1:0][REG_COUNT - 1:0]   p_data_i,
     input   rob_id_t [1:0][REG_COUNT - 1:0] p_reg_id_i,
-    input   logic [1:0][REG_COUNT - 1:0]    p_valid_i,
+    input   logic [1:0][REG_COUNT - 1:0]    choose,
     // IQ的ready含义是队列未满，可以继续接收指令
     output  logic                   entry_ready_o,
 
@@ -95,13 +95,13 @@ always_comb begin
     iq_tail = iq_tail_q;
     // 上一拍允许这一拍进入
     if(entry_ready_o) begin
-        iq_tail += p_valid_i[0] + p_valid_i[1];
+        iq_tail += choose[0] + choose[1];
     end
 end
 
 // 存在IQ中的指令数
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i[0] + p_valid_i[1] + (excute_ready & excute_valid);
+    free_cnt = free_cnt_q - (choose[0] + choose[1]) + (excute_ready & excute_valid);
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -110,7 +110,7 @@ end
 word_t   [IQ_SIZE - 1:0][1:0]    iq_data;
 rob_id_t [IQ_SIZE - 1:0][1:0]    iq_reg_id;
 logic    [IQ_SIZE - 1:0][1:0]    iq_valid;
-decode_info_t [IQ_SIZE - 1:0] iq_di;
+decode_info_t [IQ_SIZE - 1:0]    iq_di;
 
 always_comb begin
     entry_select = '0;
@@ -123,10 +123,10 @@ end
 
 always_comb begin
     entry_init = '0;
-    if(^p_valid_i) begin
+    if(^choose) begin
         entry_init[iq_tail_q] |= '1;
     end
-    else if(&p_valid_i) begin
+    else if(&choose) begin
         entry_init[iq_tail_q] |= '1;
         entry_init[iq_tail_q + 1] |= '1;
     end
@@ -154,21 +154,21 @@ always_comb begin
     iq_valid    = '0;
     iq_di       = '0;
 
-    if(^p_valid_i) begin
-        iq_data   [iq_tail_q]        |= p_valid_i[0] ? p_data_i[0]   : p_data_i[1];
-        iq_reg_id [iq_tail_q]        |= p_valid_i[0] ? p_reg_id_i[0] : p_reg_id_i[1];
-        iq_valid  [iq_tail_q]        |= '1;
-        iq_di     [iq_tail_q]        |= p_valid_i[0] ? p_di_i[0]     : p_di_i[1];
+    if(^choose) begin
+        iq_data   [iq_tail_q]        |= choose[0] ? p_data_i[0]   : p_data_i[1];
+        iq_reg_id [iq_tail_q]        |= choose[0] ? p_reg_id_i[0] : p_reg_id_i[1];
+        iq_valid  [iq_tail_q]        |= choose[0] ? p_valid_i[0]  : p_valid_i[1];
+        iq_di     [iq_tail_q]        |= choose[0] ? p_di_i[0]     : p_di_i[1];
     end
-    else if(&p_valid_i) begin
+    else if(&choose) begin
         iq_data   [iq_tail_q]        |= p_data_i[0] ;
         iq_reg_id [iq_tail_q]        |= p_reg_id_i[0];
-        iq_valid  [iq_tail_q]        |= '1;
+        iq_valid  [iq_tail_q]        |= p_valid_i[0];
         iq_di     [iq_tail_q]        |= p_di_i[0];
 
         iq_data   [iq_tail_q + 1]    |= p_data_i[1] ;
         iq_reg_id [iq_tail_q + 1]    |= p_reg_id_i[1];
-        iq_valid  [iq_tail_q + 1]    |= '1;
+        iq_valid  [iq_tail_q + 1]    |= p_valid_i[1];
         iq_di     [iq_tail_q + 1]    |= p_di_i[1];
     end
 end

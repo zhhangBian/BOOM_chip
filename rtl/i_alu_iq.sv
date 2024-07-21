@@ -124,7 +124,7 @@ logic [$bits(IQ_SIZE):0] free_cnt;
 logic [$bits(IQ_SIZE):0] free_cnt_q;
 
 always_comb begin
-    free_cnt = free_cnt_q - p_valid_i + (excute_ready & excute_valid);
+    free_cnt = free_cnt_q - (|choose) + (excute_ready & excute_valid);
 end
 
 always_ff @(posedge clk) begin
@@ -159,7 +159,7 @@ always_ff @(posedge clk) begin
             if(entry_select[i]) begin
                 entry_empty_q[i] <= 1;
             end
-            else if(entry_init[i] & p_valid_i) begin
+            else if(entry_init[i] & (|choose)) begin
                 entry_empty_q[i] <= 0;
             end
         end
@@ -210,7 +210,7 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin : gen_iq_entry
         .flush,
 
         .select_i(entry_select[i] & excute_ready),
-        .init_i(entry_init[i] & p_valid_i),
+        .init_i(entry_init[i] & (|choose)),
 
         .data_i(p_data_i),
         .data_reg_id_i(p_reg_id_i),
