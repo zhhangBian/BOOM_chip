@@ -54,12 +54,14 @@ module mycpu_top (
     input           bvalid,
     output          bready,
 
-    //debug
+    //debug TODO: chiplab only. However, chiplab can be modified (doge)
+`ifdef _VERILATOR
     input           break_point,
     input           infor_flag,
     input  [ 4:0]   reg_num,
     output          ws_valid,
     output [31:0]   rf_rdata,
+`endif
 
 `ifdef _VERILATOR
     // chiplab 的接口
@@ -94,7 +96,8 @@ correct_info_t [1:0] correct_infos;
 bpu bpu_inst(
     .clk(clk),
     .rst_n(rst_n),
-    .g_flush(flush),
+    .flush_i(flush),
+    .redir_addr_i(redir_addr),
 
     .correct_infos_i(correct_infos),
     .sender(b_fifo_handshake.sender)
