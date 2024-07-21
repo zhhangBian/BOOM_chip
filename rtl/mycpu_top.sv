@@ -89,13 +89,14 @@ csr_t csr;
 /*============================== Branch Predicting ==============================*/
 
 handshake_if #(b_f_pkg_t) b_fifo_handshake();
+correct_info_t [1:0] correct_infos;
 
 bpu bpu_inst(
     .clk(clk),
     .rst_n(rst_n),
     .g_flush(flush),
 
-    .correct_infos_i(TODO),
+    .correct_infos_i(correct_infos),
     .sender(b_fifo_handshake.sender)
 );
 
@@ -139,10 +140,13 @@ i_cache # (
     .axi_data_valid_i(),
     .axi_data_i(),
     // TODO: 全局信号
-    .commit_cache_req(), // commit维护cache时的请求
-    .cache_commit_resp(), // cache向提交级反馈结果
+    .commit_icache_req(), // commit维护cache时的请求
+    .icache_cacop_flush_o(),
+    .icache_cacop_tlb_exc(),
+    .icache_cacop_bvaddr(),
     .commit_req_valid_i(), // commit发维护请求需要读（cacop op为2的时候）的时候
-    .commit_resp_ready_o() // 状态处理完毕，即为NORMAL状态时
+    .commit_resp_ready_o(), // 状态处理完毕，即为NORMAL状态时
+    .commit_resp_valid_o()  // cache向提交级反馈结果
 );
 
 /*============================== Decoder ==============================*/
@@ -338,6 +342,9 @@ fifo # (
     .sender(fu_cdb[1].sender)
 );
 
+handshake_if #(.T(iq_lsu_pkg_t)) cpu_lsu_if();
+handshake_if #(.T(lsu_iq_pkg_t)) lsu_cpu_if();
+
 lsu_iq # (
     .CDB_COUNT(CDB_COUNT),
     .WKUP_COUNT(WKUP_COUNT)
@@ -363,13 +370,13 @@ lsu_iq # (
     .wkup_reg_id_i(wkup_reg_id),
     .wkup_valid_i(wkup_valid),
 
-    .iq_lsu_valid_o(),
-    .iq_lsu_ready_i(),
-    .iq_lsu_req_o(),
+    .iq_lsu_valid_o(cpu_lsu_if.valid),
+    .iq_lsu_ready_i(cpu_lsu_if.ready),
+    .iq_lsu_req_o(cpu_lsu_if.data),
 
-    .lsu_iq_valid_i(),
-    .lsu_iq_ready_o(),
-    .lsu_iq_resp_i(),
+    .lsu_iq_valid_i(lsu_cpu_if.valid),
+    .lsu_iq_ready_o(lsu_cpu_if.ready),
+    .lsu_iq_resp_i(lsu_cpu_if.data),
 
     .result_o(fu_cdb_data[2]),
     .fifo_ready(fu_fifo[2].ready),
@@ -429,7 +436,6 @@ fifo # (
     .receiver(fu_fifo[3].receiver),
     .sender(fu_cdb[3].sender)
 );
-
 
 cdb_info_t [1:0] cdb_infos;
 
@@ -515,9 +521,9 @@ commit # () commit(
     .tlb_write_req_o(),
 
     .commit_icache_req_o(),
-    .icache_commit_tlb_exp_i(),
-    .icache_commit_tlb_miss_i(),
-    .commit_icache_ready_o(),
+    .icache_cacop_flush_i(),
+    .icache_cacop_tlb_exp_i(),
+    .icache_cacop_bvaddr_i(),
     .commit_icache_valid_o(),
     .icache_commit_ready_i(),
     .icache_commit_valid_i()
@@ -530,8 +536,8 @@ dcache # () dcache(
     .stall_i(stall),
 
     .csr_i(csr),
-    .cpu_lsu_receiver(),
-    .lsu_cpu_sender(),
+    .cpu_lsu_receiver(cpu_lsu_if.receiver),
+    .lsu_cpu_sender(lsu_cpu_if.sender),
 
     .commit_cache_req(),
     .cache_commit_resp()

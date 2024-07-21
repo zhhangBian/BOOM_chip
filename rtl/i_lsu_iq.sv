@@ -296,7 +296,7 @@ data_wkup #(
 iq_lsu_pkg_t    iq_lsu_request;
 lsu_iq_pkg_t    lsu_iq_request;
 
-assign iq_lsu_req_o = iq_lsu_request;
+assign iq_lsu_req_o     = iq_lsu_request;
 assign iq_lsu_valid_o   = excute_valid_q;
 assign lsu_iq_ready_o   = fifo_ready;
 assign entry_valid_o    = lsu_iq_valid_i;

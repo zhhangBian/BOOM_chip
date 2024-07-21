@@ -85,11 +85,11 @@ module commit #(
 
     // commit与ICache的握手信号
     output  commit_icache_req_t     commit_icache_req_o,
-    // ICache返回TLB异常
-    input   tlb_exception_t         icache_commit_tlb_exp_i,
     // 2'b01 tlb_exc, 2'b10 tag_miss, other normal
-    input   logic [1:0]             icache_commit_tlb_miss_i,
-    output  logic   commit_icache_ready_o,
+    input   logic [1:0]             icache_cacop_flush_i,
+    // ICache返回TLB异常
+    input   tlb_exception_t         icache_cacop_tlb_exc_i,
+    input   logic [31:0]            icache_cacop_bvaddr_i,
     output  logic   commit_icache_valid_o,
     input   logic   icache_commit_ready_i,
     input   logic   icache_commit_valid_i
@@ -101,7 +101,6 @@ module commit #(
 logic stall, stall_q;
 assign stall_o = stall;
 assign commit_ready_o = ~stall;
-assign commit_icache_ready_o = commit_ready_o;
 
 assign commit_cache_ready = '1;
 
@@ -408,7 +407,7 @@ wire priv_excp     = rob_commit_valid_i[0] & rob_commit_i[0].priv_inst && (csr_q
 wire execute_excp  = rob_commit_valid_i[0] & rob_commit_i[0].execute_exception;
 
 //icache的维护指令出现tlb异常
-wire cacop_excep   = |icache_commit_tlb_exp_i;
+wire cacop_excep   = |icache_cacop_tlb_exc_i;
 
 wire [7:0] exception = {int_excep, fetch_excp, cacop_excep, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
@@ -454,7 +453,7 @@ always_comb begin
 
         //cacop
         8'b001?????: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = icache_commit_tlb_exp_i.exc_code;
+            csr_exception_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
             csr_exception_update.badv                    = ; //TODO 存badv
             csr_exception_update.tlbehi[`_TLBEHI_VPPN]   = ;  //TODO 一定是tlb异常，tlb例外存vppn
