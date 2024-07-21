@@ -92,6 +92,8 @@ typedef logic [0 : 0] tlbrd_inst_t;
 typedef logic [0 : 0] tlbwr_inst_t;
 typedef logic [0 : 0] tlbfill_inst_t;
 typedef logic [0 : 0] invtlb_inst_t;
+typedef logic [0 : 0] flush_inst_t;
+typedef logic [0 : 0] ibar_inst_t;
 typedef logic [3 : 0] fpu_op_t;
 typedef logic [0 : 0] fpu_mode_t;
 typedef logic [3 : 0] rnd_mode_t;
@@ -108,7 +110,6 @@ typedef logic [0 : 0] bcnez_t;
 typedef logic [31: 0] inst_t;
 typedef logic [0 : 0] alu_inst_t;
 typedef logic [0 : 0] mdu_inst_t;
-typedef logic [0 : 0] div_inst_t;
 typedef logic [0 : 0] lsu_inst_t;
 typedef logic [0 : 0] fpu_inst_t;
 typedef logic [0 : 0] fbranch_inst_t;
@@ -313,10 +314,12 @@ typedef struct packed {
     dbar_inst_t     dbar_inst; // 是否是 DBAR 指令
     logic           decode_err; // 出现未知指令
     ertn_inst_t     ertn_inst; // 是否是 ertn 指令
+    flush_inst_t    flush_inst;
+    ibar_inst_t     ibar_inst;
     idle_inst_t     idle_inst; // 仅在 IDLE 指令下置1.
     imm_type_t      imm_type; // 立即数类型 _IMM_...
     inst_t          inst; // 指令本身
-    invtlb_inst_t     invtlb_inst; // 是否是invtlb指令
+    invtlb_inst_t   invtlb_inst; // 是否是invtlb指令
     jump_inst_t     jump_inst; // 是否是跳转指令
     sc_inst_t       ll_inst; // 是否是原子访问指令
     lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
@@ -339,10 +342,10 @@ typedef struct packed {
     slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
     syscall_inst_t  syscall_inst; // 是否是 syscall 指令
     target_type_t   target_type; // 只有JIRL的目标地址和寄存器有关，其余均之和PC有关，因此要做区分
-    tlbfill_inst_t    tlbfill_inst;
-    tlbrd_inst_t      tlbrd_inst;
-    tlbsrch_inst_t    tlbsrch_inst;
-    tlbwr_inst_t      tlbwr_inst;
+    tlbfill_inst_t  tlbfill_inst;
+    tlbrd_inst_t    tlbrd_inst;
+    tlbsrch_inst_t  tlbsrch_inst;
+    tlbwr_inst_t    tlbwr_inst;
     /* Float point control signals
     bceqz_t         bceqz; // 是否否是bceqz指令
     bcnez_t         bcnez; // 是否是bcnez指令
@@ -394,3 +397,5 @@ function logic [31:0] inst_to_addr_imm (input logic[31:0] inst, input addr_imm_t
 endfunction
 
 `endif
+
+// 所有特权, rdcnt, dbar, ibar, 3csr, 5tlb, cacop, ertn, idle
