@@ -379,7 +379,6 @@ always_comb begin
                 if (axi_resp_ready_i) begin
                     fsm_next = F_MISS_S;
                     temp_data_block = '0;
-                    addr_valid_o    = '0;
                 end
             end else if (uncache) begin
                 stall |= '1;
@@ -393,7 +392,6 @@ always_comb begin
                 if (axi_resp_ready_i) begin
                     fsm_next = F_UNCACHE_S;
                     temp_data_block = '0;
-                    addr_valid_o    = '0;
                 end
             end
         end
