@@ -32,9 +32,10 @@
 `define _CSR_DMW1       (9'h181)
 `define _CSR_END        (9'h182)
 
-`define _CSR_CSRRD      (3'h1)
-`define _CSR_CSRWR      (3'h2)
-`define _CSR_CSRXCHG    (3'h3)
+`define _CSR_CSRNONE    (2'h0)
+`define _CSR_CSRRD      (2'h1)
+`define _CSR_CSRWR      (2'h2)
+`define _CSR_CSRXCHG    (2'h3)
 
 typedef struct packed {
     logic [31:0] crmd;

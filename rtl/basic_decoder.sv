@@ -19,6 +19,7 @@
  *      3. 
  */
 
+`include "a_csr.svh"
 `include "a_decoder.svh"
 
 module basic_decoder (
@@ -32,8 +33,12 @@ always_comb begin
     decode_info_o.wait_inst = 1'd0;
     decode_info_o.syscall_inst = 1'd0;
     decode_info_o.break_inst = 1'd0;
-    decode_info_o.csr_op_en = 1'd0;
+    decode_info_o.csr_op_type = `_CSR_CSRNONE;
     decode_info_o.csr_rdcnt = 2'd0;
+    decode_info_o.rdcnt_inst = 1'd0;
+    decode_info_o.rdcntvl_inst = 1'd0;
+    decode_info_o.rdcntvh_inst = 1'd0;
+    decode_info_o.rdcntid_inst = 1'd0;
     decode_info_o.tlbsrch_en = 1'd0;
     decode_info_o.tlbrd_en = 1'd0;
     decode_info_o.tlbwr_en = 1'd0;
@@ -63,8 +68,9 @@ always_comb begin
     decode_info_o.mem_write = 1'd0;
     decode_info_o.mem_read = 1'd0;
     decode_info_o.mem_cacop = 1'd0;
-    decode_info_o.llsc_inst = 1'd0;
-    decode_info_o.dbarrier = 1'd0;
+    decode_info_o.ll_inst = 1'd0;
+    decode_info_o.sc_inst = 1'd0;
+    decode_info_o.dbar_inst = 1'd0;
     /*
     decode_info_o.fpu_op = 4'd0;
     decode_info_o.fpu_mode = 1'd0;
@@ -456,7 +462,17 @@ always_comb begin
         // CSRRD, CSRWR, CSRXCHG
         32'b00000100????????????????????????: begin
             decode_info_o.priv_inst = 1'd1;
-            decode_info_o.csr_op_en = 1'd1;
+            case (ins_i[9:5])
+                5'b0:
+                    // CSRRD
+                    decode_info_o.csr_op_type = `_CSR_CSRRD;
+                5'b1: 
+                    // CSRWR
+                    decode_info_o.csr_op_type = `_CSR_CSRWR;
+                default: 
+                    // CSRXCHG
+                    decode_info_o.csr_op_type = `_CSR_CSRXCHG;
+            endcase
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RD;
             decode_info_o.reg_type_r1 = `_REG_RJ;
@@ -474,7 +490,7 @@ always_comb begin
             decode_info_o.slot0 = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_WORD;
             decode_info_o.mem_read = 1'd1;
-            decode_info_o.llsc_inst = 1'd1;
+            decode_info_o.ll_inst = 1'd1;
         end
         // SC.W
         32'b00100001????????????????????????: begin
@@ -486,7 +502,7 @@ always_comb begin
             decode_info_o.slot0 = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_WORD;
             decode_info_o.mem_write = 1'd1;
-            decode_info_o.llsc_inst = 1'd1;
+            decode_info_o.sc_inst = 1'd1;
         end
         /*==================== CACHE ====================*/
         // CACOP
@@ -630,7 +646,7 @@ always_comb begin
             decode_info_o.lsu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
-            decode_info_o.dbarrier = 1'd1;
+            decode_info_o.dbar_inst = 1'd1;
         end
         // IBAR
         32'b00111000011100101???????????????: begin
@@ -638,19 +654,29 @@ always_comb begin
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
         end
-        // RDCNTVL.W
         32'b0000000000000000011000??????????: begin
-            decode_info_o.csr_rdcnt = `_RDCNT_ID_VLOW;
+            decode_info_o.rdcnt_inst = 1'd1;
+            if (ins_i[9:5] == 5'b0) begin
+                // RDCNTVL.W
+                decode_info_o.rdcntvl_inst = 1'd1;
+                decode_info_o.reg_type_w = `_REG_W_RD;
+            end
+            else begin
+                // RDCNTID.W
+                decode_info_o.rdcntid_inst = 1'd1;
+                decode_info_o.reg_type_w = `_REG_W_RJ;
+            end
             decode_info_o.alu_inst = 1'd1;
-            decode_info_o.reg_type_w = `_REG_W_RJD;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
         end
         // RDCNTVH.W
         32'b0000000000000000011001??????????: begin
+            decode_info_o.rdcnt_inst = 1'd1;
+            decode_info_o.rdcntvh_inst = 1'd1;
             decode_info_o.csr_rdcnt = `_RDCNT_VHIGH;
             decode_info_o.alu_inst = 1'd1;
-            decode_info_o.reg_type_w = `_REG_W_RJD;
+            decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
         end
