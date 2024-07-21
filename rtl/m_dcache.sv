@@ -21,7 +21,9 @@ module dcache #(
     // commit级信号
     input logic              stall_i, // 全局stall信号
     input commit_cache_req_t commit_cache_req,
-    output cache_commit_resp_t cache_commit_resp
+    output cache_commit_resp_t cache_commit_resp,
+
+    input tlb_write_req_t  tlb_write_req_i,
 );
 // global stall
 logic sb_stall;
@@ -68,6 +70,7 @@ mmu #(
     .va(iq_lsu_pkg.vaddr),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // ? dcache中，只有读和写两种情况:分别是
+    .tlb_write_req_i(tlb_write_req_i),
     .trans_result_o(trans_result),
     .tlb_exception_o(tlb_exception)
 );
