@@ -293,20 +293,23 @@ for(integer i = 0; i < 2; i += 1) begin
 
         case (branch_info[i].br_type)
             // 比较结果由ALU进行计算
-            BR_B:
+            BR_B: begin
+                real_target[i] = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                next_pc[i] = real_target[i]; // TODO: check
+            end
             BR_NORMAL: begin
-                real_target = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                real_target[i] = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
                 if (rob_commit_i[i].w_data == 1) begin
-                    next_pc[i] = real_target; // TODO: check
+                    next_pc[i] = real_target[i]; // TODO: check
                 end
             end
             BR_CALL: begin
-                real_target = rob_commit_i[i].data_imm;
+                real_target[i] = rob_commit_i[i].data_imm;
                 next_pc[i] = rob_commit_i[i].data_imm;
             end
             BR_RET: begin
-                real_target = rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
-                next_pc[i] = real_target; // TODO: check
+                real_target[i] = rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
+                next_pc[i] = real_target[i]; // TODO: check
             end
         endcase
     end
