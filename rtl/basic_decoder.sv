@@ -38,6 +38,8 @@ always_comb begin
     decode_info_o.decode_err = 1'b0; // 有修改
     decode_info_o.div_inst = 1'd0;
     decode_info_o.ertn_inst = 1'd0;
+    decode_info_o.flush_inst = 1'd0;
+    decode_info_o.ibar = 1'd0;
     decode_info_o.idle_inst = 1'd0;
     decode_info_o.imm_type = `_IMM_U12;
     decode_info_o.inst = ins_i;
@@ -467,6 +469,7 @@ always_comb begin
         // CSRRD, CSRWR, CSRXCHG
         32'b00000100????????????????????????: begin
             decode_info_o.priv_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             case (ins_i[9:5])
                 5'b0:
                     // CSRRD
@@ -513,6 +516,7 @@ always_comb begin
         // CACOP
         32'b0000011000??????????????????????: begin
             decode_info_o.priv_inst = (ins_i[4:3] != 2'b10); // 
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.lsu_inst = 1'd1;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
@@ -622,8 +626,9 @@ always_comb begin
         end
         // ERTN
         32'b0000011001001000001110??????????: begin
-            decode_info_o.ertn_inst = 1'd1;
             decode_info_o.priv_inst = 1'd1;
+            decode_info_o.ertn_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -632,17 +637,8 @@ always_comb begin
         32'b00000110010010001???????????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.idle_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
-            decode_info_o.slot0 = 1'd1;
-            decode_info_o.refetch = 1'd1;
-        end
-        // INVTLB
-        32'b00000110010010011???????????????: begin
-            decode_info_o.priv_inst = 1'd1;
-            decode_info_o.invtlb_inst = 1'd1;
-            decode_info_o.alu_inst = 1'd1;
-            decode_info_o.reg_type_r0 = `_REG_RK;
-            decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
         end
@@ -652,15 +648,19 @@ always_comb begin
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
             decode_info_o.dbar_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
         end
         // IBAR
         32'b00111000011100101???????????????: begin
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
+            decode_info_o.ibar = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
         end
         32'b0000000000000000011000??????????: begin
             decode_info_o.rdcnt_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             if (ins_i[9:5] == 5'b0) begin
                 // RDCNTVL.W
                 decode_info_o.rdcntvl_inst = 1'd1;
@@ -679,16 +679,29 @@ always_comb begin
         32'b0000000000000000011001??????????: begin
             decode_info_o.rdcnt_inst = 1'd1;
             decode_info_o.rdcntvh_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
         end
         /*==================== TLB指令 ====================*/
+        // INVTLB
+        32'b00000110010010011???????????????: begin
+            decode_info_o.priv_inst = 1'd1;
+            decode_info_o.invtlb_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
+            decode_info_o.alu_inst = 1'd1;
+            decode_info_o.reg_type_r0 = `_REG_RK;
+            decode_info_o.reg_type_r1 = `_REG_RJ;
+            decode_info_o.slot0 = 1'd1;
+            decode_info_o.refetch = 1'd1;
+        end
         // TLBSRCH
         32'b0000011001001000001010??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbsrch_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -697,6 +710,7 @@ always_comb begin
         32'b0000011001001000001011??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbrd_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -705,6 +719,7 @@ always_comb begin
         32'b0000011001001000001100??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbwr_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
@@ -713,6 +728,7 @@ always_comb begin
         32'b0000011001001000001101??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbfill_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;

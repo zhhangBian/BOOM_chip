@@ -43,6 +43,9 @@ module commit #(
     output  logic   flush,
     output  logic   stall_o,
 
+    //外部中断接入
+    input   logic   [7:0]  hard_is_i,
+
     // 可能没用
     input   logic   [1:0]   rob_commit_valid_i,
     input   rob_commit_pkg_t [1:0]  rob_commit_i,
@@ -73,6 +76,7 @@ module commit #(
 
     // commit与BPU的接口
     output  correct_info_t [1:0]    correct_info_o,
+    output  logic [31:0]            redir_addr_o,
 
     //commit与两个外部tlb/mmu的接口
     output  csr_t            csr_o,
@@ -115,14 +119,14 @@ logic [5:0] timer_64, timer_64_q;
 // - cache维护指令
 // - dbar,ibar
 // 特殊处理均只允许单条提交
-//TODO : 最后提交的逻辑，ibar（不实现）,cacop的异常没有处理
+//TODO : 最后提交的逻辑，flush的逻辑，部分接线，ibar（不实现）
 always_comb begin
-    commit_request_o[0] = rob_commit_valid_i[0];
+    commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
 
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~rob_commit_i[0].first_commit &
-                          ~rob_commit_i[1].first_commit;
+                          ~rob_commit_i[1].first_commit;//TODO first_commit信号产生
 end
 
 // 处理对ARF的接口
@@ -138,16 +142,16 @@ always_comb begin
         commit_arf_areg_o[1] = rob_commit_i[1].arf_id;
         commit_arf_preg_o[1] = rob_commit_i[1].rob_id;
     end
-//上面这个提交不太对TODO
+//上面我觉得stall可以删掉 TODO 下面可以放进normal
 
     if(is_csr_fix[0]) begin
-        commit_arf_we_o[0]   = rob_commit_valid_i[0] & !cur_exception;
+        commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
         commit_arf_data_o[0] = commit_csr_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
         commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
     end
-    if (rdcnt_en[0]) begin
-        commit_arf_we_o[0]   = rob_commit_valid_i[0] & !cur_exception;
+    else if (rdcnt_en[0]) begin
+        commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
         commit_arf_data_o[0] = rdcnt_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
         commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
@@ -155,7 +159,7 @@ always_comb begin
     //csr指令和rdcnt指令的提交，已完成
 
     else if(ls_fsm_q == S_NORMAL) begin
-        commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
+        commit_arf_we_o[0]   = commit_request_o[0] & & !cur_exception & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
         commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
         commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
@@ -223,39 +227,51 @@ end
 // ------------------------------------------------------------------
 // 处理全局flush信息
 // TODO
+
+logic [1:0] commit_flush_info;
+
 always_comb begin
-    // 只要不是现在提交，就刷
-    // 此种情况包含了Cache，CSR和TLB维护的情况
-    if(~(commit_request_o[0]) && ls_fsm_q == S_NORMAL) begin
-        flush = '1;
+    commit_flush_info = '0;
+
+    if (cur_exception) begin
+        commit_flush_info = 2'b01;
     end
-    else if(is_dbar || is_ibar) begin
-        flush = '1;
+    //异常则flush
+
+    else if (commit_request_o[0]) begin
+        if (rob_commit_i[0].flush_inst) begin
+            commit_flush_info = 2'b01;
+        end//一定会flush的指令
+        else if (~predict_success[0])begin
+            commit_flush_info = 2'b01;
+        end//分支预测失败
+        else if (commit_request_o[1] & ~predict_success[1]) begin
+            commit_flush_info = 2'b10;
+        end//第一条成功但第二条失败了
     end
-    else if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) || 
+
+    if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) || 
             ((ls_fsm_q == S_NORMAL) && commit_icache_valid_o && 
               icache_commit_valid_i && icache_commit_ready_i)) begin
-        flush = '1;
-    end
-    else if(|is_lsu) begin
+        commit_flush_info = 2'b01;
+    end //TODO  ICACOP指令
+
+    else if(|is_lsu/*是不是要加valid*/) begin
         if(ls_fsm_q == S_NORMAL) begin
-            if(!cache_commit_hit) begin
-                flush = '1;
+            if(!&cache_commit_hit) begin
+                flush = '1; //TODO 存储指令，等待完成
             end
             else if(is_uncached[0]) begin
-                flush = '1;
-            end
-            else begin
-                flush = '0;
+                commit_flush_info = 2'b01;
             end
         end
-        else begin
-            flush = '0;
-        end
-    end
-    else begin
-        flush = '0;
-    end
+    end //TODO 存储指令，等待完成
+
+    if (wait_for_int_q) begin
+        commit_flush_info = 2'b01;
+    end//idle持续flush
+
+    flush = |commit_flush_info;
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -280,6 +296,7 @@ assign branch_info[1] = rob_commit_i[1].branch_info;
 
 logic [1:0] is_branch;
 logic [1:0] taken;
+logic [1:0] predict_success;
 
 // 异常PC入口
 logic [31:0] exp_pc;
@@ -293,20 +310,23 @@ for(integer i = 0; i < 2; i += 1) begin
 
         case (branch_info[i].br_type)
             // 比较结果由ALU进行计算
-            BR_B:
+            BR_B: begin
+                real_target[i] = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                next_pc[i] = real_target[i]; // TODO: check
+            end
             BR_NORMAL: begin
-                real_target = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                real_target[i] = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
                 if (rob_commit_i[i].w_data == 1) begin
-                    next_pc[i] = real_target; // TODO: check
+                    next_pc[i] = real_target[i]; // TODO: check
                 end
             end
             BR_CALL: begin
-                real_target = rob_commit_i[i].data_imm;
+                real_target[i] = rob_commit_i[i].data_imm;
                 next_pc[i] = rob_commit_i[i].data_imm;
             end
             BR_RET: begin
-                real_target = rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
-                next_pc[i] = real_target; // TODO: check
+                real_target[i] = rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
+                next_pc[i] = real_target[i]; // TODO: check
             end
         endcase
     end
@@ -318,17 +338,20 @@ for(integer i = 0; i < 2; i += 1) begin
         is_branch[i] = branch_info[i].is_branch;
         taken[i] = ((branch_info[i].br_type != BR_NORMAL) ||
                     (rob_commit_i[i].w_data == 1));
+        predict_success[i] = predict_info[i].next_pc == next_pc;
     end
 end
+
+//flush的时候才有意义，所以可以省掉一些逻辑
+assign redir_addr_o = cur_exception ? exp_pc : //异常入口
+                    (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
+                    (~cache_commit_hit[0] & ~is_uncached) ? rob_commit_i[0].pc ://重新执行当前pc TODO ?访存指令缺失的情况，前面的那个信号是随便写的！！！
+                    next_pc[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
 
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_i[i].pc;
-        correct_info_o[i].redir_addr = cur_exception ? exp_pc : //异常入口
-                                       (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
-                                       (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc
-                                       next_pc[i];//刷掉流水，执行下一条（pc + 4)
-        //前面的跳转只允许所提交的第0条指令的重定位，分支预测失败？TODO
+
         correct_info_o[i].target_miss = (predict_info[i].target_pc != real_target[i]);
         corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
 
@@ -339,7 +362,8 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].update = (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-        correct_info_o[i].target_pc = real_target[i] : 
+                                   //TODO 如果是由0发出的flush，则1不update，valid
+        correct_info_o[i].target_pc = real_target[i];
 
         correct_info_o[i].history = predict_info[i].history;
         correct_info_o[i].scnt = predict_info[i].scnt;
@@ -393,17 +417,17 @@ csr_t csr_exception_update;//周期结束时候写入csr_q
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
 wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
-//取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
-wire fetch_excp    = rob_commit_valid_i[0] & rob_commit_i[0].fetch_exception;
+//取指异常  判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
+wire fetch_excp    = commit_request_o[0] & rob_commit_i[0].fetch_exception;
 
-//译码异常 下面的信号来自decoder TODO
-wire syscall_excp  = rob_commit_valid_i[0] & rob_commit_i[0].syscall_inst;
-wire break_excp    = rob_commit_valid_i[0] & rob_commit_i[0].break_inst;
-wire ine_excp      = rob_commit_valid_i[0] & rob_commit_i[0].decode_err;
-wire priv_excp     = rob_commit_valid_i[0] & rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
+//译码异常 下面的信号来自decoder 
+wire syscall_excp  = commit_request_o[0] & rob_commit_i[0].syscall_inst;
+wire break_excp    = commit_request_o[0] & rob_commit_i[0].break_inst;
+wire ine_excp      = commit_request_o[0] & rob_commit_i[0].decode_err;
+wire priv_excp     = commit_request_o[0] & rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 
-//执行异常 TODO 访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
-wire execute_excp  = rob_commit_valid_i[0] & rob_commit_i[0].execute_exception;
+//执行异常  访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
+wire execute_excp  = commit_request_o[0] & rob_commit_i[0].execute_exception;
 
 //icache的维护指令出现tlb异常
 wire cacop_excep   = |icache_cacop_tlb_exc_i;
@@ -423,7 +447,7 @@ always_comb begin
     csr_exception_update.crmd[`_CRMD_IE]   = '0;
     /*对应文档的1，进入核心态和关中断*/
     csr_exception_update.era               = rob_commit_i[0].pc;
-    /*对应2，TODO:要pc，好像没有*/
+    /*对应2，TODO:要pc，如果在状态机里面要去其他地方拿!!!*/
 
     //例外的仲裁部分，取最优先的例外将例外号存入csr，对应文档的例外操作3
     //部分操作包含4和5，即存badv和vppn的部分
@@ -444,7 +468,7 @@ always_comb begin
                 cur_tlbr_exception = 1'b1;
             end
         end
-        /*取指例外 TODO 判断的信号从fetch来，
+        /*取指例外 判断的信号从fetch来，
         要求fetch如果有例外要传一个fetch_excpetion信号，
         和一个存到exc_code里面的错误编码,要求在前面仲裁好是地址错还是tlb错
         （注意，后面如果有访存出错不能把取指错的错误码替掉）
@@ -454,8 +478,8 @@ always_comb begin
         8'b001?????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = ; //TODO 存badv
-            csr_exception_update.tlbehi[`_TLBEHI_VPPN]   = ;  //TODO 一定是tlb异常，tlb例外存vppn
+            csr_exception_update.badv                    = icache_cacop_bvaddr_i; //存badv
+            csr_exception_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
             end
@@ -491,7 +515,7 @@ always_comb begin
             end
         end
         /*执行例外，
-        TODO 访存级别如果有地址不对齐错误或者tlb错误
+        访存级别如果有地址不对齐错误或者tlb错误
         要传execute_excpetion信号和错误号过来，
         同样需要出错虚地址badva，同取指部分的例外*/
 
@@ -531,7 +555,6 @@ wire another_exception    = rob_commit_valid_i[1] & |{a_fetch_excp, a_syscall_ex
 csr_t csr, csr_q, csr_init;
 wire  [1:0] csr_type = rob_commit_i[0].csr_type;
 wire [13:0] csr_num  = rob_commit_i[0].csr_num;
-//TODO fetch from imm
 
 // CSR复位
 always_comb begin
@@ -882,9 +905,9 @@ always_comb begin
         endcase
     end
 
-    if (!rob_commit_valid_i[0]) begin
+    if (!commit_request_o[0]) begin
         tlb_wr_req = '0;
-    end//无效rob表项则上面全部不用，不知道这样加会不会逻辑更复杂😭
+    end//不提交rob表项则上面全部不用，不知道这样加会不会逻辑更复杂😭
 end
 
 function automatic logic vppn_match(logic [31:0] va, 
@@ -944,7 +967,7 @@ end
 
 //下面这个组合逻辑内部顺序不要更改
 always_comb begin
-    if (rob_commit_valid_i[0]) begin
+    if (commit_request_o[0]) begin
         if (rob_commit_i[0].is_tlb_fix) begin
             csr_update = tlb_update_csr;
         end
@@ -975,7 +998,7 @@ always_comb begin
 
     //下面这个放在这里，是因为cpu每个周期都要更新一些软件不能更新的东西
     //如果放在前面会被覆盖掉，放在后面，由于是软件不能改的位，不会把前面的覆盖掉
-    csr_update.estat[`_ESTAT_HARD_IS]  = hard_is; //TODO从外面连过来
+    csr_update.estat[`_ESTAT_HARD_IS]  = hard_is_i; //从外面连过来中断
 
     //下面维护定时器
     csr_update.estat[`_ESTAT_TIMER_IS] = 0;
@@ -993,7 +1016,7 @@ always_comb begin
     end
 
     //这个优先级最高，如果clear了就将其写入
-    if (rob_commit_valid_i[0] & !cur_exception & timer_interrupt_clear) begin
+    if (commit_request_o[0] & !cur_exception & timer_interrupt_clear) begin
         csr_update.estat[`_ESTAT_TIMER_IS] = 0;
     end
 
@@ -1097,7 +1120,7 @@ logic icache_wait;
 logic [31:0] cache_dirty_addr;
 
 logic ll_bit;
-assign ll_bit = csr_q.llbctl;
+assign ll_bit = csr_q.llbit;
 
 // Cache的特性是本周期发出请求，下周期才能得到回应
 sb_ebtry_t sb_entry, sb_entry_q;

@@ -8,6 +8,8 @@ module decoder (
     output d_decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
 );
 
+// TODO: csr_num not handled!!!!!!!!!!!
+
 // input && output
 logic [1:0]         mask;
 logic [1:0][31:0]   pc;
