@@ -155,21 +155,21 @@ always_comb begin
     iq_di       = '0;
 
     if(^p_valid_i) begin
-        iq_data[iq_tail_q]      |= p_valid_i[0] ? p_data_i[0] : p_data_i[1];
-        iq_reg_id[iq_tail_q]    |= p_valid_i[0] ? p_reg_id_i[0] : p_reg_id_i[1];
-        iq_valid[iq_tail_q]     |= '1;
-        iq_di[iq_tail_q]        |= p_valid_i[0] ? p_di_i[0] : p_di_i[1];
+        iq_data   [iq_tail_q]        |= p_valid_i[0] ? p_data_i[0]   : p_data_i[1];
+        iq_reg_id [iq_tail_q]        |= p_valid_i[0] ? p_reg_id_i[0] : p_reg_id_i[1];
+        iq_valid  [iq_tail_q]        |= '1;
+        iq_di     [iq_tail_q]        |= p_valid_i[0] ? p_di_i[0]     : p_di_i[1];
     end
     else if(&p_valid_i) begin
-        iq_data[iq_tail_q]      |= p_data_i[0] ;
-        iq_reg_id[iq_tail_q]    |= p_reg_id_i[0];
-        iq_valid[iq_tail_q]     |= '1;
-        iq_di[iq_tail_q]        |= p_di_i[0];
+        iq_data   [iq_tail_q]        |= p_data_i[0] ;
+        iq_reg_id [iq_tail_q]        |= p_reg_id_i[0];
+        iq_valid  [iq_tail_q]        |= '1;
+        iq_di     [iq_tail_q]        |= p_di_i[0];
 
-        iq_data[iq_tail_q + 1]  |= p_data_i[1] ;
-        iq_reg_id[iq_tail_q + 1]|= p_reg_id_i[1];
-        iq_valid[iq_tail_q + 1] |= '1;
-        iq_di[iq_tail_q + 1]    |= p_di_i[1];
+        iq_data   [iq_tail_q + 1]    |= p_data_i[1] ;
+        iq_reg_id [iq_tail_q + 1]    |= p_reg_id_i[1];
+        iq_valid  [iq_tail_q + 1]    |= '1;
+        iq_di     [iq_tail_q + 1]    |= p_di_i[1];
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

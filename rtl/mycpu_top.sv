@@ -186,7 +186,7 @@ basic_fifo #(
 
 handshake_if #(.T(r_p_pkg_t)) r_p_handshake();
 
-logic [1:0] c_retire;
+logic [1:0] c_retire; // 这个是c级的retire信号，含义是：要提交指令且该指令要写ARF，写ARF信息在infos里面
 retire_pkg_t [1:0] c_retire_infos;
 
 rename # () rename (
@@ -211,10 +211,10 @@ p_dispatch # () p_dispatch(
     .rst_n(rst_n),
     .flush_i(flush),
 
-    .cdb_dispatch_i(),
-    .rob_dispatch_i(),
+    .cdb_dispatch_i(), // cdb信号转发进来
+    .rob_dispatch_i(), // 从rob读的数据
 
-    .dispatch_rob_o(),
+    .dispatch_rob_o(), // 写入rob的信息，和要读的rob_id
 
     .r_p_receiver(r_p_handshake.receiver),
 
@@ -224,6 +224,8 @@ p_dispatch # () p_dispatch(
     .p_mdu_sender(p_mdu_handshake.sender)
 );
 
+// TODO 将接口信号拆分为握手信号和传输数据
+
 alu_iq #(
     .CDB_CONUT(),
     .WKUP_COUNT()
@@ -232,16 +234,17 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(),
-    .p_di_c(),
-    .p_data_c(),
-    .p_reg_id_c(),
+    .choose(), 
+    .p_di_c(), //两条指令各自的译码信息
+    .p_data_c(), //从P级传入的两条指令各自的两个data数值
+    .p_reg_id_c(), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
+    .p_valid_c(),   // 实际上不是握手的valid信号，而是r_valid，指令有效信号，含义是|p_alu_handshake_0.data.inst_choose（有一个指令选中iq则允许写入）
 
-    .entry_ready_o(),
+    .entry_ready_o(), // ready信号
 
-    .cdb_data_i(),
-    .cdb_reg_id_i(),
-    .cdb_valid_i(),
+    .cdb_data_i(), // cdb传入的数据
+    .cdb_reg_id_i(), // cdb传入的物理寄存器编号
+    .cdb_valid_i(), // cdb要写寄存器
 
     .wkup_data_i(),
     .wkup_reg_id_i(),
@@ -256,6 +259,7 @@ alu_iq #(
     .excute_valid_o()
 );
 
+// TODO 增加receiver接口
 handshake_if #(.T(TODO)) alu_0_cdb();
 
 fifo # (
@@ -419,7 +423,7 @@ rob # () rob (
     .flush_i(flush),
 
     .dispatch_info_i(),
-    .cdb_ifno_i(cdb_info),
+    .cdb_info_i(cdb_info),
 
     .rob_dispatch_o(),
     .commit_req(),
