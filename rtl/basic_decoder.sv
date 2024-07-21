@@ -364,7 +364,7 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_LI;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
             decode_info_o.alu_op = `_INT_ADD;
             decode_info_o.target_type = `_TARGET_ABS;
             decode_info_o.cmp_type = `_CMP_NOCONDITION;
@@ -385,7 +385,7 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_R1;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
             decode_info_o.slot0 = 1'd1;
-            decode_info_o.alu_grand_op = `_ALU_GTYPE_LI;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
             decode_info_o.alu_op = `_INT_ADD;
             decode_info_o.target_type = `_TARGET_REL;
             decode_info_o.cmp_type = `_CMP_NOCONDITION;
@@ -399,6 +399,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
             decode_info_o.alu_op = `_COM_EQ;
             decode_info_o.jump_inst = 1'd1;
         end
@@ -410,6 +411,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
             decode_info_o.alu_op = `_COM_NE;
             decode_info_o.jump_inst = 1'd1;
         end
@@ -421,6 +423,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
             decode_info_o.alu_op = `_COM_LT;
             decode_info_o.jump_inst = 1'd1;
         end
@@ -432,6 +435,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
             decode_info_o.alu_op = `_COM_GE;
             decode_info_o.jump_inst = 1'd1;
         end
@@ -443,6 +447,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
             decode_info_o.alu_op = `_COM_LTU;
             decode_info_o.jump_inst = 1'd1;
         end
@@ -454,6 +459,7 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
             decode_info_o.alu_op = `_COM_GEU;
             decode_info_o.jump_inst = 1'd1;
         end
