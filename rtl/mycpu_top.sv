@@ -127,7 +127,7 @@ i_cache # (
     .rst_n(rst_n),
     .flush_i(flush),
     // CSR
-    .csr_i(/* csr_i from backend */ TODO)
+    .csr_i(csr)
     // cpu 侧信号
     .fetch_icache_receiver(fifo_f_handshake.receiver),
     .icache_decoder_sender(f_fifo_handshake.sender)
@@ -206,15 +206,20 @@ handshake_if #(.T(p_i_pkg_t)) p_alu_handshake_1();
 handshake_if #(.T(p_i_pkg_t)) p_lsu_handshake();
 handshake_if #(.T(p_i_pkg_t)) p_mdu_handshake();
 
+// dispatch 和 rob 交互信息
+dispatch_rob_pkg_t dispatch_rob_pkg [1:0];
+rob_dispatch_pkg_t rob_dispatch_pkg [1:0];
+cdb_dispatch_pkg_t cdb_dispatch_pkg [1:0];
+
 p_dispatch # () p_dispatch(
     .clk(clk),
     .rst_n(rst_n),
     .flush_i(flush),
 
-    .cdb_dispatch_i(), // cdb信号转发进来
-    .rob_dispatch_i(), // 从rob读的数据
+    .cdb_dispatch_i(cdb_dispatch_pkg), // cdb信号转发进来
+    .rob_dispatch_i(rob_dispatch_pkg), // 从rob读的数据
 
-    .dispatch_rob_o(), // 写入rob的信息，和要读的rob_id
+    .dispatch_rob_o(dispatch_rob_pkg), // 写入rob的信息，和要读的rob_id
 
     .r_p_receiver(r_p_handshake.receiver),
 
@@ -225,6 +230,9 @@ p_dispatch # () p_dispatch(
 );
 
 // TODO 将接口信号拆分为握手信号和传输数据
+logic [1:0][31:0] cdb_data;
+logic [1:0][5 :0] cdb_reg_id;
+logic [1:0]       cdb_valid;
 
 alu_iq #(
     .CDB_CONUT(),
@@ -238,14 +246,14 @@ alu_iq #(
     .p_di_c(), //两条指令各自的译码信息  TODO
     .p_data_c(p_alu_handshake_0.data.data), //从P级传入的两条指令各自的两个data数值
     .p_reg_id_c(p_alu_handshake_0.data.preg), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
-    .ohter_
-    .p_valid_c((|p_alu_handshake_0.data.inst_choose)),   // 实际上不是握手的valid信号，而是r_valid，指令有效信号，含义是|p_alu_handshake_0.data.inst_choose（有一个指令选中iq则允许写入）
+    .ohter_ready(p_alu_handshake_0.valid),
+    .p_valid_c(p_alu_handshake_0.data.data_valid),   // 实际上不是握手的valid信号，而是r_valid，指令有效信号，含义是|p_alu_handshake_0.data.inst_choose（有一个指令选中iq则允许写入）
 
-    .entry_ready_o(), // ready信号
+    .entry_ready_o(p_alu_handshake_0.ready), // ready信号
 
-    .cdb_data_i(), // cdb传入的数据
-    .cdb_reg_id_i(), // cdb传入的物理寄存器编号
-    .cdb_valid_i(), // cdb要写寄存器
+    .cdb_data_i(cdb_data), // cdb传入的数据
+    .cdb_reg_id_i(cdb_reg_id), // cdb传入的物理寄存器编号
+    .cdb_valid_i(cdb_valid), // cdb要写寄存器
 
     .wkup_data_i(),
     .wkup_reg_id_i(),
@@ -261,16 +269,17 @@ alu_iq #(
 );
 
 // TODO 增加receiver接口
-handshake_if #(.T(TODO)) alu_0_cdb();
+handshake_if #(.T(cdb_info_t)) fu_cdb [3 : 0] ();
+// handshake_if #(.T(cdb_info_t)) alu_0_cdb();
 
 fifo # (
     .BYPASS(0),
-    .T(TODO)
+    .T(cdb_info_t)
 ) alu_iq_fifo_0 (
     .clk(clk),
     .rst_n(rst_n),
     .receiver(),
-    .sender(alu_0_cdb.sender)
+    .sender(fu_cdb[0].sender)
 );
 
 alu_iq #(
@@ -281,16 +290,18 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(),
+    .choose(p_alu_handshake_1.data.inst_choose),
     .p_di_c(),
-    .p_data_c(),
-    .p_reg_id_c(),
+    .p_data_c(p_alu_handshake_1.data.data),
+    .p_reg_id_c(p_alu_handshake_1.data.preg),
+    .other_ready(p_alu_handshake_1.valid),
+    .p_valid_c(p_alu_handshake_1.data.data_valid),
 
-    .entry_ready_o(),
+    .entry_ready_o(p_alu_handshake_1.ready),
 
-    .cdb_data_i(),
-    .cdb_reg_id_i(),
-    .cdb_valid_i(),
+    .cdb_data_i(cdb_data),
+    .cdb_reg_id_i(cdb_reg_id),
+    .cdb_valid_i(cdb_valid),
 
     .wkup_data_i(),
     .wkup_reg_id_i(),
@@ -305,16 +316,16 @@ alu_iq #(
     .excute_valid_o()
 );
 
-handshake_if #(.T(TODO)) alu_1_cdb();
+// handshake_if #(.T(cdb_info_t)) alu_1_cdb();
 
 fifo # (
     .BYPASS(0),
-    .T(TODO)
+    .T(cdb_info_t)
 ) alu_iq_fifo_1 (
     .clk(clk),
     .rst_n(rst_n),
     .receiver(),
-    .sender(alu_1_cdb.sender)
+    .sender(fu_cdb[1].sender)
 );
 
 lsu_iq # (
@@ -325,16 +336,18 @@ lsu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(),
+    .choose(p_lsu_handshake.data.inst_choose),
     .p_di_i(),
-    .p_data_i(),
-    .p_reg_id_i(),
+    .p_data_i(p_lsu_handshake.data.data),
+    .p_reg_id_i(p_lsu_handshake.data.preg),
+    .p_valid_i(p_lsu_handshake.data.data_valid),
+    .ohter_ready(p_lsu_handshake.valid),
 
-    .entry_ready_o(),
+    .entry_ready_o(p_lsu_handshake.ready),
 
-    .cdb_data_i(),
-    .cdb_reg_id_i(),
-    .cdb_valid_i(),
+    .cdb_data_i(cdb_data),
+    .cdb_reg_id_i(cdb_reg_id),
+    .cdb_valid_i(cdb_valid),
 
     .wkup_data_i(),
     .wkup_reg_id_i(),
@@ -353,16 +366,16 @@ lsu_iq # (
     .excute_valid_o()
 );
 
-handshake_if #(.T(TODO)) lsu_cdb();
+// handshake_if #(.T(cdb_info_t)) lsu_cdb();
 
 fifo # (
     .BYPASS(0),
-    .T(TODO)
+    .T(cdb_info_t)
 ) lsu_iq_fifo (
     .clk(clk),
     .rst_n(rst_n),
     .receiver(),
-    .sender(lsu_cdb.sender)
+    .sender(fu_cdb[2].sender)
 );
 
 mdu_iq # (
@@ -373,16 +386,18 @@ mdu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(),
+    .choose(p_mdu_handshake.data.inst_choose),
     .p_di_i(),
-    .p_data_i(),
-    .p_reg_id_i(),
+    .p_data_i(p_mdu_handshake.data.data),
+    .p_reg_id_i(p_mdu_handshake.data.preg),
+    .p_valid_i(p_mdu_handshake.data.data_valid),
+    .ohter_ready(p_mdu_handshake.valid),
 
-    .entry_ready_o(),
+    .entry_ready_o(p_mdu_handshake.ready),
 
-    .cdb_data_i(),
-    .cdb_reg_id_i(),
-    .cdb_valid_i(),
+    .cdb_data_i(cdb_data),
+    .cdb_reg_id_i(cdb_reg_id),
+    .cdb_valid_i(cdb_valid),
 
     .wkup_data_i(),
     .wkup_reg_id_i(),
@@ -393,19 +408,20 @@ mdu_iq # (
     .excute_valid_o()
 );
 
-handshake_if #(.T(TODO)) mdu_cdb();
+// handshake_if #(.T(cdb_info_t)) mdu_cdb();
 
 fifo # (
     .BYPASS(0),
-    .T(TODO)
+    .T(cdb_info_t)
 ) mdu_iq_fifo (
     .clk(clk),
     .rst_n(rst_n),
     .receiver(),
-    .sender(mdu_cdb.sender)
+    .sender(fu_cdb[3].sender)
 );
 
-cdb_rob_pkg_t [1:0] cdb_info;
+
+cdb_info_t [1:0] cdb_infos;
 
 cdb #(
     .PORT_COUNT(4)
@@ -414,19 +430,29 @@ cdb #(
     .(rst_n),
     .(flush),
 
-    .fifo_handshake(),
-    .cdb_data_o(cdb_info)
+    .fifo_handshake(fu_cdb),
+    .cdb_data_o(cdb_infos)
 );
+
+cdb_rob_pkg_t cdb_rob_pkgs [1:0];
+always_comb begin
+    for (integer i = 0; i < 2; i++) begin
+        cdb_rob_pkgs[i].w_preg    =  cdb_infos[i].rob_id;
+        cdb_rob_pkgs[i].w_data    =  cdb_infos[i].w_data;
+        cdb_rob_pkgs[i].w_valid   =  cdb_infos[i].r_valid;
+        cdb_rob_pkgs[i].ctrl      =  cdb_infos[i]./* TODO */; 
+    end
+end
 
 rob # () rob (
     .clk(clk),
     .rst_n(rst_n),
     .flush_i(flush),
 
-    .dispatch_info_i(),
-    .cdb_info_i(cdb_info),
+    .dispatch_info_i(dispatch_rob_pkg),
+    .cdb_info_i(cdb_rob_pkgs),
 
-    .rob_dispatch_o(),
+    .rob_dispatch_o(rob_dispatch_pkg),
     .commit_req(),
     .commit_info_o(),
     .commit_valid()

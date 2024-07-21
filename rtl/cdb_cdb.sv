@@ -1,13 +1,5 @@
 `include "a_defines.svh"
 
-typedef struct packed {
-    logic r_valid; // 指令有效
-    // 写寄存器相关控制信息
-    logic   w_reg;   // 要写寄存器
-    rob_id_t rob_id;   // rob_id
-    word_t w_data;   // 写的数据
-} cdb_info_t;
-
 module cdb #(
     parameter int PORT_COUNT = 4
 ) (

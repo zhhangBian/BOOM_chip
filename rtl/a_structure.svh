@@ -144,6 +144,15 @@ typedef struct pack {
     logic [1 : 0][31 : 0] rob_data;
     logic [1 : 0]         rob_complete;
 } rob_dispatch_pkg_t;
+/***********************cdb pkg*********************/
+typedef struct packed {
+    logic    r_valid;  // 指令有效
+    logic    w_reg;    // 要写寄存器
+    rob_id_t rob_id;   // rob_id
+    word_t   w_data;   // 写的数据
+    // else information for control
+} cdb_info_t;
+
 /**********************rob pkg**********************/
 
 // 指令信息表项
