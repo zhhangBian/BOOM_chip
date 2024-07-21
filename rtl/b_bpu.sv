@@ -52,7 +52,7 @@ assign correct_info = correct_infos_i[0].update ? correct_infos_i[0] : correct_i
 /* ============================== PC ============================== */
 logic ready_i;
 logic [31:0 ] pc;
-logic [31:0 ] npc; // wire 类型 组合逻辑得出。
+logic [31:0 ] pc_next; // wire 类型 组合逻辑得出。
 
 always_ff @(clk) begin : pc_logic
     if (!rst_n) begin
@@ -62,7 +62,7 @@ always_ff @(clk) begin : pc_logic
         pc <= redir_addr_i;
     end
     else if (ready_i) begin
-        pc <= npc;
+        pc <= pc_next;
     end
 end
 
@@ -198,7 +198,7 @@ always_ff @( clk ) begin : pht_logic
     end
 end
 
-/* ============================== NPC ============================== */
+/* ============================== pc_next ============================== */
 /**
  * BTB: bpu_pht_entry_t [1:0] btb_rdata
  * PHT: bpu_pht_entry_t [1:0] pht_rdata
@@ -206,6 +206,7 @@ end
  */
 logic [1:0] branch;
 logic [1:0] mask;
+logic [1:0][31:0] next_pc; // 每一条指令的下一条 pc ; pc_next 是 pc 的下一个值
 logic [1:0][31:0] target_pc;
 logic [31:0] pc_add_4_8;
 assign pc_add_4_8 = {pc[31:3]+1, 3'b0};
@@ -216,20 +217,20 @@ for (genvar i = 0; i < 2; i=i+1) begin
     // 1. !btb_rdata[i].is_cond_br 
     // 2. pht_rdata[i].scnt[1]
     assign branch[i] = btb_valid[i] & (btb_rdata[i].br_type !=  BR_NORMAL | pht_rdata[i].scnt[1]);
+    assign target_pc[i] = btb_rdata[i].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[i].target_pc;
 end
 
-assign target_pc[0] = !branch[0] ? {pc[31:3], 3'b100} :
-                        btb_rdata[0].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[0].target_pc;
-assign target_pc[1] = !branch[1] ? pc_add_4_8 :
-                        btb_rdata[1].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[1].target_pc;
+assign next_pc[0] = !branch[0] ? {pc[31:3], 3'b100} : target_pc;
+assign next_pc[1] = !branch[1] ? pc_add_4_8 : target_pc;
 
 assign mask = {!branch[0] | pc[2], !pc[2]};
 always_comb begin
+    pc_next = pc_add_4_8;
     if (branch[0] && !pc[2]) begin
-        npc = target_pc[0];
+        pc_next = next_pc[0];
     end
-    else begin
-        npc = target_pc[1];
+    else if (branch[1]) begin
+        pc_next = next_pc[1];
     end
 end
 
@@ -238,7 +239,8 @@ predict_infos_t [1:0] predict_infos;
 b_f_pkg_t b_f_pkg;
 
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign predict_infos[i].target_pc   =  btb_rdata[i].target_pc;
+    assign predict_infos[i].target_pc   =  target_pc[i];
+    assign predict_infos[i].next_pc     =  next_pc[i];
     assign predict_infos[i].is_branch   =  btb_rdata[i].is_branch;
     assign predict_infos[i].br_type     =  btb_rdata[i].br_type;
     assign predict_infos[i].taken       =  branch[i];
