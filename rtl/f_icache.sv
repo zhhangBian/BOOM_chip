@@ -24,10 +24,12 @@ module icache #(
     input    logic             axi_resp_ready_i,
     input    logic             axi_data_valid_i,
     input    logic  [31:0]     axi_data_i,
-    // 全局信号
-    input commit_fetch_req_t   commit_cache_req, // commit维护cache时的请求
-    output fetch_commit_resp_t cache_commit_resp, // cache向提交级反馈结果
-    input logic                commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
+    // commit交互信号
+    input  commit_icache_req_t commit_icache_req,
+    output [1:0]               icache_cacop_flush_o,
+    output tlb_exception_t     icache_cacop_tlb_exc,
+    output [31:0]              icache_cacop_bvaddr, 
+    input  logic               commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
     output logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
     output logic               commit_resp_valid_o
 )
@@ -304,6 +306,16 @@ always_ff @(posedge clk) begin
     end
 end
 
+// addr延时一拍
+logic [31:0] cacop_bvaddr;
+always_ff @(posedge clk) begin
+    if(!rst_n) begin
+        cacop_bvaddr <= '0;
+    end else begin
+        cacop_bvaddr <= commit_icache_req.addr;
+    end
+end
+
 always_comb begin
     stall    = stall_q;
     cacop_stall = cacop_stall_q;
@@ -325,6 +337,7 @@ always_comb begin
     addr_valid_o    = '0;
     data_len_o      = '0;
     commit_resp_valid_o  = '0;
+    icache_cacop_bvaddr  = '0;
     case(fsm_cur) 
         F_NORMAL:begin
             temp_data_block = '0;
@@ -442,18 +455,17 @@ always_comb begin
             commit_resp_valid_o  = '1;
             if (cache_commit_resp.tlb_exception.ecode != '0) begin
                 icache_cacop_flush_o                   = 2'b01;
-                icache_cacop_tlb_exc                   = cache_commit_resp.tlb_exception
+                icache_cacop_tlb_exc                   = cache_commit_resp.tlb_exception;
+                icache_cacop_bvaddr                    = cacop_bvaddr;
             end else if (|cache_commit_resp.way_hit) begin
-                commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
+                commit_cache_req.addr[11:TAG_ADDR_LOW] = cacop_bvaddr[11:TAG_ADDR_LOW];
                 commit_cache_req.way_choose            = cache_commit_resp.way_hit;
                 commit_cache_req.tag_data              = '0;
                 commit_cache_req.tag_we                = '1;
-                icache_cacop_flush_o                   = 2'b10;
-                icache_cacop_tlb_exc                   = '0;              
+                icache_cacop_flush_o                   = 2'b10;  
             end else begin
                 icache_cacop_flush_o                   = 2'b10;
                 cacop_stall                            = '0;
-                fsm_next = F_NORMAL;
             end
         end
         default:begin
