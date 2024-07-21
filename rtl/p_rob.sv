@@ -10,9 +10,9 @@ module rob # () (
 
     // output
     output  rob_dispatch_pkg_t [1 : 0] rob_dispatch_o,
-    input                      [1 : 0] commit_req, // commit 级根据 rob 的信息判断是否选择指令提交
+    input   logic              [1 : 0] commit_req, // commit 级根据 rob 的信息判断是否选择指令提交
     output  rob_commit_pkg_t   [1 : 0] commit_info_o,
-    output                     [1 : 0] commit_valid
+    output  logic              [1 : 0] commit_valid
 );
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ always_comb begin
     end
     // C级
     for (integer i = 0; i < 2; i++) begin
-        commit_info_o[i].w_areg = commit_inst_o[i].areg;
+        commit_info_o[i].arf_id = commit_inst_o[i].areg;
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
         commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;
     end

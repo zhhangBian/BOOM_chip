@@ -18,20 +18,23 @@ module icache #(
     handshake_if.receiver    fetch_icache_receiver,
     hadnshake_if.sender      icache_decoder_sender,
     // axi信号
-    output   logic             addr_valid_o,
-    output   logic  [31:0]     addr_o,
-    output   logic  [7 :0]     data_len_o,
-    input    logic             axi_resp_ready_i,
-    input    logic             axi_data_valid_i,
-    input    logic  [31:0]     axi_data_i,
+    output  logic               addr_valid_o,
+    output  logic  [31:0]       addr_o,
+    output  logic  [7 :0]       data_len_o,
+    input   logic               axi_resp_ready_i,
+    input   logic               axi_data_valid_i,
+    input   logic  [31:0]       axi_data_i,
     // commit交互信号
-    input  commit_icache_req_t commit_icache_req,
-    output [1:0]               icache_cacop_flush_o,
-    output tlb_exception_t     icache_cacop_tlb_exc,
-    output [31:0]              icache_cacop_bvaddr, 
-    input  logic               commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
-    output logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
-    output logic               commit_resp_valid_o
+    input   commit_icache_req_t commit_icache_req,
+    output  [1:0]               icache_cacop_flush_o,
+    output  tlb_exception_t     icache_cacop_tlb_exc,
+    output  [31:0]              icache_cacop_bvaddr, 
+    input   logic               commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
+    output  logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
+    output  logic               commit_resp_valid_o,
+
+    input   tlb_write_req_t     tlb_write_req_i,
+
 )
 
 commit_fetch_req_t   commit_cache_req;
@@ -82,6 +85,7 @@ mmu #(
     .va(pc/*改成PC*/),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // icache中，取指
+    .tlb_write_req_i(tlb_write_req_i),
     .trans_result_o(trans_result),
     .tlb_exception_o(tlb_exception)
 );

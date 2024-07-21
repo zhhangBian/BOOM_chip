@@ -48,17 +48,11 @@ module commit #(
     input   rob_commit_pkg_t [1:0]  rob_commit_i,
 
     // 给ROB的输出信号，确定提交相关指令
-    output  logic   commit_ready_o,
     output  logic   [1:0]   commit_request_o,
 
     // commit与DCache的接口
     output  commit_cache_req_t  commit_cache_req_o,
     input   cache_commit_resp_t cache_commit_resp_i,
-    // commit与cache的握手信号
-    input   logic   commit_cache_ready_i,
-    output  logic   commit_cache_valid_o,
-    input   logic   cache_commit_valid_i,
-    output  logic   cache_commit_ready_o,
 
     // commit与AXI的接口
     // 接口好多啊
@@ -74,7 +68,8 @@ module commit #(
     // commit与ARF的接口
     output  logic   [1:0]   commit_arf_we_o,
     output  word_t  [1:0]   commit_arf_data_o,
-    output  word_t  [1:0]   commit_arf_areg_o,
+    output  logic [1:0][4:0]commit_arf_areg_o,
+    output  logic [1:0][5:0]commit_arf_preg_o,
 
     // commit与BPU的接口
     output  correct_info_t [1:0]    correct_info_o,
@@ -100,7 +95,6 @@ module commit #(
 // 是否将整个提交阻塞
 logic stall, stall_q;
 assign stall_o = stall;
-assign commit_ready_o = ~stall;
 
 assign commit_cache_ready = '1;
 
@@ -123,13 +117,12 @@ logic [5:0] timer_64, timer_64_q;
 // 特殊处理均只允许单条提交
 //TODO : 最后提交的逻辑，flush的逻辑，部分接线，ibar（不实现）
 always_comb begin
-    commit_request_o[0] = rob_commit_valid_i[0] & commit_ready_o;
+    commit_request_o[0] = rob_commit_valid_i[0];
 
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~rob_commit_i[0].first_commit &
-                          ~rob_commit_i[1].first_commit &
-                          commit_ready_o;
+                          ~rob_commit_i[1].first_commit;
 end
 
 // 处理对ARF的接口
@@ -137,36 +130,42 @@ always_comb begin
     commit_arf_we_o = '0;
     commit_arf_data_o = '0;
     commit_arf_areg_o = '0;
+    commit_arf_preg_o = '0;
 
     if(~stall) begin
         commit_arf_we_o[1] = commit_request_o[1] & rob_commit_i[1].w_reg;
         commit_arf_data_o[1] = rob_commit_i[1].w_data;
-        commit_arf_areg_o[1] = rob_commit_i[1].w_areg;
+        commit_arf_areg_o[1] = rob_commit_i[1].arf_id;
+        commit_arf_preg_o[1] = rob_commit_i[1].rob_id;
     end
 //上面这个提交不太对TODO
 
     if(is_csr_fix[0]) begin
         commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
         commit_arf_data_o[0] = commit_csr_data_o;
-        commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
+        commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
+        commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
     end
     if (rdcnt_en[0]) begin
         commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
         commit_arf_data_o[0] = rdcnt_data_o;
-        commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
+        commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
+        commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
     end
     //csr指令和rdcnt指令的提交，已完成
 
     else if(ls_fsm_q == S_NORMAL) begin
         commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
-        commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
+        commit_arf_areg_o[0] = rob_commit_i[0].arf_id;
+        commit_arf_preg_o[0] = rob_commit_i[0].rob_id;
     end
     else if(ls_fsm_q == S_UNCACHED) begin
         if(axi_commit_valid_i) begin
             commit_arf_we_o[0]   = |rob_commit_q.lsu_info.rmask;
             commit_arf_data_o[0] = axi_commit_resp_i.data;
-            commit_arf_areg_o[0] = rob_commit_q.w_areg;
+            commit_arf_areg_o[0] = rob_commit_q.arf_id;
+            commit_arf_preg_o[0] = rob_commit_q.rob_id;
         end
     end
     // 其余情况均不提交
@@ -1084,10 +1083,6 @@ ls_fsm_s ls_fsm_q;
 logic axi_return_back;
 rob_commit_pkg_t rob_commit_q;
 
-// 配置与Cache的握手信号
-logic commit_cache_valid, commit_cache_valid_q;
-assign commit_cache_valid_o = commit_cache_valid_q;
-
 word_t [CACHE_BLOCK_NUM-1:0] cache_block_data;
 word_t [CACHE_BLOCK_NUM-1:0] axi_block_data;
 
@@ -1131,7 +1126,6 @@ always_comb begin
             end
 
             else if(cache_tar == 1) begin
-                commit_cache_valid = '1;
                 // 对于Cache维护指令，将维护地址视作目的地址
                 // Cache采用直接映射，故直接赋值即可
                 commit_cache_req.addr         = lsu_info[0].paddr;
@@ -1174,7 +1168,6 @@ always_comb begin
         else if(cache_commit_hit) begin
             if((is_sc && ll_bit) || ~is_sc) begin
                 // 配置Cache的相应信息
-                commit_cache_valid = '1;
                 commit_cache_req.addr         = lsu_info[0].paddr;
                 commit_cache_req.way_choose   = lsu_info[0].tag_hit;
                 commit_cache_req.tag_data     = '0;
@@ -1188,7 +1181,6 @@ always_comb begin
             // 读出Cache的整块数据，最后写回
             if(cache_commit_dirty) begin
                 // 设置相应的Cache数据
-                commit_cache_valid = '1;
                 // 对齐一块的数据
                 commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
                 commit_cache_req.way_choose = lsu_info[0].refill;
@@ -1210,7 +1202,6 @@ always_comb begin
                 commit_axi_req.read         = |lsu_info[i].rmask;
 
                 // 配置Cache的相应信息
-                commit_cache_valid          = '1;
                 commit_cache_req.addr       = lsu_info[0].addr;
                 commit_cache_req.way_choose = lsu_info[0].refill;
                 commit_cache_req.tag_data   = '0;
@@ -1272,7 +1263,6 @@ always_comb begin
         if(axi_commit_valid_i) begin
             // AXI请求完成，进行下一步状态
             if(axi_block_ptr == axi_block_len) begin
-                commit_cache_valid = '1;
                 commit_cache_req   = commit_cache_req_q;
             end
             else begin

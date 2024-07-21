@@ -100,7 +100,8 @@ typedef struct packed {
 typedef struct packed {
     // 在CSR指令中复用为rd寄存器的值
     logic   [31: 0] w_data;
-    logic   [4 : 0] w_areg;
+    logic   [4 : 0] arf_id;
+    logic   [`ROB_WIDTH - 1 :0] rob_id;
     logic   w_reg;
     logic   w_mem;
 

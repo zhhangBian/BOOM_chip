@@ -54,12 +54,14 @@ module mycpu_top (
     input           bvalid,
     output          bready,
 
-    //debug
+    //debug TODO: chiplab only. However, chiplab can be modified (doge)
+`ifdef _VERILATOR
     input           break_point,
     input           infor_flag,
     input  [ 4:0]   reg_num,
     output          ws_valid,
     output [31:0]   rf_rdata,
+`endif
 
 `ifdef _VERILATOR
     // chiplab 的接口
@@ -94,7 +96,8 @@ correct_info_t [1:0] correct_infos;
 bpu bpu_inst(
     .clk(clk),
     .rst_n(rst_n),
-    .g_flush(flush),
+    .flush_i(flush),
+    .redir_addr_i(redir_addr),
 
     .correct_infos_i(correct_infos),
     .sender(b_fifo_handshake.sender)
@@ -118,6 +121,17 @@ basic_fifo #(
 
 handshake_if #(f_d_pkg_t) f_fifo_handshake();
 
+commit_icache_req_t commit_icache_req;
+logic   [1:0]   icache_cacop_flush;
+tlb_exception_t icache_cacop_tlb_exc;
+logic   [31:0]  icache_cacop_bvaddr;
+logic   commit_icache_valid;
+logic   icache_commit_ready;
+logic   icache_commit_valid;
+
+tlb_write_req_t tlb_update_pkg;
+
+
 i_cache # (
     .WAY_NUM(2), // default
     .WORD_SIZE(64), // default
@@ -140,13 +154,14 @@ i_cache # (
     .axi_data_valid_i(),
     .axi_data_i(),
     // TODO: 全局信号
-    .commit_icache_req(), // commit维护cache时的请求
-    .icache_cacop_flush_o(),
-    .icache_cacop_tlb_exc(),
-    .icache_cacop_bvaddr(),
-    .commit_req_valid_i(), // commit发维护请求需要读（cacop op为2的时候）的时候
-    .commit_resp_ready_o(), // 状态处理完毕，即为NORMAL状态时
-    .commit_resp_valid_o()  // cache向提交级反馈结果
+    .commit_icache_req(commit_icache_req), // commit维护cache时的请求
+    .icache_cacop_flush_o(icache_cacop_flush),
+    .icache_cacop_tlb_exc(icache_cacop_tlb_exc),
+    .icache_cacop_bvaddr(icache_cacop_bvaddr),
+    .commit_req_valid_i(commit_icache_valid), // commit发维护请求需要读（cacop op为2的时候）的时候
+    .commit_resp_ready_o(icache_commit_ready), // 状态处理完毕，即为NORMAL状态时
+    .commit_resp_valid_o(icache_commit_valid), // cache向提交级反馈结果
+    .tlb_write_req_i(tlb_update_pkg)
 );
 
 /*============================== Decoder ==============================*/
@@ -192,6 +207,20 @@ handshake_if #(.T(r_p_pkg_t)) r_p_handshake();
 
 logic [1:0] c_retire; // 这个是c级的retire信号，含义是：要提交指令且该指令要写ARF，写ARF信息在infos里面
 retire_pkg_t [1:0] c_retire_infos;
+logic [1:0] commit_arf_we;
+logic [1:0][31:0] commit_arf_data;
+logic [1:0][4:0] commit_arf_areg;
+logic [1:0][5:0] commit_rob_areg;
+
+assign c_retire = commit_request & commit_arf_we;
+for(integer i = 0; i < 2; i += 1) begin
+    always_comb begin
+        c_retire_infos[i].w_valid = commit_arf_we[i];
+        c_retire_infos[i].arf_id = commit_arf_areg[i];
+        c_retire_infos[i].rob_id = commit_arf_preg[i];
+        c_retire_infos[i].data = commit_arf_data[i];
+    end
+end
 
 rename # () rename (
     .clk(clk),
@@ -283,8 +312,6 @@ alu_iq #(
     .fifo_ready(fu_fifo[0].ready),
     .excute_valid_o(fu_fifo[0].valid)
 );
-
-
 
 fifo # (
     .BYPASS(0),
@@ -470,6 +497,10 @@ always_comb begin
     end
 end
 
+rob_commit_pkg_t [1:0] commit_infos;
+logic [1:0] rob_commit_valid;
+logic [1:0] commit_request;
+
 rob # () rob (
     .clk(clk),
     .rst_n(rst_n),
@@ -479,10 +510,16 @@ rob # () rob (
     .cdb_info_i(cdb_rob_pkgs),
 
     .rob_dispatch_o(rob_dispatch_pkg),
-    .commit_req(),
-    .commit_info_o(),
-    .commit_valid()
+    .commit_req(commit_request),
+    .commit_info_o(commit_infos),
+    .commit_valid(rob_commit_valid)
 );
+
+handshake_if #(.T(commit_cache_req_t)) commit_cache_if();
+handshake_if #(.T(cache_commit_resp_t)) cache_commit_if();
+
+commit_cache_req_t commit_cache_req;
+cache_commit_resp_t cache_commit_resp;
 
 commit # () commit(
     .clk(clk),
@@ -491,18 +528,13 @@ commit # () commit(
     // 给Dcache使用
     .stall_o(stall),
 
-    .rob_commit_valid_i(),
-    .rob_commit_i(),
+    .rob_commit_valid_i(rob_commit_valid),
+    .rob_commit_i(commit_infos),
 
-    .commit_ready_o(),
-    .commit_request_o(),
+    .commit_request_o(commit_request),
 
-    .commit_cache_req_o(),
-    .cache_commit_resp_i(),
-    .commit_cache_ready_i(),
-    .commit_cache_valid_o(),
-    .cache_commit_valid_i(),
-    .cache_commit_ready_o(),
+    .commit_cache_req_o(commit_cache_req),
+    .cache_commit_resp_i(cache_commit_resp),
 
     .commit_axi_req_o(),
     .axi_commit_resp_i(),
@@ -511,22 +543,22 @@ commit # () commit(
     .axi_commit_valid_i(),
     .axi_commit_ready_o(),
 
-    .commit_arf_we_o(),
-    .commit_arf_data_o(),
-    .commit_arf_areg_o(),
+    .commit_arf_we_o(commit_arf_we),
+    .commit_arf_data_o(commit_arf_data),
+    .commit_arf_areg_o(commit_arf_areg),
 
-    .correct_info_o(),
+    .correct_info_o(correct_infos),
     
     .csr_o(csr),
-    .tlb_write_req_o(),
+    .tlb_write_req_o(tlb_update_pkg),
 
-    .commit_icache_req_o(),
-    .icache_cacop_flush_i(),
-    .icache_cacop_tlb_exp_i(),
-    .icache_cacop_bvaddr_i(),
-    .commit_icache_valid_o(),
-    .icache_commit_ready_i(),
-    .icache_commit_valid_i()
+    .commit_icache_req_o(commit_icache_req),
+    .icache_cacop_flush_i(icache_cacop_flush),
+    .icache_cacop_tlb_exc_i(icache_cacop_tlb_exc),
+    .icache_cacop_bvaddr_i(icache_cacop_bvaddr),
+    .commit_icache_valid_o(commit_icache_valid),
+    .icache_commit_ready_i(icache_commit_ready),
+    .icache_commit_valid_i(icache_commit_valid)
 );
 
 dcache # () dcache(
@@ -539,8 +571,10 @@ dcache # () dcache(
     .cpu_lsu_receiver(cpu_lsu_if.receiver),
     .lsu_cpu_sender(lsu_cpu_if.sender),
 
-    .commit_cache_req(),
-    .cache_commit_resp()
+    .commit_cache_req(commit_cache_if.receiver),
+    .cache_commit_resp(cache_commit_if.sender),
+
+    .tlb_write_req_i(tlb_update_pkg)
 );
 
 /*============================== 2x1 AXI Bridge ==============================*/
