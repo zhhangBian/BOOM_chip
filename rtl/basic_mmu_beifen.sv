@@ -139,7 +139,7 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    if (rst_n || flush) begin
+    if (~rst_n | flush) begin
         trans_result_o <= '0;
         tlb_exception_o <= '0;
     end else begin
