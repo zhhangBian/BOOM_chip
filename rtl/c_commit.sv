@@ -145,18 +145,20 @@ always_comb begin
         commit_arf_data_o[1] = rob_commit_i[1].w_data;
         commit_arf_areg_o[1] = rob_commit_i[1].w_areg;
     end
-
+//上面这个提交不太对TODO
 
     if(is_csr_fix[0]) begin
-        commit_arf_we_o[0]   = 1;
+        commit_arf_we_o[0]   = rob_commit_valid_i[0] & !cur_exception;
         commit_arf_data_o[0] = commit_csr_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
     end
-    if (TODO isrdcnt) begin
-        commit_arf_we_o[0]   = 1;
+    if (rdcnt_en[0]) begin
+        commit_arf_we_o[0]   = rob_commit_valid_i[0] & !cur_exception;
         commit_arf_data_o[0] = rdcnt_data_o;
         commit_arf_areg_o[0] = rob_commit_i[0].w_areg;
     end
+    //csr指令和rdcnt指令的提交，已完成
+
     else if(ls_fsm_q == S_NORMAL) begin
         commit_arf_we_o[0]   = commit_request_o[0] & rob_commit_i[0].w_reg;
         commit_arf_data_o[0] = rob_commit_i[0].w_data;
@@ -389,16 +391,16 @@ wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
 wire int_excep     = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
 //取指异常 TODO 判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
-wire fetch_excp    = rob_commit_i[0].fetch_exception;
+wire fetch_excp    = rob_commit_valid_i[0] & rob_commit_i[0].fetch_exception;
 
 //译码异常 下面的信号来自decoder TODO
-wire syscall_excp  = rob_commit_i[0].syscall_inst;
-wire break_excp    = rob_commit_i[0].break_inst;
-wire ine_excp      = rob_commit_i[0].decode_err;
-wire priv_excp     = rob_commit_i[0].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
+wire syscall_excp  = rob_commit_valid_i[0] & rob_commit_i[0].syscall_inst;
+wire break_excp    = rob_commit_valid_i[0] & rob_commit_i[0].break_inst;
+wire ine_excp      = rob_commit_valid_i[0] & rob_commit_i[0].decode_err;
+wire priv_excp     = rob_commit_valid_i[0] & rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 
 //执行异常 TODO 访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
-wire execute_excp  = rob_commit_i[0].execute_exception;
+wire execute_excp  = rob_commit_valid_i[0] & rob_commit_i[0].execute_exception;
 
 wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
@@ -496,11 +498,11 @@ wire a_fetch_excp    = rob_commit_i[1].fetch_exception;
 wire a_syscall_excp  = rob_commit_i[1].syscall_inst;
 wire a_break_excp    = rob_commit_i[1].break_inst;
 wire a_ine_excp      = rob_commit_i[1].decode_err;
-wire a_priv_excp     = rob_commit_i[1].priv_inst && csr_q.crmd[`_CRMD_PLV] == 3;
+wire a_priv_excp     = rob_commit_i[1].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 
 wire a_execute_excp  = rob_commit_i[1].execute_exception;
 
-wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
+wire another_exception    = rob_commit_valid_i[1] & |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
 //上面是1表示两条指令的后一条有例外
 
 
@@ -510,9 +512,9 @@ wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_
 // ------------------------------------------------------------------
 // CSR特权指令
 csr_t csr, csr_q, csr_init;
-wire  [2:0] csr_type = rob_commit_i[0].csr_type;
+wire  [1:0] csr_type = rob_commit_i[0].csr_type;
 wire [13:0] csr_num = rob_commit_i[0].csr_num;
-
+//TODO fetch from imm
 
 // CSR复位
 always_comb begin
@@ -571,7 +573,7 @@ logic timer_interrupt_clear;
 
 task write_csr(input [31:0] write_data, input [13:0] csr_num);
     begin
-        case (csr_num)
+        unique case (csr_num)
             `_CSR_CRMD: begin
                 write_csr_mask(crmd, `_CRMD_PLV);
                 write_csr_mask(crmd, `_CRMD_IE);
@@ -698,13 +700,13 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num);
     end
 endtask
 
-//当没有例外的时候，针对单条需要刷流水级的csr寄存器值的修改
-//必须包括csr访问指令、tlb维护指令、ertn指令
+
+//csr访问指令对csr寄存器的修改
 always_comb begin
     csr = csr_q;
     timer_interrupt_clear = 0;
 
-    case (csr_type)
+    unique case (csr_type)
         `_CSR_CSRRD: begin
             //do nothing
         end
@@ -713,7 +715,7 @@ always_comb begin
         end
 
         `_CSR_XCHG: begin
-            write_csr(rob_commit_i[0].data_rd & rob_commit_i[0].data_rj, csr_num);
+            write_csr((rob_commit_i[0].data_rd & rob_commit_i[0].data_rj), csr_num);
         end
 
         default: begin//do nothing
@@ -812,7 +814,7 @@ always_comb begin
 
     if (cur_invtlb) begin
         tlb_update_entry       = '0;
-        case (rob_commit_i[0].tlb_op)
+        unique case (rob_commit_i[0].tlb_op)
             5'h0: begin
                 tlb_wr_req = '1;
             end
@@ -862,6 +864,10 @@ always_comb begin
             default: 
         endcase
     end
+
+    if (!rob_commit_valid_i[0]) begin
+        tlb_wr_req = '0;
+    end//无效rob表项则上面全部不用
 end
 
 function automatic logic vppn_match(logic [31:0] va, 
@@ -921,29 +927,29 @@ end
 
 //下面这个组合逻辑内部顺序不要更改
 always_comb begin
-    if (rob_commit_i[0].is_tlb_fix) begin
-        csr_update = tlb_update_csr;
-    end
-    if (rob_commit_i[0].is_csr_fix) begin
-        csr_update = csr;
-    end
-    if (TODO ertn指令) begin
-        csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
-        csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
-        if (csr_q.llbctl[`_LLBCT_KLO]) begin
-            csr_update.llbctl[`_LLBCT_KLO] = 0;
+    if (rob_commit_valid_i[0]) begin
+        if (rob_commit_i[0].is_tlb_fix) begin
+            csr_update = tlb_update_csr;
         end
-        else begin
-            csr_update.llbit = 0;
+        if (rob_commit_i[0].is_csr_fix) begin
+            csr_update = csr;
+        end
+        if (TODO ertn指令) begin
+            csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
+            csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
+            if (csr_q.llbctl[`_LLBCT_KLO]) begin
+                csr_update.llbctl[`_LLBCT_KLO] = 0;
+            end
+            else begin
+                csr_update.llbit = 0;
+            end
+        end
+        if (is_ll[0]) begin
+            csr_update.llbit = 1;
         end
     end
-    if (is_ll[0]) begin
-        csr_update.llbit = 1;
-    end
-    //TODO more instructions that modify csr(include llbit/timer etc.)
-    //like ll/sc ertn
 
-    //下面这个放在这里，是因为中断/异常的优先级最高
+    //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效或者是中断
     if(cur_exception) begin
         csr_update = csr_exception_update;
     end
@@ -953,6 +959,8 @@ always_comb begin
     //下面这个放在这里，是因为cpu每个周期都要更新一些软件不能更新的东西
     //如果放在前面会被覆盖掉，放在后面，由于是软件不能改的位，不会把前面的覆盖掉
     csr_update.estat[`_ESTAT_HARD_IS]  = hard_is; //TODO从外面连过来
+
+    //下面维护定时器
     csr_update.estat[`_ESTAT_TIMER_IS] = 0;
     if (csr_q.tcfg[`_TCFG_EN]) begin
         if (csr_q.tval != 0) begin
@@ -968,7 +976,7 @@ always_comb begin
     end
 
     //这个优先级最高，如果clear了就将其写入
-    if (!cur_exception && timer_interrupt_clear) begin
+    if (rob_commit_valid_i[0] & !cur_exception & timer_interrupt_clear) begin
         csr_update.estat[`_ESTAT_TIMER_IS] = 0;
     end
 
