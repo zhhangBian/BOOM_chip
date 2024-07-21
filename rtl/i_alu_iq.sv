@@ -345,7 +345,7 @@ always_comb begin
     excute_valid_o = excute_valid_q;
     
     result_o.data = result_q;
-    result_o.preg = select_di_qq.preg;
+    result_o.preg = select_di_qq.wreg_id;
     result_o.w_reg = select_di_qq.wreg;
     result_o.inst_valid = select_di_qq.inst_valid;
 end
