@@ -256,7 +256,7 @@ always_comb begin
         commit_flush_info = 2'b01;
     end //TODO  ICACOP指令
 
-    else if(|is_lsu) begin
+    else if(|is_lsu/*是不是要加valid*/) begin
         if(ls_fsm_q == S_NORMAL) begin
             if(!&cache_commit_hit) begin
                 flush = '1; //TODO 存储指令，等待完成
@@ -345,9 +345,8 @@ end
 //flush的时候才有意义，所以可以省掉一些逻辑
 assign redir_addr_o = cur_exception ? exp_pc : //异常入口
                     (rob_commit_i[0].ertn_en) : csr_q.era : //异常返回
-                    (flush & ~is_uncached) ? rob_commit_i[i].pc ://重新执行当前pc TODO ?
-                    next_pc[i];//刷掉流水，执行下一条
-//TODO 去i化
+                    (~cache_commit_hit[0] & ~is_uncached) ? rob_commit_i[0].pc ://重新执行当前pc TODO ?访存指令缺失的情况，前面的那个信号是随便写的！！！
+                    next_pc[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
 
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
