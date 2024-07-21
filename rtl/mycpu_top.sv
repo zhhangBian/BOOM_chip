@@ -437,6 +437,16 @@ cdb #(
 cdb_rob_pkg_t cdb_rob_pkgs [1:0];
 always_comb begin
     for (integer i = 0; i < 2; i++) begin
+        cdb_data[i]               =  cdb_infos[i].w_data;
+        cdb_reg_id[i]             =  cdb_infos[i].rob_id;
+        cdb_valid[i]              =  cdb_infos[i].w_reg;
+
+        cdb_dispatch_pkg[i].w_preg =  cdb_infos[i].rob_id;
+        cdb_dispatch_pkg[i].w_data =  cdb_infos[i].w_data;
+        cdb_dispatch_pkg[i].w_reg  =  cdb_infos[i].w_reg;
+        cdb_dispatch_pkg[i].w_mem  =  /* TODO */
+        cdb_dispatch_pkg[i].w_valid=  cdb_infos[i].r_valid;           
+
         cdb_rob_pkgs[i].w_preg    =  cdb_infos[i].rob_id;
         cdb_rob_pkgs[i].w_data    =  cdb_infos[i].w_data;
         cdb_rob_pkgs[i].w_valid   =  cdb_infos[i].r_valid;
