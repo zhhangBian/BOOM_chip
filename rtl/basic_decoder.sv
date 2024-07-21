@@ -302,7 +302,7 @@ always_comb begin
         /*==================== 乘除指令 ====================*/
         // MUL.W
         32'b00000000000111000???????????????: begin
-            decode_info_o.mul_inst = 1'd1;
+            decode_info_o.mdu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
@@ -310,7 +310,7 @@ always_comb begin
         end
         // MULH.W
         32'b00000000000111001???????????????: begin
-            decode_info_o.mul_inst = 1'd1;
+            decode_info_o.mdu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
@@ -318,7 +318,7 @@ always_comb begin
         end
         // MULH.WU
         32'b00000000000111010???????????????: begin
-            decode_info_o.mul_inst = 1'd1;
+            decode_info_o.mdu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
@@ -326,7 +326,7 @@ always_comb begin
         end
         // DIV.W
         32'b00000000001000000???????????????: begin
-            decode_info_o.div_inst = 1'd1;
+            decode_info_o.mdu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
@@ -334,7 +334,7 @@ always_comb begin
         end
         // MOD.W
         32'b00000000001000001???????????????: begin
-            decode_info_o.div_inst = 1'd1;
+            decode_info_o.mdu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
@@ -342,7 +342,7 @@ always_comb begin
         end
         // DIV.WU
         32'b00000000001000010???????????????: begin
-            decode_info_o.div_inst = 1'd1;
+            decode_info_o.mdu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
@@ -350,7 +350,7 @@ always_comb begin
         end
         // MOD.WU
         32'b00000000001000011???????????????: begin
-            decode_info_o.div_inst = 1'd1;
+            decode_info_o.mdu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
@@ -648,7 +648,7 @@ always_comb begin
         end
         // DBAR
         32'b00111000011100100???????????????: begin
-            decode_info_o.lsu_inst = 1'd1;
+            decode_info_o.alu_inst = 1'd1; // TODO: check
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
             decode_info_o.dbar_inst = 1'd1;

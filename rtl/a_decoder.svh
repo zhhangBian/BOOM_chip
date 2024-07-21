@@ -107,7 +107,7 @@ typedef logic [0 : 0] bceqz_t;
 typedef logic [0 : 0] bcnez_t;
 typedef logic [31: 0] inst_t;
 typedef logic [0 : 0] alu_inst_t;
-typedef logic [0 : 0] mul_inst_t;
+typedef logic [0 : 0] mdu_inst_t;
 typedef logic [0 : 0] div_inst_t;
 typedef logic [0 : 0] lsu_inst_t;
 typedef logic [0 : 0] fpu_inst_t;
@@ -285,7 +285,7 @@ typedef struct packed {
     mem_read_t mem_read;
     mem_type_t mem_type;
     mem_write_t mem_write;
-    mul_inst_t mul_inst;
+    mdu_inst_t mdu_inst;
     need_fa_t need_fa;
     priv_inst_t priv_inst;
     refetch_t refetch;
@@ -308,9 +308,8 @@ typedef struct packed {
     alu_inst_t      alu_inst; // 是否是需要使用 alu 的指令
     alu_op_t        alu_op; // alu 子类，在不同大类下有不同含义
     break_inst_t    break_inst; // 是否是 break 指令
-    cmp_type_t      cmp_type; // 跳转条件类型，包括无条件跳转。实际上是一个独热码。四位分别表示{小于，等于，大于，有符号}。比如BLE就是1101(有符号)
+    cmp_type_t      cmp_type; // TODO: 不需要。跳转条件类型，包括无条件跳转。实际上是一个独热码。四位分别表示{小于，等于，大于，有符号}。比如BLE就是1101(有符号)
     csr_op_type_t   csr_op_type; // csr 指令类型
-    div_inst_t      div_inst; // 是否是除法指令
     dbar_inst_t     dbar_inst; // 是否是 DBAR 指令
     logic           decode_err; // 出现未知指令
     ertn_inst_t     ertn_inst; // 是否是 ertn 指令
@@ -325,7 +324,7 @@ typedef struct packed {
     mem_read_t      mem_read; // 是否需要读取内存
     mem_type_t      mem_type; // BHW[U]和none
     mem_write_t     mem_write; // 是否会写入内存
-    mul_inst_t      mul_inst; // 是否是乘法指令
+    mdu_inst_t      mdu_inst; // 是否是 mdu 指令
     need_fa_t       need_fa; // 完全没有用到 TODO
     priv_inst_t     priv_inst; // 是否是特权指令
     rdcnt_inst_t    rdcnt_inst; // 是否是 rdcnt 类型指令
