@@ -28,7 +28,8 @@ module icache #(
     input commit_fetch_req_t   commit_cache_req, // commit维护cache时的请求
     output fetch_commit_resp_t cache_commit_resp, // cache向提交级反馈结果
     input logic                commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
-    output logic               commit_resp_ready_o // 状态处理完毕，即为NORMAL状态时
+    output logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
+    output logic               commit_resp_valid_o
 )
 
 commit_fetch_req_t   commit_cache_req;
@@ -51,7 +52,7 @@ always_ff @(posedge clk) begin
     end
 end
 
-assign commit_resp_ready_o = !stall;
+assign commit_resp_ready_o = !stall_q;
 // 打一拍整理数据
 
 // stall逻辑，重填和维护都阻塞，阻塞时注意要
@@ -323,6 +324,7 @@ always_comb begin
     addr_o          = '0;
     addr_valid_o    = '0;
     data_len_o      = '0;
+    commit_resp_valid_o  = '0;
     case(fsm_cur) 
         F_NORMAL:begin
             temp_data_block = '0;
@@ -337,6 +339,7 @@ always_comb begin
                         commit_cache_req.tag_data              = '0;
                         commit_cache_req.tag_we                = '1;
                         icache_cacop_flush_o                   = 2'b10;
+                        commit_resp_valid_o                    = '1;
                     end
                     2: begin
                         commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
@@ -436,6 +439,7 @@ always_comb begin
         end
         F_CACOP: begin
             fsm_next = F_NORMAL;
+            commit_resp_valid_o  = '1;
             if (cache_commit_resp.tlb_exception.ecode != '0) begin
                 icache_cacop_flush_o                   = 2'b01;
                 icache_cacop_tlb_exc                   = cache_commit_resp.tlb_exception
