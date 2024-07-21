@@ -131,6 +131,12 @@ logic   icache_commit_valid;
 
 tlb_write_req_t tlb_update_pkg;
 
+logic icache_axi_addr_valid;
+logic [31:0] icache_axi_addr;
+logic [3:0] icache_axi_len;
+logic axi_icache_ready;
+logic axi_icache_valid;
+logic [31:0] axi_icache_data;
 
 i_cache # (
     .WAY_NUM(2), // default
@@ -146,14 +152,14 @@ i_cache # (
     // cpu 侧信号
     .fetch_icache_receiver(fifo_f_handshake.receiver),
     .icache_decoder_sender(f_fifo_handshake.sender)
-    // TODO: axi 信号
-    .addr_valid_o(),
-    .addr_o(),
-    .data_len_o(),
-    .axi_resp_ready_i(),
-    .axi_data_valid_i(),
-    .axi_data_i(),
-    // TODO: 全局信号
+
+    .addr_valid_o(icache_axi_addr_valid),
+    .addr_o(icache_axi_addr),
+    .data_len_o(icache_axi_len),
+    .axi_resp_ready_i(axi_icache_ready),
+    .axi_data_valid_i(axi_icache_valid),
+    .axi_data_i(axi_icache_data),
+
     .commit_icache_req(commit_icache_req), // commit维护cache时的请求
     .icache_cacop_flush_o(icache_cacop_flush),
     .icache_cacop_tlb_exc(icache_cacop_tlb_exc),
@@ -521,6 +527,15 @@ handshake_if #(.T(cache_commit_resp_t)) cache_commit_if();
 commit_cache_req_t commit_cache_req;
 cache_commit_resp_t cache_commit_resp;
 
+commit_axi_req_t commit_axi_req;
+axi_commit_resp_t axi_commit_resp;
+logic commit_axi_ready;
+logic commit_axi_valid;
+logic axi_commit_ready;
+logic axi_commit_ready_r, axi_commit_ready_w, axi_commit_ready_c;
+logic axi_commit_valid;
+assign axi_commit_ready = axi_commit_ready_r | axi_commit_ready_w | axi_commit_ready_c;
+
 commit # () commit(
     .clk(clk),
     .rst_n(rst_n),
@@ -536,12 +551,12 @@ commit # () commit(
     .commit_cache_req_o(commit_cache_req),
     .cache_commit_resp_i(cache_commit_resp),
 
-    .commit_axi_req_o(),
-    .axi_commit_resp_i(),
-    .commit_axi_ready_i(),
-    .commit_axi_valid_o(),
-    .axi_commit_valid_i(),
-    .axi_commit_ready_o(),
+    .commit_axi_req_o(commit_axi_req),
+    .axi_commit_resp_i(cache_commit_resp),
+    .commit_axi_ready_o(commit_axi_ready),
+    .commit_axi_valid_o(commit_axi_valid),
+    .axi_commit_valid_i(axi_commit_valid),
+    .axi_commit_ready_i(axi_commit_ready),
 
     .commit_arf_we_o(commit_arf_we),
     .commit_arf_data_o(commit_arf_data),
@@ -593,48 +608,44 @@ axi_crossbar # (
     /*
      * AXI slave interfaces
      */
-    .s_axi_awid( ),
-    .s_axi_awaddr( ),
-    .s_axi_awlen( ),
-    .s_axi_awsize( ),
-    .s_axi_awburst( ),
-    .s_axi_awlock( ),
-    .s_axi_awcache( ),
-    .s_axi_awprot( ),
-    .s_axi_awqos( ),
-    .s_axi_awuser( ),
-    .s_axi_awvalid( ),
-    .s_axi_awready( ),
-    .s_axi_wdata( ),
-    .s_axi_wstrb( ),
-    .s_axi_wlast( ),
-    .s_axi_wuser( ),
-    .s_axi_wvalid( ),
-    .s_axi_wready( ),
-    .s_axi_bid( ),
-    .s_axi_bresp( ),
-    .s_axi_buser( ),
-    .s_axi_bvalid( ),
-    .s_axi_bready( ),
-    .s_axi_arid( ),
-    .s_axi_araddr( ),
-    .s_axi_arlen( ),
-    .s_axi_arsize( ),
-    .s_axi_arburst( ),
-    .s_axi_arlock( ),
-    .s_axi_arcache( ),
-    .s_axi_arprot( ),
-    .s_axi_arqos( ),
-    .s_axi_aruser( ),
-    .s_axi_arvalid( ),
-    .s_axi_arready( ),
-    .s_axi_rid( ),
-    .s_axi_rdata( ),
-    .s_axi_rresp( ),
-    .s_axi_rlast( ),
-    .s_axi_ruser( ),
-    .s_axi_rvalid( ),
-    .s_axi_rready( ),
+    .s_axi_awid('0),
+    .s_axi_awaddr({icache_axi_addr, commit_axi_req.addr}),
+    .s_axi_awlen({icache_axi_len, commit_axi_req.len}),
+    .s_axi_awsize({3'b010,3'b010}),
+    .s_axi_awburst({2'b01,2'b01}),
+    .s_axi_awlock('0),
+    .s_axi_awcache('0),
+    .s_axi_awprot('0),
+    .s_axi_awqos('0),
+    .s_axi_awuser('0),
+    .s_axi_awvalid({0, commit_axi_valid & (|commit_axi_req.strb)}),
+    .s_axi_awready(axi_commit_ready_c),
+    .s_axi_wdata({32{1'b0}, commit_axi_req.data}),
+    .s_axi_wstrb({4'b0, commit_axi_req.strb}),
+    .s_axi_wlast(),
+    .s_axi_wuser('0),
+    .s_axi_wvalid(2'b01),
+    .s_axi_wready({, axi_commit_ready_w}),
+    .s_axi_bready('1),
+    .s_axi_arid('0),
+    .s_axi_araddr({icache_axi_addr, commit_axi_req.addr}),
+    .s_axi_arlen({icache_axi_len, commit_axi_req.len}),
+    .s_axi_arsize({3'b010,3'b010}),
+    .s_axi_arburst({2'b01,2'b01}),
+    .s_axi_arlock('0),
+    .s_axi_arcache('0),
+    .s_axi_arprot('0),
+    .s_axi_arqos('0),
+    .s_axi_aruser('0),
+    .s_axi_arvalid({icache_axi_addr_valid, commit_axi_valid & commit_axi_req.read}),
+    .s_axi_arready({axi_icache_ready, axi_commit_ready_r}),
+    .s_axi_rid(),
+    .s_axi_rdata({axi_icache_data, axi_commit_resp.data}),
+    .s_axi_rresp(),
+    .s_axi_rlast(),
+    .s_axi_ruser(),
+    .s_axi_rvalid({axi_icache_valid, axi_commit_valid}),
+    .s_axi_rready('1),
 
     /*
      * AXI master interfaces
