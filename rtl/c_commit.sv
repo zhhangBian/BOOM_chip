@@ -419,32 +419,62 @@ for(integer i = 0; i < 2; i += 1) begin
     end
 end
 
+always_ff @( posedge clk ) begin
+    if (~rst_n) begin
+        predict_success_q <= '0;
+        next_pc_q         <= '0;
+        predict_info_q    <= '0;
+        taken_q           <= '0;
+        branch_info_q     <= '0;
+        real_target_q     <= '0;
+    end
+    else if (stall) begin
+        predict_success_q <= predict_success_q;
+        next_pc_q         <= next_pc_q;
+        predict_info_q    <= predict_info_q;
+        taken_q           <= taken_q;
+        branch_info_q     <= branch_info_q;
+        real_target_q     <= real_target_q;
+    end
+    else if (flush) begin
+        predict_success_q <= '0;
+        next_pc_q         <= '0;
+        predict_info_q    <= '0;
+        taken_q           <= '0;
+        branch_info_q     <= '0;
+        real_target_q     <= '0;
+    end
+    else begin
+        predict_success_q <= predict_success;
+        next_pc_q         <= next_pc;
+        predict_info_q    <= predict_info;
+        taken_q           <= taken;
+        branch_info_q     <= branch_info;
+        real_target_q     <= real_target;
+    end
+end
+
+
 ///////////////////////////////////////////////////////////////////////////////////
 //在第二级
 //把之前打包的东西打一拍过来TODO
 
 //flush的时候才有意义，所以可以省掉一些逻辑
-//
-//这几个不要用
-logic i_cacop_exception;
-logic icacop_tlbr_exception;
-wire  icacop_exc_pc = icacop_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry;
-
 assign redir_addr_o = (fsm_flush) ? fsm_npc ://fsm来的npc
                      (cur_exception_q) ? exp_pc_q : //异常入口
                      (rob_commit_q[0].ertn_en) ? csr_q.era : //异常返回
                      next_pc_q[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
 
-correct_info_o[0].update = retire_request_o[i] &
-                           ((predict_info_q[i].need_update) |
-                           (predict_branch_q[i]) |
-                           (is_branch_q[i]));
+correct_info_o[0].update = retire_request_o[0] &
+                           ((predict_info_q[0].need_update) |
+                           (predict_branch_q[0]) |
+                           (is_branch_q[0]));
 
-correct_info_o[1].update = (retire_request_o[i] |
-                           (predict_info_q[i].need_update) |
-                           (predict_branch_q[i]) |
-                           (is_branch_q[i])) &
-                           commit_flush_info[1];
+correct_info_o[1].update = retire_request_o[1] &
+                           ((predict_info_q[1].need_update) |
+                           (predict_branch_q[1]) |
+                           (is_branch_q[1])) &
+                           commit_flush_info[1];//如果是前一条flush则不更新这一条
                         //表示是第二条带来的flush
                         // 如果是由0发出的flush，则1不update，可以通过第二级的组合逻辑信号commit_flush_info知道是哪个导致了flush
 
@@ -478,7 +508,7 @@ end
 logic [5:0] timer_64, timer_64_q;
 
 always_ff @(posedge clk) begin
-    if(!rst_n) begin
+    if(~rst_n) begin
         timer_64_q <= '0;
     end
     else begin
@@ -661,11 +691,12 @@ wire a_priv_excp     = rob_commit_i[1].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3
 
 wire a_execute_excp  = rob_commit_i[1].execute_exception;
 
-wire another_exception    = rob_commit_valid_i[1] & |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
+wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
 //上面是1表示两条指令的后一条有例外
+//注意：这个信号只用来判断是不是单个提交，所以不用判断指令是否有效，其他地方后面不能直接用！！！
 
 always_ff @( posedge clk ) begin
-    if (rst_n | flush) begin
+    if (~rst_n) begin
         cur_exception_q <= '0;
         cur_tlbr_exception_q <= '0;
         csr_exception_update_q <= '0;
@@ -674,11 +705,16 @@ always_ff @( posedge clk ) begin
         cur_exception_q      <= cur_exception_q;
         cur_tlbr_exception_q <= cur_tlbr_exception_q;
         csr_exception_update_q <= csr_exception_update_q;
+    end
+    else if (flush) begin
+        cur_exception_q <= '0;
+        cur_tlbr_exception_q <= '0;
+        csr_exception_update_q <= '0;
+    end
     else begin
         cur_exception_q <= cur_exception;
         cur_tlbr_exception_q <= cur_tlbr_exception;
         csr_exception_update_q <= csr_exception_update;
-    end
     end
 end
 
@@ -747,7 +783,14 @@ end
 
 //传到第二级arf，不管有没有用都读出来
 always_ff @( posedge clk ) begin
-    commit_csr_data_q <= commit_csr_data_o;
+    if (~rst_n) begin
+        commit_csr_data_q <= '0;
+        csr_maintain_q    <= '0;
+    end
+    else begin
+        commit_csr_data_q <= commit_csr_data_o;
+        csr_maintain_q    <= csr;
+    end
 end
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -758,7 +801,12 @@ logic timer_interrupt_clear_q;
 //__forward()
 
 always_ff @( posedge clk ) begin
-    timer_interrupt_clear_q <= timer_interrupt_clear;
+    if (~rst_n) begin
+        timer_interrupt_clear_q <= '0;
+    end
+    else begin
+        timer_interrupt_clear_q <= timer_interrupt_clear;
+    end
 end
 
 //定义软件写csr寄存器的行为
@@ -943,7 +991,7 @@ logic [`_TLB_ENTRY_NUM - 1:0] tlb_wr_req, tlb_wr_req_q;/*更新进tlb的使能�
 //__forward()
 
 always_ff @( posedge clk ) begin
-    if (rst_n | flush) begin
+    if (~rst_n) begin
         tlb_update_csr_q <= '0;
         tlb_update_entry_q <= '0;
         tlb_wr_req_q <= '0;
@@ -952,11 +1000,16 @@ always_ff @( posedge clk ) begin
         tlb_update_csr_q     <= tlb_update_csr_q;
         tlb_update_entry_q   <= tlb_update_entry_q;
         tlb_wr_req_q         <= tlb_wr_req_q;
+    end
+    else if (flush) begin
+        tlb_update_csr_q <= '0;
+        tlb_update_entry_q <= '0;
+        tlb_wr_req_q <= '0;
+    end
     else begin
         tlb_update_csr_q <= tlb_update_csr;
         tlb_update_entry_q <= tlb_update_entry;
         tlb_wr_req_q <= tlb_wr_req;
-    end
     end
 end
 
@@ -1081,7 +1134,7 @@ always_comb begin
 
     if (!commit_request_o[0]) begin
         tlb_wr_req = '0;
-    end//不是将要提交的命令，则上面全部不用
+    end//不是将要提交的命令，则上面全部不用，注意可能有异常！！！
 end
 
 function automatic logic vppn_match(logic [31:0] va,
@@ -1129,14 +1182,14 @@ endtask
 
 always_comb begin
     csr_o = csr_q;
-    tlb_write_req_o.tlb_write_req   = tlb_wr_req_q;
+    tlb_write_req_o.tlb_write_req   = cur_exception_q ? 0 : tlb_wr_req_q;//这个放在第二级是因为前一级比较爆炸
     tlb_write_req_o.tlb_write_entry = tlb_update_entry_q;
 end
 
 //周期结束的时候更新进tlb，同时也发出去更新mmu里面的tlb
 always_ff @( posedge clk ) begin
     for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
-        if (tlb_wr_req_q[i]) begin
+        if (~cur_exception_q & tlb_wr_req_q[i]) begin
             tlb_entries_q[i] <= tlb_update_entry_q;
         end
     end
@@ -1204,7 +1257,7 @@ always_comb begin
 
 end
 
-// 对csr_q的信息维护
+// 对csr_q的信息维护，第二级结尾写入
 always_ff @(posedge clk) begin
     if(~rst_n) begin
         csr_q <= csr_init; // 初始化 CSR
@@ -1232,7 +1285,7 @@ always_comb begin
         wait_for_int = ~int_excep;
     end
     else begin
-        wait_for_int = retire_request_o[0] ? 0 : rob_commit_i[0].idle_en;
+        wait_for_int = retire_request_o[0] ? 0 : rob_commit_q[0].idle_en;
     end
 end
 //当处于等待状态时，一直flush，要求rob来的所有指令都不valid！
