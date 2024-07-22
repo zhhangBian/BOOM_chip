@@ -15,7 +15,7 @@ module old_mmu #(
     input  wire  [1:0]            mem_type,//类型，定义见a_mmu_defines
 
     output trans_result_t trans_result_o
-)
+);
 
 wire  cur_asid = csr.asid;
 logic tlb_found;

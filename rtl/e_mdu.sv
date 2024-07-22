@@ -14,11 +14,7 @@ module mdu (
     input   logic   valid_i,
     output  logic   ready_o,
     output  logic   valid_o,
-    input   logic   ready_i,
-
-    // 定义握手信号的接口
-    // handshake_if.receiver receiver,
-    // handshake_if.sender   sender
+    input   logic   ready_i
 );
 
 mdu_o_t mul_res_o, div_res_o;

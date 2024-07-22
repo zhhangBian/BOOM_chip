@@ -29,7 +29,7 @@ module icache #(
     output fetch_commit_resp_t cache_commit_resp, // cache向提交级反馈结果
     input logic                commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
     output logic               commit_resp_ready_o // 状态处理完毕，即为NORMAL状态时
-)
+);
 
 commit_fetch_req_t   commit_cache_req;
 fetch_commit_resp_t  cache_commit_resp;

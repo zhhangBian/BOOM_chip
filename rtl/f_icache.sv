@@ -33,9 +33,8 @@ module icache #(
     output  logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
     output  logic               commit_resp_valid_o,
 
-    input   tlb_write_req_t     tlb_write_req_i,
-
-)
+    input   tlb_write_req_t     tlb_write_req_i
+);
 
 commit_fetch_req_t   commit_cache_req;
 fetch_commit_resp_t  cache_commit_resp;

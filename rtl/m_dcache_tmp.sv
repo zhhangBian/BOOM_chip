@@ -26,7 +26,7 @@ module bad_dcache #(
     // output lsu_iq_resp_t  cpu_lsu_resp
     // commit级信号
     // 请求
-)
+);
 /*******************************global*********************************/
 
 iq_lsu_pkg_t iq_lsu_pkg;
