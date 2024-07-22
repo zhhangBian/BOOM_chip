@@ -492,6 +492,8 @@ typedef struct packed {
 //   fetch_excp_t f_excp;
     logic   [3:0]   strb;
     logic   [3:0]   rmask;  // 需要读的字节
+    logic           msigned;     // 有符号拓展
+    logic   [1:0]   msize;     // 访存大小-1
     logic   [31:0]  wdata;      // 需要写的数据
     logic           uncached;   // uncached 特性
     logic           hit;        // 是否命中，总判断
