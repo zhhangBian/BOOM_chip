@@ -65,7 +65,7 @@ assign d_r_pkg.r_valid = mask;
 assign d_r_pkg.pc = pc;
 // 2024/07/22 ADD
 assign d_r_pkg.predict_infos = receiver.data.predict_infos;
-
+assign d_r_pkg.fetch_exc_info = receiver.data.fetch_exc_info;
 for (integer i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.w_reg[i] = |decode_infos[i].reg_type_w;
     assign d_r_pkg.w_mem[i] = |decode_infos[i].mem_type_write;

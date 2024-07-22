@@ -13,6 +13,28 @@ function cache_tag_t get_cache_tag(
     return cache_tag;
 endfunction
 
+function automatic offset(input logic [31:0] data, input [1:0] m_size, input [3:0] mask, input msigned);
+    logic [31:0] lw_data 
+    lw_data = '0;
+    sign    = '0;
+    if (m_size == 2'd0) begin
+        for (integer i = 0; i < 4; i++) begin
+            lw_data[7 : 0]     |= mask[i] ? data[8 * i + 7 : 8 * i] : '0;
+            sign               |= mask[i] ? data[8 * i + 7]         : '0;
+        end
+        lw_data[31: 8]         |= {24{sign & msigned}};
+    end else if (m_size == 2'd1) begin
+        for (integer i = 0; i < 2; i++) begin
+            lw_data[15: 0]     |= mask[2*i] ? data[16 * i + 15 : 16 * i] : '0;
+            sign               |= mask[2*i] ? data[16 * i + 15]          : '0;
+        end
+        lw_data[31:16]         |= {16{sign & msigned}};
+    end else begin
+        lw_data                |= data;
+    end
+    return lw_data;
+endfunction
+
 module commit #(
     parameter int CACHE_BLOCK_NUM = 4;
     parameter int CPU_ID = 0;
@@ -178,6 +200,7 @@ assign retire_request_o[1] = commit_request_q[1] & ~stall;
 
 wire   pc_s                = commit_request_q[0].pc;
 
+
 // 处理对ARF的接口
 always_comb begin
     commit_arf_we_o = '0;
@@ -199,10 +222,10 @@ always_comb begin
 
     if(ls_fsm_q == S_UNCACHED_RD) begin
         if(axi_commit_rvalid_i) begin
-            commit_arf_we_o[0]   = |rob_commit_q.lsu_info.rmask;
-            commit_arf_data_o[0] = axi_commit_resp_i.rdata;//TODO rdata mask
-            commit_arf_areg_o[0] = rob_commit_q.arf_id;
-            commit_arf_preg_o[0] = rob_commit_q.rob_id;
+            commit_arf_we_o[0]   = |rob_commit_q[0].lsu_info.rmask;
+            commit_arf_data_o[0] = offset(axi_commit_resp_i.rdata, rob_commit_q[0].lsu_info.msize, rob_commit_q[0].lsu_info.rmask, rob_commit_q[0].lsu_info.msigned);//TODO rdata mask
+            commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
+            commit_arf_preg_o[0] = rob_commit_q[0].rob_id;
             //有了上面哪个时序，这个rob_commit_q就可以直接用了
         end
     end

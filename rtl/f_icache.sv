@@ -258,6 +258,9 @@ always_comb begin
     f_d_pkg.pc      =  b_f_pkg_q.pc & 32'hfffffff8; //TODO ATTENTION:后面要分两个PC
     f_d_pkg.mask    =  b_f_pkg_q.mask;
     f_d_pkg.predict_infos = b_f_pkg_q.predict_infos;
+    f_d_pkg.fetch_exc_info.fetch_exception = fetch_exception;
+    f_d_pkg.fetch_exc_info.exc_code        = exc_code;
+    f_d_pkg.fetch_exc_info.badv            = badv;
 end
 always_ff @(posedge clk) begin
     if (!rst_n) begin

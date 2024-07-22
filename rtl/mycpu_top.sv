@@ -499,7 +499,7 @@ always_comb begin
         cdb_rob_pkgs[i].w_preg    =  cdb_infos[i].rob_id;
         cdb_rob_pkgs[i].w_data    =  cdb_infos[i].w_data;
         cdb_rob_pkgs[i].w_valid   =  cdb_infos[i].r_valid;
-        cdb_rob_pkgs[i].ctrl      =  cdb_infos[i]./* TODO */; 
+        cdb_rob_pkgs[i].ctrl      =  cdb_infos[i].ctrl/* TODO */; 
         cdb_rob_pkgs[i].lsu_info  =  cdb_infos[i].lsu_info; 
     end
 end
@@ -546,6 +546,14 @@ commit # () commit(
     .flush(flush),
     // 给Dcache使用
     .stall_o(stall),
+
+    .hard_is_i(
+    `ifdef _VERILATOR
+        intrpt
+    `endif
+    `ifdef _FPGA
+        ext_int
+    `endif),
 
     .rob_commit_valid_i(rob_commit_valid),
     .rob_commit_i(commit_infos),
