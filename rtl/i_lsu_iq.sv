@@ -239,7 +239,7 @@ end
 
 // ------------------------------------------------------------------
 // 填入发射指令所需的执行信息：下一个周期填入执行单元
-decode_info_t   select_di, select_di_q;
+decode_info_t   select_di, select_di_q, select_di_qq;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
@@ -268,8 +268,13 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    if(excute_ready) begin
-        select_di_q <= select_di;
+    if (!rst_n | flush) begin begin
+        select_di_q  <= '0;
+        select_di_qq <= '0;
+    end
+    else if(excute_ready) begin
+        select_di_q  <= select_di;
+        select_di_qq <= select_di_q;
     end
 end
 
@@ -294,8 +299,6 @@ data_wkup #(
 // ------------------------------------------------------------------
 // 匹配给DCache的接口
 iq_lsu_pkg_t    iq_lsu_request;
-assign iq_lsu_req_o = iq_lsu_request;
-
 assign iq_lsu_req_o     = iq_lsu_request;
 assign iq_lsu_valid_o   = excute_valid_q;
 assign lsu_iq_ready_o   = fifo_ready;
@@ -310,14 +313,16 @@ always_comb begin
     // 约定0号为数据，1号为地址
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
     iq_lsu_request.wdata    = real_data[0];
+    iq_lsu_request.rmask    = msize == 0 ? 1'b1 << iq_lsu_request.vaddr[1:0] : msize == 1 ? 2'b11 << iq_lsu_request.vaddr[1] : 4'b1111;
+    iq_lsu_request.strb     = iq_lsu_request.rmask;
 end
 
 // 配置lsu到iq的信息，向FIFO输出
 always_comb begin
     result_o.w_data   = lsu_iq_resp_i.rdata;
-    result_o.rob_id   = select_di_q.wreg_id;
-    result_o.w_reg    = select_di_q.wreg;
-    result_o.r_valid  = select_di_q.inst_valid;
+    result_o.rob_id   = select_di_qq.wreg_id;
+    result_o.w_reg    = select_di_qq.wreg;
+    result_o.r_valid  = select_di_qq.inst_valid;
     result_o.lsu_info = lsu_iq_resp_i;
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

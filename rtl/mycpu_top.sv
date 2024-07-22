@@ -218,7 +218,7 @@ logic [1:0][31:0] commit_arf_data;
 logic [1:0][4:0] commit_arf_areg;
 logic [1:0][5:0] commit_rob_areg;
 
-assign c_retire = commit_request & commit_arf_we;//TODO 这个不太对
+assign c_retire = commit_arf_we;
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         c_retire_infos[i].w_valid = commit_arf_we[i];
@@ -294,7 +294,7 @@ alu_iq #(
     .flush(flush),
 
     .choose(p_alu_handshake_0.data.inst_choose), 
-    .p_di_c(), //两条指令各自的译码信息  TODO
+    .p_di_c(p_alu_handshake_0.data.di), //两条指令各自的译码信息  TODO
     .p_data_c(p_alu_handshake_0.data.data), //从P级传入的两条指令各自的两个data数值
     .p_reg_id_c(p_alu_handshake_0.data.preg), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
     .ohter_ready(p_alu_handshake_0.valid),
@@ -338,7 +338,7 @@ alu_iq #(
     .flush(flush),
 
     .choose(p_alu_handshake_1.data.inst_choose),
-    .p_di_c(),
+    .p_di_c(p_alu_handshake_1.data.di),
     .p_data_c(p_alu_handshake_1.data.data),
     .p_reg_id_c(p_alu_handshake_1.data.preg),
     .other_ready(p_alu_handshake_1.valid),
@@ -387,7 +387,7 @@ lsu_iq # (
     .flush(flush),
 
     .choose(p_lsu_handshake.data.inst_choose),
-    .p_di_i(),
+    .p_di_i(p_lsu_handshake.data.di),
     .p_data_i(p_lsu_handshake.data.data),
     .p_reg_id_i(p_lsu_handshake.data.preg),
     .p_valid_i(p_lsu_handshake.data.data_valid),
@@ -437,7 +437,7 @@ mdu_iq # (
     .flush(flush),
 
     .choose(p_mdu_handshake.data.inst_choose),
-    .p_di_i(),
+    .p_di_i(p_mdu_handshake.data.di),
     .p_data_i(p_mdu_handshake.data.data),
     .p_reg_id_i(p_mdu_handshake.data.preg),
     .p_valid_i(p_mdu_handshake.data.data_valid),

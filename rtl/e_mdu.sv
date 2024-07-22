@@ -1,4 +1,4 @@
-`include "a_mdu_defines.svh"
+`include "a_defines.svh"
 
 module mdu (
     input   wire    clk,
@@ -33,8 +33,8 @@ mdu_muler muler(
     .req_i(req_i),
     .res_o(mul_res_o),
 
-    .valid_i(valid_i),
-    .ready_o(mul_read_o),
+    .valid_i(mul_valid_i),
+    .ready_o(mul_ready_o),
     .valid_o(mul_valid_o),
     .ready_i(ready_i)
 );
@@ -47,11 +47,14 @@ mdu_diver diver(
     .req_i(req_i),
     .res_o(div_res_o),
 
-    .valid_i(valid_i),
+    .valid_i(div_valid_i),
     .ready_o(div_ready_o),
     .valid_o(div_valid_o),
     .ready_i(ready_i)
 );
+
+assign mul_valid_i = valid_i & (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
+assign div_valid_i = valid_i & ~(req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
 
 assign res_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
                 mul_res_o : div_res_o;

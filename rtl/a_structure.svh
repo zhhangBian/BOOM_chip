@@ -16,6 +16,7 @@ typedef struct packed {
     predict_info_t [1:0]predict_infos;
 } f_d_pkg_t;
 
+typedef logic [31:0] word_t;
 typedef logic [`ARF_WIDTH - 1 :0] arf_id_t ;
 typedef logic [`ROB_WIDTH - 1 :0] rob_id_t ;
 
@@ -25,13 +26,13 @@ typedef struct packed {
 } arf_table_t;
 
 typedef struct packed {
-    arf_table_t  arf_table; // 读写地址寄存器表
+    logic  [1 :0][31:0] pc ; // 指令地址
     logic  [1 :0]  r_valid; // 前端发射出来的指令有效
+    // ARF 与 源操作数 相关信号
+    arf_table_t  arf_table; // 读写地址寄存器表
     logic  [1 :0]  w_reg;
-    logic  [1 :0]  w_mem;
     logic  [3 :0]  reg_need; // 指令需要的寄存器
     // else controller signals
-    logic  [1 :0][31:0] pc ; // 指令地址
     logic  [3 :0]   use_imm; // 指令是否使用立即数
     logic  [1 :0][31:0]   data_imm; // 数据立即数
     logic  [1 :0][31:0]   addr_imm; // 地址立即数
@@ -50,10 +51,9 @@ typedef struct packed {
     logic [1:0][2:0]   grand_op; 
     logic [1:0][2:0]   op;
     // LSU 信号
-    logic [1:0][3:0]   rmask; // 读掩码 TODO: ???
-    logic [1:0][3:0]   strb;  // 写掩码 TODO: ???
     logic [1:0]        msigned; // 是否符号拓展（ld指令）
     logic [1:0][1:0]   msize;   // 读字节数目 - 1
+    logic  [1 :0]  w_mem; // 加在这里了
 
     // 特殊指令独热码
     logic [1:0]        break_inst;
@@ -78,9 +78,6 @@ typedef struct packed {
 } d_r_pkg_t;
 
 typedef struct packed {
-    logic  [1 :0]     alu_type; // 指令类型
-    logic  [1 :0]     mdu_type;
-    logic  [1 :0]     lsu_type;
     logic  [1 :0][`ARF_WIDTH - 1:0] areg;
     logic  [1 :0][`ROB_WIDTH - 1:0] preg;
     logic  [3 :0][`ROB_WIDTH - 1:0] src_preg;
@@ -88,12 +85,51 @@ typedef struct packed {
     logic  [1 :0][31:0] pc ; // 指令地址
     logic  [1 :0]       r_valid;
     logic  [1 :0]       w_reg;
-    logic  [1 :0]       w_mem;
     logic  [1 :0]       check;
     logic  [3 :0]       use_imm; // 指令是否使用立即数
     logic  [3 :0]       data_valid; // 对应数据是否为有效，要么不需要使用该数据，要么已经准备好
     logic  [1 :0][31:0] data_imm; // 立即数
+    logic  [1 :0][31:0] addr_imm; // 立即数
     predict_info_t [1 :0] predict_infos;
+    // 指令类型
+    logic  [1 :0]     alu_type; // 指令类型
+    logic  [1 :0]     mdu_type;
+    logic  [1 :0]     lsu_type;
+    logic  [1 :0]     flush_inst;
+    logic  [1 :0]     jump_inst; // TODO: 似乎暂时没有用到？
+    logic  [1 :0]     priv_inst;
+    logic  [1 :0]     rdcnt_inst;
+    // control info, temp, 根据需要自己调整
+    predict_info_t [1 :0] predict_infos;
+    logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
+    // ALU & MDU 信号
+    logic [1:0][2:0]   grand_op; 
+    logic [1:0][2:0]   op;
+    // LSU 信号
+    logic [1:0]        msigned; // 是否符号拓展（ld指令）
+    logic [1:0][1:0]   msize;   // 读字节数目 - 1
+    logic  [1 :0]      w_mem;
+
+    // 特殊指令独热码
+    logic [1:0]        break_inst;
+    logic [1:0]        cacop_inst; // lsu iq
+    logic [1:0]        dbar_inst;
+    logic [1:0]        ertn_inst;
+    logic [1:0]        ibar_inst;
+    logic [1:0]        idle_inst;
+    logic [1:0]        invtlb_inst;
+    logic [1:0]        ll_inst; // lsu iq
+
+    logic [1:0]        rdcntid_inst;
+    logic [1:0]        rdcntvh_inst;
+    logic [1:0]        rdcntvl_inst;
+
+    logic [1:0]        sc_inst; // lsu iq
+    logic [1:0]        syscall_inst;
+    logic [1:0]        tlbfill_inst;
+    logic [1:0]        tlbrd_inst;
+    logic [1:0]        tlbsrch_inst;
+    logic [1:0]        tlbwr_inst;
 } r_p_pkg_t;
 
 typedef struct packed {
@@ -102,7 +138,7 @@ typedef struct packed {
     logic [`ARF_WIDTH - 1 :0] arf_id;
     logic [31 :0] data;
     logic w_valid; // 需要写register
-    logic w_check;
+    // logic w_check;
     // else information for retirement
 } retire_pkg_t;
 
@@ -126,6 +162,38 @@ typedef struct packed {
     logic                                          w_reg;
     logic                                          w_mem;
     logic                                          check;
+
+    // 指令类型
+    logic  alu_type; // 指令类型
+    logic  mdu_type;
+    logic  lsu_type;
+    logic  flush_inst;
+    logic  jump_inst; // TODO: 似乎暂时没有用到？
+    logic  priv_inst;
+    logic  rdcnt_inst;
+    // control info, temp, 根据需要自己调整
+    predict_info_t predict_info;
+    logic if_jump; // 是否跳转 TODO: 什么意思？
+    // 特殊指令独热码
+    logic break_inst;
+    logic cacop_inst; // lsu iq
+    logic dbar_inst;
+    logic ertn_inst;
+    logic ibar_inst;
+    logic idle_inst;
+    logic invtlb_inst;
+    logic ll_inst; // lsu iq
+
+    logic rdcntid_inst;
+    logic rdcntvh_inst;
+    logic rdcntvl_inst;
+
+    logic sc_inst; // lsu iq
+    logic syscall_inst;
+    logic tlbfill_inst;
+    logic tlbrd_inst;
+    logic tlbsrch_inst;
+    logic tlbwr_inst;
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
@@ -205,7 +273,7 @@ typedef struct packed {
     rob_ctrl_entry_t           ctrl;
 } cdb_rob_pkg_t;
 
-typedef struct pack {
+typedef struct packed {
     logic [1 : 0][31 : 0] rob_data;
     logic [1 : 0]         rob_complete;
 } rob_dispatch_pkg_t;
@@ -224,11 +292,45 @@ typedef struct packed {
 
 // 指令信息表项
 typedef struct packed {
-    logic [4 : 0] areg;
     logic [31: 0] pc;
+    // ARF 相关
+    logic [4 : 0] areg;
     logic         w_reg;
-    logic         w_mem;
     logic         check;
+
+    logic         w_mem;
+
+    // 指令类型
+    logic  alu_type; // 指令类型
+    logic  mdu_type;
+    logic  lsu_type;
+    logic  flush_inst;
+    logic  jump_inst; // TODO: 似乎暂时没有用到？
+    logic  priv_inst;
+    logic  rdcnt_inst;
+    // control info, temp, 根据需要自己调整
+    predict_info_t predict_info;
+    logic if_jump; // 是否跳转 TODO: 什么意思？
+    // 特殊指令独热码
+    logic break_inst;
+    logic cacop_inst; // lsu iq
+    logic dbar_inst;
+    logic ertn_inst;
+    logic ibar_inst;
+    logic idle_inst;
+    logic invtlb_inst;
+    logic ll_inst; // lsu iq
+
+    logic rdcntid_inst;
+    logic rdcntvh_inst;
+    logic rdcntvl_inst;
+
+    logic sc_inst; // lsu iq
+    logic syscall_inst;
+    logic tlbfill_inst;
+    logic tlbrd_inst;
+    logic tlbsrch_inst;
+    logic tlbwr_inst;
 } rob_inst_entry_t;
 
 // 有效信息表项
@@ -263,17 +365,50 @@ typedef struct packed {
 
 /**********************dispatch  to  execute  pkg******************/
 typedef struct packed {
+    word_t  pc;
+    word_t  imm;
+    logic   if_jump;
+
+    logic   [2:0]   grand_op;
+    logic   [2:0]   op;
+    
+    rob_id_t        wreg_id;
+    logic   wreg;
+    logic   wmem;
+    // logic   [3:0]   rmask;
+    // logic   [3:0]   strb;
+    // logic   cacop;
+    // logic   dbar;
+    // logic   llsc;
+    logic   msigned;
+    logic   msize;
+
+    logic   inst_valid; 
+} decode_info_t;
+
+typedef struct packed {
     logic    [3 :0][31:0] data; // 四个源操作数
     rob_id_t [3 :0]       preg; // 四个源操作数对应的preg id
     logic    [3 :0]       data_valid; //四个源操作数是否已经有效
     logic    [1 :0]       inst_choose;//选择送进来的哪条指令[1:0]分别对应传进来的两条指令
     logic    [1 :0]       r_valid; // 指令是否有效
     // 控制信号，包括：
-    // alu计算类型，jump类型
-    // mdu计算类型
-    // lsu类型
-    // 异常信号
-    // FU之前的一切异常信号
+    // alu计算类型 √ ，jump类型 x
+    // mdu计算类型 √ 
+    // lsu类型 √ 
+    // 异常信号 x 
+    // FU之前的一切异常信号 x 
+
+    logic [1:0][31:0]  imm; // addr_imm
+    // ALU & MDU 信号
+    logic [1:0][2:0]   grand_op; 
+    logic [1:0][2:0]   op;
+    // LSU 信号
+    logic [1:0]        msigned; // 是否符号拓展（ld指令）
+    logic [1:0][1:0]   msize;   // 读字节数目 - 1
+    logic [1 :0]       w_mem;
+
+    decode_info_t [1:0] di;
 } p_i_pkg_t;
 
 /**********************store buffer pkg******************/
@@ -295,6 +430,8 @@ typedef struct packed {
     logic  [1:0] msize;     // 访存大小-1
     logic [31:0] vaddr;     // 虚拟地址
     logic [31:0] wdata;     // 写数据
+    logic [3 :0] rmask;     // 读掩码
+    logic [3 :0] strb ;     // 写掩码
 } iq_lsu_pkg_t;
 
 // LSU 到 LSU IQ 的响应

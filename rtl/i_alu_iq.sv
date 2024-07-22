@@ -299,8 +299,6 @@ data_wkup #(
 // 创建IQ相联的部件
 word_t e_result;
 word_t e_alu_result, e_alu_result_q;
-logic  e_jump_o;
-word_t e_jump_result;
 
 e_alu alu(
     .r0_i(real_data[0]),
@@ -312,21 +310,8 @@ e_alu alu(
     .res_o(e_alu_result)
 );
 
-e_jump jump(
-    .r0_i(real_data[0]),
-    .r1_i(real_data[1]),
-    .pc_i(select_di_q.pc),
-    .imm_i(select_di_q.imm),
-
-    .op_i({select_di_q.grand_op, select_di_q.op}),
-    .res_o(e_jump_target),
-    .jump_o(e_jump_o)
-);
-
-assign jump_o   = e_jump_o;
-
 word_t result, result_q;
-assign result = jump_o ? e_jump_result : e_alu_result;
+assign result = e_alu_result;
 
 // 配置wkup的输出信息
 always_ff @(posedge clk) begin
