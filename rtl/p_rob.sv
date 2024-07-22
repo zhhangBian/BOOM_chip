@@ -91,6 +91,39 @@ always_comb begin
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
         dispatch_inst_i[i].check = dispatch_info_i[i].check;
+
+        // 指令类型
+        dispatch_inst_i[i].alu_type     = dispatch_info_i[i].alu_type ; 
+        dispatch_inst_i[i].mdu_type     = dispatch_info_i[i].mdu_type ;
+        dispatch_inst_i[i].lsu_type     = dispatch_info_i[i].lsu_type ;
+        dispatch_inst_i[i].flush_inst   = dispatch_info_i[i].flush_inst ;
+        dispatch_inst_i[i].jump_inst    = dispatch_info_i[i].jump_inst ; // TODO: 似乎暂时没有用到？
+        dispatch_inst_i[i].priv_inst    = dispatch_info_i[i].priv_inst ;
+        dispatch_inst_i[i].rdcnt_inst   = dispatch_info_i[i].rdcnt_inst ;
+        // control info, temp, 根据需要自己调整
+        dispatch_inst_i[i].predict_info = dispatch_info_i[i].predict_info ;
+        dispatch_inst_i[i].if_jump      = dispatch_info_i[i].if_jump ; // 是否跳转 TODO: 什么意思？
+        // 特殊指令独热码
+        dispatch_inst_i[i].break_inst   = dispatch_info_i[i].break_inst ;
+        dispatch_inst_i[i].cacop_inst   = dispatch_info_i[i].cacop_inst ; // lsu iq
+        dispatch_inst_i[i].dbar_inst    = dispatch_info_i[i].dbar_inst ;
+        dispatch_inst_i[i].ertn_inst    = dispatch_info_i[i].ertn_inst ;
+        dispatch_inst_i[i].ibar_inst    = dispatch_info_i[i].ibar_inst ;
+        dispatch_inst_i[i].idle_inst    = dispatch_info_i[i].idle_inst ;
+        dispatch_inst_i[i].invtlb_inst  = dispatch_info_i[i].invtlb_inst ;
+        dispatch_inst_i[i].ll_inst      = dispatch_info_i[i].ll_inst ; // lsu iq
+        
+        dispatch_inst_i[i].rdcntid_inst = dispatch_info_i[i].rdcntid_inst ;
+        dispatch_inst_i[i].rdcntvh_inst = dispatch_info_i[i].rdcntvh_inst ;
+        dispatch_inst_i[i].rdcntvl_inst = dispatch_info_i[i].rdcntvl_inst ;
+        
+        dispatch_inst_i[i].sc_inst      = dispatch_info_i[i].sc_inst ; // lsu iq
+        dispatch_inst_i[i].syscall_inst = dispatch_info_i[i].syscall_inst ;
+        dispatch_inst_i[i].tlbfill_inst = dispatch_info_i[i].tlbfill_inst ;
+        dispatch_inst_i[i].tlbrd_inst   = dispatch_info_i[i].tlbrd_inst ;
+        dispatch_inst_i[i].tlbsrch_inst = dispatch_info_i[i].tlbsrch_inst ;
+        dispatch_inst_i[i].tlbwr_inst   = dispatch_info_i[i].tlbwr_inst ;
+
         dispatch_preg_i[i]       = dispatch_info_i[i].preg;
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
     end

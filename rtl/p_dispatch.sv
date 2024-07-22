@@ -18,6 +18,8 @@ module p_dispatch #(
     handshake_if.sender              p_mdu_sender,
 );
 
+decode_info_t [1:0] p_di,
+
 // handshake signal
 logic  lsu_ready, mdu_ready;
 logic  [1 : 0]    alu_ready;
@@ -38,6 +40,38 @@ always_comb begin
         dispatch_rob_o[i].w_reg     = r_p_pkg.w_reg[i];
         dispatch_rob_o[i].w_mem     = r_p_pkg.w_mem[i];
         dispatch_rob_o[i].check     = r_p_pkg.check[i];
+
+        // 指令类型
+        dispatch_rob_o[i].alu_type = r_p_pkg.alu_type[i]; // 指令类型
+        dispatch_rob_o[i].mdu_type = r_p_pkg.mdu_type[i];
+        dispatch_rob_o[i].lsu_type = r_p_pkg.lsu_type[i];
+        dispatch_rob_o[i].flush_inst = r_p_pkg.flush_inst[i];
+        dispatch_rob_o[i].jump_inst = r_p_pkg.jump_inst[i]; // TODO: 似乎暂时没有用到？
+        dispatch_rob_o[i].priv_inst = r_p_pkg.priv_inst[i];
+        dispatch_rob_o[i].rdcnt_inst = r_p_pkg.rdcnt_inst[i];
+        // control info, temp, 根据需要自己调整
+        dispatch_rob_o[i].predict_info = r_p_pkg.predict_infos[i];
+        dispatch_rob_o[i].if_jump = r_p_pkg.if_jump[i]; // 是否跳转 TODO: 什么意思？
+        // 特殊指令独热码
+        dispatch_rob_o[i].break_inst = r_p_pkg.break_inst[i];
+        dispatch_rob_o[i].cacop_inst = r_p_pkg.cacop_inst[i]; // lsu iq
+        dispatch_rob_o[i].dbar_inst = r_p_pkg.dbar_inst[i];
+        dispatch_rob_o[i].ertn_inst = r_p_pkg.ertn_inst[i];
+        dispatch_rob_o[i].ibar_inst = r_p_pkg.ibar_inst[i];
+        dispatch_rob_o[i].idle_inst = r_p_pkg.idle_inst[i];
+        dispatch_rob_o[i].invtlb_inst = r_p_pkg.invtlb_inst[i];
+        dispatch_rob_o[i].ll_inst = r_p_pkg.ll_inst[i]; // lsu iq
+
+        dispatch_rob_o[i].rdcntid_inst = r_p_pkg.rdcntid_inst[i];
+        dispatch_rob_o[i].rdcntvh_inst = r_p_pkg.rdcntvh_inst[i];
+        dispatch_rob_o[i].rdcntvl_inst = r_p_pkg.rdcntvl_inst[i];
+
+        dispatch_rob_o[i].sc_inst = r_p_pkg.sc_inst[i]; // lsu iq
+        dispatch_rob_o[i].syscall_inst = r_p_pkg.syscall_inst[i];
+        dispatch_rob_o[i].tlbfill_inst = r_p_pkg.tlbfill_inst[i];
+        dispatch_rob_o[i].tlbrd_inst = r_p_pkg.tlbrd_inst[i];
+        dispatch_rob_o[i].tlbsrch_inst = r_p_pkg.tlbsrch_inst[i];
+        dispatch_rob_o[i].tlbwr_inst = r_p_pkg.tlbwr_inst[i];
     end
 end
 
@@ -129,7 +163,7 @@ assign p_lsu_sender.valid   = '1;
 p_i_pkg_t [3 : 0] p_i_pkg; // 对应四个发射队列：[3:0]对应lsu,mdu,alu1,alu0
 p_i_pkg_t [3 : 0] p_i_pkg_q; // 握手缓存
 
-
+// 到四个发射队列的信号的逻辑
 always_comb begin
     for (integer i = 0; i < 4; i++) begin
         p_i_pkg[i].data = sel_data;
@@ -137,11 +171,40 @@ always_comb begin
         p_i_pkg[i].data_valid = data_valid;
         p_i_pkg[i].r_valid    = r_p_pkg.r_valid;
         // 控制信号TODO
+        p_i_pkg[i].imm = r_p_pkg.addr_imm;
+        // ALU & MDU 信号
+        p_i_pkg[i].grand_op = r_p_pkg.grand_op;
+        p_i_pkg[i].op = r_p_pkg.op;
+        // LSU 信号
+        p_i_pkg[i].msigned = r_p_pkg.msigned;
+        p_i_pkg[i].msize = r_p_pkg.msize;
+        p_i_pkg[i].w_mem = r_p_pkg.w_mem;
+        p_i_pkg[i].di = p_di;
     end
     p_i_pkg[0].inst_choose = choose_alu[0];
     p_i_pkg[1].inst_choose = choose_alu[1];
     p_i_pkg[2].inst_choose = choose_mdu;
     p_i_pkg[3].inst_choose = choose_lsu;
+end
+
+// 到四个发射队列的 decode_info_t 逻辑
+for (integer i = 0; i < 2; i=i+1) begin
+    assign p_di[i].pc = r_p_pkg.pc[i];
+    assign p_di[i].imm = r_p_pkg.addr_imm[i];
+    assign p_di[i].if_jump = r_p_pkg.if_jump[i];
+    
+    assign p_di[i].grand_op = r_p_pkg.grand_op[i];
+    assign p_di[i].op = r_p_pkg.op[i];
+
+    assign p_di[i].wreg_id = r_p_pkg.preg[i];
+    assign p_di[i].wreg = r_p_pkg.w_reg[i];
+    assign p_di[i].wmem = r_p_pkg.w_mem[i];
+
+    assign p_di[i].msigned = r_p_pkg.msigned[i];
+    assign p_di[i].msize = r_p_pkg.msize[i];
+
+    assign p_di[i].inst_valid = r_p_pkg.r_valid[i];
+
 end
 
 // always_ff @(posedge clk) begin
