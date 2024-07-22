@@ -529,12 +529,15 @@ cache_commit_resp_t cache_commit_resp;
 
 commit_axi_req_t commit_axi_req;
 axi_commit_resp_t axi_commit_resp;
-logic commit_axi_ready;
-logic commit_axi_valid;
-logic axi_commit_ready;
-logic axi_commit_ready_r, axi_commit_ready_w, axi_commit_ready_c;
-logic axi_commit_valid;
-assign axi_commit_ready = axi_commit_ready_r | axi_commit_ready_w | axi_commit_ready_c;
+logic commit_axi_arvalid;
+logic axi_commit_arready;
+logic axi_commit_rvalid;
+logic axi_commit_last;
+logic commit_axi_awvalid;
+logic axi_commit_awready;
+logic commit_axi_wvalid;
+logic commit_axi_wlast;
+logic axi_commit_wready;
 
 commit # () commit(
     .clk(clk),
@@ -551,12 +554,18 @@ commit # () commit(
     .commit_cache_req_o(commit_cache_req),
     .cache_commit_resp_i(cache_commit_resp),
 
+    .commit_axi_arvalid_o(commit_axi_arvalid),
+    .axi_commit_arready_i(axi_commit_arready),
+    .axi_commit_rvalid_i(axi_commit_rvalid),
+    .axi_commit_last_i(axi_commit_last),
+    .commit_axi_awvalid_o(commit_axi_awvalid),
+    .axi_commit_awready_i(axi_commit_arready),
+    .commit_axi_wvalid_o(commit_axi_wvalid),
+    .commit_axi_wlast_o(commit_axi_wlast),
+    .axi_commit_wready_i(axi_commit_wready),
+
     .commit_axi_req_o(commit_axi_req),
-    .axi_commit_resp_i(cache_commit_resp),
-    .commit_axi_ready_o(commit_axi_ready),
-    .commit_axi_valid_o(commit_axi_valid),
-    .axi_commit_valid_i(axi_commit_valid),
-    .axi_commit_ready_i(axi_commit_ready),
+    .axi_commit_resp_i(axi_commit_resp),
 
     .commit_arf_we_o(commit_arf_we),
     .commit_arf_data_o(commit_arf_data),
@@ -609,8 +618,8 @@ axi_crossbar # (
      * AXI slave interfaces
      */
     .s_axi_awid('0),
-    .s_axi_awaddr({icache_axi_addr, commit_axi_req.addr}),
-    .s_axi_awlen({icache_axi_len, commit_axi_req.len}),
+    .s_axi_awaddr({icache_axi_addr, commit_axi_req.waddr}),
+    .s_axi_awlen({icache_axi_len, commit_axi_req.wlen}),
     .s_axi_awsize({3'b010,3'b010}),
     .s_axi_awburst({2'b01,2'b01}),
     .s_axi_awlock('0),
@@ -618,18 +627,18 @@ axi_crossbar # (
     .s_axi_awprot('0),
     .s_axi_awqos('0),
     .s_axi_awuser('0),
-    .s_axi_awvalid({0, commit_axi_valid & (|commit_axi_req.strb)}),
-    .s_axi_awready(axi_commit_ready_c),
-    .s_axi_wdata({32{1'b0}, commit_axi_req.data}),
+    .s_axi_awvalid(commit_axi_awvalid),
+    .s_axi_awready({0,axi_commit_awready}),
+    .s_axi_wdata({32'b0, commit_axi_req.wdata}),
     .s_axi_wstrb({4'b0, commit_axi_req.strb}),
-    .s_axi_wlast(),
+    .s_axi_wlast({0, commit_axi_wlast}),
     .s_axi_wuser('0),
-    .s_axi_wvalid(2'b01),
-    .s_axi_wready({, axi_commit_ready_w}),
+    .s_axi_wvalid(commit_axi_wvalid),
+    .s_axi_wready({0, axi_commit_wready}),
     .s_axi_bready('1),
     .s_axi_arid('0),
-    .s_axi_araddr({icache_axi_addr, commit_axi_req.addr}),
-    .s_axi_arlen({icache_axi_len, commit_axi_req.len}),
+    .s_axi_araddr({icache_axi_addr, commit_axi_req.waddr}),
+    .s_axi_arlen({icache_axi_len, commit_axi_req.wlen}),
     .s_axi_arsize({3'b010,3'b010}),
     .s_axi_arburst({2'b01,2'b01}),
     .s_axi_arlock('0),
@@ -637,14 +646,14 @@ axi_crossbar # (
     .s_axi_arprot('0),
     .s_axi_arqos('0),
     .s_axi_aruser('0),
-    .s_axi_arvalid({icache_axi_addr_valid, commit_axi_valid & commit_axi_req.read}),
-    .s_axi_arready({axi_icache_ready, axi_commit_ready_r}),
+    .s_axi_arvalid({icache_axi_addr_valid, commit_axi_arvalid}),
+    .s_axi_arready({axi_icache_ready, axi_commit_arready}),
     .s_axi_rid(),
-    .s_axi_rdata({axi_icache_data, axi_commit_resp.data}),
+    .s_axi_rdata({axi_icache_data, axi_commit_resp.rdata}),
     .s_axi_rresp(),
     .s_axi_rlast(),
     .s_axi_ruser(),
-    .s_axi_rvalid({axi_icache_valid, axi_commit_valid}),
+    .s_axi_rvalid({axi_icache_valid, axi_commit_rvalid}),
     .s_axi_rready('1),
 
     /*

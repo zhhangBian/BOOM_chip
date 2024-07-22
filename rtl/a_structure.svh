@@ -383,7 +383,7 @@ typedef struct packed {
 
     logic   [31:0]  waddr;
     logic   [31:0]  wdata;
-    logic   [7:0]   len;
+    logic   [7:0]   wlen;
 
     logic   [3:0]   strb;
     logic   [3:0]   rmask;

@@ -72,7 +72,7 @@ module commit #(
     input   logic   axi_commit_wready_i,
 
     output  commit_axi_req_t    commit_axi_req_o,
-    input   axi_commit_resp_t   axi_commit_resp,
+    input   axi_commit_resp_t   axi_commit_resp_i,
 
     // commit与ARF的接口
     output  logic   [1:0]   commit_arf_we_o,
