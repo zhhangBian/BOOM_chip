@@ -138,7 +138,7 @@ typedef struct packed {
     logic [`ARF_WIDTH - 1 :0] arf_id;
     logic [31 :0] data;
     logic w_valid; // 需要写register
-    logic w_check;
+    // logic w_check;
     // else information for retirement
 } retire_pkg_t;
 

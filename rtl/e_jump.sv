@@ -1,3 +1,5 @@
+// 此模块已弃用
+
 `include "a_jump_defines.svh"
 
 module e_jump (

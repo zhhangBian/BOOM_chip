@@ -218,7 +218,7 @@ logic [1:0][31:0] commit_arf_data;
 logic [1:0][4:0] commit_arf_areg;
 logic [1:0][5:0] commit_rob_areg;
 
-assign c_retire = commit_request & commit_arf_we;//TODO 这个不太对
+assign c_retire = commit_arf_we;
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         c_retire_infos[i].w_valid = commit_arf_we[i];
