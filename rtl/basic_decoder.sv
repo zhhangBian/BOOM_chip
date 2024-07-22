@@ -503,6 +503,7 @@ always_comb begin
             decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
             decode_info_o.ll_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
         end
         // SC.W
         32'b00100001????????????????????????: begin

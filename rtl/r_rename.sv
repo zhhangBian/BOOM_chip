@@ -189,9 +189,6 @@ always_ff @(posedge clk) begin
 end
 
 always_comb begin
-    r_p_pkg_temp.alu_type = d_r_pkg_i.alu_type;
-    r_p_pkg_temp.mdu_type = d_r_pkg_i.mdu_type;
-    r_p_pkg_temp.lsu_type = d_r_pkg_i.lsu_type;
     r_p_pkg_temp.areg      = d_r_pkg_i.arf_table.w_arfid;
     r_p_pkg_temp.preg      = r_wrobid;
     r_p_pkg_temp.src_preg  = r_rrobid; 
@@ -203,9 +200,50 @@ always_comb begin
     r_p_pkg_temp.check     = {r_rename_new[1].check, r_rename_new[0].check};
     r_p_pkg_temp.use_imm   = d_r_pkg_i.use_imm;
     r_p_pkg_temp.data_imm  = d_r_pkg_i.data_imm;
+    r_p_pkg_temp.addr_imm  = d_r_pkg_i.addr_imm;
     r_p_pkg_temp.data_valid= (~d_r_pkg_i.reg_need) | r_p_arfdata_valid;
     // 2024/07/22 ADD
     r_p_pkg_temp.predict_infos = d_r_pkg_i.predict_infos;
+    r_p_pkg_temp.if_jump = d_r_pkg_i.if_jump;
+
+    // 指令类型
+    r_p_pkg_temp.alu_type       = d_r_pkg_i.alu_type;
+    r_p_pkg_temp.mdu_type       = d_r_pkg_i.mdu_type;
+    r_p_pkg_temp.lsu_type       = d_r_pkg_i.lsu_type;
+    r_p_pkg_temp.flush_inst     = d_r_pkg_i.flush_inst;
+    r_p_pkg_temp.jump_inst      = d_r_pkg_i.jump_inst;
+    r_p_pkg_temp.priv_inst      = d_r_pkg_i.priv_inst;
+    r_p_pkg_temp.rdcnt_inst     = d_r_pkg_i.rdcnt_inst;
+
+    // ALU & MDU 信号
+    r_p_pkg_temp.grand_op       = d_r_pkg_i.grand_op;
+    r_p_pkg_temp.op             = d_r_pkg_i.op;
+
+    // LSU 信号
+    r_p_pkg_temp.msigned = d_r_pkg_i.msigned;
+    r_p_pkg_temp.msize = d_r_pkg_i.msize;
+    r_p_pkg_temp.w_mem     = d_r_pkg_i.w_mem;
+
+    // 特殊指令独热码
+    r_p_pkg_temp.break_inst     = d_r_pkg_i.break_inst;
+    r_p_pkg_temp.cacop_inst     = d_r_pkg_i.cacop_inst; // lsu iq
+    r_p_pkg_temp.dbar_inst      = d_r_pkg_i.dbar_inst;
+    r_p_pkg_temp.ertn_inst      = d_r_pkg_i.ertn_inst;
+    r_p_pkg_temp.ibar_inst      = d_r_pkg_i.ibar_inst;
+    r_p_pkg_temp.idle_inst      = d_r_pkg_i.idle_inst;
+    r_p_pkg_temp.invtlb_inst    = d_r_pkg_i.invtlb_inst;
+    r_p_pkg_temp.ll_inst        = d_r_pkg_i.ll_inst; // lsu iq
+
+    r_p_pkg_temp.rdcntid_inst   = d_r_pkg_i.rdcntid_inst;
+    r_p_pkg_temp.rdcntvh_inst   = d_r_pkg_i.rdcntvh_inst;
+    r_p_pkg_temp.rdcntvl_inst   = d_r_pkg_i.rdcntvl_inst;
+
+    r_p_pkg_temp.sc_inst        = d_r_pkg_i.sc_inst; // lsu iq
+    r_p_pkg_temp.syscall_inst   = d_r_pkg_i.syscall_inst;
+    r_p_pkg_temp.tlbfill_inst   = d_r_pkg_i.tlbfill_inst;
+    r_p_pkg_temp.tlbrd_inst     = d_r_pkg_i.tlbrd_inst;
+    r_p_pkg_temp.tlbsrch_inst   = d_r_pkg_i.tlbsrch_inst;
+    r_p_pkg_temp.tlbwr_inst     = d_r_pkg_i.tlbwr_inst;
 end
 
 
