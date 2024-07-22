@@ -1726,36 +1726,52 @@ end
 
 // 时序逻辑只保存状态
 always_ff @(posedge clk) begin
-    if(~rst_n) begin
+    if(~rst_n || cur_exception) begin
+        ls_fsm_q            <= S_NORMAL;
+        stall_q             <= '0;
 
+        axi_wait_q          <= '0;
+        icache_wait_q       <= '0;
+
+        lsu_info_q          <= '0;
+        cache_dirty_addr_q  <= '0;
+
+        axi_back_target_q   <= '0;
+
+        commit_icache_req_q <= '0;
+        commit_cache_req_q  <= '0;
+        commit_axi_req_q    <= '0;
+
+        cache_block_data_q  <= '0;
+        cache_block_ptr_q   <= '0;
+        cache_block_len_q   <= '0;
+
+        axi_block_data_q    <= '0;
+        axi_block_ptr_q     <= '0;
+        axi_block_len_q     <= '0;
     end
     else begin
-        if(cur_exception) begin
+        ls_fsm_q            <= ls_fsm;
+        stall_q             <= stall;
 
-        end
-        else begin
-            ls_fsm_q            <= ls_fsm;
-            stall_q             <= stall;
+        axi_wait_q          <= axi_wait;
+        icache_wait_q       <= icache_wait;
 
-            axi_wait_q          <= axi_wait;
-            icache_wait_q       <= icache_wait;
+        lsu_info_q          <= lsu_info_s;
+        cache_dirty_addr_q  <= cache_dirty_addr;
 
-            lsu_info_q          <= lsu_info_s;
-            cache_dirty_addr_q  <= cache_dirty_addr;
+        axi_back_target_q   <= axi_back_target;
 
-            axi_back_target_q   <= axi_back_target;
+        commit_icache_req_q <= commit_icache_req;
+        commit_cache_req_q  <= commit_cache_req;
+        commit_axi_req_q    <= commit_axi_req;
 
-            commit_icache_req_q <= commit_icache_req;
-            commit_cache_req_q  <= commit_cache_req;
-            commit_axi_req_q    <= commit_axi_req;
+        cache_block_data_q  <= cache_block_data;
+        cache_block_ptr_q   <= cache_block_ptr;
+        cache_block_len_q   <= cache_block_len;
 
-            cache_block_data_q  <= cache_block_data;
-            cache_block_ptr_q   <= cache_block_ptr;
-            cache_block_len_q   <= cache_block_len;
-
-            axi_block_data_q    <= axi_block_data;
-            axi_block_ptr_q     <= axi_block_ptr;
-            axi_block_len_q     <= axi_block_len;
-        end
+        axi_block_data_q    <= axi_block_data;
+        axi_block_ptr_q     <= axi_block_ptr;
+        axi_block_len_q     <= axi_block_len;
     end
 end
