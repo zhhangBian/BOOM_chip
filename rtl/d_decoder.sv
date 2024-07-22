@@ -1,5 +1,32 @@
 `include "a_decoder.svh"
 
+function logic [31:0] inst_to_data_imm (input logic[31:0] inst, input imm_type_t data_imm_type);
+    logic [31:0] ret;
+    // inst[4:0] and [31:25] unused
+    case (data_imm_type)
+        `_IMM_S12:  ret =  {{20{inst[21]}}, inst[21:10]};
+        `_IMM_S20:  ret =  {{12{inst[24]}}, inst[24: 5]};
+        `_IMM_U5:   ret =  {27'b0,          inst[14:10]};
+        // `_IMM_U12:
+        default:    ret =  {20'b0,          inst[21:10]}; 
+    endcase
+    return ret;
+endfunction
+
+function logic [31:0] inst_to_addr_imm (input logic[31:0] inst, input addr_imm_type_t addr_imm_type);
+    logic [31:0] ret;
+    // inst[31:26] unused
+    case (addr_imm_type)
+        `_ADDR_IMM_S12: ret =  {{20{inst[21]}}, inst[21:10]}; // 仅用于store/load指令，低位不补零;
+        `_ADDR_IMM_S14: ret =  {{16{inst[23]}}, inst[23:10], 2'b0}; // 仅用于原子访存指令，低位补两个0;
+        `_ADDR_IMM_S16: ret =  {{14{inst[25]}}, inst[25:10], 2'b0}; // 仅用于计算分支offset，低位补两个0;
+        // _ADDR_IMM_S21:  // 仅用于浮点分支指令使用，也就是暂时不使用
+        // `_ADDR_IMM_S26:
+        default:        ret =  {{4 {inst[ 9]}}, inst[ 9:0 ], inst[25:10], 2'b0};
+    endcase
+    return ret;
+endfunction
+
 // 纯组合逻辑，D流水级的时序在顶层模块上，其实也就是在进来的时候打了一拍放到了FIFO中而已。
 module decoder (
     handshake_if.receiver               receiver, // f_d_pkg_t type
@@ -87,7 +114,7 @@ for (integer i = 0; i < 2; i=i+1) begin
 end
 
 // 立即数逻辑
-for (genvar i = 0; i < 2; i=i+1) begin
+for (integer i = 0; i < 2; i=i+1) begin
     logic [31:0] inst;
     assign inst = decode_infos[i].inst;
 
@@ -96,12 +123,12 @@ for (genvar i = 0; i < 2; i=i+1) begin
 end
 
 // predict_infos 逻辑
-for (genvar i = 0; i < 2; i=i+1) begin
+for (integer i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.predict_infos[i] = receiver.predict_infos[i];
 end
 
 // ALU 信号逻辑
-for (genvar i = 0; i < 2; i=i+1) begin
+for (integer i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.grand_op = decode_infos[i].alu_grand_op;
     assign d_r_pkg.op = decode_infos[i].alu_op;
     assign d_r_pkg.msigned = decode_infos[i].mem_signed;
@@ -109,7 +136,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
 end
 
 // 指令类型
-for (genvar i = 0; i < 2; i=i+1) begin
+for (integer i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.alu_type[i] = decode_infos[i].alu_inst;
     assign d_r_pkg.mdu_type[i] = decode_infos[i].mdu_inst;
     assign d_r_pkg.lsu_type[i] = decode_infos[i].lsu_inst;
@@ -122,7 +149,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
 end
 
 // 特殊指令的独热信号
-for (genvar i = 0; i < 2; i=i+1) begin
+for (integer i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.break_inst[i] = decode_infos[i].break_inst;
     assign d_r_pkg.cacop_inst[i] = decode_infos[i].cacop_inst;
     assign d_r_pkg.dbar_inst[i] = decode_infos[i].dbar_inst;
