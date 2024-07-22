@@ -39,18 +39,42 @@ typedef struct packed {
     logic  [1 :0]     alu_type; // 指令类型
     logic  [1 :0]     mdu_type;
     logic  [1 :0]     lsu_type;
-    predict_info_t [1 :0] predict_infos;
+    logic  [1 :0]     flush_inst;
+    logic  [1 :0]     jump_inst; // TODO: 似乎暂时没有用到？
+    logic  [1 :0]     priv_inst;
+    logic  [1 :0]     rdcnt_inst;
     // control info, temp, 根据需要自己调整
-    logic             if_jump; // 是否跳转
-    logic     [2:0]   grand_op; 
-    logic     [2:0]   op;
-    logic     [3:0]   rmask; // 读掩码
-    logic     [3:0]   strb;  // 写掩码
-    logic             cacop; // 是否cache操作
-    logic             dbar;
-    logic             llsc;
-    logic             msigned; // 是否符号拓展（ld指令）
-    logic     [1:0]   msize;   // 读字节数目 - 1
+    predict_info_t [1 :0] predict_infos;
+    logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
+    // ALU & MDU 信号
+    logic [1:0][2:0]   grand_op; 
+    logic [1:0][2:0]   op;
+    // LSU 信号
+    logic [1:0][3:0]   rmask; // 读掩码 TODO: ???
+    logic [1:0][3:0]   strb;  // 写掩码 TODO: ???
+    logic [1:0]        msigned; // 是否符号拓展（ld指令）
+    logic [1:0][1:0]   msize;   // 读字节数目 - 1
+
+    // 特殊指令独热码
+    logic [1:0]        break_inst;
+    logic [1:0]        cacop_inst; // lsu iq
+    logic [1:0]        dbar_inst;
+    logic [1:0]        ertn_inst;
+    logic [1:0]        ibar_inst;
+    logic [1:0]        idle_inst;
+    logic [1:0]        invtlb_inst;
+    logic [1:0]        ll_inst; // lsu iq
+
+    logic [1:0]        rdcntid_inst;
+    logic [1:0]        rdcntvh_inst;
+    logic [1:0]        rdcntvl_inst;
+
+    logic [1:0]        sc_inst; // lsu iq
+    logic [1:0]        syscall_inst;
+    logic [1:0]        tlbfill_inst;
+    logic [1:0]        tlbrd_inst;
+    logic [1:0]        tlbsrch_inst;
+    logic [1:0]        tlbwr_inst;
 } d_r_pkg_t;
 
 typedef struct packed {
