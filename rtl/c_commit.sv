@@ -1490,7 +1490,7 @@ always_comb begin
 
     else if(ls_fsm_q == S_UNCACHED_RD) begin
         // 等待握手
-        if(axi_wait) begin
+        if(axi_wait_q) begin
             axi_wait = axi_wait_q & ~axi_commit_arready_i;
             commit_axi_arvalid_o = '1;
         end
@@ -1509,32 +1509,29 @@ always_comb begin
 
     else if(ls_fsm_q == S_UNCACHED_WB) begin
         // 等待握手
-        if(axi_wait) begin
+        if(axi_wait_q) begin
+            commit_axi_awvalid_o = '1;
             if(axi_commit_awready_i) begin
                 axi_wait = '0;
-                commit_axi_awvalid_o = '0;
-                // 发送AXI请求
-                commit_axi_req.wdata = axi_block_data[axi_block_ptr_q];
-                commit_axi_wvalid_o = '1;
-                commit_axi_wlast = '1;
             end
             else begin
                 axi_wait = '1;
-                commit_axi_awvalid_o = '1;
             end
         end
         // 读入数据
         else begin
+            // 发送AXI请求
+            commit_axi_req.wdata = axi_block_data[axi_block_ptr_q];
             commit_axi_wvalid_o = '1;
+            commit_axi_wlast = '1;
 
             if(axi_commit_wready_i) begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
             end
             else begin
-                // 维持请求
-                commit_axi_req.wdata = axi_block_data[axi_block_ptr_q];
-                commit_axi_wlast = '1;
+                ls_fsm = S_UNCACHED_WB;
+                stall = '1;
             end
         end
     end
@@ -1542,7 +1539,6 @@ always_comb begin
     // 读了立即发送AXI，同时读写
     else if(ls_fsm_q == S_CACHE_RD) begin
         if(cache_block_ptr_q == cache_block_len) begin
-
         end
         else begin
             // 读Cache数据
@@ -1559,7 +1555,8 @@ always_comb begin
         end
 
         // 等待握手
-        if(axi_wait) begin
+        if(axi_wait_q) begin
+            commit_axi_awvalid_o = '1;
             if(axi_commit_awready_i) begin
                 axi_wait = '0;
             end
@@ -1570,13 +1567,11 @@ always_comb begin
         // 读入数据
         else begin
 			commit_axi_wvalid_o = (cache_block_ptr_q > axi_block_ptr_q);
+            commit_axi_req.wdata = cache_block_data[axi_block_ptr_q];
+            commit_axi_wlast = (axi_block_ptr_q == axi_block_len - 1);
+
             if(axi_commit_wready_i) begin
                 axi_block_ptr = axi_block_ptr_q + 1;
-            end
-            else begin
-                // 维持请求
-                commit_axi_req.wdata = cache_block_data[axi_block_ptr];
-                commit_axi_wlast = (axi_block_ptr == axi_block_len - 1);
             end
         end
 
@@ -1622,11 +1617,10 @@ always_comb begin
     // 读了立即发送Cache，同时读写
     else if(ls_fsm_q == S_AXI_RD) begin
         if(axi_block_ptr_q == axi_block_len) begin
-
         end
         else begin
             // 等待握手
-            if(axi_wait) begin
+            if(axi_wait_q) begin
                 axi_wait = axi_wait_q & ~axi_commit_arready_i;
             end
             // 读入数据
@@ -1673,11 +1667,11 @@ always_comb begin
         commit_icache_valid_o = icache_wait_q;
         icache_wait = icache_wait_q & ~icache_commit_ready_i;
 
-        if(icache_wait) begin
+        if(icache_wait_q) begin
             commit_icache_valid_o      = '1;
         end
         else begin
-            commit_icache_valid_o      = '1;
+            commit_icache_valid_o      = '0;
 
             if(icache_commit_valid_i) begin
                 ls_fsm = S_NORMAL;
