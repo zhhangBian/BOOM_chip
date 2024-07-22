@@ -302,6 +302,7 @@ always_comb begin
     result_o.rob_id   = res_o.reg_id;
     result_o.w_reg    = select_di_q.wreg;
     result_o.r_valid  = select_di_q.inst_valid;
+    result_o.lsu_info = '0;
 end
 
 e_mdu mdu (

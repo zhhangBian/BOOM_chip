@@ -348,6 +348,7 @@ always_comb begin
     result_o.rob_id  = select_di_qq.wreg_id;
     result_o.w_reg   = select_di_qq.wreg;
     result_o.r_valid = select_di_qq.inst_valid;
+    result_o.lsu_info = '0; // TODO: check
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

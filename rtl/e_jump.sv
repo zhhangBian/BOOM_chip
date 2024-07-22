@@ -26,6 +26,6 @@ assign r0 = {(~r0_i[31]) & sign_type, r0_i};
 assign r1 = {(~r1_i[31]) & sign_type, r1_i};
 
 assign jump_o = |(cmp_result & jump_result);
-assign res_o = {{4{imm_i[27]}}, imm_i} + (jump_type == `_TAR_REG ? r1_i : pc_i);
+assign res_o = imm_i + (jump_type == `_TAR_REG ? r1_i : pc_i);
 
 endmodule

@@ -44,6 +44,7 @@ typedef struct packed {
     logic  [1 :0]     jump_inst; // TODO: 似乎暂时没有用到？
     logic  [1 :0]     priv_inst;
     logic  [1 :0]     rdcnt_inst;
+    tlb_inst_t   [1:0]tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t [1 :0] predict_infos;
     logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
@@ -75,6 +76,19 @@ typedef struct packed {
     logic [1:0]        tlbrd_inst;
     logic [1:0]        tlbsrch_inst;
     logic [1:0]        tlbwr_inst;
+
+    // csr
+    csr_op_type_t [1:0] csr_op_type;
+    logic [1:0][13:0] csr_num;
+
+    logic [1:0][4:0]  inst_4_0; // cache_op 和 tlb_op
+
+    //tlb
+    logic        [1:0] decode_err;
+
+    // branch
+    logic        [1:0] is_branch;
+    br_type_t    [1:0] br_type;
 } d_r_pkg_t;
 
 typedef struct packed {
@@ -99,6 +113,7 @@ typedef struct packed {
     logic  [1 :0]     jump_inst; // TODO: 似乎暂时没有用到？
     logic  [1 :0]     priv_inst;
     logic  [1 :0]     rdcnt_inst;
+    logic  [1 :0]     tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t [1 :0] predict_infos;
     logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
@@ -130,6 +145,19 @@ typedef struct packed {
     logic [1:0]        tlbrd_inst;
     logic [1:0]        tlbsrch_inst;
     logic [1:0]        tlbwr_inst;
+
+    // csr
+    csr_op_type_t [1:0] csr_op_type;
+    logic [1:0][13:0] csr_num;
+
+    logic [1:0][4:0]  inst_4_0; // cache_op 和 tlb_op
+
+    //tlb
+    logic        [1:0] decode_err;
+
+    // branch
+    logic        [1:0] is_branch;
+    br_type_t    [1:0] br_type;
 } r_p_pkg_t;
 
 typedef struct packed {
@@ -147,7 +175,7 @@ typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0] w_preg;
     logic [31             : 0] w_data;
     logic                      w_reg;
-    logic                      w_mem;
+    // logic                      w_mem;
     logic                      w_valid;
 } cdb_dispatch_pkg_t;
 
@@ -163,6 +191,8 @@ typedef struct packed {
     logic                                          w_mem;
     logic                                          check;
 
+    logic [31:0]                                   addr_imm;
+
     // 指令类型
     logic  alu_type; // 指令类型
     logic  mdu_type;
@@ -171,6 +201,7 @@ typedef struct packed {
     logic  jump_inst; // TODO: 似乎暂时没有用到？
     logic  priv_inst;
     logic  rdcnt_inst;
+    logic  tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t predict_info;
     logic if_jump; // 是否跳转 TODO: 什么意思？
@@ -194,6 +225,13 @@ typedef struct packed {
     logic tlbrd_inst;
     logic tlbsrch_inst;
     logic tlbwr_inst;
+
+    csr_op_type_t csr_op_type;
+    logic [13:0] csr_num;
+    logic [ 4:0] inst_4_0;
+    logic decode_err;
+    logic is_branch;
+    br_type_t br_type;
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
@@ -213,7 +251,6 @@ typedef struct packed {
     logic   c_valid;
 
     logic   [31:0]  pc;
-    logic   [31:0]  data_rd;
     logic   [31:0]  data_rk;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
@@ -257,9 +294,6 @@ typedef struct packed {
 
     logic   [4:0]   tlb_op;
 
-    logic   [1:0]   csr_type;
-    logic   [13:0]  csr_num;
-
     // 分支预测信息
     logic   is_branch;
     predict_info_t  predict_info;
@@ -271,6 +305,7 @@ typedef struct packed {
     logic [31             : 0] w_data;
     logic                      w_valid;  // valid
     rob_ctrl_entry_t           ctrl;
+    lsu_info_t                 lsu_info;
 } cdb_rob_pkg_t;
 
 typedef struct packed {
@@ -284,7 +319,7 @@ typedef struct packed {
     rob_id_t rob_id;   // rob_id
     word_t   w_data;   // 写的数据
     // else information for control
-    predict_info_t predict_info;
+    // predict_info_t predict_info; // predict_info is in rob
     lsu_iq_pkg_t lsu_info;
 } cdb_info_t;
 
@@ -300,6 +335,8 @@ typedef struct packed {
 
     logic         w_mem;
 
+    logic [31:0]  addr_imm;
+
     // 指令类型
     logic  alu_type; // 指令类型
     logic  mdu_type;
@@ -308,6 +345,7 @@ typedef struct packed {
     logic  jump_inst; // TODO: 似乎暂时没有用到？
     logic  priv_inst;
     logic  rdcnt_inst;
+    logic  tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t predict_info;
     logic if_jump; // 是否跳转 TODO: 什么意思？
@@ -331,6 +369,17 @@ typedef struct packed {
     logic tlbrd_inst;
     logic tlbsrch_inst;
     logic tlbwr_inst;
+
+    // csr
+    csr_op_type_t csr_op_type;
+    logic [4:0]  inst_4_0; // cache_op 和 tlb_op
+
+    //tlb
+    logic decode_err;
+
+    // branch
+    logic is_branch;
+    br_type_t br_type;
 } rob_inst_entry_t;
 
 // 有效信息表项
@@ -340,15 +389,18 @@ typedef struct packed {
 
 // 数据信息表项
 typedef struct packed {
-    logic [31: 0] data;
-    rob_ctrl_entry_t ctrl;
+    logic [`ROB_WIDTH - 1:0] w_preg;
+    logic [31: 0]            data;
+    logic                    w_valid;  // valid
+    rob_ctrl_entry_t         ctrl;
+    lsu_info_t               lsu_info;
 } rob_data_entry_t;
 
 // 控制信息表项
 typedef struct packed {
     // 异常控制信号流，其他控制信号流，后续补充
     exc_info_t exc_info;
-    logic bpu_fail;
+    // logic bpu_fail;
 } rob_ctrl_entry_t;
 
 typedef struct packed {

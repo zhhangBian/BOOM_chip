@@ -92,6 +92,8 @@ always_comb begin
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
         dispatch_inst_i[i].check = dispatch_info_i[i].check;
 
+        dispatch_inst_i[i].addr_imm = dispatch_info_i[i].addr_imm;
+
         // 指令类型
         dispatch_inst_i[i].alu_type     = dispatch_info_i[i].alu_type ; 
         dispatch_inst_i[i].mdu_type     = dispatch_info_i[i].mdu_type ;
@@ -100,6 +102,7 @@ always_comb begin
         dispatch_inst_i[i].jump_inst    = dispatch_info_i[i].jump_inst ; // TODO: 似乎暂时没有用到？
         dispatch_inst_i[i].priv_inst    = dispatch_info_i[i].priv_inst ;
         dispatch_inst_i[i].rdcnt_inst   = dispatch_info_i[i].rdcnt_inst ;
+        dispatch_inst_i[i].tlb_inst     = dispatch_info_i[i].tlb_inst;
         // control info, temp, 根据需要自己调整
         dispatch_inst_i[i].predict_info = dispatch_info_i[i].predict_info ;
         dispatch_inst_i[i].if_jump      = dispatch_info_i[i].if_jump ; // 是否跳转 TODO: 什么意思？
@@ -124,15 +127,82 @@ always_comb begin
         dispatch_inst_i[i].tlbsrch_inst = dispatch_info_i[i].tlbsrch_inst ;
         dispatch_inst_i[i].tlbwr_inst   = dispatch_info_i[i].tlbwr_inst ;
 
+        dispatch_inst_i[i].csr_op_type  = dispatch_info_i[i].csr_op_type ;
+        dispatch_inst_i[i].inst_4_0     = dispatch_info_i[i].inst_4_0 ;
+        dispatch_inst_i[i].decode_err   = dispatch_info_i[i].decode_err ;
+        dispatch_inst_i[i].is_branch    = dispatch_info_i[i].is_branch ;
+        dispatch_inst_i[i].br_type      = dispatch_info_i[i].br_type ;
+
         dispatch_preg_i[i]       = dispatch_info_i[i].preg;
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
     end
     // C级
     for (integer i = 0; i < 2; i++) begin
+        commit_info_o[i].= commit_data_o[i].;
+        commit_info_o[i].= commit_inst_o[i].;
+
+        commit_info_o[i].w_data = commit_data_o[i].data;
         commit_info_o[i].arf_id = commit_inst_o[i].areg;
+        commit_info_o[i].rob_id = commit_inst_o[i].w_preg;
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
         commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;
-    end
+
+        commit_info_o[i].c_valid  = commit_inst_o[i].w_valid; // TODO
+
+        commit_info_o[i].pc = commit_inst_o[i].pc;
+        commit_info_o[i].data_rk = /*TODO*/;
+        commit_info_o[i].data_rj = /*TODO*/;
+        commit_info_o[i].data_imm = commit_inst_o[i].addr_imm;
+
+        commit_info_o[i].first_commit = '0; // TODO: check with zhx
+        commit_info_o[i].lsu_info = commit_data_o[i].lsu_info;
+
+        commit_info_o[i].is_ll = commit_inst_o[i].ll_inst;
+        commit_info_o[i].is_sc = commit_inst_o[i].sc_inst;
+        commit_info_o[i].is_uncached = commit_data_o[i].lsu_info.uncached;
+        commit_info_o[i].exc_code = /*TODO*/;   // 位宽随便定的，之后调整
+        commit_info_o[i].is_csr_fix = |commit_info_o[i].csr_op_type;
+        commit_info_o[i].csr_type = commit_info_o[i].csr_op_type; // 往后传
+        commit_info_o[i].csr_num = commit_info_o[i].csr_num;
+        commit_info_o[i].is_cache_fix = commit_inst_o[i].cacop_inst;
+        commit_info_o[i].cache_code = commit_inst_o[i].inst_4_0;
+        commit_info_o[i].is_tlb_fix = commit_inst_o[i].tlb_inst;
+
+        commit_info_o[i].flush_inst = commit_inst_o[i].flush_inst;
+
+        commit_info_o[i].fetch_exception = /* TODO */;
+        commit_info_o[i].syscall_inst = commit_inst_o[i].syscall_inst;
+        commit_info_o[i].break_inst = commit_inst_o[i].break_inst;
+        commit_info_o[i].decode_err = decode_err;
+        commit_info_o[i].priv_inst = commit_inst_o[i].priv_inst; //要求：不包含hit类cacop
+        commit_info_o[i].execute_exception; // TODO: 访存异常???
+
+        commit_info_o[i].badva; // TODO: 访存异常
+
+        commit_info_o[i].rdcntvh_en = commit_inst_o[i].rdcntvh_inst;
+        commit_info_o[i].rdcntvl_en = commit_inst_o[i].rdcntvl_inst;
+        commit_info_o[i].rdcntid_en = commit_inst_o[i].rdcntid_inst;
+        commit_info_o[i].ertn_en = commit_inst_o[i].ertn_inst;
+        commit_info_o[i].idle_en = commit_inst_o[i].idle_inst;
+
+        commit_info_o[i].tlbsrch_en = commit_inst_o[i].tlbsrch_inst;
+        commit_info_o[i].tlbrd_en = commit_inst_o[i].tlbrd_inst;
+        commit_info_o[i].tlbwr_en = commit_inst_o[i].tlbwr_inst;
+        commit_info_o[i].tlbfill_en = commit_inst_o[i].tlbfill_inst;
+        commit_info_o[i].invtlb_en = commit_inst_o[i].invtlb_inst;
+
+        commit_info_o[i].tlb_op = commit_inst_o[i].inst[4:0];
+
+        // 分支预测信息
+        commit_info_o[i].is_branch = commit_inst_o[i].is_branch;
+        commit_info_o[i].predict_info = commit_inst_o[i].predict_info;
+        commit_info_o[i].branch_info.br_type = commit_inst_o[i].br_type;
+        commit_info_o[i].branch_info.is_branch = commit_inst_o[i].is_branch;
+        commit_info_o[i].branch_info.target = '0; // TODO: branch_info 似乎不需要 target 域
+
+        commit_info_o[i].csr_op_type = comit_inst_o[i].csr_op_type;
+        commit_info_o[i].csr_num = comit_inst_o[i].csr_num;
+        end
 end
 
 // 表体分 bank，写入处理bank conflict
@@ -173,8 +243,12 @@ always_comb begin
         // cdb
         cdb_preg_i[i] = cdb_info_i[i].w_preg;
         cdb_valid_i[i] = cdb_info_i[i].w_valid;
+
+        cdb_data_i[i].w_preg = cdb_info_i[i].w_preg;
         cdb_data_i[i].data = cdb_info_i[i].w_data;
+        cdb_data_i[i].w_valid = cdb_info_i[i].w_valid;
         cdb_data_i[i].ctrl = cdb_info_i[i].ctrl;
+        cdb_data_i[i].lsu_info = cdb_info_i[i].lsu_info;
         // C级
         commit_info_o[i].w_data = commit_data_o[i].data;
     end

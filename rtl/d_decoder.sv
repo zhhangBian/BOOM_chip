@@ -69,7 +69,7 @@ for (integer i = 0; i < 2; i=i+1) begin
         endcase
 
         // 第二个读寄存器
-        case (decode_infos[i].reg_type_r0)
+        case (decode_infos[i].reg_type_r1)
         _REG_RD: d_r_pkg.arf_table.r_arfid[2*i+1] = rd;
         _REG_RJ: d_r_pkg.arf_table.r_arfid[2*i+1] = rj;
         _REG_RK: d_r_pkg.arf_table.r_arfid[2*i+1] = rk;
@@ -118,6 +118,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.jump_inst[i] = decode_infos[i].jump_inst;
     assign d_r_pkg.priv_inst[i] = decode_infos[i].priv_inst;
     assign d_r_pkg.rdcnt_inst[i] = decode_infos[i].rdcnt_inst;
+    assign d_r_pkg.tlb_inst[i] = decode_infos[i].tlb_inst;
 end
 
 // 特殊指令的独热信号
@@ -141,6 +142,12 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.tlbrd_inst[i] = decode_infos[i].tlbrd_inst;
     assign d_r_pkg.tlbsrch_inst[i] = decode_infos[i].tlbsrch_inst;
     assign d_r_pkg.tlbwr_inst[i] = decode_infos[i].tlbwr_inst;
+
+    assign d_r_pkg.csr_op_type[i] = decode_infos[i].csr_op_type;
+    assign d_r_pkg.csr_num[i] = decode_infos[i].inst[23:10];
+    assign d_r_pkg.inst_4_0[i] = decode_infos[i].inst[4:0];
+    assign d_r_pkg.decode_err[i] = decode_infos[i].decode_err;
+    assign d_r_pkg.is_branch[i] = decode_infos[i].jump_inst;
 end
 
 endmodule
