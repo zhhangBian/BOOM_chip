@@ -79,6 +79,8 @@ module commit #(
     output  word_t  [1:0]   commit_arf_data_o,
     output  logic [1:0][4:0]commit_arf_areg_o,
     output  logic [1:0][5:0]commit_arf_preg_o,
+    
+    output  logic [1:0]     retire_request_o,//新增
 
     // commit与BPU的接口
     output  correct_info_t [1:0]    correct_info_o,
@@ -177,9 +179,8 @@ end
 ///////////////////////////////////////////////////////////////////////
 //第二级
 //这是一大改动，引入了retire_request，区别于commit_request
-logic [1:0] retire_request;
-assign retire_request[0] = commit_request_q[0] & ~stall;
-assign retire_request[1] = commit_request_q[1] & ~stall;
+assign retire_request_o[0] = commit_request_q[0] & ~stall;
+assign retire_request_o[1] = commit_request_q[1] & ~stall;
 
 // 处理对ARF的接口
 always_comb begin
@@ -470,6 +471,7 @@ end
 //rdcnt命令
 logic [31:0] rdcnt_data;
 logic [31:0] rdcnt_data_q;
+//__forward()
 
 always_comb begin
     rdcnt_data = '0;
@@ -494,11 +496,31 @@ end
 // 异常处理
 //识别rob_commit_i[0]这一条指令是不是有异常，如果有，修改csr
 //识别在第一级，写入在第二级
+//TODO icache异常在第二级处理
+//
+//icache的维护指令出现tlb异常 wire cacop_excep   = |icache_cacop_tlb_exc_i;
+/*
+        //cacop
+        7'b001?????: begin
+            csr_exception_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.exc_code;
+            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_exception_update.badv                    = icache_cacop_bvaddr_i; //存badv
+            csr_exception_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
+            if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
+                cur_tlbr_exception = 1'b1;
+            end
+        end
+*/
 
 //都不是寄存器
 logic cur_exception;       //提交的第0条是不是异常指令
 logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
 csr_t csr_exception_update;//周期结束时候写入csr_q
+
+//__forward()
+logic cur_exception_q;
+logic cur_tlbr_exception_q;
+csr_t cur_exception_update_q;
 
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
@@ -516,10 +538,7 @@ wire priv_excp     = commit_request_o[0] & rob_commit_i[0].priv_inst && (csr_q.c
 //执行异常  访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
 wire execute_excp  = commit_request_o[0] & rob_commit_i[0].execute_exception;
 
-//icache的维护指令出现tlb异常
-wire cacop_excep   = |icache_cacop_tlb_exc_i;
-
-wire [7:0] exception = {int_excep, fetch_excp, cacop_excep, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
+wire [7:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
 always_comb begin
     /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
@@ -539,12 +558,12 @@ always_comb begin
     //例外的仲裁部分，取最优先的例外将例外号存入csr，对应文档的例外操作3
     //部分操作包含4和5，即存badv和vppn的部分
     unique casez (exception)
-        8'b1???????: begin
+        7'b1??????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INT;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*中断*/
 
-        8'b01??????: begin
+        7'b01?????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
             csr_exception_update.badv                    = rob_commit_i[0].pc; //存badv
@@ -561,36 +580,25 @@ always_comb begin
         （注意，后面如果有访存出错不能把取指错的错误码替掉）
         以及出错的虚拟地址va*/
 
-        //cacop
-        8'b001?????: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.exc_code;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = icache_cacop_bvaddr_i; //存badv
-            csr_exception_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
-            if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
-                cur_tlbr_exception = 1'b1;
-            end
-        end
-
-        8'b001????: begin
+        7'b001????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_SYS;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*syscall*/
-        8'b0001???: begin
+        7'b0001???: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_BRK;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*break*/
-        8'b00001??: begin
+        7'b00001??: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INE;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*ine指令不存在*/
-        8'b000001?: begin
+        7'b000001?: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_IPE;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*ipe指令等级不合规*/
         /*译码例外，这几判断的个信号从decoder来*/
 
-        8'b0000001: begin
+        7'b0000001: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
             csr_exception_update.badv                    = rob_commit_i[0].badva; //存badv
@@ -633,13 +641,31 @@ wire a_execute_excp  = rob_commit_i[1].execute_exception;
 wire another_exception    = rob_commit_valid_i[1] & |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
 //上面是1表示两条指令的后一条有例外
 
-
+always_ff @( posedge clk ) begin
+    if (rst_n | flush) begin
+        cur_exception_q <= '0;
+        cur_tlbr_exception_q <= '0;
+        csr_exception_update_q <= '0;
+    end
+    else if (stall) begin
+        cur_exception_q      <= cur_exception_q;
+        cur_tlbr_exception_q <= cur_tlbr_exception_q;
+        csr_exception_update_q <= csr_exception_update_q;
+    else begin
+        cur_exception_q <= cur_exception;
+        cur_tlbr_exception_q <= cur_tlbr_exception;
+        csr_exception_update_q <= csr_exception_update;
+    end
+    end
+end
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
 // CSR特权指令
-csr_t csr, csr_q, csr_init;
+csr_t csr_q;//这个是正宗的csr本体
+
+csr_t csr, csr_maintain_q, csr_init;
 wire  [1:0] csr_type = rob_commit_i[0].csr_type;
 wire [13:0] csr_num  = rob_commit_i[0].csr_num;
 //在第一级读出来，写到临时地方
@@ -655,7 +681,8 @@ always_comb begin
     csr_init.tid            = CPU_ID;
 end
 
-logic [31:0] commit_csr_data_o;
+logic [31:0] commit_csr_data_o, commit_csr_data_q;
+//__forward();
 
 // 从CSR读取的旧值（默认在第一级读出来）
 always_comb begin
@@ -700,8 +727,16 @@ always_ff @( posedge clk ) begin
     commit_csr_data_q <= commit_csr_data_o;
 end
 
-//csr写统统在第二级
+////////////////////////////////////////////////////////////////////////////////
+//csr写
+//csr写处理在第一级，写入在第二级
 logic timer_interrupt_clear;
+logic timer_interrupt_clear_q;
+//__forward()
+
+always_ff @( posedge clk ) begin
+    timer_interrupt_clear_q <= timer_interrupt_clear;
+end
 
 //定义软件写csr寄存器的行为
 `define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
@@ -872,16 +907,35 @@ tlb_entry_t [`_TLB_ENTRY_NUM - 1 : 0] tlb_entries_q;
 //我默认没有实现tlb的初始化，开始的时候由软件用INVTLB 0, r0, r0实现
 
 //拿到维护类型
-wire cur_tlbsrch = rob_commit_q[0].tlbsrch_en;
-wire cur_tlbrd   = rob_commit_q[0].tlbrd_en;
-wire cur_tlbwr   = rob_commit_q[0].tlbwr_en;
-wire cur_tlbfill = rob_commit_q[0].tlbfill_en;
-wire cur_invtlb  = rob_commit_q[0].invtlb_en;
+wire cur_tlbsrch = rob_commit_i[0].tlbsrch_en;
+wire cur_tlbrd   = rob_commit_i[0].tlbrd_en;
+wire cur_tlbwr   = rob_commit_i[0].tlbwr_en;
+wire cur_tlbfill = rob_commit_i[0].tlbfill_en;
+wire cur_invtlb  = rob_commit_i[0].invtlb_en;
 
 //给下面准备的一些信号
-csr_t tlb_update_csr;/*对csr的更新*/
-tlb_entry_t tlb_entry/*前面是一个临时变量*/,tlb_update_entry;/*更新进tlb的内容*/
-logic [`_TLB_ENTRY_NUM - 1:0] tlb_wr_req;/*更新进tlb的使能位*/
+csr_t tlb_update_csr, tlb_update_csr_q;/*对csr的更新*/
+tlb_entry_t tlb_entry/*前面是一个临时变量*/,tlb_update_entry,tlb_update_entry_q;/*更新进tlb的内容*/
+logic [`_TLB_ENTRY_NUM - 1:0] tlb_wr_req, tlb_wr_req_q;/*更新进tlb的使能位*/
+//__forward()
+
+always_ff @( posedge clk ) begin
+    if (rst_n | flush) begin
+        tlb_update_csr_q <= '0;
+        tlb_update_entry_q <= '0;
+        tlb_wr_req_q <= '0;
+    end
+    else if (stall) begin
+        tlb_update_csr_q     <= tlb_update_csr_q;
+        tlb_update_entry_q   <= tlb_update_entry_q;
+        tlb_wr_req_q         <= tlb_wr_req_q;
+    else begin
+        tlb_update_csr_q <= tlb_update_csr;
+        tlb_update_entry_q <= tlb_update_entry;
+        tlb_wr_req_q <= tlb_wr_req;
+    end
+    end
+end
 
 always_comb begin
     tlb_update_csr = csr_q;
@@ -1002,9 +1056,9 @@ always_comb begin
         endcase
     end
 
-    if (!retire_request[0]) begin
+    if (!commit_request_o[0]) begin
         tlb_wr_req = '0;
-    end//不退休，则上面全部不用
+    end//不是将要提交的命令，则上面全部不用
 end
 
 function automatic logic vppn_match(logic [31:0] va,
@@ -1046,18 +1100,21 @@ task load_tlb_update_entry();
         end
 endtask
 
+/////////////////////////////////////////////////////////////////////////
+//第二级
 //纯组合逻辑输出
+
 always_comb begin
     csr_o = csr_q;
-    tlb_write_req_o.tlb_write_req   = tlb_wr_req;
-    tlb_write_req_o.tlb_write_entry = tlb_update_entry;
+    tlb_write_req_o.tlb_write_req   = tlb_wr_req_q;
+    tlb_write_req_o.tlb_write_entry = tlb_update_entry_q;
 end
 
 //周期结束的时候更新进tlb，同时也发出去更新mmu里面的tlb
 always_ff @( posedge clk ) begin
     for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
-        if (tlb_wr_req[i]) begin
-            tlb_entries_q[i] <= tlb_update_entry;
+        if (tlb_wr_req_q[i]) begin
+            tlb_entries_q[i] <= tlb_update_entry_q;
         end
     end
 end
@@ -1066,10 +1123,10 @@ end
 always_comb begin
     if (retire_request[0]) begin
         if (rob_commit_q[0].is_tlb_fix) begin
-            csr_update = tlb_update_csr;
+            csr_update = tlb_update_csr_q;
         end
         else if (rob_commit_q[0].is_csr_fix) begin
-            csr_update = csr;
+            csr_update = csr_maintain_q;
         end
         else if (rob_commit_q[0].ertn_en) begin
             csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
@@ -1081,14 +1138,14 @@ always_comb begin
                 csr_update.llbit = 0;
             end
         end
-        else if (is_ll_q[0]) begin
+        else if (is_ll_q[0]) begin//TODO 这个信号还没
             csr_update.llbit = 1;
         end
     end
 
     //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效或者是中断
-    if(cur_exception) begin
-        csr_update = csr_exception_update;
+    if(cur_exception_q) begin
+        csr_update = csr_exception_update_q;
     end
 
     //上面那些每周期规定只有一条，因此没有交叉冒险的情况
@@ -1113,9 +1170,9 @@ always_comb begin
     end
 
     //这个优先级最高，如果clear了就将其写入
-    if (commit_request_o[0] & !cur_exception & timer_interrupt_clear) begin
+    if (retire_request_o[0] & !cur_exception_q & timer_interrupt_clear_q) begin
         csr_update.estat[`_ESTAT_TIMER_IS] = 0;
-    end
+    end//要提交且是csr写，且写入对应位，且无例外
 
 end
 
@@ -1124,8 +1181,11 @@ always_ff @(posedge clk) begin
     if(~rst_n) begin
         csr_q <= csr_init; // 初始化 CSR
     end
-    else begin
+    else if (retire_request_o[0]) begin
         csr_q <= csr_update;
+    end
+    else begin
+        csr_q <= csr_q;
     end
 end
 
@@ -1144,7 +1204,7 @@ always_comb begin
         wait_for_int = ~int_excep;
     end
     else begin
-        wait_for_int = cur_exception ? 0 : rob_commit_i[0].idle_en;
+        wait_for_int = retire_request_o[0] ? 0 : rob_commit_i[0].idle_en;
     end
 end
 //当处于等待状态时，一直flush，要求rob来的所有指令都不valid！
