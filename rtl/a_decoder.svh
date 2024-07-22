@@ -143,6 +143,7 @@ typedef logic [0 : 0] rdcnt_inst_t;
 typedef logic [0 : 0] rdcntvl_inst_t;
 typedef logic [0 : 0] rdcntvh_inst_t;
 typedef logic [0 : 0] rdcntid_inst_t;
+typedef logic [0 : 0] tlb_inst_t;
 
 /*
 typedef struct packed {
@@ -311,6 +312,7 @@ typedef struct packed {
     alu_inst_t      alu_inst; // 是否是需要使用 alu 的指令
     alu_op_t        alu_op; // alu 子类，在不同大类下有不同含义
     break_inst_t    break_inst; // 是否是 break 指令
+    br_type_t       br_type; // 是否是 break 指令
     cacop_inst_t    cacop_inst; // 是否是 cacop 指令
     cmp_type_t      cmp_type; // TODO: 不需要。跳转条件类型，包括无条件跳转。实际上是一个独热码。四位分别表示{小于，等于，大于，有符号}。比如BLE就是1101(有符号)
     csr_op_type_t   csr_op_type; // csr 指令类型
@@ -345,6 +347,7 @@ typedef struct packed {
     slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
     syscall_inst_t  syscall_inst; // 是否是 syscall 指令
     target_type_t   target_type; // 只有JIRL的目标地址和寄存器有关，其余均之和PC有关，因此要做区分
+    tlb_inst_t      tlb_inst;
     tlbfill_inst_t  tlbfill_inst;
     tlbrd_inst_t    tlbrd_inst;
     tlbsrch_inst_t  tlbsrch_inst;

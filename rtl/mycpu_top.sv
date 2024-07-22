@@ -493,13 +493,14 @@ always_comb begin
         cdb_dispatch_pkg[i].w_preg =  cdb_infos[i].rob_id;
         cdb_dispatch_pkg[i].w_data =  cdb_infos[i].w_data;
         cdb_dispatch_pkg[i].w_reg  =  cdb_infos[i].w_reg;
-        cdb_dispatch_pkg[i].w_mem  =  /* TODO */
+        // cdb_dispatch_pkg[i].w_mem  =  /* TODO */
         cdb_dispatch_pkg[i].w_valid=  cdb_infos[i].r_valid;           
 
         cdb_rob_pkgs[i].w_preg    =  cdb_infos[i].rob_id;
         cdb_rob_pkgs[i].w_data    =  cdb_infos[i].w_data;
         cdb_rob_pkgs[i].w_valid   =  cdb_infos[i].r_valid;
         cdb_rob_pkgs[i].ctrl      =  cdb_infos[i]./* TODO */; 
+        cdb_rob_pkgs[i].lsu_info  =  cdb_infos[i].lsu_info; 
     end
 end
 

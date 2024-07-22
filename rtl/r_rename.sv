@@ -214,15 +214,16 @@ always_comb begin
     r_p_pkg_temp.jump_inst      = d_r_pkg_i.jump_inst;
     r_p_pkg_temp.priv_inst      = d_r_pkg_i.priv_inst;
     r_p_pkg_temp.rdcnt_inst     = d_r_pkg_i.rdcnt_inst;
+    r_p_pkg_temp.tlb_inst       = d_r_pkg_i.tlb_inst;
 
     // ALU & MDU 信号
     r_p_pkg_temp.grand_op       = d_r_pkg_i.grand_op;
     r_p_pkg_temp.op             = d_r_pkg_i.op;
 
     // LSU 信号
-    r_p_pkg_temp.msigned = d_r_pkg_i.msigned;
-    r_p_pkg_temp.msize = d_r_pkg_i.msize;
-    r_p_pkg_temp.w_mem     = d_r_pkg_i.w_mem;
+    r_p_pkg_temp.msigned        = d_r_pkg_i.msigned;
+    r_p_pkg_temp.msize          = d_r_pkg_i.msize;
+    r_p_pkg_temp.w_mem          = d_r_pkg_i.w_mem;
 
     // 特殊指令独热码
     r_p_pkg_temp.break_inst     = d_r_pkg_i.break_inst;
@@ -244,6 +245,13 @@ always_comb begin
     r_p_pkg_temp.tlbrd_inst     = d_r_pkg_i.tlbrd_inst;
     r_p_pkg_temp.tlbsrch_inst   = d_r_pkg_i.tlbsrch_inst;
     r_p_pkg_temp.tlbwr_inst     = d_r_pkg_i.tlbwr_inst;
+
+    r_p_pkg_temp.csr_op_type    = d_r_pkg_i.csr_op_type;
+    r_p_pkg_temp.csr_num        = d_r_pkg_i.csr_num;
+    r_p_pkg_temp.inst_4_0       = d_r_pkg_i.inst_4_0;
+    r_p_pkg_temp.decode_err     = d_r_pkg_i.decode_err;
+    r_p_pkg_temp.is_branch      = d_r_pkg_i.is_branch;
+    r_p_pkg_temp.br_type        = d_r_pkg_i.br_type;
 end
 
 

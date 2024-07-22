@@ -41,14 +41,17 @@ always_comb begin
         dispatch_rob_o[i].w_mem     = r_p_pkg.w_mem[i];
         dispatch_rob_o[i].check     = r_p_pkg.check[i];
 
+        dispatch_rob_o[i].addr_imm  = r_p_pkg.addr_imm[i];
+
         // 指令类型
         dispatch_rob_o[i].alu_type = r_p_pkg.alu_type[i]; // 指令类型
         dispatch_rob_o[i].mdu_type = r_p_pkg.mdu_type[i];
         dispatch_rob_o[i].lsu_type = r_p_pkg.lsu_type[i];
         dispatch_rob_o[i].flush_inst = r_p_pkg.flush_inst[i];
-        dispatch_rob_o[i].jump_inst = r_p_pkg.jump_inst[i]; // TODO: 似乎暂时没有用到？
+        dispatch_rob_o[i].jump_inst = r_p_pkg.jump_inst[i];
         dispatch_rob_o[i].priv_inst = r_p_pkg.priv_inst[i];
         dispatch_rob_o[i].rdcnt_inst = r_p_pkg.rdcnt_inst[i];
+        dispatch_rob_o[i].tlb_inst = r_p_pkg.tlb_inst[i];
         // control info, temp, 根据需要自己调整
         dispatch_rob_o[i].predict_info = r_p_pkg.predict_infos[i];
         dispatch_rob_o[i].if_jump = r_p_pkg.if_jump[i]; // 是否跳转 TODO: 什么意思？
@@ -72,6 +75,13 @@ always_comb begin
         dispatch_rob_o[i].tlbrd_inst = r_p_pkg.tlbrd_inst[i];
         dispatch_rob_o[i].tlbsrch_inst = r_p_pkg.tlbsrch_inst[i];
         dispatch_rob_o[i].tlbwr_inst = r_p_pkg.tlbwr_inst[i];
+
+        dispatch_rob_o[i].csr_op_type = r_p_pkg.csr_op_type[i];
+        dispatch_rob_o[i].csr_num = r_p_pkg.csr_num[i];
+        dispatch_rob_o[i].inst_4_0  = r_p_pkg.inst_4_0[i];
+        dispatch_rob_o[i].decode_err = r_p_pkg.decode_err[i];
+        dispatch_rob_o[i].is_branch = r_p_pkg.is_branch[i];
+        dispatch_rob_o[i].br_type = r_p_pkg.br_type[i];
     end
 end
 

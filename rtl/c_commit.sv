@@ -380,6 +380,7 @@ logic [31:0] exp_pc;
 assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 
 // 计算实际跳转的PC
+// 
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         next_pc[i] = rob_commit_i[i].pc + 4;

@@ -68,6 +68,7 @@ always_comb begin
     decode_info_o.slot0 = 1'd0;
     decode_info_o.syscall_inst = 1'd0;
     decode_info_o.target_type = 1'd0;
+    decode_info_o.tlb_inst = 1'd0;
     decode_info_o.tlbfill_inst = 1'd0;
     decode_info_o.tlbrd_inst = 1'd0;
     decode_info_o.tlbsrch_inst = 1'd0;
@@ -364,6 +365,7 @@ always_comb begin
         // JIRL
         32'b010011??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_RET;
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
@@ -377,6 +379,7 @@ always_comb begin
         // B
         32'b010100??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_B;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.target_type = `_TARGET_REL;
@@ -386,6 +389,7 @@ always_comb begin
         // BL
         32'b010101??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_CALL;
             decode_info_o.reg_type_w = `_REG_W_R1;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
             decode_info_o.slot0 = 1'd1;
@@ -398,6 +402,7 @@ always_comb begin
         // BEQ
         32'b010110??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_NORMAL;
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_r1 = `_REG_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
@@ -410,6 +415,7 @@ always_comb begin
         // BNE
         32'b010111??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_NORMAL;
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_r1 = `_REG_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
@@ -422,6 +428,7 @@ always_comb begin
         // BLT
         32'b011000??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_NORMAL;
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_r1 = `_REG_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
@@ -434,6 +441,7 @@ always_comb begin
         // BGE
         32'b011001??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_NORMAL;
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_r1 = `_REG_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
@@ -446,6 +454,7 @@ always_comb begin
         // BLTU
         32'b011010??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_NORMAL;
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_r1 = `_REG_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
@@ -458,6 +467,7 @@ always_comb begin
         // BGEU
         32'b011011??????????????????????????: begin
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.br_type = BR_NORMAL;
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_r1 = `_REG_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
@@ -705,6 +715,7 @@ always_comb begin
         32'b00000110010010011???????????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.invtlb_inst = 1'd1;
+            decode_info_o.tlb_inst = 1'd1;
             decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.reg_type_r0 = `_REG_RK;
@@ -716,6 +727,7 @@ always_comb begin
         32'b0000011001001000001010??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbsrch_inst = 1'd1;
+            decode_info_o.tlb_inst = 1'd1;
             decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
@@ -725,6 +737,7 @@ always_comb begin
         32'b0000011001001000001011??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbrd_inst = 1'd1;
+            decode_info_o.tlb_inst = 1'd1;
             decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
@@ -734,6 +747,7 @@ always_comb begin
         32'b0000011001001000001100??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbwr_inst = 1'd1;
+            decode_info_o.tlb_inst = 1'd1;
             decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
@@ -743,6 +757,7 @@ always_comb begin
         32'b0000011001001000001101??????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.tlbfill_inst = 1'd1;
+            decode_info_o.tlb_inst = 1'd1;
             decode_info_o.flush_inst = 1'd1;
             decode_info_o.alu_inst = 1'd1;
             decode_info_o.slot0 = 1'd1;
