@@ -125,15 +125,17 @@ typedef logic [0 : 0] fr0_t;
 typedef logic [0 : 0] fr1_t;
 typedef logic [0 : 0] fr2_t;
 typedef logic [0 : 0] fw_t;
-typedef logic [1 : 0] alu_grand_op_t;
+typedef logic [2 : 0] alu_grand_op_t;
 typedef logic [2 : 0] alu_op_t;
 typedef logic [0 : 0] target_type_t;
 typedef logic [3 : 0] cmp_type_t;
 typedef logic [0 : 0] jump_inst_t;
 typedef logic [2 : 0] mem_type_t;
+typedef logic [0 : 0] mem_signed_t;
+typedef logic [1 : 0] mem_size_t;
 typedef logic [0 : 0] mem_write_t;
 typedef logic [0 : 0] mem_read_t;
-typedef logic [0 : 0] mem_cacop_t;
+typedef logic [0 : 0] cacop_inst_t;
 typedef logic [0 : 0] sc_inst_t;
 typedef logic [0 : 0] ll_inst_t;
 typedef logic [0 : 0] dbar_inst_t;
@@ -163,7 +165,7 @@ typedef struct packed {
 typedef struct packed {
     dbarrier_t dbarrier;
     llsc_inst_t llsc_inst;
-    mem_cacop_t mem_cacop;
+    cacop_inst_t cacop_inst;
     mem_read_t mem_read;
     mem_write_t mem_write;
 } decode_info_c_lsu_common_t;
@@ -178,7 +180,7 @@ typedef struct packed {
     jump_inst_t jump_inst;
     llsc_inst_t llsc_inst;
     lsu_inst_t lsu_inst;
-    mem_cacop_t mem_cacop;
+    cacop_inst_t cacop_inst;
     mem_read_t mem_read;
     mem_write_t mem_write;
     refetch_t refetch;
@@ -210,7 +212,7 @@ typedef struct packed {
 typedef struct packed {
     dbarrier_t dbarrier;
     llsc_inst_t llsc_inst;
-    mem_cacop_t mem_cacop;
+    cacop_inst_t cacop_inst;
     mem_read_t mem_read;
     mem_type_t mem_type;
     mem_write_t mem_write;
@@ -240,7 +242,7 @@ typedef struct packed {
     jump_inst_t jump_inst;
     llsc_inst_t llsc_inst;
     lsu_inst_t lsu_inst;
-    mem_cacop_t mem_cacop;
+    cacop_inst_t cacop_inst;
     mem_read_t mem_read;
     mem_write_t mem_write;
     priv_inst_t priv_inst;
@@ -282,7 +284,7 @@ typedef struct packed {
     inst_t inst;
     invtlb_inst_t invtlb_inst;
     lsu_inst_t lsu_inst;
-    mem_cacop_t mem_cacop;
+    cacop_inst_t cacop_inst;
     mem_read_t mem_read;
     mem_type_t mem_type;
     mem_write_t mem_write;
@@ -309,6 +311,7 @@ typedef struct packed {
     alu_inst_t      alu_inst; // 是否是需要使用 alu 的指令
     alu_op_t        alu_op; // alu 子类，在不同大类下有不同含义
     break_inst_t    break_inst; // 是否是 break 指令
+    cacop_inst_t    cacop_inst; // 是否是 cacop 指令
     cmp_type_t      cmp_type; // TODO: 不需要。跳转条件类型，包括无条件跳转。实际上是一个独热码。四位分别表示{小于，等于，大于，有符号}。比如BLE就是1101(有符号)
     csr_op_type_t   csr_op_type; // csr 指令类型
     dbar_inst_t     dbar_inst; // 是否是 DBAR 指令
@@ -320,12 +323,12 @@ typedef struct packed {
     imm_type_t      imm_type; // 立即数类型 _IMM_...
     inst_t          inst; // 指令本身
     invtlb_inst_t   invtlb_inst; // 是否是invtlb指令
-    jump_inst_t     jump_inst; // 是否是跳转指令
-    sc_inst_t       ll_inst; // 是否是原子访问指令
+    jump_inst_t     jump_inst; // 是否是跳转指令 // TODO: 目前似乎还没有用到
+    ll_inst_t       ll_inst; // 是否是原子访问指令
     lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
-    mem_cacop_t     mem_cacop; // 是否是 cacop 指令
     mem_read_t      mem_read; // 是否需要读取内存
-    mem_type_t      mem_type; // BHW[U]和none
+    mem_signed_t    mem_signed; // 读取出来的数据是否会有符号扩展
+    mem_size_t      mem_size; // 读取出来的数据的字节数目-1; WORD 为 3, HALF-WORD 为 1, BYTE 为 0.
     mem_write_t     mem_write; // 是否会写入内存
     mdu_inst_t      mdu_inst; // 是否是 mdu 指令
     need_fa_t       need_fa; // 完全没有用到 TODO
@@ -338,7 +341,7 @@ typedef struct packed {
     reg_type_r0_t   reg_type_r0; // 
     reg_type_r1_t   reg_type_r1; // 
     reg_type_w_t    reg_type_w; // RD, RJD(RJ寄存器，仅RDCNTID指令会用), BL1(R1寄存器), None
-    ll_inst_t       sc_inst; // 是否是原子存储指令
+    sc_inst_t       sc_inst; // 是否是原子存储指令
     slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
     syscall_inst_t  syscall_inst; // 是否是 syscall 指令
     target_type_t   target_type; // 只有JIRL的目标地址和寄存器有关，其余均之和PC有关，因此要做区分
