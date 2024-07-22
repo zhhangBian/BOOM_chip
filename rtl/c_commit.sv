@@ -13,26 +13,6 @@ function cache_tag_t get_cache_tag(
     return cache_tag;
 endfunction
 
-function logic [31:0] get_data_mask(
-    input logic [31:0] data,
-    input logic [3:0] mask
-);
-    logic [31:0] data_mask;
-
-    assign data_mask[7:0]   = mask[0] ? data[7:0]   : '0;
-    assign data_mask[15:8]  = mask[1] ? data[15:8]  : '0;
-    assign data_mask[23:16] = mask[2] ? data[23:16] : '0;
-    assign data_mask[31:24] = mask[3] ? data[31:24] : '0;
-
-    return data_mask;
-endfunction
-
-function logic [1:0] get_way_choose(
-    input logic hit
-);
-    return hit ? 2'b10 : 2'b01;
-endfunction
-
 module commit #(
     parameter int CACHE_BLOCK_NUM = 4;
     parameter int CPU_ID = 0;
@@ -72,14 +52,14 @@ module commit #(
     input   logic   axi_commit_wready_i,
 
     output  commit_axi_req_t    commit_axi_req_o,
-    input   axi_commit_resp_t   axi_commit_resp,
+    input   axi_commit_resp_t   axi_commit_resp_i,
 
     // commit与ARF的接口
     output  logic   [1:0]   commit_arf_we_o,
     output  word_t  [1:0]   commit_arf_data_o,
     output  logic [1:0][4:0]commit_arf_areg_o,
     output  logic [1:0][5:0]commit_arf_preg_o,
-    
+
     output  logic [1:0]     retire_request_o,//新增
 
     // commit与BPU的接口
@@ -113,8 +93,6 @@ assign commit_cache_ready = '1;
 logic [31:0] commit_data, commit_data_q;
 assign commit_data_o = commit_data_q;
 
-// 维护一个提交级的时钟
-logic [5:0] timer_64, timer_64_q;
 
 // 正常情况都不需要进入状态机，直接提交即可
 // 特殊处理
@@ -139,16 +117,24 @@ logic [1:0] first_commit;
 
 always_comb begin
     //在有效的情况下是不是单提交的情况
-    first_commit[0]     = rob_commit_i[0].flush_inst | stall指令 | cur_exception | 访存缺失 | ~predict_success[0];
-    first_commit[1]     = rob_commit_i[1].flush_inst | stall指令 | another_exception | 访存缺失；//仅第二条分支预测失败也可以双提
+    first_commit[0]     = rob_commit_i[0].flush_inst | //一定flush指令
+                          rob_commit_i[0].lsu_info.is_lsu_write | //store
+                          cur_exception | //异常
+                          ~rob_commit_i[0].cache_commit_hit | //cache miss
+                          ~predict_success[0];//预测错
+
+    first_commit[1]     = rob_commit_i[1].flush_inst | 
+                          rob_commit_i[1].lsu_info.is_lsu_write | 
+                          another_exception | 
+                          ~rob_commit_i[1].cache_commit_hit;//仅第二条分支预测失败也可以双提
 
     commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
 
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~stall &
-                          ~rob_commit_i[0].first_commit &
-                          ~rob_commit_i[1].first_commit;
+                          ~first_commit[0] &
+                          ~first_commit[1];
 end
 
 
@@ -157,11 +143,15 @@ end
 logic            [1:0] commit_request_q;
 rob_commit_pkg_t [1:0] rob_commit_q;
 //__forward()
+//下面只是一个组合逻辑，如果传指令过去就一起传包，否则全0
+rob_commit_pkg_t [1:0] rob_commit_flow;
 
-//instr_flow_q表示传过来的指令是有效的，有可能是要提交，有可能是第一条要进去状态机
+assign rob_commit_flow[0] = commit_request_o[0] ? rob_commit_q[0] : '0;
+assign rob_commit_flow[1] = commit_request_o[1] ? rob_commit_q[1] : '0;
+
 //注意flush把这一级也flush了
 always_ff @( posedge clk ) begin
-    if (~rst_n | flush) begin//TODO 对吗
+    if (~rst_n) begin
         commit_request_q <= '0;
         rob_commit_q <= '0;
     end
@@ -170,17 +160,23 @@ always_ff @( posedge clk ) begin
         commit_request_q <= commit_request_q;
         rob_commit_q     <= rob_commit_q;
     end
+    else if (flush) begin//TODO 放在stall后面，也就是说如果stall（进状态机）会保留信息
+        commit_request_q <= '0;
+        rob_commit_q <= '0;
+    end
     else begin
         commit_request_q <= commit_request_o;
-        rob_commit_q <= rob_commit_i;
+        rob_commit_q     <= rob_commit_flow;
     end
 end
 
 ///////////////////////////////////////////////////////////////////////
 //第二级
-//这是一大改动，引入了retire_request，区别于commit_request
+//引入了retire_request，区别于commit_request
 assign retire_request_o[0] = commit_request_q[0] & ~stall;
 assign retire_request_o[1] = commit_request_q[1] & ~stall;
+
+wire   pc_s                = commit_request_q[0].pc;
 
 // 处理对ARF的接口
 always_comb begin
@@ -190,8 +186,8 @@ always_comb begin
     commit_arf_preg_o = '0;
 
     for (genvar i = 0; i < 2; i = i + 1) begin
-        commit_arf_we_o[i]   = retire_request[i] & rob_commit_q[i].w_reg & !cur_exception_q;
-        //TODO 接到rename级的有问题！ 是不是连前面的与也不用了
+        commit_arf_we_o[i]   = retire_request_o[i] & rob_commit_q[i].w_reg & !cur_exception_q;
+        //接到rename级的要用这个！
 
         commit_arf_data_o[i] = rob_commit_q[i].rdcnt_en  ? rdcnt_data_q:
                                |rob_commit_q[i].csr_type ? commit_csr_data_q:
@@ -201,6 +197,16 @@ always_comb begin
         commit_arf_preg_o[i] = rob_commit_q[i].rob_id;
     end
 
+    if(ls_fsm_q == S_UNCACHED_RD) begin
+        if(axi_commit_rvalid_i) begin
+            commit_arf_we_o[0]   = |rob_commit_q.lsu_info.rmask;
+            commit_arf_data_o[0] = axi_commit_resp_i.rdata;//TODO rdata mask
+            commit_arf_areg_o[0] = rob_commit_q.arf_id;
+            commit_arf_preg_o[0] = rob_commit_q.rob_id;
+            //有了上面哪个时序，这个rob_commit_q就可以直接用了
+        end
+    end
+// TODO 好像还有sc
 /*
     if(~stall) begin
         commit_arf_we_o[1] = commit_request_o[1] & rob_commit_i[1].w_reg;
@@ -208,7 +214,7 @@ always_comb begin
         commit_arf_areg_o[1] = rob_commit_i[1].arf_id;
         commit_arf_preg_o[1] = rob_commit_i[1].rob_id;
     end
-//TODO 下面与状态机有关的情况还得加到上面去
+//下面与状态机有关的情况还得加到上面去，已经加了，只有uncached
 
     if(is_csr_fix[0]) begin
         commit_arf_we_o[0]   = commit_request_o[0] & !cur_exception;
@@ -246,6 +252,7 @@ end
 
 // ------------------------------------------------------------------
 // 代表相应的指令属性
+//这些全部都是第二级的，但是没有加_q！！！！！！！！！！！！！！！！！！！！
 logic [1:0] is_lsu_write, is_lsu_read, is_lsu;
 logic [1:0] is_uncached;    // 指令为Uncached指令
 logic [1:0] is_csr_fix;     // 指令为CSR特权指令
@@ -258,8 +265,8 @@ logic [1:0] is_sc;
 
 // 与DCache的一级流水交互
 lsu_iq_pkg_t [1:0] lsu_info;
-assign lsu_info[0] = rob_commit_i[0].lsu_info;
-assign lsu_info[1] = rob_commit_i[1].lsu_info;
+assign lsu_info[0] = rob_commit_q[0].lsu_info;
+assign lsu_info[1] = rob_commit_q[1].lsu_info;
 
 // 判断指令类型
 for(integer i = 0; i < 2; i += 1) begin
@@ -270,22 +277,22 @@ for(integer i = 0; i < 2; i += 1) begin
 
         is_lsu[i]       = is_lsu_write[i] | is_lsu_read[i];
         is_uncached[i]  = lsu_info[i].is_uncached;
-        is_csr_fix[i]   = rob_commit_i[i].is_csr_fix;
-        is_cache_fix[i] = rob_commit_i[i].is_cache_fix;
-        is_tlb_fix[i]   = rob_commit_i[i].is_tlb_fix;
+        is_csr_fix[i]   = rob_commit_q[i].is_csr_fix;
+        is_cache_fix[i] = rob_commit_q[i].is_cache_fix;
+        is_tlb_fix[i]   = rob_commit_q[i].is_tlb_fix;
 
         cache_commit_hit[i] = lsu_info[i].hit;
         cache_commit_dirty[i] = lsu_info[i].dirty;
 
-        is_ll[i]        = rob_commit_i[i].is_ll;
-        is_sc[i]        = rob_commit_i[i].is_sc;
+        is_ll[i]        = rob_commit_q[i].is_ll;
+        is_sc[i]        = rob_commit_q[i].is_sc;
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
 // 处理全局flush信息
-// TODO 只在第二级
+// 只在第二级
 
 logic [1:0] commit_flush_info;
 
@@ -301,14 +308,14 @@ always_comb begin
     end
     //异常则flush
 
-    else if (retire_request[0]) begin
+    else if (retire_request_o[0]) begin
         if (rob_commit_q[0].flush_inst) begin
             commit_flush_info = 2'b01;
         end//要提交且一定会flush的指令
         else if (~predict_success_q[0])begin
             commit_flush_info = 2'b01;
         end//分支预测失败
-        else if (commit_request_o[1] & ~predict_success_q[1]) begin
+        else if (retire_request_o[1] & ~predict_success_q[1]) begin
             commit_flush_info = 2'b10;
         end//第一条成功但第二条失败了
     end
@@ -346,10 +353,9 @@ end
 // ------------------------------------------------------------------
 // 处理分支预测信息
 //在第一级
-//TODO 拆成两级
 
 // 分支预测是否正确：按照第一条错误的分支指令来
-// 认为分支指令只能单挑提交 TODO ？
+
 word_t [1:0] pc;
 word_t [1:0] pc_add_4;
 word_t [1:0] next_pc;
@@ -414,38 +420,51 @@ for(integer i = 0; i < 2; i += 1) begin
 end
 
 ///////////////////////////////////////////////////////////////////////////////////
-//TODO 在第二级
-//把之前打包的东西打一拍过来
+//在第二级
+//把之前打包的东西打一拍过来TODO
 
 //flush的时候才有意义，所以可以省掉一些逻辑
+//
+//这几个不要用
+logic i_cacop_exception;
+logic icacop_tlbr_exception;
+wire  icacop_exc_pc = icacop_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry;
 
-assign redir_addr_o = cur_exception_q ? exp_pc_q : //异常入口
+assign redir_addr_o = (fsm_flush) ? fsm_npc ://fsm来的npc
+                     (cur_exception_q) ? exp_pc_q : //异常入口
                      (rob_commit_q[0].ertn_en) ? csr_q.era : //异常返回
-                     (~rob_commit_q[0].lsu_info.cache_commit_hit & ~is_uncached) ? rob_commit_q[0].pc ://重新执行当前pc TODO uncached的情况不能重新来，信号还没改
                      next_pc_q[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
 
-//全部要打一拍！TODO
+correct_info_o[0].update = retire_request_o[i] &
+                           ((predict_info_q[i].need_update) |
+                           (predict_branch_q[i]) |
+                           (is_branch_q[i]));
+
+correct_info_o[1].update = (retire_request_o[i] |
+                           (predict_info_q[i].need_update) |
+                           (predict_branch_q[i]) |
+                           (is_branch_q[i])) &
+                           commit_flush_info[1];
+                        //表示是第二条带来的flush
+                        // 如果是由0发出的flush，则1不update，可以通过第二级的组合逻辑信号commit_flush_info知道是哪个导致了flush
+
+
+//全部要打一拍！
 for(integer i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_q[i].pc;
 
-        correct_info_o[i].target_miss = (predict_info[i].target_pc != real_target[i]);
-        corrext_info_o[i].type_miss = (predict_info[i].br_type != branch_info[i].br_type);
+        correct_info_o[i].target_miss = (predict_info_q[i].target_pc != real_target_q[i]);
+        corrext_info_o[i].type_miss = (predict_info_q[i].br_type != branch_info_q[i].br_type);
 
-        correct_info_o[i].taken = taken[i];
-        correct_info_o[i].is_branch = branch_info[i].is_branch;
-        correct_info_o[i].branch_type = branch_info[i].br_type;
+        correct_info_o[i].taken = taken_q[i];
+        correct_info_o[i].is_branch = branch_info_q[i].is_branch;
+        correct_info_o[i].branch_type = branch_info_q[i].br_type;
 
-        correct_info_o[i].update = commit_request_o[i] |
-                                   (predict_info[i].need_update) |
-                                   (predict_branch[i]) |
-                                   (is_branch[i]);
-                                   //TODO 如果是由0发出的flush，则1不update，可以通过第二级的组合逻辑信号commit_flush_info知道是哪个导致了flush
+        correct_info_o[i].target_pc = real_target_q[i];
 
-        correct_info_o[i].target_pc = real_target[i];
-
-        correct_info_o[i].history = predict_info[i].history;
-        correct_info_o[i].scnt = predict_info[i].scnt;
+        correct_info_o[i].history = predict_info_q[i].history;
+        correct_info_o[i].scnt = predict_info_q[i].scnt;
     end
 end
 
@@ -454,6 +473,9 @@ end
 // ------------------------------------------------------------------
 // 维护提交级的计时器
 // 在第一级
+
+// 维护一个提交级的时钟
+logic [5:0] timer_64, timer_64_q;
 
 always_ff @(posedge clk) begin
     if(!rst_n) begin
@@ -473,6 +495,7 @@ logic [31:0] rdcnt_data;
 logic [31:0] rdcnt_data_q;
 //__forward()
 
+//第一级读取
 always_comb begin
     rdcnt_data = '0;
     if (rob_commit_i[0].rdcntvl_en) begin
@@ -495,9 +518,9 @@ end
 // ------------------------------------------------------------------
 // 异常处理
 //识别rob_commit_i[0]这一条指令是不是有异常，如果有，修改csr
-//识别在第一级，写入在第二级
+//识别在第一级，写入csr和刷流水线在第二级
 //TODO icache异常在第二级处理
-//
+
 //icache的维护指令出现tlb异常 wire cacop_excep   = |icache_cacop_tlb_exc_i;
 /*
         //cacop
@@ -1121,7 +1144,7 @@ end
 
 //下面这个组合逻辑内部顺序不要更改
 always_comb begin
-    if (retire_request[0]) begin
+    if (retire_request_o[0]) begin
         if (rob_commit_q[0].is_tlb_fix) begin
             csr_update = tlb_update_csr_q;
         end
@@ -1138,16 +1161,21 @@ always_comb begin
                 csr_update.llbit = 0;
             end
         end
-        else if (is_ll_q[0]) begin//TODO 这个信号还没
+        else if (is_ll[0]) begin//注意，这个信号虽然没有_q，但是的确是第二拍的！
             csr_update.llbit = 1;
         end
+        else if (|icache_cacop_tlb_exc_i) begin
+            csr_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.ecode;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
+            csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
+        end//cacop维护出现的异常
     end
 
     //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效或者是中断
     if(cur_exception_q) begin
         csr_update = csr_exception_update_q;
     end
-
     //上面那些每周期规定只有一条，因此没有交叉冒险的情况
 
     //下面这个放在这里，是因为cpu每个周期都要更新一些软件不能更新的东西
@@ -1224,8 +1252,9 @@ end
 // ------------------------------------------------------------------
 //在第二级
 // Cache维护指令：也需要进入状态机
+
 logic [4:0] cache_code, cache_code_q;
-assign cache_code = rob_commit_i[0].cache_code;
+assign cache_code = rob_commit_q[0].cache_code;//用于状态机，在第二级
 // code[2:0]指示操作的Cache对象
 logic [2:0] cache_tar, cache_tar_q;
 assign cache_tar = cache_code[2:0];
@@ -1261,6 +1290,8 @@ typedef enum logic[4:0] {
 
 ls_fsm_s ls_fsm, ls_fsm_q;
 logic fsm_flush;
+logic [31:0] fsm_npc;
+logic [31:0] pc_s;
 
 commit_cache_req_t  commit_cache_req,  commit_cache_req_q;
 commit_axi_req_t    commit_axi_req,    commit_axi_req_q;
@@ -1296,7 +1327,8 @@ always_comb begin
     // 值初始化
     ls_fsm              = ls_fsm_q;
     stall               = stall_q;
-    ls_flush            = '0;
+    fsm_flush           = '0;
+    fsm_npc             = pc_s + 4;
 
     axi_wait            = axi_wait_q;
     icache_wait         = icache_wait_q;
@@ -1339,6 +1371,9 @@ always_comb begin
                 ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
                 fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
+                fsm_npc = (icache_cacop_flush_i ^ 2'b01) ? (pc_s + 4) :
+                          (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
+                          csr_q.eentry;
                 icache_wait = ~icache_commit_ready_i;
 
                 commit_icache_valid_o      = '1;
@@ -1361,6 +1396,7 @@ always_comb begin
                         ls_fsm = S_NORMAL;
                         stall = '0;
                         fsm_flush = '1;
+                        fsm_npc = pc_s + 4;
 
                         commit_cache_req.tag_data = '0;
                         commit_cache_req.tag_we   = '1;
@@ -1386,6 +1422,7 @@ always_comb begin
                             ls_fsm = S_NORMAL;
                             stall = '0;
                             fsm_flush = '1;
+                            fsm_npc = pc_s + 4;
                         end
                     end
 
@@ -1430,6 +1467,7 @@ always_comb begin
                 ls_fsm = S_UNCACHED_WB;
                 stall = '1;
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
                 // 发起AXI请求
                 commit_axi_req.waddr = lsu_info[0].paddr;
                 commit_axi_req.wlen = 1;
@@ -1529,6 +1567,7 @@ always_comb begin
                 else begin
                     // 直接刷掉流水
                     fsm_flush = '1;
+                    fsm_npc = pc_s;
                     // 不是脏的，直接写入Cache即可
                     if(~cache_commit_dirty[0]) begin
                         ls_fsm = S_NORMAL;
@@ -1596,6 +1635,7 @@ always_comb begin
                 stall = '0;
                 // uncache读入后再刷
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
 
                 axi_block_data[axi_block_ptr_q] = axi_commit_resp_i.rdata;
             end
@@ -1675,6 +1715,7 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
             end
             else begin
                 ls_fsm = S_AXI_RD;
@@ -1773,6 +1814,7 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
             end
         end
     end
@@ -1835,3 +1877,5 @@ always_ff @(posedge clk) begin
         axi_block_len_q     <= axi_block_len;
     end
 end
+
+endmodule
