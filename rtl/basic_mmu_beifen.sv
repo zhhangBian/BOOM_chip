@@ -32,7 +32,7 @@ tlb_value_t [TLB_ENTRY_NUM - 1:0][1:0] tlb_value_q;
 /*===================ok===================*/
 always_comb begin
     tlb_found = 0;
-    for (genvar i = 0; i < TLB_ENTRY_NUM; i+= 1) begin
+    for (integer i = 0; i < TLB_ENTRY_NUM; i+= 1) begin
         if (tlb_key_q[i].e 
         && (tlb_key_q[i].g || (tlb_key_q[i].asid == cur_asid))
         && vppn_match(va, tlb_key_q[i].huge_page, tlb_key_q[i].vppn)) begin
@@ -47,7 +47,7 @@ always_comb begin
 end
 /*===================ok===================*/
 function automatic logic vppn_match(logic [31:0] va, 
-                                    logic huge_page, logic [18: 0] vppn)//位宽好像错了
+                                    logic huge_page, logic [18: 0] vppn);//位宽好像错了
     if (huge_page) begin
         return va[31:22] == vppn[18:9]; //ok
     end else begin
@@ -57,7 +57,7 @@ endfunction
 
 //tlb写请求
 always_ff @(posedge clk) begin
-    for (genvar i = 0; i < TLB_ENTRY_NUM; i += 1) begin
+    for (integer i = 0; i < TLB_ENTRY_NUM; i += 1) begin
         if (tlb_write_req_i.tlb_write_req[i]) begin
             tlb_key_q[i]      <= tlb_write_req_i.tlb_write_entry.key;
             tlb_value_q[i][0] <= tlb_write_req_i.tlb_write_entry.value[0];
@@ -84,7 +84,7 @@ wire [31:0] dmw_read = dmw0_hit ? dmw0 :
                        '0;
 
 //choose from tlb/dmw/da
-logic trans_result_t trans_result;
+trans_result_t trans_result;
 
 wire da = csr.crmd[`_CRMD_DA];
 wire pg = csr.crmd[`_CRMD_PG];
@@ -120,17 +120,17 @@ always_comb begin
             if (!tlb_value_read.v) begin
                 trans_result.valid = 0;
                 case (mmu_mem_type)
-                    `FETCH:
+                    `_MEM_FETCH:
                         ecode = `_ECODE_PIF;
-                    `LOAD:
+                    `_MEM_LOAD:
                         ecode = `_ECODE_PIL;
-                    `STORE:
+                    `_MEM_STORE:
                         ecode = `_ECODE_PIS;
                 endcase
-            end elif(csr.crmd[`_CRMD_PLV] > tlb_value_read.plv) begin
+            end else if(csr.crmd[`_CRMD_PLV] > tlb_value_read.plv) begin
                 trans_result.valid = 0;
                 ecode = `_ECODE_PPI;
-            end elif(mmu_mem_type == `STORE && !trans_result.d) begin
+            end else if((mmu_mem_type == `_MEM_STORE) && (!trans_result.d)) begin
                 trans_result.valid = 0;
                 ecode = `_ECODE_PME;
             end

@@ -6,7 +6,7 @@ module alu_iq # (
     parameter int IQ_SIZE = 4,
     parameter int AGING_LENGTH = 4,
     parameter int IQ_ID = 0,
-    parameter int DISPATCH_CNT = 2;
+    parameter int DISPATCH_CNT = 2,
     parameter int REG_COUNT  = 2,
     parameter int CDB_COUNT  = 2,
     parameter int WKUP_COUNT = 2

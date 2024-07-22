@@ -14,7 +14,7 @@ function cache_tag_t get_cache_tag(
 endfunction
 
 function automatic offset(input logic [31:0] data, input [1:0] m_size, input [3:0] mask, input msigned);
-    logic [31:0] lw_data 
+    logic [31:0] lw_data;
     lw_data = '0;
     sign    = '0;
     if (m_size == 2'd0) begin
@@ -36,8 +36,8 @@ function automatic offset(input logic [31:0] data, input [1:0] m_size, input [3:
 endfunction
 
 module commit #(
-    parameter int CACHE_BLOCK_NUM = 4;
-    parameter int CPU_ID = 0;
+    parameter int CACHE_BLOCK_NUM = 4,
+    parameter int CPU_ID = 0
 ) (
     input   logic   clk,
     input   logic   rst_n,
@@ -50,7 +50,7 @@ module commit #(
 
     // 可能没用
     input   logic   [1:0]   rob_commit_valid_i,
-    input   rob_commit_pkg_t [1:0]  rob_commit_i,
+    input   rob_commit_pkg_t rob_commit_i [1:0],
 
     // 给ROB的输出信号，确定提交相关指令
     //加上的：不是提交，是从rob里面取出
@@ -163,10 +163,10 @@ end
 //下面两个是第二级的数据来源，这样也避免了一些情况，比如说刷掉流水导致找不到之前的数据
 //flush对1->2部分的数据不应该刷掉自己
 logic            [1:0] commit_request_q;
-rob_commit_pkg_t [1:0] rob_commit_q;
+rob_commit_pkg_t rob_commit_q[1:0];
 //__forward()
 //下面只是一个组合逻辑，如果传指令过去就一起传包，否则全0
-rob_commit_pkg_t [1:0] rob_commit_flow;
+rob_commit_pkg_t rob_commit_flow[1:0];
 
 assign rob_commit_flow[0] = commit_request_o[0] ? rob_commit_i[0] : '0;
 assign rob_commit_flow[1] = commit_request_o[1] ? rob_commit_i[1] : '0;
@@ -208,7 +208,7 @@ always_comb begin
     commit_arf_areg_o = '0;
     commit_arf_preg_o = '0;
 
-    for (genvar i = 0; i < 2; i = i + 1) begin
+    for (integer i = 0; i < 2; i = i + 1) begin
         commit_arf_we_o[i]   = retire_request_o[i] & rob_commit_q[i].w_reg & !cur_exception_q;
         //接到rename级的要用这个！
 
@@ -287,12 +287,12 @@ logic [1:0] is_ll;
 logic [1:0] is_sc;
 
 // 与DCache的一级流水交互
-lsu_iq_pkg_t [1:0] lsu_info;
+lsu_iq_pkg_t lsu_info[1:0];
 assign lsu_info[0] = rob_commit_q[0].lsu_info;
 assign lsu_info[1] = rob_commit_q[1].lsu_info;
 
 // 判断指令类型
-for(integer i = 0; i < 2; i += 1) begin
+for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         // 处理后续的竞争逻辑
         is_lsu_write[i] = |lsu_info[i].strb;
@@ -404,7 +404,7 @@ assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 
 // 计算实际跳转的PC
 // 
-for(integer i = 0; i < 2; i += 1) begin
+for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         next_pc[i] = rob_commit_i[i].pc + 4;
         predict_branch[i] = predict_info[i].taken;
@@ -434,7 +434,7 @@ for(integer i = 0; i < 2; i += 1) begin
 end
 
 // 计算分支预测是否正确
-for(integer i = 0; i < 2; i += 1) begin
+for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         is_branch[i] = branch_info[i].is_branch;
         taken[i] = ((branch_info[i].br_type != BR_NORMAL) ||
@@ -504,7 +504,7 @@ correct_info_o[1].update = retire_request_o[1] &
 
 
 //全部要打一拍！
-for(integer i = 0; i < 2; i += 1) begin
+for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_q[i].pc;
 
