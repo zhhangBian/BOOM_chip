@@ -1266,8 +1266,8 @@ commit_cache_req_t  commit_cache_req,  commit_cache_req_q;
 commit_axi_req_t    commit_axi_req,    commit_axi_req_q;
 commit_icache_req_t commit_icache_req, commit_icache_req_q;
 
-assign commit_cache_req_o = commit_cache_req;
-assign commit_axi_req_o = commit_axi_req;
+assign commit_cache_req_o  = commit_cache_req;
+assign commit_axi_req_o    = commit_axi_req;
 assign commit_icache_req_o = commit_icache_req;
 
 logic axi_back_target, axi_back_target_q;
@@ -1336,8 +1336,7 @@ always_comb begin
             icache_wait = '0;
 
             if(cache_tar == 0) begin
-                ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ?
-                            S_NORMAL : S_ICACHE;
+                ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
                 fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
                 icache_wait = ~icache_commit_ready_i;
@@ -1680,29 +1679,29 @@ always_comb begin
             else begin
                 ls_fsm = S_AXI_RD;
                 stall = '1;
-            end
 
-            // 设置相应的AXI请求
-            commit_axi_req = '0;
-            commit_axi_req.raddr = cache_dirty_addr;
-            commit_axi_req.rlen = 4;
-            commit_axi_req.strb = '0;
-            commit_axi_arvalid_o = '1;
+                // 设置相应的AXI请求
+                commit_axi_req = '0;
+                commit_axi_req.raddr = cache_dirty_addr;
+                commit_axi_req.rlen = 4;
+                commit_axi_req.strb = '0;
+                commit_axi_arvalid_o = '1;
 
-            // 设置相应的指针
-            axi_block_ptr = '0;
-            axi_block_len = 4;
-            axi_block_data = '0;
-
-            if(axi_commit_arready_i) begin
-                axi_wait = '0;
                 // 设置相应的指针
-                cache_block_ptr = '0;
-                cache_block_len = 4;
-                cache_block_data = '0;
-            end
-            else begin
-                axi_wait = '1;
+                axi_block_ptr = '0;
+                axi_block_len = 4;
+                axi_block_data = '0;
+
+                if(axi_commit_arready_i) begin
+                    axi_wait = '0;
+                    // 设置相应的指针
+                    cache_block_ptr = '0;
+                    cache_block_len = 4;
+                    cache_block_data = '0;
+                end
+                else begin
+                    axi_wait = '1;
+                end
             end
         end
         else begin
@@ -1717,6 +1716,7 @@ always_comb begin
         else begin
             // 等待握手
             if(axi_wait_q) begin
+                commit_axi_arvalid_o = '1;
                 axi_wait = axi_wait_q & ~axi_commit_arready_i;
             end
             // 读入数据
@@ -1742,7 +1742,7 @@ always_comb begin
                 // 设置相应的Cache数据
                 cache_block_ptr = cache_block_ptr_q + 1;
                 // 对齐一块的数据
-                commit_cache_req.addr       = (lsu_info_s[0].paddr & 32'hfffffff0) + (cache_block_ptr_q << 2);
+                commit_cache_req.addr       = (lsu_info_s[0].paddr & 32'hfffffff0) | (cache_block_ptr_q << 2);
                 commit_cache_req.way_choose = lsu_info_s[0].refill;
                 commit_cache_req.tag_data   = get_cache_tag(lsu_info_s[0].paddr & 32'hfffffff0, '1, '0);
                 commit_cache_req.tag_we     = '1;
