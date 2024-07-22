@@ -6,8 +6,6 @@
 // `define _FPGA
 
 
-`include "a_params.svh"
-`include "a_decoder.svh"
 `include "a_macros.svh"
 `include "a_structure.svh"
 `include "a_csr.svh"
@@ -16,6 +14,5 @@
 `include "a_mdu_defines.svh"
 `include "a_mmu_defines.svh"
 `include "a_exception_defines.svh"
-`include "a_branch_predict.svh"
 
 `endif

@@ -3,6 +3,173 @@
 
 `include "a_branch_predict.svh"
 
+/*============================== Branch Predict ==============================*/
+// BPU 类型定义
+typedef enum logic[1:0] {
+    BR_NORMAL, // 立即数跳转指令, BEQ, BNE, BGT, BGE, BLT, BLE
+    BR_B, // LA 中的 B 指令
+    BR_CALL, // LA 中的 BL 指令
+    BR_RET // LA 中的 JIRL 指令
+} br_type_t;
+
+typedef struct packed {
+    logic [31:0]                    target_pc; // 跳转到的目标 PC 
+    logic [31:0]                    next_pc;
+    logic                           is_branch;
+    br_type_t                       br_type;
+    logic                           taken;
+    logic [ 1:0]                    scnt;
+    logic                           need_update;
+    logic [`BPU_HISTORY_LEN-1:0]    history; // 最新的历史放 0 位，旧的历史往高位移
+    // ras_ptr???    
+} predict_info_t;
+
+typedef struct packed { // TODO: 后端不能同时提交两条分支指令
+    logic  [31:0]   pc;
+    logic           flush; // TODO: 放到 correct_info 外面
+    logic  [31:0]   redir_addr; // TODO: 放到 correct_info 外面 如果跳转错误,后端得到正确的跳转地址之后反馈给前端
+
+    logic           target_miss; // TODO:目标地址预测错误，需要更新BTB. taken预测错了也要将target_miss置有效。TODO: 暂时可能用不上
+    logic           type_miss; // TODO:类型预测错误，说明一定这条指令一定不在表中，全部更新 TODO: 暂时可能用不上
+    logic           taken; // 是否跳转
+    logic           is_branch;
+    br_type_t       branch_type; // 分支类型，用于更新 BTB
+    logic           update; // 如果这条指令是分支或者预测成了分支，就要置 1 。
+    logic  [31:0]   target_pc; // 正确的跳转地址，用于更新 BTB
+    logic  [`BPU_HISTORY_LEN-1:0] history; // 历史记录，最新的历史往 0 位放，旧的历史左移一位。
+    logic  [ 1:0]   scnt; // 饱和计数器的值。
+} correct_info_t;
+
+typedef struct packed {
+    logic                           is_branch;
+    logic  [`BPU_TAG_LEN-1 : 0]     tag;
+    logic  [31:0]                   target_pc;
+    br_type_t                       br_type;
+} bpu_btb_entry_t;
+
+typedef struct packed {
+    logic  [`BPU_HISTORY_LEN-1 : 0]  history;
+} bpu_bht_entry_t;
+
+typedef struct packed {
+    logic  [1:0]    scnt;
+} bpu_pht_entry_t;
+
+/* ============================== Decoder ==============================*/
+typedef logic [0 : 0] ertn_inst_t;
+typedef logic [0 : 0] priv_inst_t;
+typedef logic [0 : 0] idle_inst_t;
+typedef logic [0 : 0] syscall_inst_t;
+typedef logic [0 : 0] break_inst_t;
+typedef logic [1 : 0] csr_op_type_t;
+typedef logic [0 : 0] tlbsrch_inst_t;
+typedef logic [0 : 0] tlbrd_inst_t;
+typedef logic [0 : 0] tlbwr_inst_t;
+typedef logic [0 : 0] tlbfill_inst_t;
+typedef logic [0 : 0] invtlb_inst_t;
+typedef logic [0 : 0] flush_inst_t;
+typedef logic [0 : 0] ibar_inst_t;
+typedef logic [3 : 0] fpu_op_t;
+typedef logic [0 : 0] fpu_mode_t;
+typedef logic [3 : 0] rnd_mode_t;
+typedef logic [0 : 0] fpd_inst_t;
+typedef logic [0 : 0] fcsr_upd_t;
+typedef logic [0 : 0] fcmp_t;
+typedef logic [0 : 0] fcsr2gr_t;
+typedef logic [0 : 0] gr2fcsr_t;
+typedef logic [0 : 0] upd_fcc_t;
+typedef logic [0 : 0] fsel_t;
+typedef logic [0 : 0] fclass_t;
+typedef logic [0 : 0] bceqz_t;
+typedef logic [0 : 0] bcnez_t;
+typedef logic [31: 0] inst_t;
+typedef logic [0 : 0] alu_inst_t;
+typedef logic [0 : 0] mdu_inst_t;
+typedef logic [0 : 0] lsu_inst_t;
+typedef logic [0 : 0] fpu_inst_t;
+typedef logic [0 : 0] fbranch_inst_t;
+typedef logic [2 : 0] reg_type_r0_t;
+typedef logic [2 : 0] reg_type_r1_t;
+typedef logic [1 : 0] reg_type_w_t;
+typedef logic [2 : 0] imm_type_t;
+typedef logic [1 : 0] addr_imm_type_t;
+typedef logic [0 : 0] slot0_t;
+typedef logic [0 : 0] refetch_t;
+typedef logic [0 : 0] need_fa_t;
+typedef logic [0 : 0] fr0_t;
+typedef logic [0 : 0] fr1_t;
+typedef logic [0 : 0] fr2_t;
+typedef logic [0 : 0] fw_t;
+typedef logic [2 : 0] alu_grand_op_t;
+typedef logic [2 : 0] alu_op_t;
+typedef logic [0 : 0] target_type_t;
+typedef logic [3 : 0] cmp_type_t;
+typedef logic [0 : 0] jump_inst_t;
+typedef logic [2 : 0] mem_type_t;
+typedef logic [0 : 0] mem_signed_t;
+typedef logic [1 : 0] mem_size_t;
+typedef logic [0 : 0] mem_write_t;
+typedef logic [0 : 0] mem_read_t;
+typedef logic [0 : 0] cacop_inst_t;
+typedef logic [0 : 0] sc_inst_t;
+typedef logic [0 : 0] ll_inst_t;
+typedef logic [0 : 0] dbar_inst_t;
+typedef logic [0 : 0] rdcnt_inst_t;
+typedef logic [0 : 0] rdcntvl_inst_t;
+typedef logic [0 : 0] rdcntvh_inst_t;
+typedef logic [0 : 0] rdcntid_inst_t;
+typedef logic [0 : 0] tlb_inst_t;
+
+typedef struct packed {
+    addr_imm_type_t addr_imm_type; // 地址是 S12, S14, S16 还是 S26
+    alu_grand_op_t  alu_grand_op; // alu大类，分别来源于算术运算、逻辑运算、位移运算以及其他（LU12I, PCADDU12I, PC+4(link)）
+    alu_inst_t      alu_inst; // 是否是需要使用 alu 的指令
+    alu_op_t        alu_op; // alu 子类，在不同大类下有不同含义
+    break_inst_t    break_inst; // 是否是 break 指令
+    br_type_t       br_type; // 是否是 break 指令
+    cacop_inst_t    cacop_inst; // 是否是 cacop 指令
+    cmp_type_t      cmp_type; // TODO: 不需要。跳转条件类型，包括无条件跳转。实际上是一个独热码。四位分别表示{小于，等于，大于，有符号}。比如BLE就是1101(有符号)
+    csr_op_type_t   csr_op_type; // csr 指令类型
+    dbar_inst_t     dbar_inst; // 是否是 DBAR 指令
+    logic           decode_err; // 出现未知指令
+    ertn_inst_t     ertn_inst; // 是否是 ertn 指令
+    flush_inst_t    flush_inst;
+    ibar_inst_t     ibar_inst;
+    idle_inst_t     idle_inst; // 仅在 IDLE 指令下置1.
+    imm_type_t      imm_type; // 立即数类型 _IMM_...
+    inst_t          inst; // 指令本身
+    invtlb_inst_t   invtlb_inst; // 是否是invtlb指令
+    jump_inst_t     jump_inst; // 是否是跳转指令 // TODO: 目前似乎还没有用到
+    ll_inst_t       ll_inst; // 是否是原子访问指令
+    lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
+    mem_read_t      mem_read; // 是否需要读取内存
+    mem_signed_t    mem_signed; // 读取出来的数据是否会有符号扩展
+    mem_size_t      mem_size; // 读取出来的数据的字节数目-1; WORD 为 3, HALF-WORD 为 1, BYTE 为 0.
+    mem_write_t     mem_write; // 是否会写入内存
+    mdu_inst_t      mdu_inst; // 是否是 mdu 指令
+    need_fa_t       need_fa; // 完全没有用到 TODO
+    priv_inst_t     priv_inst; // 是否是特权指令
+    rdcnt_inst_t    rdcnt_inst; // 是否是 rdcnt 类型指令
+    rdcntid_inst_t  rdcntid_inst;
+    rdcntvh_inst_t  rdcntvh_inst;
+    rdcntvl_inst_t  rdcntvl_inst;
+    refetch_t       refetch; // TODO: CSR, CACOP, ERTN, IDLE, TLB-relate, DBAR, IBAR, RDCNTVL.W, RD
+    reg_type_r0_t   reg_type_r0; // 
+    reg_type_r1_t   reg_type_r1; // 
+    reg_type_w_t    reg_type_w; // RD, RJD(RJ寄存器，仅RDCNTID指令会用), BL1(R1寄存器), None
+    sc_inst_t       sc_inst; // 是否是原子存储指令
+    slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
+    syscall_inst_t  syscall_inst; // 是否是 syscall 指令
+    target_type_t   target_type; // 只有JIRL的目标地址和寄存器有关，其余均之和PC有关，因此要做区分
+    tlb_inst_t      tlb_inst;
+    tlbfill_inst_t  tlbfill_inst;
+    tlbrd_inst_t    tlbrd_inst;
+    tlbsrch_inst_t  tlbsrch_inst;
+    tlbwr_inst_t    tlbwr_inst;
+} d_decode_info_t;
+
+// 数据通路
+
 typedef struct packed {
     logic [31:0]        pc;
     logic [ 1:0]        mask;
