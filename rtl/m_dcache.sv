@@ -120,6 +120,9 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
     );
 end
 
+
+
+
 /**********************M1 数据传输**********************/
 iq_lsu_pkg_t m1_iq_lsu_pkg;
 always_ff @(posedge clk) begin
@@ -162,6 +165,18 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         .rdata1_o(rdata1)
     );
 end  
+
+/**************************EXCEPTION**************************/
+// input       exc_code;
+logic          execute_exception;
+logic   [5:0]  exc_code_new;
+logic   [31:0] badv;
+logic          ade_exc;
+assign  ade_exc  = (m1_iq_lsu_pkg.msized == 3) ? |badv : (m1_iq_lsu_pkg.msized == 1) ? badv[1] : '0;
+assign  exc_code_new  =  |exc_code_i ? exc_code_i : ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
+assign  execute_exception = ade_exc | (|tlb_exception.ecode);
+assign  badv     = m1_iq_lsu_pkg.vaddr;
+
 /**************************HIT DATA***************************/
 logic [31 : 0] tmp_data;
 

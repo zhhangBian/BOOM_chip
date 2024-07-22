@@ -74,7 +74,7 @@ assign predict_info = b_f_pkg.predict_infos;
 // MMU
 wire [1:0] mem_type = `_MEM_FETCH;
 trans_result_t trans_result;
-tlb_exception_t tlb_exception;
+tlb_exception_t tlb_exception, tlb_exception_q;
 mmu #(
     .TLB_ENTRY_NUM(64),
     .TLB_SWITCH_OFF(0)
@@ -102,10 +102,10 @@ mmu #(
     .va(commit_cache_req.addr),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // icache中，取指
+    .tlb_write_req_i(tlb_write_req_i),
     .trans_result_o(trans_result_c),
     .tlb_exception_o(tlb_exception_c)
 );
-
 
 logic [31 : 0] paddr; // 假设从mmu打一拍传来的paddr
 logic [19 : 0] ppn;
@@ -119,10 +119,13 @@ assign uncache = !trans_result.mat[0];
 always_ff @(posedge clk) begin
     if (!rst_n) begin
         paddr_q <= '0;
+        tlb_exception_q <= '0;
     end else if (!stall_q) begin
         paddr_q <= paddr; 
+        tlb_exception_q <= tlb_exception;
     end else begin
         paddr_q <= paddr_q;
+        tlb_exception_q <= tlb_exception_q;
     end
 end
 
@@ -271,7 +274,14 @@ assign icache_decoder_sender.valid = !stall & |f_d_pkg.mask & !flush_i;
 assign fetch_icache_receiver.ready = !stall ;
 
 // exception
-
+logic          fetch_exception;
+logic  [5:0]   exc_code;
+logic  [31:0]  badv;
+tlb_exception_t tlb_exception_tmp;
+assign tlb_exception_tmp = stall_q ? tlb_exception_q : tlb_exception;
+assign fetch_exception   = (|tlb_exception_tmp.ecode) | (|b_f_pkg_q.pc[1:0]);
+assign exc_code          = (|b_f_pkg_q.pc[1:0]) ? `_ECODE_ADEF : tlb_exception_tmp.ecode;
+assign badv              = b_f_pkg_q.pc;
 
 // fsm , NORMAL -> REFILL(ONLY AXI -> SRAM) -> FINISH -> NORMAL
 // defination for axi handshake
