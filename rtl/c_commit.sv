@@ -1395,6 +1395,17 @@ always_comb begin
                         cache_block_ptr = '0;
                         cache_block_len = 4;
                         cache_dirty_addr = lsu_info[0].cache_dirty_addr;
+                        // 设置相应的AXI请求
+                        commit_axi_req = '0;
+                        commit_axi_req.waddr = cache_dirty_addr;
+                        commit_axi_req.wlen = 4;
+                        commit_axi_req.strb = '1;
+                        commit_axi_awvalid_o = '1;
+                        axi_wait = ~axi_commit_axready_i;
+                        // 设置相应的指针
+                        axi_block_ptr = '0;
+                        axi_block_len = 4;
+                        axi_block_data = '0;
                     end
                 end
             end
@@ -1457,6 +1468,17 @@ always_comb begin
                         cache_block_ptr = '0;
                         cache_block_len = 4;
                         cache_dirty_addr = lsu_info[0].cache_dirty_addr;
+                        // 设置相应的AXI请求
+                        commit_axi_req = '0;
+                        commit_axi_req.waddr = cache_dirty_addr;
+                        commit_axi_req.wlen = 4;
+                        commit_axi_req.strb = '1;
+                        commit_axi_awvalid_o = '1;
+                        axi_wait = ~axi_commit_axready_i;
+                        // 设置相应的指针
+                        axi_block_ptr = '0;
+                        axi_block_len = 4;
+                        axi_block_data = '0;
                     end
                 end
             end
@@ -1516,16 +1538,58 @@ always_comb begin
     end
 
     // 读了立即发送AXI，同时读写
-    else if(ls_fsm_q == S_CACHE_RD) begin
-        if(cache_block_ptr_q == cache_block_len - 1) begin
-            ls_fsm = S_NORMAL;
-            // 设置相应的AXI接口
+    else if(ls_fsm_q == S_CACHE_RD) begin\
+        if(cache_block_ptr_q == cache_block_len) begin
+            
+        end
+        else begin
+            // 读Cache数据
+            cache_block_data[cache_block_ptr_q] = cache_commit_resp_i.data;
+            cache_block_ptr = cache_block_ptr_q + 1;
+            // 设置相应的Cache请求
+            commit_cache_req.addr       = commit_cache_req_q.addr + 4;
+            commit_cache_req.way_choose = commit_cache_req_q.refill;
+            commit_cache_req.tag_data   = '0;
+            commit_cache_req.tag_we     = '0;
+            commit_cache_req.data_data  = '0;
+            commit_cache_req.strb       = '0;
+            commit_cache_req.fetch_sb   = '0;
+        end
+
+        // 等待握手
+        if(axi_wait) begin
+            if(axi_commit_awready_i) begin
+                axi_wait = '0;
+            end
+            else begin
+                axi_wait = '1;
+            end
+        end
+        // 读入数据
+        else begin
+            if(axi_commit_wready_i) begin
+                axi_block_ptr = axi_block_ptr_q + 1;
+            end
+            else begin
+                // 维持请求
+                commit_axi_req.wdata = cache_block_data[axi_block_ptr];
+                commit_axi_wvalid_o = (cache_block_ptr_q > axi_block_ptr_q);
+                commit_axi_wlast = (axi_block_ptr == axi_block_len - 1);
+            end
+        end
+
+        if(axi_block_ptr_q == axi_block_len) begin
+            ls_fsm = S_AXI_RD;
+            // 发送AXI请求
+        end
+        else begin
+            ls_fsm = S_CACHE_RD;
         end
     end
 
-    else if(ls_fsm_q == S_AXI_WB) begin
+    // else if(ls_fsm_q == S_AXI_WB) begin
         
-    end
+    // end
 
     // 读了立即发送Cache，同时读写
     else if(ls_fsm_q == S_AXI_RD) begin

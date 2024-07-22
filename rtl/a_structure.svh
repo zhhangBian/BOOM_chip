@@ -296,6 +296,7 @@ typedef struct packed {
     logic   [1 :0]  refill;     // 选择哪一路重填
     logic           dirty;      // 是否需要写回
     logic           hit_dirty;  // 是否命中dirty位
+    logic   [31:0]  cache_dirty_addr;
     // TODO cache_dirty_addr
     logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
 } lsu_iq_pkg_t;
