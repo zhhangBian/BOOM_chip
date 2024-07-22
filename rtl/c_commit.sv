@@ -304,16 +304,16 @@ always_comb begin
 
 //下面这一大坨就用上面的替代掉了
 /*
-    if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) || 
-            ((ls_fsm_q == S_NORMAL) && commit_icache_valid_o && 
+    if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) ||
+            ((ls_fsm_q == S_NORMAL) && commit_icache_valid_o &&
               icache_commit_valid_i && icache_commit_ready_i)) begin
         commit_flush_info = 2'b01;
-    end 
+    end
 
     else if(|is_lsu//是不是要加valid) begin
         if(ls_fsm_q == S_NORMAL) begin
             if(!&cache_commit_hit) begin
-                flush = '1; 
+                flush = '1;
             end
             else if(is_uncached[0]) begin
                 commit_flush_info = 2'b01;
@@ -479,7 +479,7 @@ wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec;
 //取指异常  判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
 wire fetch_excp    = commit_request_o[0] & rob_commit_i[0].fetch_exception;
 
-//译码异常 下面的信号来自decoder 
+//译码异常 下面的信号来自decoder
 wire syscall_excp  = commit_request_o[0] & rob_commit_i[0].syscall_inst;
 wire break_excp    = commit_request_o[0] & rob_commit_i[0].break_inst;
 wire ine_excp      = commit_request_o[0] & rob_commit_i[0].decode_err;
@@ -856,7 +856,7 @@ always_comb begin
         //下面找对应的表项，同mmu里面的找法
         tlb_update_csr.tlbidx[`_TLBIDX_NE] = 1;
         for (genvar i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
-            if (tlb_entries_q[i].key.e 
+            if (tlb_entries_q[i].key.e
                 && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid))
                 && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
                     tlb_update_csr.tlbidx[`_TLBIDX_INDEX] = i; //不知道这里语法有没有问题
@@ -938,7 +938,7 @@ always_comb begin
             end
             5'h4: begin
                 for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
-                    if (!tlb_entries_q[i].key.g && 
+                    if (!tlb_entries_q[i].key.g &&
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0]) begin
                         tlb_wr_req[i] = 1;
                     end
@@ -946,7 +946,7 @@ always_comb begin
             end
             5'h5: begin
                 for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
-                    if (!tlb_entries_q[i].key.g && 
+                    if (!tlb_entries_q[i].key.g &&
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0] &&
                         vppn_match(rob_commit_i[0].data_rk, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
                         tlb_wr_req[i] = 1;
@@ -962,7 +962,7 @@ always_comb begin
                     end
                 end
             end
-            default: 
+            default:
         endcase
     end
 
@@ -971,7 +971,7 @@ always_comb begin
     end//不提交rob表项则上面全部不用，不知道这样加会不会逻辑更复杂😭
 end
 
-function automatic logic vppn_match(logic [31:0] va, 
+function automatic logic vppn_match(logic [31:0] va,
                                     logic huge_page, logic [18: 0] vppn)
     if (huge_page) begin
         return va[31:22] == vppn[18:9]; //this right
@@ -1221,7 +1221,7 @@ always_comb begin
     axi_block_data      = axi_block_data_q;
     axi_block_ptr       = axi_block_ptr_q;
     axi_block_len       = axi_block_len_q;
-    
+
     commit_axi_araddr_o = '0;
     commit_axi_rlen_o   = '0;
     commit_axi_arvalid_o= '0;
@@ -1240,7 +1240,7 @@ always_comb begin
             icache_wait = '0;
 
             if(cache_tar == 0) begin
-                ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? 
+                ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ?
                             S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
                 fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
@@ -1269,7 +1269,7 @@ always_comb begin
 
                         commit_cache_req.tag_data = '0;
                         commit_cache_req.tag_we   = '1;
-                    end 
+                    end
 
                     // 将Cache无效化，并将数据写回
                     1: begin
@@ -1305,13 +1305,13 @@ always_comb begin
                             commit_cache_req.tag_data     = '0;
                             commit_cache_req.tag_we       = '1;
                         end
-                        else begin 
+                        else begin
                             ls_fsm = S_NORMAL;
                             stall = '0;
                             fsm_flush = '0;
                         end
                     end
-                    default: 
+                    default:
                 endcase
 
             end
@@ -1332,7 +1332,7 @@ always_comb begin
                 axi_wait = ~axi_commit_arready_i;
             end
             else begin
-                ls_fsm = S_UNCACHE_WB;
+                ls_fsm = S_UNCACHED_WB;
                 stall = '1;
                 fsm_flush = '1;
                 // 发起AXI请求
@@ -1384,9 +1384,9 @@ always_comb begin
                         commit_cache_req.way_choose = lsu_info[0].refill;
                         commit_cache_req.tag_data   = '0;
                         commit_cache_req.tag_we     = '0;
-                        commit_cache_req.data_data  = lsu_info[0].wdata;
-                        commit_cache_req.strb       = lsu_info[0].strb;
-                        commit_cache_req.fetch_sb   = |lsu_info[0].strb;
+                        commit_cache_req.data_data  = '0;
+                        commit_cache_req.strb       = '0;
+                        commit_cache_req.fetch_sb   = '0;
                         // 设置相应的指针
                         cache_block_data = '0;
                         cache_block_ptr = '0;
@@ -1443,9 +1443,9 @@ always_comb begin
                         commit_cache_req.way_choose = lsu_info[0].refill;
                         commit_cache_req.tag_data   = get_cache_tag(lus_info.paddr, '1, '0);
                         commit_cache_req.tag_we     = '1;
-                        commit_cache_req.data_data  = lsu_info[0].wdata;
-                        commit_cache_req.strb       = lsu_info[0].strb;
-                        commit_cache_req.fetch_sb   = |lsu_info[0].strb;
+                        commit_cache_req.data_data  = '0;
+                        commit_cache_req.strb       = '0;
+                        commit_cache_req.fetch_sb   = '0;
                     end
                     // 开始重填
                     else begin
@@ -1492,6 +1492,7 @@ always_comb begin
         // 等待握手
         if(axi_wait) begin
             axi_wait = axi_wait_q & ~axi_commit_arready_i;
+            commit_axi_arvalid_o = '1;
         end
         // 读入数据
         else begin
@@ -1501,7 +1502,7 @@ always_comb begin
                 // uncache读入后再刷
                 fsm_flush = '1;
 
-                axi_block_data[axi_block_ptr] = axi_commit_rep_i.rdata;
+                axi_block_data[axi_block_ptr_q] = axi_commit_resp_i.rdata;
             end
         end
     end
@@ -1511,25 +1512,28 @@ always_comb begin
         if(axi_wait) begin
             if(axi_commit_awready_i) begin
                 axi_wait = '0;
+                commit_axi_awvalid_o = '0;
                 // 发送AXI请求
-                commit_axi_req.wdata = axi_block_data[axi_block_ptr];
+                commit_axi_req.wdata = axi_block_data[axi_block_ptr_q];
                 commit_axi_wvalid_o = '1;
                 commit_axi_wlast = '1;
             end
             else begin
                 axi_wait = '1;
+                commit_axi_awvalid_o = '1;
             end
         end
         // 读入数据
         else begin
+            commit_axi_wvalid_o = '1;
+
             if(axi_commit_wready_i) begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
             end
             else begin
                 // 维持请求
-                commit_axi_req.wdata = axi_block_data[axi_block_ptr];
-                commit_axi_wvalid_o = '1;
+                commit_axi_req.wdata = axi_block_data[axi_block_ptr_q];
                 commit_axi_wlast = '1;
             end
         end
@@ -1538,7 +1542,7 @@ always_comb begin
     // 读了立即发送AXI，同时读写
     else if(ls_fsm_q == S_CACHE_RD) begin
         if(cache_block_ptr_q == cache_block_len) begin
-            
+
         end
         else begin
             // 读Cache数据
@@ -1565,13 +1569,13 @@ always_comb begin
         end
         // 读入数据
         else begin
+			commit_axi_wvalid_o = (cache_block_ptr_q > axi_block_ptr_q);
             if(axi_commit_wready_i) begin
                 axi_block_ptr = axi_block_ptr_q + 1;
             end
             else begin
                 // 维持请求
                 commit_axi_req.wdata = cache_block_data[axi_block_ptr];
-                commit_axi_wvalid_o = (cache_block_ptr_q > axi_block_ptr_q);
                 commit_axi_wlast = (axi_block_ptr == axi_block_len - 1);
             end
         end
@@ -1586,7 +1590,7 @@ always_comb begin
                 ls_fsm = S_AXI_RD;
                 stall = '1;
             end
-            
+
             // 设置相应的AXI请求
             commit_axi_req = '0;
             commit_axi_req.raddr = cache_dirty_addr;
@@ -1618,9 +1622,9 @@ always_comb begin
     // 读了立即发送Cache，同时读写
     else if(ls_fsm_q == S_AXI_RD) begin
         if(axi_block_ptr_q == axi_block_len) begin
-            
+
         end
-        else begin  
+        else begin
             // 等待握手
             if(axi_wait) begin
                 axi_wait = axi_wait_q & ~axi_commit_arready_i;
@@ -1656,7 +1660,7 @@ always_comb begin
                 commit_cache_req.strb       = '1;
                 commit_cache_req.fetch_sb   = '0;
             end
-            else begin  
+            else begin
                 commit_cache_req.tag_data   = '0;
                 commit_cache_req.tag_we     = '0;
                 commit_cache_req.data_data  = '0;
@@ -1693,11 +1697,11 @@ end
 // 时序逻辑只保存状态
 always_ff @(posedge clk) begin
     if(~rst_n) begin
-        
+
     end
     else begin
         if(cur_exception) begin
-            
+
         end
         else begin
             ls_fsm_q            <= ls_fsm;
