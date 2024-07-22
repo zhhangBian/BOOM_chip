@@ -138,12 +138,12 @@ logic axi_icache_ready;
 logic axi_icache_valid;
 logic [31:0] axi_icache_data;
 
-i_cache # (
+icache # (
     .WAY_NUM(2), // default
     .WORD_SIZE(64), // default
     .DATA_DEPTH(128), // default
     .BLOCK_SIZE(4 * 64), // default
-) i_cache_inst (
+) icache_inst (
     .clk(clk),
     .rst_n(rst_n),
     .flush_i(flush),
