@@ -1,4 +1,4 @@
-`include "a_iq_defines.svh"
+`include "a_defines.svh"
 
 // 用于统一在 IQ发射时等待唤醒的数据一拍
 module data_wkup #(
@@ -35,7 +35,7 @@ always_ff @(posedge clk) begin
 end
 
 always_comb begin
-    for(genvar i = 0; i < REG_COUNT - 1; i += 1) begin
+    for(integer i = 0; i < REG_COUNT - 1; i += 1) begin
         real_data_o[i] = (|(wkup_hit_qq[i])) ? '0 : data_q[i];
 
         for(integer j = 0 ; j < WKUP_COUNT - 1 ; j += 1) begin

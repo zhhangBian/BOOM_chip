@@ -1,8 +1,6 @@
 `ifndef _BOOM_STRUCTURE_HEAD
 `define _BOOM_STRUCTURE_HEAD
 
-`include "a_branch_predict.svh"
-
 /*============================== Branch Predict ==============================*/
 // BPU 类型定义
 typedef enum logic[1:0] {

@@ -1,4 +1,4 @@
-`include "a_structure.svh"
+`include "a_defines.svh"
 
 // 将IQ分为了静态信息和动态信息
 // IQ_entry的表项
@@ -82,7 +82,7 @@ always_ff @(posedge clk) begin
     if(~rst_n || flush) begin
         entry_valid     <= '0;
     end
-    else if begin
+    else begin
         if(init_i) begin
             entry_valid <= '1;
         end
@@ -107,7 +107,7 @@ always_ff @(posedge clk) begin
 end
 
 // 更新数据
-for(integer i = 0; i < REG_COUNT; i += 1) begin
+for(genvar i = 0; i < REG_COUNT; i += 1) begin
     always_ff @(posedge clk) begin
         if(~rst_n || flush) begin
             entry_data[i]   <= '0;
@@ -157,12 +157,12 @@ end
 
 // ------------------------------------------------------------------
 // 生成wkup数据
-for(integer i = 0; i < REG_COUNT; i += 1) begin
+for(genvar i = 0; i < REG_COUNT; i += 1) begin
     always_comb begin
         wkup_hit = '0;
         wkup_result[i] = '0;
 
-        for(genvar j = 0; j < WKUP_COUNT; j += 1) begin
+        for(integer j = 0; j < WKUP_COUNT; j += 1) begin
             wkup_hit[i][j] |= (wkup_reg_id_i[j] == entry_reg_id[i]) &
                               wkup_valid_i[j].valid &
                               entry_valid &
@@ -181,7 +181,7 @@ always_comb begin
 end
 
 // wkup等待两拍后唤醒
-for (integer i = 0; i < REG_COUNT; i++) begin
+for (genvar i = 0; i < REG_COUNT; i++) begin
     always_ff @(posedge clk) begin
         if(~rst_n || flush) begin
             wkup_hit_q[i]   <= '0;
@@ -201,12 +201,12 @@ end
 
 // ------------------------------------------------------------------
 // 生成CDB数据
-for(integer i = 0; i < REG_COUNT; i += 1) begin
+for(genvar i = 0; i < REG_COUNT; i += 1) begin
     always_comb begin
         cdb_hit[i] = '0;
         cdb_result[i] = '0;
 
-        for(genvar j = 0; j < CDB_COUNT; j += 1) begin
+        for(integer j = 0; j < CDB_COUNT; j += 1) begin
             cdb_hit[i][j] = (cdb_reg_id_i[j] == entry_reg_id[i]) &
                             cdb_valid_i[i] &
                             (~data_ready_q[i]);

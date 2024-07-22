@@ -1,5 +1,4 @@
 `include "a_defines.svh"
-`include "a_interface.svh"
 
 module mdu_muler (
     input   wire    clk,

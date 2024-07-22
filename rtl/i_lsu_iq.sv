@@ -1,5 +1,4 @@
-`include "a_structure.svh"
-`include "a_iq_defines.svh"
+`include "a_defines.svh"
 
 module lsu_iq # (
     // 设置IQ共有4个表项
@@ -61,7 +60,7 @@ logic [IQ_SIZE - 1:0] entry_empty_q;// 对应的表项是否空闲
 // ------------------------------------------------------------------
 // 配置IQ逻辑
 // 当前的表项数
-logic [PTR_LEN - 1:0]   free_cnt, free_cnt_q
+logic [PTR_LEN - 1:0]   free_cnt, free_cnt_q;
 // 执行的指针
 logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 // 写的指针
@@ -116,7 +115,7 @@ decode_info_t [IQ_SIZE - 1:0]    iq_di;
 
 always_comb begin
     entry_select = '0;
-    for(genvar i = 0; i < IQ_SIZE; i += 1) begin
+    for(integer i = 0; i < IQ_SIZE; i += 1) begin
         if(i[PTR_LEN - 1:0] == iq_head_q) begin
             entry_select[i] |= entry_ready[i];
         end
@@ -251,10 +250,10 @@ always_comb begin
     select_data         = '0;
     select_wkup_hit_q   = '0;
     // 选中了提前唤醒
-    wkup_valid_o        = '0,
+    wkup_valid_o        = '0;
     wkup_reg_id         = '0;
 
-    for(genvar i = 0; i < IQ_SIZE; i += 1) begin
+    for(integer i = 0; i < IQ_SIZE; i += 1) begin
         // 如果发射对应指令
         if(entry_select[i]) begin
             select_di       |= entry_di[i];
@@ -268,7 +267,7 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    if (!rst_n | flush) begin begin
+    if (!rst_n | flush) begin
         select_di_q  <= '0;
         select_di_qq <= '0;
     end
@@ -286,7 +285,7 @@ data_wkup #(
 ) data_wkup (
     .clk,
     .rst_n,
-    .flush
+    .flush,
 
     .ready_i(excute_ready),
     .wkup_hit_q_i(select_wkup_hit_q),

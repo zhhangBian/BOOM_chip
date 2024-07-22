@@ -230,7 +230,7 @@ end
 
 // hit逻辑，比dcache简单得多
 logic [WAY_NUM - 1 : 0] tag_hit;
-for (integer i = 0; i < WAY_NUM ; i++) begin
+for (genvar i = 0; i < WAY_NUM ; i++) begin
     assign tag_hit[i] = (tag_ans0[i].tag == ppn) | (b_f_pkg_q.mask == '0);
     assign cache_commit_resp.way_hit[i] = (tag_ans1[i].tag == trans_result_c.pa[31:12]);
 end
@@ -298,7 +298,7 @@ typedef enum logic [4:0] {
     F_UNCACHE_S, // uncache握手成功
     F_MISS,      // 缺失
     F_MISS_S,    // miss握手成功
-    F_CACOP,
+    F_CACOP
 } fsm_state;
 
 fsm_state fsm_cur, fsm_next;

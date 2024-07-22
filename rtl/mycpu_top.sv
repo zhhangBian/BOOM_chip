@@ -142,16 +142,16 @@ icache # (
     .WAY_NUM(2), // default
     .WORD_SIZE(64), // default
     .DATA_DEPTH(128), // default
-    .BLOCK_SIZE(4 * 64), // default
+    .BLOCK_SIZE(4 * 64) // default
 ) icache_inst (
     .clk(clk),
     .rst_n(rst_n),
     .flush_i(flush),
     // CSR
-    .csr_i(csr)
+    .csr_i(csr),
     // cpu 侧信号
     .fetch_icache_receiver(fifo_f_handshake.receiver),
-    .icache_decoder_sender(f_fifo_handshake.sender)
+    .icache_decoder_sender(f_fifo_handshake.sender),
 
     .addr_valid_o(icache_axi_addr_valid),
     .addr_o(icache_axi_addr),
@@ -219,7 +219,7 @@ logic [1:0][4:0] commit_arf_areg;
 logic [1:0][5:0] commit_rob_areg;
 
 assign c_retire = commit_arf_we;
-for(integer i = 0; i < 2; i += 1) begin
+for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         c_retire_infos[i].w_valid = commit_arf_we[i];
         c_retire_infos[i].arf_id = commit_arf_areg[i];
@@ -277,7 +277,7 @@ logic [1:0]       cdb_valid;
 handshake_if #(.T(cdb_info_t)) fu_cdb  [3 : 0] ();
 handshake_if #(.T(cdb_info_t)) fu_fifo [3 : 0] ();
 cdb_info_t fu_cdb_data [3 : 0];
-for (integer i = 0; i < 4; i++) begin
+for (genvar i = 0; i < 4; i++) begin
     assign fu_fifo[i].data = fu_cdb_data[i];
 end
 
@@ -475,9 +475,9 @@ cdb_info_t [1:0] cdb_infos;
 cdb #(
     .PORT_COUNT(4)
 ) cdb (
-    .(clk),
-    .(rst_n),
-    .(flush),
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush(flush),
 
     .fifo_handshake(fu_cdb),
     .cdb_data_o(cdb_infos)
@@ -619,7 +619,7 @@ axi_crossbar # (
     .ADDR_WIDTH(32), // 地址位宽， 32 位
     .S_ID_WIDTH(4), // 官方包是 4 
     .M_ADDR_WIDTH(32'd32), // ICACHE和DCACHE的数据位宽应该都是32位？TODO: 取决于物理地址宽度
-    .M_CONNECT_WRITE(2'b01), // TODO: 设置成仅 DCache 侧可写
+    .M_CONNECT_WRITE(2'b01) // TODO: 设置成仅 DCache 侧可写
 ) axi_crossbar_2x1_inst (
     .clk(aclk),
     .rst(!aresetn), // TODO: recheck

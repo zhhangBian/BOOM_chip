@@ -95,7 +95,7 @@ assign btb_raddr = hash(pc);
 assign btb_waddr = hash(correct_info.pc);
 assign btb_we = correct_info.updata & (correct_info.type_miss | correct_info.target_miss);
 
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
     assign btb_valid[i] = btb_rdata[i].is_branch & btb_tag_match[i];
 end
@@ -142,7 +142,7 @@ assign bht_raddr = btb_raddr; // = hash(pc);
 assign bht_waddr = btb_waddr; // = hash(correct_info.pc);
 assign bht_we = correct_info.update;
 
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign bht_wdata[i].history = correct_info.type_miss ? {{(`BPU_HISTORY_LEN-1){1'b0}}, correct_info.taken} :
                                     {correct_info.history[3:0], correct_info.taken};
     assign bht_rdata[i] = bht[i][bht_raddr];
@@ -198,7 +198,7 @@ logic                               pht_we;
 
 assign pht_we = correct_info.update;
 
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign pht_waddr[i].scnt = next_scnt(correct_info.scnt, correct_info.taken);
     assign pht_raddr[i] = {bht_rdata[i].history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
 end
@@ -225,7 +225,7 @@ logic [1:0][31:0] target_pc;
 logic [31:0] pc_add_4_8;
 assign pc_add_4_8 = {pc[31:3]+1, 3'b0};
 
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     // branch[i] 表示第 i 条指令是否要分支出去 TODO: 
     // branch 的可能：
     // 1. !btb_rdata[i].is_cond_br 
@@ -249,10 +249,10 @@ always_comb begin
 end
 
 // Output
-predict_infos_t [1:0] predict_infos;
+predict_infos_t predict_infos[1:0];
 b_f_pkg_t b_f_pkg;
 
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign predict_infos[i].target_pc   =  target_pc[i];
     assign predict_infos[i].next_pc     =  next_pc[i];
     assign predict_infos[i].is_branch   =  btb_rdata[i].is_branch;

@@ -801,7 +801,8 @@ always_comb begin
         `_CSR_TLBRENTRY:commit_csr_data_o  |= csr_q.tlbrentry;
         `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
         `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
-        default:
+        default: begin
+        end
     endcase
 end
 
@@ -840,117 +841,117 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num);
     begin
         unique case (csr_num)
             `_CSR_CRMD: begin
-                write_csr_mask(crmd, `_CRMD_PLV);
-                write_csr_mask(crmd, `_CRMD_IE);
-                write_csr_mask(crmd, `_CRMD_DA);
-                write_csr_mask(crmd, `_CRMD_PG);
-                write_csr_mask(crmd, `_CRMD_DATF);
-                write_csr_mask(crmd, `_CRMD_DATM);
+                `write_csr_mask(crmd, `_CRMD_PLV);
+                `write_csr_mask(crmd, `_CRMD_IE);
+                `write_csr_mask(crmd, `_CRMD_DA);
+                `write_csr_mask(crmd, `_CRMD_PG);
+                `write_csr_mask(crmd, `_CRMD_DATF);
+                `write_csr_mask(crmd, `_CRMD_DATM);
             end
             `_CSR_PRMD: begin
-                write_csr_mask(prmd, `_PRMD_PIE);
-                write_csr_mask(prmd, `_PRMD_PPLV);
+                `write_csr_mask(prmd, `_PRMD_PIE);
+                `write_csr_mask(prmd, `_PRMD_PPLV);
             end
             `_CSR_EUEN: begin
-                write_csr_mask(euen, `_EUEN_FPE);
+                `write_csr_mask(euen, `_EUEN_FPE);
             end
             `_CSR_ECFG: begin
-                write_csr_mask(ecfg, `_ECFG_LIE1);
-                write_csr_mask(ecfg, `_ECFG_LIE2);
+                `write_csr_mask(ecfg, `_ECFG_LIE1);
+                `write_csr_mask(ecfg, `_ECFG_LIE2);
             end
             `_CSR_ESTAT: begin
-                write_csr_mask(estat, `_ESTAT_SOFT_IS);
+                `write_csr_mask(estat, `_ESTAT_SOFT_IS);
             end
             `_CSR_ERA: begin
-                write_csr_mask(era, 31:0);
+                `write_csr_mask(era, 31:0);
             end
             `_CSR_BADV: begin
-                write_csr_mask(badv, 31:0);
+                `write_csr_mask(badv, 31:0);
             end
             `_CSR_EENTRY: begin
-                write_csr_mask(eentry, `_EENTRY_VA);
+                `write_csr_mask(eentry, `_EENTRY_VA);
             end
             `_CSR_CPUID: begin
                 //do nothing
             end
             `_CSR_SAVE0: begin
-                write_csr_mask(save0, 31:0);
+                `write_csr_mask(save0, 31:0);
             end
             `_CSR_SAVE1: begin
-                write_csr_mask(save1, 31:0);
+                `write_csr_mask(save1, 31:0);
             end
             `_CSR_SAVE2: begin
-                write_csr_mask(save2, 31:0);
+                `write_csr_mask(save2, 31:0);
             end
             `_CSR_SAVE3: begin
-                write_csr_mask(save3, 31:0);
+                `write_csr_mask(save3, 31:0);
             end
             `_CSR_LLBCTL: begin
                 if (write_data[`_LLBCT_WCLLB]) begin
                     csr.llbit = 0;
                 end
-                write_csr_mask(llbctl, `_LLBCT_KLO);
+                `write_csr_mask(llbctl, `_LLBCT_KLO);
             end
             `_CSR_TLBIDX: begin
-                write_csr_mask(tlbidx, `_TLBIDX_INDEX);
-                write_csr_mask(tlbidx, `_TLBIDX_PS);
-                write_csr_mask(tlbidx, `_TLBIDX_NE);
+                `write_csr_mask(tlbidx, `_TLBIDX_INDEX);
+                `write_csr_mask(tlbidx, `_TLBIDX_PS);
+                `write_csr_mask(tlbidx, `_TLBIDX_NE);
             end
             `_CSR_TLBEHI: begin
-                write_csr_mask(tlbehi, `_TLBEHI_VPPN);
+                `write_csr_mask(tlbehi, `_TLBEHI_VPPN);
             end
             `_CSR_TLBELO0: begin
-                write_csr_mask(tlbelo0, `_TLBELO_TLB_V);
-                write_csr_mask(tlbelo0, `_TLBELO_TLB_D);
-                write_csr_mask(tlbelo0, `_TLBELO_TLB_PLV);
-                write_csr_mask(tlbelo0, `_TLBELO_TLB_MAT);
-                write_csr_mask(tlbelo0, `_TLBELO_TLB_G);
-                write_csr_mask(tlbelo0, `_TLBELO_TLB_PPN);
+                `write_csr_mask(tlbelo0, `_TLBELO_TLB_V);
+                `write_csr_mask(tlbelo0, `_TLBELO_TLB_D);
+                `write_csr_mask(tlbelo0, `_TLBELO_TLB_PLV);
+                `write_csr_mask(tlbelo0, `_TLBELO_TLB_MAT);
+                `write_csr_mask(tlbelo0, `_TLBELO_TLB_G);
+                `write_csr_mask(tlbelo0, `_TLBELO_TLB_PPN);
             end
             `_CSR_TLBELO1: begin
-                write_csr_mask(tlbelo1, `_TLBELO_TLB_V);
-                write_csr_mask(tlbelo1, `_TLBELO_TLB_D);
-                write_csr_mask(tlbelo1, `_TLBELO_TLB_PLV);
-                write_csr_mask(tlbelo1, `_TLBELO_TLB_MAT);
-                write_csr_mask(tlbelo1, `_TLBELO_TLB_G);
-                write_csr_mask(tlbelo1, `_TLBELO_TLB_PPN);
+                `write_csr_mask(tlbelo1, `_TLBELO_TLB_V);
+                `write_csr_mask(tlbelo1, `_TLBELO_TLB_D);
+                `write_csr_mask(tlbelo1, `_TLBELO_TLB_PLV);
+                `write_csr_mask(tlbelo1, `_TLBELO_TLB_MAT);
+                `write_csr_mask(tlbelo1, `_TLBELO_TLB_G);
+                `write_csr_mask(tlbelo1, `_TLBELO_TLB_PPN);
             end
             `_CSR_ASID: begin
-                write_csr_mask(asid, `_ASID);
+                `write_csr_mask(asid, `_ASID);
             end
             `_CSR_PGDL: begin
-                write_csr_mask(pgdl, `_PGD_BASE);
+                `write_csr_mask(pgdl, `_PGD_BASE);
             end
             `_CSR_PGDH: begin
-                write_csr_mask(pgdh, `_PGD_BASE);
+                `write_csr_mask(pgdh, `_PGD_BASE);
             end
             `_CSR_PGD: begin
                 //do nothing
             end
             `_CSR_TLBRENTRY: begin
-                write_csr_mask(tlbrentry, `_TLBRENTRY_PA);
+                `write_csr_mask(tlbrentry, `_TLBRENTRY_PA);
             end
             `_CSR_DMW0: begin
-                write_csr_mask(dmw0, `_DMW_PLV0);
-                write_csr_mask(dmw0, `_DMW_PLV3);
-                write_csr_mask(dmw0, `_DMW_MAT);
-                write_csr_mask(dmw0, `_DMW_PSEG);
-                write_csr_mask(dmw0, `_DMW_VSEG);
+                `write_csr_mask(dmw0, `_DMW_PLV0);
+                `write_csr_mask(dmw0, `_DMW_PLV3);
+                `write_csr_mask(dmw0, `_DMW_MAT);
+                `write_csr_mask(dmw0, `_DMW_PSEG);
+                `write_csr_mask(dmw0, `_DMW_VSEG);
             end
             `_CSR_DMW1: begin
-                write_csr_mask(dmw1, `_DMW_PLV1);
-                write_csr_mask(dmw1, `_DMW_PLV3);
-                write_csr_mask(dmw1, `_DMW_MAT);
-                write_csr_mask(dmw1, `_DMW_PSEG);
-                write_csr_mask(dmw1, `_DMW_VSEG);
+                `write_csr_mask(dmw1, `_DMW_PLV0);
+                `write_csr_mask(dmw1, `_DMW_PLV3);
+                `write_csr_mask(dmw1, `_DMW_MAT);
+                `write_csr_mask(dmw1, `_DMW_PSEG);
+                `write_csr_mask(dmw1, `_DMW_VSEG);
             end
             `_CSR_TID: begin
-                write_csr_mask(tid, 31:0);
+                `write_csr_mask(tid, 31:0);
             end
             `_CSR_TCFG: begin
-                write_csr_mask(tcfg, `_TCFG_EN);
-                write_csr_mask(tcfg, `_TCFG_PERIODIC);
-                write_csr_mask(tcfg, `_TCFG_INITVAL);
+                `write_csr_mask(tcfg, `_TCFG_EN);
+                `write_csr_mask(tcfg, `_TCFG_PERIODIC);
+                `write_csr_mask(tcfg, `_TCFG_INITVAL);
             end
             `_CSR_TVAL: begin
                 //do nothing
@@ -960,7 +961,9 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num);
                     timer_interrupt_clear = 1;
                 end
             end
-            default: //do nothing
+            default: //do nothing 
+            begin
+            end
         endcase
     end
 endtask
@@ -980,7 +983,7 @@ always_comb begin
             write_csr(rob_commit_i[0].data_rk, csr_num);//rk是rd TODO
         end
 
-        `_CSR_XCHG: begin
+        `_CSR_CSRXCHG: begin
             write_csr((rob_commit_i[0].data_rk & rob_commit_i[0].data_rj), csr_num);//rk是rd
         end
 
@@ -1045,7 +1048,7 @@ always_comb begin
     if (cur_tlbsrch) begin
         //下面找对应的表项，同mmu里面的找法
         tlb_update_csr.tlbidx[`_TLBIDX_NE] = 1;
-        for (genvar i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
+        for (integer i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
             if (tlb_entries_q[i].key.e
                 && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid))
                 && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
@@ -1113,21 +1116,21 @@ always_comb begin
                 tlb_wr_req = '1;
             end
             5'h2: begin
-                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
+                for (integer i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (tlb_entries_q[i].key.g) begin
                         tlb_wr_req[i] = 1;
                     end
                 end
             end
             5'h3: begin
-                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
+                for (integer i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (!tlb_entries_q[i].key.g) begin
                         tlb_wr_req[i] = 1;
                     end
                 end
             end
             5'h4: begin
-                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
+                for (integer i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (!tlb_entries_q[i].key.g &&
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0]) begin
                         tlb_wr_req[i] = 1;
@@ -1135,7 +1138,7 @@ always_comb begin
                 end
             end
             5'h5: begin
-                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
+                for (integer i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if (!tlb_entries_q[i].key.g &&
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0] &&
                         vppn_match(rob_commit_i[0].data_rk, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
@@ -1144,7 +1147,7 @@ always_comb begin
                 end
             end
             5'h6: begin
-                for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
+                for (integer i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
                     if ((tlb_entries_q[i].key.g ||
                         tlb_entries_q[i].key.asid == rob_commit_i[0].data_rj[9:0]) &&
                         vppn_match(rob_commit_i[0].data_rk, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
@@ -1152,7 +1155,8 @@ always_comb begin
                     end
                 end
             end
-            default:
+            default: begin
+            end
         endcase
     end
 
@@ -1162,7 +1166,7 @@ always_comb begin
 end
 
 function automatic logic vppn_match(logic [31:0] va,
-                                    logic huge_page, logic [18: 0] vppn)
+                                    logic huge_page, logic [18: 0] vppn);
     if (huge_page) begin
         return va[31:22] == vppn[18:9]; //this right
     end else begin
@@ -1212,7 +1216,7 @@ end
 
 //周期结束的时候更新进tlb，同时也发出去更新mmu里面的tlb
 always_ff @( posedge clk ) begin
-    for (genvar i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
+    for (integer i = 0; i < `_TLB_ENTRY_NUM; i = i + 1) begin
         if (~cur_exception_q & tlb_wr_req_q[i]) begin
             tlb_entries_q[i] <= tlb_update_entry_q;
         end
@@ -1520,7 +1524,8 @@ always_comb begin
                             fsm_flush = '0;
                         end
                     end
-                    default:
+                    default: begin
+                    end
                 endcase
 
             end

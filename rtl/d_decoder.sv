@@ -1,4 +1,4 @@
-`include "a_decoder.svh"
+`include "a_defines.svh"
 
 function logic [31:0] inst_to_data_imm (input logic[31:0] inst, input imm_type_t data_imm_type);
     logic [31:0] ret;
@@ -53,7 +53,7 @@ assign sender.valid = receiver.valid;
 assign receiver.ready = sender.ready;
 
 // 内置两个decoder, decode_infos 生成逻辑
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     basic_decoder basic_decoder (
         .ins_i(insts_i[i]),
         .decode_info_o(decode_infos[i])
@@ -66,7 +66,7 @@ assign d_r_pkg.pc = pc;
 // 2024/07/22 ADD
 assign d_r_pkg.predict_infos = receiver.data.predict_infos;
 assign d_r_pkg.fetch_exc_info = receiver.data.fetch_exc_info;
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.w_reg[i] = |decode_infos[i].reg_type_w;
     assign d_r_pkg.w_mem[i] = |decode_infos[i].mem_type_write;
     assign d_r_pkg.reg_need[2*i    ] = decode_infos[i].reg_type_r0 != `_REG_ZERO; // & decode_infos[i].reg_type_r0 != `_REG_IMM;
@@ -77,12 +77,12 @@ for (integer i = 0; i < 2; i=i+1) begin
 end
 
 // arftable逻辑
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     logic [31:0] inst;
     assign inst = decode_infos[i].inst;
 
     logic [4:0] rd, rj, rk;
-    assign rd = inst[ 4:0 ]
+    assign rd = inst[ 4:0 ];
     assign rj = inst[ 9:5 ];
     assign rk = inst[14:10];
 
@@ -114,7 +114,7 @@ for (integer i = 0; i < 2; i=i+1) begin
 end
 
 // 立即数逻辑
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     logic [31:0] inst;
     assign inst = decode_infos[i].inst;
 
@@ -123,12 +123,12 @@ for (integer i = 0; i < 2; i=i+1) begin
 end
 
 // predict_infos 逻辑
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.predict_infos[i] = receiver.predict_infos[i];
 end
 
 // ALU 信号逻辑
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.grand_op = decode_infos[i].alu_grand_op;
     assign d_r_pkg.op = decode_infos[i].alu_op;
     assign d_r_pkg.msigned = decode_infos[i].mem_signed;
@@ -136,7 +136,7 @@ for (integer i = 0; i < 2; i=i+1) begin
 end
 
 // 指令类型
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.alu_type[i] = decode_infos[i].alu_inst;
     assign d_r_pkg.mdu_type[i] = decode_infos[i].mdu_inst;
     assign d_r_pkg.lsu_type[i] = decode_infos[i].lsu_inst;
@@ -149,7 +149,7 @@ for (integer i = 0; i < 2; i=i+1) begin
 end
 
 // 特殊指令的独热信号
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.break_inst[i] = decode_infos[i].break_inst;
     assign d_r_pkg.cacop_inst[i] = decode_infos[i].cacop_inst;
     assign d_r_pkg.dbar_inst[i] = decode_infos[i].dbar_inst;

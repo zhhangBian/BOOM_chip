@@ -15,10 +15,10 @@ module p_dispatch #(
     handshake_if.sender              p_alu_sender_0, // 2 alu queues
     handshake_if.sender              p_alu_sender_1,
     handshake_if.sender              p_lsu_sender,
-    handshake_if.sender              p_mdu_sender,
+    handshake_if.sender              p_mdu_sender
 );
 
-decode_info_t [1:0] p_di,
+decode_info_t p_di [1:0];
 
 // handshake signal
 logic  lsu_ready, mdu_ready;
@@ -198,7 +198,7 @@ always_comb begin
 end
 
 // 到四个发射队列的 decode_info_t 逻辑
-for (integer i = 0; i < 2; i=i+1) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     assign p_di[i].pc = r_p_pkg.pc[i];
     assign p_di[i].imm = r_p_pkg.addr_imm[i];
     assign p_di[i].if_jump = r_p_pkg.if_jump[i];

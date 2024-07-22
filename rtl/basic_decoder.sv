@@ -19,8 +19,7 @@
  *      3. 
  */
 
-`include "a_csr.svh"
-`include "a_decoder.svh"
+`include "a_defines.svh"
 
 module basic_decoder (
     input logic[31:0]       ins_i, // input data include **ONLY ONE** 32-bit instructions.
@@ -184,7 +183,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
-            decode_info_o.alu_op = `SFT_SRL;
+            decode_info_o.alu_op = `_SFT_SRL;
         end
         // SRA.W
         32'b00000000000110000???????????????: begin

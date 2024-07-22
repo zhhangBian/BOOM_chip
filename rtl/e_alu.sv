@@ -71,7 +71,7 @@ always_comb begin
         bw_result = r0_i & (~r1_i);
     end
 
-    `_BW_NORN: begin
+    `_BW_ORN: begin
         bw_result = r0_i | (~r1_i);
     end
 
@@ -85,11 +85,11 @@ end
 always_comb begin
     case (op)
     `_LI_LUI: begin
-        li_result = {r1_i[19:0], 12'0};
+        li_result = {r1_i[19:0], 12'b0};
     end
 
     `_LI_PCADDUI: begin
-        li_result = {r1_i[19:0], 12'0} + pc_i;
+        li_result = {r1_i[19:0], 12'b0} + pc_i;
     end
 
     default: begin

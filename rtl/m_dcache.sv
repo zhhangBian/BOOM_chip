@@ -255,7 +255,7 @@ always_comb begin
     w_sb_entry.write_data  = m1_iq_lsu_pkg.wdata;
     w_sb_entry.wstrb       = m1_iq_lsu_pkg.strb;
     w_sb_entry.valid       = '1;
-    w_sb_entry.uncached    = uncache/* MMU结果 */
+    w_sb_entry.uncached    = uncache;/* MMU结果 */
     w_sb_entry.hit         = tag_hit;
 end
 /**************************LW VALID*************************/

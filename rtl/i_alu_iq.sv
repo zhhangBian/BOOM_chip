@@ -1,5 +1,4 @@
-`include "a_structure.svh"
-`include "a_iq_defines.svh"
+`include "a_defines.svh"
 
 module alu_iq # (
     // 设置IQ共有4个表项
@@ -61,7 +60,7 @@ always_comb begin
         if(choose[i]) begin
             p_di_i      |= p_di_c[i];
             p_data_i    |= p_data_c[i];
-            p_reg_id_i  != p_reg_id_c[i];
+            p_reg_id_i  |= p_reg_id_c[i];
             p_valid_i   |= p_valid_c[i];
         end
     end
@@ -250,7 +249,7 @@ always_comb begin
     select_data         = '0;
     select_wkup_hit_q   = '0;
     // 选中了提前唤醒
-    wkup_valid_o        = '0,
+    wkup_valid_o        = '0;
     wkup_reg_id         = '0;
 
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
@@ -285,7 +284,7 @@ data_wkup #(
 ) data_wkup (
     .clk,
     .rst_n,
-    .flush
+    .flush,
 
     .ready_i(excute_ready),
     .wkup_hit_q_i(select_wkup_hit_q),

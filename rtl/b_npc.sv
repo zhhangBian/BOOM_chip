@@ -3,7 +3,7 @@
  * It only generate pc+8 result.
  */
 
-`include "define.svh"
+`include "a_defines.svh"
 
 module f_npc (
     input wire                  clk,
