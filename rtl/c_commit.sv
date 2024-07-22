@@ -1149,12 +1149,8 @@ typedef enum logic[4:0] {
     S_NORMAL,
     // 将Cache的内容读出
     S_CACHE_RD,
-    // 将选定的脏块写回
-    S_AXI_WB,
     // 通过AXI总线读出内容
     S_AXI_RD,
-    // 写入Cache
-    S_CACHE,
     // UnCached情况下直接发起AXI请求
     S_UNCACHED_RD,
     S_UNCACHED_WB,
@@ -1247,7 +1243,7 @@ always_comb begin
                 ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? 
                             S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
-                fsm_flush = '1;
+                fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
                 icache_wait = ~icache_commit_ready_i;
 
                 commit_icache_valid_o      = '1;
@@ -1277,7 +1273,6 @@ always_comb begin
 
                     // 将Cache无效化，并将数据写回
                     1: begin
-                        fsm_flush = '1;
                         // 将Cache的tag无效化
                         commit_cache_req.tag_data  = '0;
                         commit_cache_req.tag_we    = '1;
@@ -1285,8 +1280,8 @@ always_comb begin
                         if (lsu_info[0].cacop_dirty) begin
                             ls_fsm = S_CACHE_RD;
                             stall = '1;
-                            // 设置后续状态机的属性
                             axi_back_target = '1;
+                            // 设置后续状态机的属性
                             cache_block_ptr = '0;
                             cache_block_len = 4;
                             cache_block_data = '0;
@@ -1295,16 +1290,16 @@ always_comb begin
                         else begin
                             ls_fsm = S_NORMAL;
                             stall = '0;
+                            fsm_flush = '1;
                         end
                     end
 
                     2: begin
                         // 如果命中再维护
                         if(cache_commit_hit) begin
-                            ls_fsm = S_CACHE_RD;
-                            // 脏的话再阻塞
+                            ls_fsm = lsu_info[0].hit_dirty ? S_CACHE_RD : S_NORMAL;
                             stall = lsu_info[0].hit_dirty;
-                            fsm_flush = '1;
+                            axi_back_target = lsu_info[0].hit_dirty;
                             // 将Cache无效化，先读出对应的tag
                             commit_cache_req.way_choose   = lsu_info[0].tag_hit;
                             commit_cache_req.tag_data     = '0;
@@ -1362,6 +1357,7 @@ always_comb begin
                     fsm_flush = '0;
                 end
                 else begin
+                    ls_fsm = '1;
                     // 不是脏的，发起AXI请求写入Cache
                     if(~cache_commit_dirty[0]) begin
                         ls_fsm = S_AXI_RD;
@@ -1382,6 +1378,7 @@ always_comb begin
                     else begin
                         ls_fsm = S_CACHE_RD;
                         stall = '1;
+                        axi_back_target = '0;
                         // 设置相应的Cache请求
                         commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
                         commit_cache_req.way_choose = lsu_info[0].refill;
@@ -1454,6 +1451,7 @@ always_comb begin
                     else begin
                         ls_fsm = S_CACHE_RD;
                         stall = '1;
+                        axi_back_target = '0;
                         // 设置相应的Cache数据
                         // 对齐一块的数据
                         commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
@@ -1538,7 +1536,7 @@ always_comb begin
     end
 
     // 读了立即发送AXI，同时读写
-    else if(ls_fsm_q == S_CACHE_RD) begin\
+    else if(ls_fsm_q == S_CACHE_RD) begin
         if(cache_block_ptr_q == cache_block_len) begin
             
         end
@@ -1579,21 +1577,92 @@ always_comb begin
         end
 
         if(axi_block_ptr_q == axi_block_len) begin
-            ls_fsm = S_AXI_RD;
-            // 发送AXI请求
+            if(axi_back_target) begin
+                ls_fsm = S_NORMAL;
+                stall = '0;
+                fsm_flush = '1;
+            end
+            else begin
+                ls_fsm = S_AXI_RD;
+                stall = '1;
+            end
+            
+            // 设置相应的AXI请求
+            commit_axi_req = '0;
+            commit_axi_req.raddr = cache_dirty_addr;
+            commit_axi_req.rlen = 4;
+            commit_axi_req.strb = '0;
+            commit_axi_arvalid_o = '1;
+
+            // 设置相应的指针
+            axi_block_ptr = '0;
+            axi_block_len = 4;
+            axi_block_data = '0;
+
+            if(axi_commit_arready_i) begin
+                axi_wait = '0;
+                // 设置相应的指针
+                cache_block_ptr = '0;
+                cache_block_len = 4;
+                cache_block_data = '0;
+            end
+            else begin
+                axi_wait = '1;
+            end
         end
         else begin
             ls_fsm = S_CACHE_RD;
         end
     end
 
-    // else if(ls_fsm_q == S_AXI_WB) begin
-        
-    // end
-
     // 读了立即发送Cache，同时读写
     else if(ls_fsm_q == S_AXI_RD) begin
-        
+        if(axi_block_ptr_q == axi_block_len) begin
+            
+        end
+        else begin  
+            // 等待握手
+            if(axi_wait) begin
+                axi_wait = axi_wait_q & ~axi_commit_arready_i;
+            end
+            // 读入数据
+            else begin
+                if(axi_commit_rvalid_i) begin
+                    axi_block_data[axi_block_ptr_q] = axi_commit_rep_i.rdata;
+                    axi_block_ptr = axi_block_ptr_q + 1;
+                end
+                else begin
+                end
+            end
+        end
+
+        if(cache_block_ptr_q == cache_block_len) begin
+            ls_fsm = S_NORMAL;
+            stall = '0;
+        end
+        else begin
+            ls_fsm = S_AXI_RD;
+            stall = '0;
+
+            if(cache_block_ptr_q < axi_block_ptr_q) begin
+                // 设置相应的Cache数据
+                cache_block_ptr = cache_block_ptr_q + 1;
+                // 对齐一块的数据
+                commit_cache_req.addr       = (lsu_info_s[0].paddr & 32'hfffffff0) + (cache_block_ptr_q << 2);
+                commit_cache_req.way_choose = lsu_info_s[0].refill;
+                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s[0].paddr & 32'hfffffff0, '1, '0);
+                commit_cache_req.tag_we     = '1;
+                commit_cache_req.data_data  = axi_block_data[cache_block_ptr_q];
+                commit_cache_req.strb       = '1;
+                commit_cache_req.fetch_sb   = '0;
+            end
+            else begin  
+                commit_cache_req.tag_data   = '0;
+                commit_cache_req.tag_we     = '0;
+                commit_cache_req.data_data  = '0;
+                commit_cache_req.strb       = '0;
+            end
+        end
     end
 
     else if(ls_fsm_q == S_ICACHE) begin
@@ -1609,6 +1678,7 @@ always_comb begin
             if(icache_commit_valid_i) begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
+                fsm_flush = '1;
             end
         end
     end
@@ -1622,7 +1692,7 @@ end
 
 // 时序逻辑只保存状态
 always_ff @(posedge clk) begin
-    if(~rst_n || flush) begin
+    if(~rst_n) begin
         
     end
     else begin
@@ -1655,285 +1725,3 @@ always_ff @(posedge clk) begin
         end
     end
 end
-
-
-// 状态转移的组合逻辑
-always_comb begin
-    stall = stall_q;
-
-    commit_cache_req = commit_cache_req_q;
-    commit_cache_req.tag_we      = '0;
-    commit_cache_req.fetch_sb    = '0;
-
-    commit_icache_req = '0;
-    commit_icache_valid_o = '0;
-
-    commit_axi_req = commit_axi_req_q;
-    commit_axi_valid_o = '0;
-    commit_axi_ready_o = '0;
-
-    // 与Cache进行读写操作
-    else if (ls_fsm_q == S_CACHE) begin
-        // 回到normal状态，取消提交级的阻塞
-        if(cahce_block_ptr == cache_block_len - 1) begin
-            stall = '0;
-        end
-        else begin
-            // Cache接受当前的读写请求
-            commit_cache_req.addr      = commit_cache_req_q.addr + 4;
-            commit_cache_req_q.way_choose = commit_cache_req_q.way_choose;
-            commit_cache_req.tag_data  = get_cache_tag(commit_cache_req.addr, 1, 0);
-            commit_cache_req.tag_we    = '1;
-            commit_cache_req.data_data = cache_block_data[cache_block_ptr];
-            commit_cache_req.strb      = '1;
-            commit_cache_req.fetch_sb  = '0;
-        end
-    end
-
-    // 发起AXI请求，读出对应地址处的数据
-    else if(ls_fsm_q == S_AXI_RD) begin
-        commit_axi_valid_o          = '0;
-
-        // 初始状态的握手信号
-        if(axi_block_ptr == 0) begin
-            // 接收到信息，不用置高位
-            if(~axi_commit_ready_i) begin
-                // 维持原有的请求信息
-                commit_axi_valid_o          = '1;
-                commit_axi_req.addr         = lsu_info_s[0].addr & 32'hfffffffc;
-                commit_axi_req.len          = CACHE_BLOCK_NUM;
-                commit_axi_req.strb         = '0;
-                commit_axi_req.rmask        = lsu_info_s[0].rmask;
-                commit_axi_req.read         = |lsu_info_s[0].rmask;
-            end
-        end
-
-        // AXI传入一个数据
-        commit_axi_valid_o = '0;
-        if(axi_commit_valid_i) begin
-            // AXI请求完成，进行下一步状态
-            if(axi_block_ptr == axi_block_len - 1) begin
-                // 配置Cache的相应信息
-                commit_cache_req.addr         = lsu_info_s[0].paddr;
-                commit_cache_req.way_choose   = lsu_info_s[0].tag_hit;
-                commit_cache_req.tag_data     = '0;
-                commit_cache_req.data_data    = lsu_info_s[0].wdata;
-                commit_cache_req.strb         = lsu_info_s[0].strb;
-                commit_cache_req.fetch_sb     = |lsu_info_s[0].strb;
-            end
-            else begin
-                commit_axi_valid_o = '1;
-                // 对齐一个字的数据
-                commit_axi_req.addr   = commit_axi_req_q.addr + 4;
-                commit_axi_req.strb   = '0;
-                commit_axi_req.rmask  = '1;
-            end
-        end
-    end
-
-    // 将需要写回部分的Cache整块数据读出
-    else if(ls_fsm_q == S_CACHE_RD) begin
-        // Cache固定延时一排出结果
-        // 完成了整块的读出操作
-        if(cache_block_ptr == cache_block_len - 1) begin
-            // 将读出的数据写回
-            commit_axi_valid_o   = '1;
-            commit_axi_req.data  = cache_block_data[0];
-            // 对齐一块的数据
-            commit_axi_req.addr  = cache_dirty_addr & 32'hfffffff0;
-            commit_axi_req.len   = CACHE_BLOCK_NUM;
-            commit_axi_req.strb  = '1;
-            commit_axi_req.rmask = '0;
-        end
-        else begin
-            // 设置下一轮的Cache数据
-            commit_cache_req.addr = commit_cache_req_q.addr + 4;
-            commit_cache_req.way_choose = commit_cache_req_q.way_choose;
-            commit_cache_req.tag_data = '0;
-            commit_cache_req.tag_we = '0;
-            commit_cache_req.data_data = '0;
-            commit_cache_req.strb = '0;
-            commit_cache_req.fetch_sb = '0;
-        end
-    end
-
-    // 发起AXI请求，写回对应地址处的数据
-    else if (ls_fsm_q == S_AXI_WB) begin
-        commit_axi_valid_o   = '0;
-
-        if(axi_block_ptr == 0) begin
-            if(~axi_commit_ready_i) begin
-                // 握手前维持原有请求不变
-                commit_axi_valid_o   = '1;
-                commit_axi_req.data  = cache_block_data[0];
-                // 对齐一块的数据
-                commit_axi_req.addr  = cache_dirty_addr & 32'hfffffff0;
-                commit_axi_req.len   = CACHE_BLOCK_NUM;
-                commit_axi_req.strb  = '1;
-                commit_axi_req.rmask = '0;
-            end
-        end
-        // commit_axi_valid_o = '0;
-        // AXI写回请求完成，再发送AXI请求进行读出所需处的数据
-        if(axi_commit_ready_i) begin
-            if(axi_block_ptr == axi_block_len - 1) begin
-                commit_axi_valid_o = '0;
-                if(axi_back_target) begin
-                end
-                else begin
-                    commit_axi_valid_o = '1;
-                    // 设置相应的AXI数据
-                    commit_axi_req.addr  = lsu_info_s.paddr;
-                    commit_axi_req.len   = CACHE_BLOCK_NUM;
-                    commit_axi_req.strb  = '0;
-                    commit_axi_req.rmask = '1;
-                end
-            end
-            else begin
-                commit_axi_valid_o = '1;
-                commit_axi_req.addr = commit_axi_req_q.addr;
-                commit_axi_req.data = axi_block_data[axi_block_ptr];
-            end
-        end
-    end
-
-    else if(ls_fsm_q == S_ICACHE) begin
-        if(~icache_wait) begin
-            commit_icache_valid_o = '1;
-        end
-        else begin
-            commit_icache_valid_o = '0;
-        end
-    end
-
-    // 对于不应该出现的异常情况
-    else begin
-        stall = '0;
-    end
-end
-
-// 状态机转移的时序逻辑
-always_ff @(posedge clk) begin
-    stall_q <= stall;
-    commit_cache_req_q  <= commit_cache_req;
-    commit_axi_req_q    <= commit_axi_req;
-    commit_icache_req_q <= commit_icache_req;
-
-    if(~rst_n) begin
-        ls_fsm_q <=  S_NORMSAL;
-        axi_wait <= '0;
-
-        cache_block_data<= '0;
-        cache_block_ptr <= '0;
-        cache_block_len <= '0;
-
-        axi_block_data  <= '0;
-        axi_block_ptr   <= '0;
-        axi_block_len   <= '0;
-
-        lsu_info_s <= '0;
-    end
-
-    else begin
-        // 与Cache进行读写操作
-        else if (ls_fsm_q == S_CACHE) begin
-            // Cache接受当前的读写请求
-            // 回到normal状态，取消提交级的阻塞
-            if(cahce_block_ptr == cache_block_len - 1) begin
-                ls_fsm_q <= S_NORMAL;
-
-                cache_block_ptr <= '0;
-                cache_block_len <= '0;
-            end
-            else begin
-                cache_block_ptr <= cache_block_ptr + 1;
-            end
-        end
-
-        // 发起AXI请求，读出对应地址处的数据
-        else if(ls_fsm_q == S_AXI_RD) begin
-            if(axi_commit_valid_i) begin
-                // AXI请求完成，进行下一步状态
-                if(axi_block_ptr == axi_block_len - 1) begin
-                    ls_fsm_q <= S_CACHE;
-
-                    axi_block_ptr <= '0;
-
-                    cache_block_len <= CACHE_BLOCK_NUM;
-                    cache_block_ptr <= 0;
-                    cache_block_data <= axi_block_data;
-                end
-                else begin
-                    axi_block_data[axi_block_ptr] <= axi_commit_resp_i.data;
-                    axi_block_ptr <= axi_block_ptr + 1;
-                end
-            end
-        end
-
-        // 将需要写回部分的Cache整块数据读出
-        else if(ls_fsm_q == S_CACHE_RD) begin
-            // Cache固定延时一拍出结果
-            // 完成了整块的读出操作
-            if(cache_block_ptr == cache_block_len - 1) begin
-                // 将读出的数据写回
-                ls_fsm_q <= S_AXI_WB;
-                axi_back_target <= '0;
-
-                axi_block_len <= CACHE_BLOCK_NUM;
-                axi_block_ptr <= 0;
-                axi_block_data <= cache_block_data;
-            end
-            else begin
-                cache_block_data[cache_block_ptr] <= cache_commit_resp_i.data;
-                cache_block_ptr <= cache_block_data + 1;
-            end
-        end
-
-        // 发起AXI请求，写回对应地址处的数据
-        else if (ls_fsm_q == S_AXI_WB) begin
-            if(axi_commit_ready_i) begin
-                // AXI写回请求完成，再发送AXI请求进行读出所需处的数据
-                if(axi_block_ptr == axi_block_len - 1) begin
-                    if(axi_back_target) begin
-                        ls_fsm_q <= S_NORMAL;
-                        axi_back_target <= '0;
-                        // 设置相应的AXI数据
-                        axi_block_ptr <= '0;
-                        axi_block_len <= '0;
-                        axi_block_data <= '0;
-                    end
-                    else begin
-                        ls_fsm_q <= S_AXI_RD;
-                        // 设置相应的AXI数据
-                        axi_block_ptr <= '0;
-                        axi_block_len <= CACHE_BLOCK_NUM;
-                        axi_block_data <= '0;
-                    end
-                end
-                else begin
-                    axi_block_ptr <= axi_block_ptr + 1;
-                end
-            end
-        end
-
-        else if(ls_fsm_q == S_ICACHE) begin
-            // 完成了ICache请求
-            if(icache_commit_valid_i) begin
-                ls_fsm_q <= S_NORMAL;
-                icache_wait <= '0;
-            end
-
-            if(icache_commit_ready_i) begin
-                icache_wait <= '1;
-            end
-        end
-
-        // 对于不应该出现的异常情况
-        else begin
-            ls_fsm_q <= S_NORMAL;
-        end
-    end
-end
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-endmodule
