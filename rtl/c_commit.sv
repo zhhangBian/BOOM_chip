@@ -146,8 +146,8 @@ rob_commit_pkg_t [1:0] rob_commit_q;
 //下面只是一个组合逻辑，如果传指令过去就一起传包，否则全0
 rob_commit_pkg_t [1:0] rob_commit_flow;
 
-assign rob_commit_flow[0] = commit_request_o[0] ? rob_commit_q[0] : '0;
-assign rob_commit_flow[1] = commit_request_o[1] ? rob_commit_q[1] : '0;
+assign rob_commit_flow[0] = commit_request_o[0] ? rob_commit_i[0] : '0;
+assign rob_commit_flow[1] = commit_request_o[1] ? rob_commit_i[1] : '0;
 
 //注意flush把这一级也flush了
 always_ff @( posedge clk ) begin
@@ -953,11 +953,11 @@ always_comb begin
             //do nothing
         end
         `_CSR_CSRWR: begin
-            write_csr(rob_commit_i[0].data_rd, csr_num);
+            write_csr(rob_commit_i[0].data_rk, csr_num);//rk是rd TODO
         end
 
         `_CSR_XCHG: begin
-            write_csr((rob_commit_i[0].data_rd & rob_commit_i[0].data_rj), csr_num);
+            write_csr((rob_commit_i[0].data_rk & rob_commit_i[0].data_rj), csr_num);//rk是rd
         end
 
         default: begin//do nothing
