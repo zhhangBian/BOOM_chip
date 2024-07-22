@@ -125,15 +125,67 @@ logic [5:0] timer_64, timer_64_q;
 // - dbar,ibar
 // 特殊处理均只允许单条提交
 //TODO : 最后提交的逻辑，flush的逻辑，部分接线，ibar（不实现）
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// -----------------------------------------------------------------
+//选择往后流水的逻辑，逻辑是要么传过去能提交的指令，要么传过去的第一条是要进状态机的
+
+//这个部分在第一级：整理信号，判断有无异常，判断分支预测结果
+logic [1:0] instr_flow;
+logic [1:0] first_commit;
+
+//下面两个是第二级的数据来源，这样也避免了一些情况，比如说刷掉流水导致找不到之前的数据
+logic            [1:0] instr_flow_q;
+rob_commit_pkg_t [1:0] rob_commit_q;
+
+//instr_flow[1] 的逻辑比较长
 always_comb begin
+    instr_flow[0] = rob_commit_valid_i[0];
+
+    instr_flow[1] = &rob_commit_valid_i & ~first_commit[0] & ~first_commit[1];
+
+    first_commit[0]     = rob_commit_i[0].flush_inst | stall指令 | cur_exception | 访存缺失 | ~predict_success[0];
+    first_commit[1]     = rob_commit_i[1].flush_inst | stall指令 | another_exception | 访存缺失；//仅第二条分支预测失败也可以双提
+//TODO
+end
+
+//instr_flow_q表示传过来的指令是有效的，有可能是要提交，有可能是第一条要进去状态机
+//注意flush把这一级也flush了
+always_ff @( posedge clk ) begin
+    if (~rst_n | flush) begin
+        instr_flow_q <= '0;
+        rob_commit_q <= '0;
+    end
+    else begin
+        instr_flow_q <= instr_flow;
+        rob_commit_q <= rob_commit_i;
+    end
+end
+
+///////////////////////////////////////////////////////////////////////
+//第二级
+always_comb begin
+    commit_request_o[0] = instr_flow_q[0] & ~stall;
+    commit_request_o[0] = instr_flow_q[1] & ~stall;
+end
+
+//原版提交逻辑，估计不要了
+/*
+always_comb begin
+    //在有效的情况下是不是单提交的情况
+    first_commit[0]     = rob_commit_i[0].flush_inst | stall指令 | cur_exception | 访存缺失 | ~predict_success[0];
+    first_commit[1]     = rob_commit_i[1].flush_inst | stall指令 | another_exception | 访存缺失；//仅第二条分支预测失败也可以双提
+
     commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
 
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~rob_commit_i[0].first_commit &
-                          ~rob_commit_i[1].first_commit;//TODO first_commit信号产生
+                          ~rob_commit_i[1].first_commit;// first_commit信号产生
 end
+*/
 
+//TODO 把直接从rob_commit_i拿过来的东西变成rob_commit_q
 // 处理对ARF的接口
 always_comb begin
     commit_arf_we_o = '0;
@@ -229,6 +281,10 @@ logic [1:0] commit_flush_info;
 always_comb begin
     commit_flush_info = '0;
 
+    if (fsm_flush) begin
+        commit_flush_info = 2'b01;
+    end//访存相关的flush
+
     if (cur_exception) begin
         commit_flush_info = 2'b01;
     end
@@ -237,7 +293,7 @@ always_comb begin
     else if (commit_request_o[0]) begin
         if (rob_commit_i[0].flush_inst) begin
             commit_flush_info = 2'b01;
-        end//一定会flush的指令
+        end//要提交且一定会flush的指令
         else if (~predict_success[0])begin
             commit_flush_info = 2'b01;
         end//分支预测失败
@@ -246,22 +302,25 @@ always_comb begin
         end//第一条成功但第二条失败了
     end
 
+//下面这一大坨就用上面的替代掉了
+/*
     if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) || 
             ((ls_fsm_q == S_NORMAL) && commit_icache_valid_o && 
               icache_commit_valid_i && icache_commit_ready_i)) begin
         commit_flush_info = 2'b01;
-    end //TODO  ICACOP指令
+    end 
 
-    else if(|is_lsu/*是不是要加valid*/) begin
+    else if(|is_lsu//是不是要加valid) begin
         if(ls_fsm_q == S_NORMAL) begin
             if(!&cache_commit_hit) begin
-                flush = '1; //TODO 存储指令，等待完成
+                flush = '1; 
             end
             else if(is_uncached[0]) begin
                 commit_flush_info = 2'b01;
             end
         end
-    end //TODO 存储指令，等待完成
+    end //存储指令
+*/
 
     if (wait_for_int_q) begin
         commit_flush_info = 2'b01;
@@ -273,6 +332,7 @@ end
 
 // ------------------------------------------------------------------
 // 处理分支预测信息
+//在第一级
 // 分支预测是否正确：按照第一条错误的分支指令来
 // 认为分支指令只能单挑提交
 word_t [1:0] pc;
@@ -355,10 +415,12 @@ for(integer i = 0; i < 2; i += 1) begin
         correct_info_o[i].is_branch = branch_info[i].is_branch;
         correct_info_o[i].branch_type = branch_info[i].br_type;
 
-        correct_info_o[i].update = (predict_info[i].need_update) |
+        correct_info_o[i].update = commit_request_o[i] |
+                                   (predict_info[i].need_update) |
                                    (predict_branch[i]) |
                                    (is_branch[i]);
-                                   //TODO 如果是由0发出的flush，则1不update，valid
+                                   //TODO 如果是由0发出的flush，则1不update
+
         correct_info_o[i].target_pc = real_target[i];
 
         correct_info_o[i].history = predict_info[i].history;
@@ -403,6 +465,7 @@ end
 // ------------------------------------------------------------------
 // 异常处理
 //识别rob_commit_i[0]这一条指令是不是有异常，如果有，修改csr
+//在第一级
 
 //都不是寄存器
 logic cur_exception;       //提交的第0条是不是异常指令
@@ -551,6 +614,7 @@ wire another_exception    = rob_commit_valid_i[1] & |{a_fetch_excp, a_syscall_ex
 csr_t csr, csr_q, csr_init;
 wire  [1:0] csr_type = rob_commit_i[0].csr_type;
 wire [13:0] csr_num  = rob_commit_i[0].csr_num;
+//在第二级
 
 // CSR复位
 always_comb begin
@@ -764,6 +828,7 @@ end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
+//在第二级
 // TLB维护指令
 // 不管理TLB的映射内容，只管理TLB的维护内容
 // 相当于管理64个TLB表项，对应有一个ITLB和DTLB的映射
@@ -1033,6 +1098,7 @@ end
 
 // -------------------------------------------------------------------
 
+//在第二级
 //idle指令
 logic wait_for_int_q, wait_for_int;
 
@@ -1060,6 +1126,7 @@ end
 
 
 // ------------------------------------------------------------------
+//在第二级
 // Cache维护指令：也需要进入状态机
 logic [4:0] cache_code, cache_code_q;
 assign cache_code = rob_commit_i[0].cache_code;
