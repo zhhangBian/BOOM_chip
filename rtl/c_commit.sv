@@ -13,26 +13,6 @@ function cache_tag_t get_cache_tag(
     return cache_tag;
 endfunction
 
-function logic [31:0] get_data_mask(
-    input logic [31:0] data,
-    input logic [3:0] mask
-);
-    logic [31:0] data_mask;
-
-    assign data_mask[7:0]   = mask[0] ? data[7:0]   : '0;
-    assign data_mask[15:8]  = mask[1] ? data[15:8]  : '0;
-    assign data_mask[23:16] = mask[2] ? data[23:16] : '0;
-    assign data_mask[31:24] = mask[3] ? data[31:24] : '0;
-
-    return data_mask;
-endfunction
-
-function logic [1:0] get_way_choose(
-    input logic hit
-);
-    return hit ? 2'b10 : 2'b01;
-endfunction
-
 module commit #(
     parameter int CACHE_BLOCK_NUM = 4;
     parameter int CPU_ID = 0;
@@ -1310,6 +1290,8 @@ typedef enum logic[4:0] {
 
 ls_fsm_s ls_fsm, ls_fsm_q;
 logic fsm_flush;
+logic [31:0] fsm_npc;
+logic [31:0] pc_s;
 
 commit_cache_req_t  commit_cache_req,  commit_cache_req_q;
 commit_axi_req_t    commit_axi_req,    commit_axi_req_q;
@@ -1345,7 +1327,8 @@ always_comb begin
     // 值初始化
     ls_fsm              = ls_fsm_q;
     stall               = stall_q;
-    ls_flush            = '0;
+    fsm_flush           = '0;
+    fsm_npc             = pc_s + 4;
 
     axi_wait            = axi_wait_q;
     icache_wait         = icache_wait_q;
@@ -1388,6 +1371,9 @@ always_comb begin
                 ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
                 fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
+                fsm_npc = (icache_cacop_flush_i ^ 2'b01) ? (pc_s + 4) :
+                          (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
+                          csr_q.eentry;
                 icache_wait = ~icache_commit_ready_i;
 
                 commit_icache_valid_o      = '1;
@@ -1410,6 +1396,7 @@ always_comb begin
                         ls_fsm = S_NORMAL;
                         stall = '0;
                         fsm_flush = '1;
+                        fsm_npc = pc_s + 4;
 
                         commit_cache_req.tag_data = '0;
                         commit_cache_req.tag_we   = '1;
@@ -1435,6 +1422,7 @@ always_comb begin
                             ls_fsm = S_NORMAL;
                             stall = '0;
                             fsm_flush = '1;
+                            fsm_npc = pc_s + 4;
                         end
                     end
 
@@ -1479,6 +1467,7 @@ always_comb begin
                 ls_fsm = S_UNCACHED_WB;
                 stall = '1;
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
                 // 发起AXI请求
                 commit_axi_req.waddr = lsu_info[0].paddr;
                 commit_axi_req.wlen = 1;
@@ -1578,6 +1567,7 @@ always_comb begin
                 else begin
                     // 直接刷掉流水
                     fsm_flush = '1;
+                    fsm_npc = pc_s;
                     // 不是脏的，直接写入Cache即可
                     if(~cache_commit_dirty[0]) begin
                         ls_fsm = S_NORMAL;
@@ -1645,6 +1635,7 @@ always_comb begin
                 stall = '0;
                 // uncache读入后再刷
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
 
                 axi_block_data[axi_block_ptr_q] = axi_commit_resp_i.rdata;
             end
@@ -1724,6 +1715,7 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
             end
             else begin
                 ls_fsm = S_AXI_RD;
@@ -1822,6 +1814,7 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
+                fsm_npc = pc_s + 4;
             end
         end
     end

@@ -294,7 +294,7 @@ data_wkup #(
 // ------------------------------------------------------------------
 // 匹配给DCache的接口
 iq_lsu_pkg_t    iq_lsu_request;
-lsu_iq_pkg_t    lsu_iq_request;
+assign iq_lsu_req_o = iq_lsu_request;
 
 assign iq_lsu_req_o     = iq_lsu_request;
 assign iq_lsu_valid_o   = excute_valid_q;
@@ -304,11 +304,6 @@ assign entry_valid_o    = lsu_iq_valid_i;
 // 配置iq到lsu的信息
 always_comb begin
     iq_lsu_request          = '0;
-    iq_lsu_request.strb     = select_di_q.strb;
-    iq_lsu_request.rmask    = select_di_q.rmask;
-    iq_lsu_request.cacop    = select_di_q.cacop;
-    iq_lsu_request.dbar     = select_di_q.dbar;
-    iq_lsu_request.llsc     = select_di_q.llsc;
     iq_lsu_request.wid      = select_di_q.wreg_id;
     iq_lsu_request.msigned  = select_di_q.msigned;
     iq_lsu_request.msize    = select_di_q.msize;
@@ -323,11 +318,8 @@ always_comb begin
     result_o.rob_id   = select_di_q.wreg_id;
     result_o.w_reg    = select_di_q.wreg;
     result_o.r_valid  = select_di_q.inst_valid;
-    // TODO：di_q
-    // TODO：加上提交所需的cache等信息
+    result_o.lsu_info = lsu_iq_resp_i;
 end
-
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 endmodule

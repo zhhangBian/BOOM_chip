@@ -11,14 +11,9 @@ typedef struct packed {
     logic   [2:0]   grand_op;
     logic   [2:0]   op;
     
-    rob_id_t        wreg_id;
+    rob_id_t wreg_id;
     logic   wreg;
     logic   wmem;
-    logic   [3:0]   rmask;
-    logic   [3:0]   strb;
-    logic   cacop;
-    logic   dbar;
-    logic   llsc;
     logic   msigned;
     logic   msize;
 
