@@ -407,7 +407,7 @@ always_comb begin
         end
         F_UNCACHE_S:begin
             // 如果已经满了 req_ptr == req_num
-            if (req_ptr == req_num) begin
+            if (req_ptr_q == req_num) begin
                 stall    = '0;
                 req_ptr  = '0;
                 req_num  = '0;
@@ -417,13 +417,13 @@ always_comb begin
             // 等待数据,axi_data_i
             else if (axi_data_valid_i) begin
                 // TODO data in
-                temp_data_block[req_ptr[0]] = axi_data_i;
+                temp_data_block[req_ptr_q[0]] = axi_data_i;
                 req_ptr  = req_ptr_q + 1;
             end
         end
         F_MISS:begin
             // 如果axi握手成功，axi_resp_ready_i
-            addr_valid_o = '0;
+            addr_valid_o = '1;
             if (axi_resp_ready_i) begin
                 fsm_next = F_MISS_S;
                 req_ptr  = '0;
@@ -433,7 +433,7 @@ always_comb begin
         end
         F_MISS_S:begin
             // 如果已经满了 req_ptr == req_num
-            if (req_ptr == req_num) begin
+            if (req_ptr_q == req_num) begin
                 stall    = '0;
                 req_ptr  = '0;
                 req_num  = '0;
@@ -444,7 +444,7 @@ always_comb begin
             // 等待数据,axi_data_i
             else if (axi_data_valid_i) begin
                 // TODO data in
-                temp_data_block[req_ptr[0]] = axi_data_i;
+                temp_data_block[req_ptr_q[0]] = axi_data_i;
                 // refill TODO
                 req_ptr = req_ptr_q + 1;
                 if (!req_ptr[0] && (req_ptr[2:1] == b_f_pkg_q.pc[4:3] + 'd1)) begin
