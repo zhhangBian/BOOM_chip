@@ -173,7 +173,7 @@ logic   [5:0]  exc_code_new;
 logic   [31:0] badv;
 logic          ade_exc;
 assign  ade_exc  = (m1_iq_lsu_pkg.msized == 3) ? |badv : (m1_iq_lsu_pkg.msized == 1) ? badv[1] : '0;
-assign  exc_code_new  =  |exc_code_i ? exc_code_i : ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
+assign  exc_code_new  =  ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
 assign  execute_exception = ade_exc | (|tlb_exception.ecode);
 assign  badv     = m1_iq_lsu_pkg.vaddr;
 
@@ -314,7 +314,10 @@ always_comb begin
     lsu_iq_pkg.tag_hit  = tag_hit;
     lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;
     lsu_iq_pkg.hit_dirty   = tag_hit[0] ? tag_ans0[0].d : tag_ans0[1].d; 
-    lsu_iq_pkg.wdata       = m1_iq_lsu_pkg.wdata;   
+    lsu_iq_pkg.wdata       = m1_iq_lsu_pkg.wdata;
+    lsu_iq_pkg.execute_exc_info.execute_exception  = execute_exception;          
+    lsu_iq_pkg.execute_exc_info.exc_code           = exc_code_new; 
+    lsu_iq_pkg.execute_exc_info.badv               = badv;
 end
 /*****************************cache2commit***********************/
 always_comb begin

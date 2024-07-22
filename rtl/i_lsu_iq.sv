@@ -324,6 +324,10 @@ always_comb begin
     result_o.w_reg    = select_di_qq.wreg;
     result_o.r_valid  = select_di_qq.inst_valid;
     result_o.lsu_info = lsu_iq_resp_i;
+    result_o.ctrl.exc_info.fetch_exception      =  select_di_qq.fetch_exc_info.fetch_exception;
+    result_o.ctrl.exc_info.execute_exception    =  lsu_iq_resp_i.execute_exc_info.execute_exception;
+    result_o.ctrl.exc_info.exc_code             =  result_o.ctrl.exc_info.fetch_exception ? select_di_qq.fetch_exc_info.exc_code : lsu_iq_resp_i.execute_exc_info.exc_code;
+    result_o.ctrl.exc_info.badva                =  result_o.ctrl.exc_info.fetch_exception ? select_di_qq.fetch_exc_info.badv     : lsu_iq_resp_i.execute_exc_info.badv    ;
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

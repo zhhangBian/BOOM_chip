@@ -160,7 +160,7 @@ always_comb begin
         commit_info_o[i].is_ll = commit_inst_o[i].ll_inst;
         commit_info_o[i].is_sc = commit_inst_o[i].sc_inst;
         commit_info_o[i].is_uncached = commit_data_o[i].lsu_info.uncached;
-        commit_info_o[i].exc_code = /*TODO*/;   // 位宽随便定的，之后调整
+        commit_info_o[i].exc_code = commit_data_o[i].ctrl.exc_info.exc_code;   // 位宽随便定的，之后调整
         commit_info_o[i].is_csr_fix = |commit_info_o[i].csr_op_type;
         commit_info_o[i].csr_type = commit_info_o[i].csr_op_type; // 往后传
         commit_info_o[i].csr_num = commit_info_o[i].csr_num;
@@ -170,14 +170,14 @@ always_comb begin
 
         commit_info_o[i].flush_inst = commit_inst_o[i].flush_inst;
 
-        commit_info_o[i].fetch_exception = /* TODO */;
+        commit_info_o[i].fetch_exception = commit_data_o[i].ctrl.exc_info.fetch_exception;/* TODO */;
         commit_info_o[i].syscall_inst = commit_inst_o[i].syscall_inst;
         commit_info_o[i].break_inst = commit_inst_o[i].break_inst;
         commit_info_o[i].decode_err = decode_err;
         commit_info_o[i].priv_inst = commit_inst_o[i].priv_inst; //要求：不包含hit类cacop
-        commit_info_o[i].execute_exception; // TODO: 访存异常???
+        commit_info_o[i].execute_exception = commit_data_o[i].ctrl.exc_info.execute_exception;// TODO: 访存异常???
 
-        commit_info_o[i].badva; // TODO: 访存异常
+        commit_info_o[i].badva      = commit_data_o[i].ctrl.exc_info.badva; // TODO: 访存异常
 
         commit_info_o[i].rdcntvh_en = commit_inst_o[i].rdcntvh_inst;
         commit_info_o[i].rdcntvl_en = commit_inst_o[i].rdcntvl_inst;

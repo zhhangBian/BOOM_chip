@@ -303,6 +303,10 @@ always_comb begin
     result_o.w_reg    = select_di_q.wreg;
     result_o.r_valid  = select_di_q.inst_valid;
     result_o.lsu_info = '0;
+    result_o.ctrl.exc_info.fetch_exception      =  select_di_q.fetch_exc_info.fetch_exception;
+    result_o.ctrl.exc_info.execute_exception    =  '0;
+    result_o.ctrl.exc_info.exc_code             =  select_di_q.fetch_exc_info.exc_code;
+    result_o.ctrl.exc_info.badva                =  select_di_q.fetch_exc_info.badv;
 end
 
 e_mdu mdu (

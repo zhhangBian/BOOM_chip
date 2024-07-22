@@ -252,6 +252,8 @@ always_comb begin
     r_p_pkg_temp.decode_err     = d_r_pkg_i.decode_err;
     r_p_pkg_temp.is_branch      = d_r_pkg_i.is_branch;
     r_p_pkg_temp.br_type        = d_r_pkg_i.br_type;
+
+    r_p_pkg_temp.fetch_exc_info = d_r_pkg_i.fetch_exc_info;
 end
 
 

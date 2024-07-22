@@ -10,10 +10,23 @@ typedef struct packed {
 } b_f_pkg_t;
 
 typedef struct packed {
+    logic          fetch_exception;
+    logic  [5:0]   exc_code;
+    logic  [31:0]  badv;
+} fetch_exc_info_t;
+
+typedef struct packed {
+    logic          execute_exception;
+    logic  [5:0]   exc_code;
+    logic  [31:0]  badv;
+} execute_exc_info_t;
+
+typedef struct packed {
     logic [1:0][31:0]   insts;
     logic [31:0]        pc;
     logic [ 1:0]        mask;
     predict_info_t [1:0]predict_infos;
+    fetch_exc_info_t    fetch_exc_info;
 } f_d_pkg_t;
 
 typedef logic [31:0] word_t;
@@ -89,6 +102,7 @@ typedef struct packed {
     // branch
     logic        [1:0] is_branch;
     br_type_t    [1:0] br_type;
+    fetch_exc_info_t    fetch_exc_info;
 } d_r_pkg_t;
 
 typedef struct packed {
@@ -158,6 +172,7 @@ typedef struct packed {
     // branch
     logic        [1:0] is_branch;
     br_type_t    [1:0] br_type;
+    fetch_exc_info_t    fetch_exc_info;
 } r_p_pkg_t;
 
 typedef struct packed {
@@ -321,6 +336,7 @@ typedef struct packed {
     // else information for control
     // predict_info_t predict_info; // predict_info is in rob
     lsu_iq_pkg_t lsu_info;
+    rob_ctrl_entry_t ctrl;
 } cdb_info_t;
 
 /**********************rob pkg**********************/
@@ -408,10 +424,10 @@ typedef struct packed {
     logic execute_exception;  //为1表示访存级有异常，当fetch级有异常这个值是什么都行
     logic [5:0] exc_code;     //fetch级有异常则存fetch级别的异常码，elif访存异常存访存异常码，如果都没有异常则存什么都行
     logic [31:0] badva;       //如果访存出现例外把地址存到这里
-    logic syscall_inst;
-    logic break_inst;
-    logic decode_err;
-    logic priv_inst;
+    // logic syscall_inst;
+    // logic break_inst;
+    // logic decode_err;
+    // logic priv_inst;
     //上面这四个之前忘记加了，来自译码级，要求指令无效时为0（？ TODO)
 } exc_info_t;
 
@@ -436,6 +452,8 @@ typedef struct packed {
     logic   msize;
 
     logic   inst_valid; 
+
+    fetch_exc_info_t    fetch_exc_info;
 } decode_info_t;
 
 typedef struct packed {
@@ -508,6 +526,7 @@ typedef struct packed {
     logic   [31:0]  cache_dirty_addr;
     // TODO cache_dirty_addr
     logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
+    execute_exc_info_t execute_exc_info;
 } lsu_iq_pkg_t;
 
 typedef struct packed {
