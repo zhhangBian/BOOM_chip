@@ -489,12 +489,12 @@ assign redir_addr_o = (fsm_flush) ? fsm_npc ://fsm来的npc
                      (rob_commit_q[0].ertn_en) ? csr_q.era : //异常返回
                      next_pc_q[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
 
-correct_info_o[0].update = retire_request_o[0] &
+assign correct_info_o[0].update = retire_request_o[0] &
                            ((predict_info_q[0].need_update) |
                            (predict_branch_q[0]) |
                            (is_branch_q[0]));
 
-correct_info_o[1].update = retire_request_o[1] &
+assign correct_info_o[1].update = retire_request_o[1] &
                            ((predict_info_q[1].need_update) |
                            (predict_branch_q[1]) |
                            (is_branch_q[1])) &

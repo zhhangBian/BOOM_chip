@@ -422,6 +422,31 @@ typedef struct packed {
     br_type_t [1:0] br_type;
 } branch_info_t;
 
+// LSU 到 LSU IQ 的响应
+typedef struct packed {
+//   lsu_excp_t   excp;
+//   fetch_excp_t f_excp;
+    logic   [3:0]   strb;
+    logic   [3:0]   rmask;  // 需要读的字节
+    logic           msigned;     // 有符号拓展
+    logic   [1:0]   msize;     // 访存大小-1
+    logic   [31:0]  wdata;      // 需要写的数据
+    logic           uncached;   // uncached 特性
+    logic           hit;        // 是否命中，总判断
+    logic   [1 :0]  tag_hit;    // tag是否命中
+    logic   [5 :0]  wid;        // 写回地址
+    logic   [31:0]  paddr;      // 物理地址
+    logic   [31:0]  rdata;      // 读出的数据结果
+    tlb_exception_t tlb_exception; // TLB异常
+    logic   [1 :0]  refill;     // 选择哪一路重填
+    logic           dirty;      // 是否需要写回
+    logic           hit_dirty;  // 是否命中dirty位
+    logic   [31:0]  cache_dirty_addr;
+    // TODO cache_dirty_addr
+    logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
+    execute_exc_info_t execute_exc_info;
+} lsu_iq_pkg_t;
+
 typedef struct packed {
     // 在CSR指令中复用为rd寄存器的值
     logic   [31: 0] w_data;
@@ -483,11 +508,30 @@ typedef struct packed {
 } rob_commit_pkg_t;
 
 typedef struct packed {
+    logic fetch_exception;    //为1表示fetch级有异常
+    logic execute_exception;  //为1表示访存级有异常，当fetch级有异常这个值是什么都行
+    logic [5:0] exc_code;     //fetch级有异常则存fetch级别的异常码，elif访存异常存访存异常码，如果都没有异常则存什么都行
+    logic [31:0] badva;       //如果访存出现例外把地址存到这里
+    // logic syscall_inst;
+    // logic break_inst;
+    // logic decode_err;
+    // logic priv_inst;
+    //上面这四个之前忘记加了，来自译码级，要求指令无效时为0（？ TODO)
+} exc_info_t;
+
+// 控制信息表项
+typedef struct packed {
+    // 异常控制信号流，其他控制信号流，后续补充
+    exc_info_t exc_info;
+    // logic bpu_fail;
+} rob_ctrl_entry_t;
+
+typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0] w_preg;
     logic [31             : 0] w_data;
     logic                      w_valid;  // valid
     rob_ctrl_entry_t           ctrl;
-    lsu_info_t                 lsu_info;
+    lsu_iq_pkg_t                 lsu_info;
 } cdb_rob_pkg_t;
 
 typedef struct packed {
@@ -576,27 +620,8 @@ typedef struct packed {
     logic [31: 0]            data;
     logic                    w_valid;  // valid
     rob_ctrl_entry_t         ctrl;
-    lsu_info_t               lsu_info;
+    lsu_iq_pkg_t               lsu_info;
 } rob_data_entry_t;
-
-// 控制信息表项
-typedef struct packed {
-    // 异常控制信号流，其他控制信号流，后续补充
-    exc_info_t exc_info;
-    // logic bpu_fail;
-} rob_ctrl_entry_t;
-
-typedef struct packed {
-    logic fetch_exception;    //为1表示fetch级有异常
-    logic execute_exception;  //为1表示访存级有异常，当fetch级有异常这个值是什么都行
-    logic [5:0] exc_code;     //fetch级有异常则存fetch级别的异常码，elif访存异常存访存异常码，如果都没有异常则存什么都行
-    logic [31:0] badva;       //如果访存出现例外把地址存到这里
-    // logic syscall_inst;
-    // logic break_inst;
-    // logic decode_err;
-    // logic priv_inst;
-    //上面这四个之前忘记加了，来自译码级，要求指令无效时为0（？ TODO)
-} exc_info_t;
 
 /**********************dispatch  to  execute  pkg******************/
 typedef struct packed {
@@ -670,31 +695,6 @@ typedef struct packed {
     logic [3 :0] rmask;     // 读掩码
     logic [3 :0] strb ;     // 写掩码
 } iq_lsu_pkg_t;
-
-// LSU 到 LSU IQ 的响应
-typedef struct packed {
-//   lsu_excp_t   excp;
-//   fetch_excp_t f_excp;
-    logic   [3:0]   strb;
-    logic   [3:0]   rmask;  // 需要读的字节
-    logic           msigned;     // 有符号拓展
-    logic   [1:0]   msize;     // 访存大小-1
-    logic   [31:0]  wdata;      // 需要写的数据
-    logic           uncached;   // uncached 特性
-    logic           hit;        // 是否命中，总判断
-    logic   [1 :0]  tag_hit;    // tag是否命中
-    rob_rid_t       wid;        // 写回地址
-    logic   [31:0]  paddr;      // 物理地址
-    logic   [31:0]  rdata;      // 读出的数据结果
-    tlb_exception_t tlb_exception; // TLB异常
-    logic   [1 :0]  refill;     // 选择哪一路重填
-    logic           dirty;      // 是否需要写回
-    logic           hit_dirty;  // 是否命中dirty位
-    logic   [31:0]  cache_dirty_addr;
-    // TODO cache_dirty_addr
-    logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
-    execute_exc_info_t execute_exc_info;
-} lsu_iq_pkg_t;
 
 typedef struct packed {
     logic [19 : 0] tag;
