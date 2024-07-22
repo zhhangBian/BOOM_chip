@@ -430,6 +430,8 @@ typedef struct packed {
     logic  [1:0] msize;     // 访存大小-1
     logic [31:0] vaddr;     // 虚拟地址
     logic [31:0] wdata;     // 写数据
+    logic [3 :0] rmask;     // 读掩码
+    logic [3 :0] strb ;     // 写掩码
 } iq_lsu_pkg_t;
 
 // LSU 到 LSU IQ 的响应
