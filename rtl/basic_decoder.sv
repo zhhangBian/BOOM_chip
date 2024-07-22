@@ -28,7 +28,7 @@ module basic_decoder (
 );
 always_comb begin
     decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
-    decode_info_o.alu_grand_op = 2'd0;
+    decode_info_o.alu_grand_op = 3'd0;
     decode_info_o.alu_inst = 1'd0;
     decode_info_o.alu_op = 3'd0;
     decode_info_o.break_inst = 1'd0;
@@ -47,9 +47,11 @@ always_comb begin
     decode_info_o.ll_inst = 1'd0;
     decode_info_o.lsu_inst = 1'd0;
     decode_info_o.jump_inst = 1'd0;
-    decode_info_o.mem_cacop = 1'd0;
+    decode_info_o.cacop_inst = 1'd0;
     decode_info_o.mem_read = 1'd0;
     decode_info_o.mem_type = 3'd0;
+    decode_info_o.mem_signed = 1'd0;
+    decode_info_o.mem_size = 1'd0;
     decode_info_o.mem_write = 1'd0;
     decode_info_o.mul_inst = 1'd0;
     decode_info_o.need_fa = 1'd0;
@@ -301,7 +303,7 @@ always_comb begin
             decode_info_o.alu_grand_op = `_GRAND_OP_BW;
             decode_info_o.alu_op = `_BW_XOR;
         end
-        /*==================== 乘除指令 ====================*/
+        /*==================== 乘除指令 MDU ====================*/
         // MUL.W
         32'b00000000000111000???????????????: begin
             decode_info_o.mdu_inst = 1'd1;
@@ -497,6 +499,8 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S14;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_WORD;
+            decode_info_o.mem_size = 2'd3;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
             decode_info_o.ll_inst = 1'd1;
         end
@@ -509,6 +513,8 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S14;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_WORD;
+            decode_info_o.mem_size = 2'd3;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
             decode_info_o.sc_inst = 1'd1;
         end
@@ -523,7 +529,9 @@ always_comb begin
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_BYTE;
-            decode_info_o.mem_cacop = 1'd1;
+            decode_info_o.mem_size = 2'd0;
+            decode_info_i.mem_signed = 1'd1;
+            decode_info_o.cacop_inst = 1'd1;
         end
         /*==================== 访存指令 ====================*/
         // LD.B
@@ -533,6 +541,8 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.mem_type = `_MEM_TYPE_BYTE;
+            decode_info_o.mem_size = 2'd0;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
         end
         // LD.H
@@ -542,6 +552,8 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.mem_type = `_MEM_TYPE_HALF;
+            decode_info_o.mem_size = 2'd1;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
         end
         // LD.W
@@ -551,6 +563,8 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.mem_type = `_MEM_TYPE_WORD;
+            decode_info_o.mem_size = 2'd3;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
         end
         // ST.B
@@ -561,6 +575,8 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_BYTE;
+            decode_info_o.mem_size = 2'd0;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
         end
         // ST.H
@@ -571,6 +587,8 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_HALF;
+            decode_info_o.mem_size = 2'd1;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
         end
         // ST.W
@@ -581,6 +599,8 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.mem_type = `_MEM_TYPE_WORD;
+            decode_info_o.mem_size = 2'd3;
+            decode_info_i.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
         end
         // LD.BU
@@ -590,6 +610,8 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.mem_type = `_MEM_TYPE_UBYTE;
+            decode_info_o.mem_size = 2'd0;
+            decode_info_i.mem_signed = 1'd0;
             decode_info_o.mem_read = 1'd1;
         end
         // LD.HU
@@ -599,16 +621,8 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.mem_type = `_MEM_TYPE_UHALF;
-            decode_info_o.mem_read = 1'd1;
-        end
-        // LD.WU
-        32'b0010101011??????????????????????: begin
-            // 修改
-            decode_info_o.lsu_inst = 1'd1;
-            decode_info_o.reg_type_r1 = `_REG_RJ;
-            decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
-            decode_info_o.mem_type = `_MEM_TYPE_UWORD;
+            decode_info_o.mem_size = 2'd1;
+            decode_info_i.mem_signed = 1'd0;
             decode_info_o.mem_read = 1'd1;
         end
         /*==================== 其他指令 ====================*/
@@ -733,6 +747,20 @@ always_comb begin
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
         end
+        /*==================== Pre load 指令 ====================*/
+        /*
+        // PRELD
+        32'b0010101011??????????????????????: begin
+            // 修改
+            decode_info_o.lsu_inst = 1'd1;
+            decode_info_o.reg_type_r1 = `_REG_RJ;
+            decode_info_o.reg_type_w = `_REG_W_RD;
+            decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
+            decode_info_o.mem_type = `_MEM_TYPE_UWORD;
+            decode_info_o.mem_read = 1'd1;
+        end
+        */
+
         /*==================== 浮点指令 ====================*/
         /*
         // FADD.S

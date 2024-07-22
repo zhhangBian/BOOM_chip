@@ -5,7 +5,7 @@ module decoder (
     handshake_if.receiver               receiver, // f_d_pkg_t type
     handshake_if.sender                 sender, // d_r_pkg_t type
 
-    // output d_decoder_info_t   [1:0]       decode_infos_o, // TODO: 需要合并到sender中
+    // output d_decoder_info_t   [1:0]       decode_infos, // TODO: 需要合并到sender中
 );
 
 // TODO: csr_num not handled!!!!!!!!!!!
@@ -25,11 +25,11 @@ assign sender.data = d_r_pkg;
 assign sender.valid = receiver.valid;
 assign receiver.ready = sender.ready;
 
-// 内置两个decoder, decode_infos_o 生成逻辑
-for (integer i = 0; i < 2; i++) begin
+// 内置两个decoder, decode_infos 生成逻辑
+for (integer i = 0; i < 2; i=i+1) begin
     basic_decoder basic_decoder (
         .ins_i(insts_i[i]),
-        .decode_info_o(decode_infos_o[i])
+        .decode_info_o(decode_infos[i])
     );
 end
 
@@ -39,24 +39,20 @@ assign d_r_pkg.pc = pc;
 // 2024/07/22 ADD
 assign d_r_pkg.predict_infos = receiver.data.predict_infos;
 
-for (integer i = 0; i < 2; i++) begin
-    assign d_r_pkg.w_reg[i] = |decode_infos_o[i].reg_type_w;
-    assign d_r_pkg.w_mem[i] = |decode_infos_o[i].mem_type_write;
-    assign d_r_pkg.reg_need[2*i    ] = decode_infos_o[i].reg_type_r0 != `_REG_ZERO; // & decode_infos_o[i].reg_type_r0 != `_REG_IMM;
-    assign d_r_pkg.reg_need[2*i + 1] = decode_infos_o[i].reg_type_r1 != `_REG_ZERO; // & decode_infos_o[i].reg_type_r1 != `_REG_IMM;
+for (integer i = 0; i < 2; i=i+1) begin
+    assign d_r_pkg.w_reg[i] = |decode_infos[i].reg_type_w;
+    assign d_r_pkg.w_mem[i] = |decode_infos[i].mem_type_write;
+    assign d_r_pkg.reg_need[2*i    ] = decode_infos[i].reg_type_r0 != `_REG_ZERO; // & decode_infos[i].reg_type_r0 != `_REG_IMM;
+    assign d_r_pkg.reg_need[2*i + 1] = decode_infos[i].reg_type_r1 != `_REG_ZERO; // & decode_infos[i].reg_type_r1 != `_REG_IMM;
 
-    assign d_r_pkg.use_imm[2*i    ] = decode_infos_o[i].reg_type_r0 == `_REG_IMM;
-    assign d_r_pkg.use_imm[2*i + 1] = decode_infos_o[i].reg_type_r1 == `_REG_IMM;
-
-    assign d_r_pkg.alu_type[i] = decode_infos_o[i].alu_inst;
-    assign d_r_pkg.mdu_type[i] = decode_infos_o[i].mdu_inst;
-    assign d_r_pkg.lsu_type[i] = decode_infos_o[i].lsu_inst;
+    assign d_r_pkg.use_imm[2*i    ] = decode_infos[i].reg_type_r0 == `_REG_IMM;
+    assign d_r_pkg.use_imm[2*i + 1] = decode_infos[i].reg_type_r1 == `_REG_IMM;
 end
 
 // arftable逻辑
-for (integer i = 0; i < 2; i++) begin
+for (integer i = 0; i < 2; i=i+1) begin
     logic [31:0] inst;
-    assign inst = decode_infos_o[i].inst;
+    assign inst = decode_infos[i].inst;
 
     logic [4:0] rd, rj, rk;
     assign rd = inst[ 4:0 ]
@@ -65,7 +61,7 @@ for (integer i = 0; i < 2; i++) begin
 
     always_comb begin
         // 第一个读寄存器
-        case (decode_infos_o[i].reg_type_r0)
+        case (decode_infos[i].reg_type_r0)
         _REG_RD: d_r_pkg.arf_table.r_arfid[2*i] = rd;
         _REG_RJ: d_r_pkg.arf_table.r_arfid[2*i] = rj;
         _REG_RK: d_r_pkg.arf_table.r_arfid[2*i] = rk;
@@ -73,7 +69,7 @@ for (integer i = 0; i < 2; i++) begin
         endcase
 
         // 第二个读寄存器
-        case (decode_infos_o[i].reg_type_r0)
+        case (decode_infos[i].reg_type_r0)
         _REG_RD: d_r_pkg.arf_table.r_arfid[2*i+1] = rd;
         _REG_RJ: d_r_pkg.arf_table.r_arfid[2*i+1] = rj;
         _REG_RK: d_r_pkg.arf_table.r_arfid[2*i+1] = rk;
@@ -81,7 +77,7 @@ for (integer i = 0; i < 2; i++) begin
         endcase
 
         // 第一个写寄存器
-        case (decode_infos_o[i].reg_type_w)
+        case (decode_infos[i].reg_type_w)
         _REG_W_RD: d_r_pkg.arf_table.w_arfid[i] = rd;
         _REG_W_RJ: d_r_pkg.arf_table.w_arfid[i] = rj;
         _REG_W_R1: d_r_pkg.arf_table.w_arfid[i] = 1; // 仅出现在 BL 指令中
@@ -91,12 +87,60 @@ for (integer i = 0; i < 2; i++) begin
 end
 
 // 立即数逻辑
-for (integer i = 0; i < 2; i++) begin
+for (genvar i = 0; i < 2; i=i+1) begin
     logic [31:0] inst;
-    assign inst = decode_infos_o[i].inst;
+    assign inst = decode_infos[i].inst;
 
-    assign d_r_pkg.data_imm[i] = inst_to_data_imm(inst, decode_infos_o[i].imm_type);
-    assign d_r_pkg.addr_imm[i] = inst_to_addr_imm(inst, decode_infos_o[i].addr_imm_type);
+    assign d_r_pkg.data_imm[i] = inst_to_data_imm(inst, decode_infos[i].imm_type);
+    assign d_r_pkg.addr_imm[i] = inst_to_addr_imm(inst, decode_infos[i].addr_imm_type);
+end
+
+// predict_infos 逻辑
+for (genvar i = 0; i < 2; i=i+1) begin
+    assign d_r_pkg.predict_infos[i] = receiver.predict_infos[i];
+end
+
+// ALU 信号逻辑
+for (genvar i = 0; i < 2; i=i+1) begin
+    assign d_r_pkg.grand_op = decode_infos[i].alu_grand_op;
+    assign d_r_pkg.op = decode_infos[i].alu_op;
+    assign d_r_pkg.msigned = decode_infos[i].mem_signed;
+    assign d_r_pkg.msize = mem_size;
+end
+
+// 指令类型
+for (genvar i = 0; i < 2; i=i+1) begin
+    assign d_r_pkg.alu_type[i] = decode_infos[i].alu_inst;
+    assign d_r_pkg.mdu_type[i] = decode_infos[i].mdu_inst;
+    assign d_r_pkg.lsu_type[i] = decode_infos[i].lsu_inst;
+
+    assign d_r_pkg.flush_inst[i] = decode_infos[i].flush_inst;
+    assign d_r_pkg.jump_inst[i] = decode_infos[i].jump_inst;
+    assign d_r_pkg.priv_inst[i] = decode_infos[i].priv_inst;
+    assign d_r_pkg.rdcnt_inst[i] = decode_infos[i].rdcnt_inst;
+end
+
+// 特殊指令的独热信号
+for (genvar i = 0; i < 2; i=i+1) begin
+    assign d_r_pkg.break_inst[i] = decode_infos[i].break_inst;
+    assign d_r_pkg.cacop_inst[i] = decode_infos[i].cacop_inst;
+    assign d_r_pkg.dbar_inst[i] = decode_infos[i].dbar_inst;
+    assign d_r_pkg.ertn_inst[i] = decode_infos[i].ertn_inst;
+    assign d_r_pkg.ibar_inst[i] = decode_infos[i].ibar_inst;
+    assign d_r_pkg.idle_inst[i] = decode_infos[i].idle_inst;
+    assign d_r_pkg.invtlb_inst[i] = decode_infos[i].invtlb_inst;
+    assign d_r_pkg.ll_inst[i] = decode_infos[i].ll_inst;
+
+    assign d_r_pkg.rdcntid_inst[i] = decode_infos[i].rdcntid_inst;
+    assign d_r_pkg.rdcntvh_inst[i] = decode_infos[i].rdcntvh_inst;
+    assign d_r_pkg.rdcntvl_inst[i] = decode_infos[i].rdcntvl_inst;
+
+    assign d_r_pkg.sc_inst[i] = decode_infos[i].sc_inst;
+    assign d_r_pkg.syscall_inst[i] = decode_infos[i].syscall_inst;
+    assign d_r_pkg.tlbfill_inst[i] = decode_infos[i].tlbfill_inst;
+    assign d_r_pkg.tlbrd_inst[i] = decode_infos[i].tlbrd_inst;
+    assign d_r_pkg.tlbsrch_inst[i] = decode_infos[i].tlbsrch_inst;
+    assign d_r_pkg.tlbwr_inst[i] = decode_infos[i].tlbwr_inst;
 end
 
 endmodule
