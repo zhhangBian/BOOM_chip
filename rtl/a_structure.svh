@@ -217,7 +217,7 @@ typedef struct packed {
     word_t   w_data;   // 写的数据
     // else information for control
     predict_info_t predict_info;
-
+    lsu_iq_pkg_t lsu_info;
 } cdb_info_t;
 
 /**********************rob pkg**********************/
@@ -290,12 +290,6 @@ typedef struct packed {
 
 /**************************lsu pkg*************************/
 typedef struct packed {
-    logic   is_uncached;
-    logic  [3:0]  strb;
-    logic  [3:0] rmask;     // 需要读的字节
-    inv_parm_e   cacop;
-    logic         dbar;     // 显式 dbar
-    logic         llsc;     // LL 指令，需要写权限
     rob_id_t       wid;     // 写回地址
     logic      msigned;     // 有符号拓展
     logic  [1:0] msize;     // 访存大小-1
@@ -324,14 +318,6 @@ typedef struct packed {
     // TODO cache_dirty_addr
     logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
 } lsu_iq_pkg_t;
-
-typedef struct packed {
-    logic   [31:0]  data;
-    logic   [5:0]   preg;
-    logic           w_reg;
-    logic           inst_valid;
-    // ...
-} iq_o_t;
 
 typedef struct packed {
     logic [19 : 0] tag;
