@@ -1779,7 +1779,7 @@ always_comb begin
             cache_block_ptr = cache_block_ptr_q + 1;
             // 设置相应的Cache请求
             commit_cache_req.addr       = commit_cache_req_q.addr + 4;
-            commit_cache_req.way_choose = commit_cache_req_q.refill;
+            commit_cache_req.way_choose = commit_cache_req_q.way_choose;
             commit_cache_req.tag_data   = '0;
             commit_cache_req.tag_we     = '0;
             commit_cache_req.data_data  = '0;
@@ -1881,9 +1881,9 @@ always_comb begin
                 // 设置相应的Cache数据
                 cache_block_ptr = cache_block_ptr_q + 1;
                 // 对齐一块的数据
-                commit_cache_req.addr       = (lsu_info_s[0].paddr & 32'hfffffff0) | (cache_block_ptr_q << 2);
-                commit_cache_req.way_choose = lsu_info_s[0].refill;
-                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s[0].paddr & 32'hfffffff0, '1, '0);
+                commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) | (cache_block_ptr_q << 2);
+                commit_cache_req.way_choose = lsu_info_s.refill;
+                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '0);
                 commit_cache_req.tag_we     = '1;
                 commit_cache_req.data_data  = axi_block_data[cache_block_ptr_q];
                 commit_cache_req.strb       = '1;

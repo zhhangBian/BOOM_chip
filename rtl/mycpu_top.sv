@@ -262,7 +262,7 @@ dispatch_rob_pkg_t dispatch_rob_pkg [1:0];
 rob_dispatch_pkg_t rob_dispatch_pkg [1:0];
 cdb_dispatch_pkg_t cdb_dispatch_pkg [1:0];
 
-p_dispatch # () p_dispatch(
+dispatch # () p_dispatch(
     .clk(clk),
     .rst_n(rst_n),
     .flush_i(flush),
@@ -516,7 +516,7 @@ always_comb begin
     end
 end
 
-rob_commit_pkg_t [1:0] commit_infos;
+rob_commit_pkg_t commit_infos [1:0];
 logic [1:0] rob_commit_valid;
 logic [1:0] commit_request;
 
@@ -619,8 +619,8 @@ dcache # () dcache(
     .cpu_lsu_receiver(cpu_lsu_if.receiver),
     .lsu_cpu_sender(lsu_cpu_if.sender),
 
-    .commit_cache_req(commit_cache_if.receiver),
-    .cache_commit_resp(cache_commit_if.sender),
+    .commit_cache_req(commit_cache_if.data),
+    .cache_commit_resp(cache_commit_if.data),
 
     .tlb_write_req_i(tlb_update_pkg)
 );
@@ -652,13 +652,13 @@ axi_crossbar # (
     .s_axi_awqos('0),
     .s_axi_awuser('0),
     .s_axi_awvalid(commit_axi_awvalid),
-    .s_axi_awready({0,axi_commit_awready}),
+    .s_axi_awready({'0,axi_commit_awready}),
     .s_axi_wdata({32'b0, commit_axi_req.wdata}),
     .s_axi_wstrb({4'b0, commit_axi_req.strb}),
-    .s_axi_wlast({0, commit_axi_wlast}),
+    .s_axi_wlast({'0, commit_axi_wlast}),
     .s_axi_wuser('0),
     .s_axi_wvalid(commit_axi_wvalid),
-    .s_axi_wready({0, axi_commit_wready}),
+    .s_axi_wready({'0, axi_commit_wready}),
     .s_axi_bready('1),
     .s_axi_arid('0),
     .s_axi_araddr({icache_axi_addr, commit_axi_req.waddr}),

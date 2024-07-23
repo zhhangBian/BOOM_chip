@@ -1,14 +1,14 @@
 `include "a_defines.svh"
 
-module p_dispatch #(    
+module dispatch #(    
 ) (
     input logic clk,
     input logic rst_n,
     input logic flush_i,
-    input cdb_dispatch_pkg_t    [1 : 0] cdb_dispatch_i,
-    input rob_dispatch_pkg_t    [1 : 0] rob_dispatch_i,
+    input cdb_dispatch_pkg_t    cdb_dispatch_i [1 : 0],
+    input rob_dispatch_pkg_t    rob_dispatch_i [1 : 0],
     
-    output dispatch_rob_pkg_t   [1 : 0] dispatch_rob_o,
+    output dispatch_rob_pkg_t   dispatch_rob_o [1 : 0],
 
     handshake_if.receiver r_p_receiver,
 

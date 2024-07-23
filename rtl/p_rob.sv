@@ -5,13 +5,13 @@ module rob # () (
     input   logic clk,
     input   logic rst_n,
     input   logic flush_i,
-    input   dispatch_rob_pkg_t [1 : 0] dispatch_info_i,
-    input   cdb_rob_pkg_t      [1 : 0] cdb_info_i,
+    input   dispatch_rob_pkg_t  dispatch_info_i [1 : 0],
+    input   cdb_rob_pkg_t       cdb_info_i [1 : 0],
 
     // output
-    output  rob_dispatch_pkg_t [1 : 0] rob_dispatch_o,
-    input   logic              [1 : 0] commit_req, // commit 级根据 rob 的信息判断是否选择指令提交
-    output  rob_commit_pkg_t   [1 : 0] commit_info_o,
+    output  rob_dispatch_pkg_t  rob_dispatch_o [1 : 0],
+    input   logic               [1 : 0] commit_req, // commit 级根据 rob 的信息判断是否选择指令提交
+    output  rob_commit_pkg_t    commit_info_o [1 : 0],
     output  logic              [1 : 0] commit_valid
 );
 
