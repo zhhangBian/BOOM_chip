@@ -115,7 +115,11 @@ assign btb_wdata.is_branch = correct_info.is_branch;
 always_ff @(posedge clk ) begin : btb_logic
     // reset btb to ZERO
     if (!rst_n) begin
-        btb <= '0; // TODO: there is a error about it;
+        for (int i = 0; i < 2; i++) begin
+            for (int j = 0; j < `BPU_BTB_DEPTH; j++) begin
+                btb[i][j] <= '0;
+            end
+        end
         btb_rdata <= '0;
     end
     // 写入
@@ -150,7 +154,11 @@ end
 
 always_ff @(posedge clk ) begin : bht_logic
     if (!rst_n) begin
-        bht <= '0;
+        for (int i = 0; i < 2; i++) begin
+            for (int j = 0; j < `BPU_BHT_DEPTH; j++) begin
+                bht[i][j] <= '0;
+            end
+        end
     end
     if (bht_we) begin
         bht[correct_info.pc[2]][bht_waddr] <= bht_wdata[correct_info.pc[2]];

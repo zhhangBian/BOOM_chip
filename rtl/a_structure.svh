@@ -675,7 +675,7 @@ typedef struct packed {
     logic [1:0][1:0]   msize;   // 读字节数目 - 1
     logic [1 :0]       w_mem;
 
-    decode_info_t      di[1:0];
+    decode_info_t [1:0] di;
 } p_i_pkg_t;
 
 /**********************store buffer pkg******************/
