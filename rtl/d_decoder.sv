@@ -30,7 +30,7 @@ endfunction
 // 纯组合逻辑，D流水级的时序在顶层模块上，其实也就是在进来的时候打了一拍放到了FIFO中而已。
 module decoder (
     handshake_if.receiver               receiver, // f_d_pkg_t type
-    handshake_if.sender                 sender, // d_r_pkg_t type
+    handshake_if.sender                 sender // d_r_pkg_t type
 
     // output d_decoder_info_t   [1:0]       decode_infos, // TODO: 需要合并到sender中
 );

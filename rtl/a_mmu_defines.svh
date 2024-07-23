@@ -21,23 +21,6 @@
 
 //tlb
 typedef struct packed {
-    logic           e;
-    logic [9:0]  asid;
-    logic           g;
-    logic     huge_ps;
-    logic [18:0] vppn;
-} tlb_key_t;
-
-typedef struct packed {
-    logic           v;
-    logic           d;
-    logic [1:0]   mat;
-    logic [1:0]   plv;
-    logic [19:0]  ppn;
-} tlb_value_t;
-
-//tlb
-typedef struct packed {
     logic [31:0]  pa;
     logic [1:0]  mat;
     logic      valid;

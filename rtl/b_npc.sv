@@ -19,7 +19,7 @@ logic [31:0] npc;
 
 assign npc = {pc[31:3] + 1, 3'b000};
 
-always_ff @( clk ) begin : pc_logic
+always_ff @(posedge clk ) begin : pc_logic
     if (!rst_n) begin
         pc <= `BPU_INIT_PC;
     end

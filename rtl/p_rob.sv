@@ -139,6 +139,7 @@ always_comb begin
     // C级
     for (integer i = 0; i < 2; i++) begin
         commit_info_o[i].w_data = commit_data_o[i].data;
+        commit_info_o[i].s_data = commit_data_o[i].s_data;
         commit_info_o[i].arf_id = commit_inst_o[i].areg;
         commit_info_o[i].rob_id = commit_inst_o[i].w_preg;
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
@@ -147,8 +148,9 @@ always_comb begin
         commit_info_o[i].c_valid  = commit_inst_o[i].w_valid; // TODO
 
         commit_info_o[i].pc = commit_inst_o[i].pc;
-        commit_info_o[i].data_rk = /*TODO*/; // TODO: 要从 I 级流水下来。
-        commit_info_o[i].data_rj = /*TODO*/;
+
+        commit_info_o[i].data_rk = commit_data_o[i].s_data[0];
+        commit_info_o[i].data_rj = commit_data_o[i].s_data[1];
         commit_info_o[i].data_imm = commit_inst_o[i].addr_imm;
 
         commit_info_o[i].first_commit = '0;
@@ -170,7 +172,7 @@ always_comb begin
         commit_info_o[i].fetch_exception = commit_data_o[i].ctrl.exc_info.fetch_exception;/* TODO */;
         commit_info_o[i].syscall_inst = commit_inst_o[i].syscall_inst;
         commit_info_o[i].break_inst = commit_inst_o[i].break_inst;
-        commit_info_o[i].decode_err = decode_err;
+        commit_info_o[i].decode_err = commit_inst_o[i].decode_err;
         commit_info_o[i].priv_inst = commit_inst_o[i].priv_inst; //要求：不包含hit类cacop
         commit_info_o[i].execute_exception = commit_data_o[i].ctrl.exc_info.execute_exception;// TODO: 访存异常???
 
@@ -197,8 +199,8 @@ always_comb begin
         commit_info_o[i].branch_info.is_branch = commit_inst_o[i].is_branch;
         commit_info_o[i].branch_info.target = '0; // TODO: branch_info 似乎不需要 target 域
 
-        commit_info_o[i].csr_op_type = comit_inst_o[i].csr_op_type;
-        commit_info_o[i].csr_num = comit_inst_o[i].csr_num;
+        commit_info_o[i].csr_op_type = commit_inst_o[i].csr_op_type;
+        commit_info_o[i].csr_num = commit_inst_o[i].csr_num;
         end
 end
 
@@ -241,11 +243,12 @@ always_comb begin
         cdb_preg_i[i] = cdb_info_i[i].w_preg;
         cdb_valid_i[i] = cdb_info_i[i].w_valid;
 
-        cdb_data_i[i].w_preg = cdb_info_i[i].w_preg;
-        cdb_data_i[i].data = cdb_info_i[i].w_data;
-        cdb_data_i[i].w_valid = cdb_info_i[i].w_valid;
-        cdb_data_i[i].ctrl = cdb_info_i[i].ctrl;
-        cdb_data_i[i].lsu_info = cdb_info_i[i].lsu_info;
+        cdb_data_i[i].w_preg    = cdb_info_i[i].w_preg;
+        cdb_data_i[i].data      = cdb_info_i[i].w_data;
+        cdb_data_i[i].s_data    = cdb_info_i[i].s_data;
+        cdb_data_i[i].w_valid   = cdb_info_i[i].w_valid;
+        cdb_data_i[i].ctrl      = cdb_info_i[i].ctrl;
+        cdb_data_i[i].lsu_info  = cdb_info_i[i].lsu_info;
         // C级
         commit_info_o[i].w_data = commit_data_o[i].data;
     end
@@ -291,7 +294,7 @@ end
 
 // P级写
 registers_file_banked # (
-    .DATA_WITH($bits(rob_valid_entry_t)),
+    .DATA_WIDTH($bits(rob_valid_entry_t)),
     .DEPTH(1 << `ROB_WIDTH),
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),
@@ -311,7 +314,7 @@ registers_file_banked # (
 
 // CDB级写
 registers_file_banked # (
-    .DATA_WITH($bits(rob_valid_entry_t)),
+    .DATA_WIDTH($bits(rob_valid_entry_t)),
     .DEPTH(1 << `ROB_WIDTH),
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),

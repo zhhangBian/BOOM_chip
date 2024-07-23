@@ -57,7 +57,7 @@ logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 logic [PTR_LEN - 1:0]   iq_tail, iq_tail_q;
 
 always_ff @(posedge clk) begin
-    if(!rst_n || flush_i) begin
+    if(!rst_n || flush) begin
         iq_head_q       <= '0;
         iq_tail_q       <= '0;
         free_cnt_q      <= IQ_SIZE;
@@ -233,15 +233,11 @@ word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
 logic            wkup_valid_o;
-rob_id_t         wkup_reg_id;
 
 always_comb begin
     select_di           = '0;
     select_data         = '0;
     select_wkup_hit_q   = '0;
-    // 选中了提前唤醒
-    wkup_valid_o        = '0;
-    wkup_reg_id         = '0;
 
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
         // 如果发射对应指令
@@ -249,9 +245,6 @@ always_comb begin
             select_di       |= entry_di[i];
             select_data     |= entry_data[i];
             select_wkup_hit_q |= wkup_hit_q[i];
-            // 选中了提前唤醒
-            wkup_valid_o    |= excute_ready;
-            wkup_reg_id_o   |= entry_di[i].wreg_id;
         end
     end
 end
@@ -284,6 +277,7 @@ data_wkup #(
 // 创建IQ相联的部件
 mud_i_t req_i;
 mdu_o_t res_o;
+word_t [1:0] data_s;
 
 logic   mdu_valid_i, mdu_ready_o;
 logic   mdu_valid_o, mdu_ready_i;
@@ -295,33 +289,34 @@ assign mdu_ready_i  = fifo_ready;
 always_comb begin
     req_i.data      = select_data_q;
     req_i.op        = op;
-    req_i.reg_id    = wkup_reg_id;
+    req_i.reg_id    = select_di_q.wreg_id;
 
     result_o.w_data   = res_o.data;
     result_o.rob_id   = res_o.reg_id;
-    result_o.w_reg    = select_di_q.wreg;
-    result_o.r_valid  = select_di_q.inst_valid;
+    result_o.w_reg    = di_o.wreg;
+    result_o.r_valid  = di_o.inst_valid;
     result_o.lsu_info = '0;
-    result_o.ctrl.exc_info.fetch_exception      =  select_di_q.fetch_exc_info.fetch_exception;
+    result_o.ctrl.exc_info.fetch_exception      =  di_o.fetch_exc_info.fetch_exception;
     result_o.ctrl.exc_info.execute_exception    =  '0;
-    result_o.ctrl.exc_info.exc_code             =  select_di_q.fetch_exc_info.exc_code;
-    result_o.ctrl.exc_info.badva                =  select_di_q.fetch_exc_info.badv;
+    result_o.ctrl.exc_info.exc_code             =  di_o.fetch_exc_info.exc_code;
+    result_o.ctrl.exc_info.badva                =  di_o.fetch_exc_info.badv;
 end
 
-e_mdu mdu (
+mdu mdu_inst (
     .clk,
     .rst_n,
     .flush,
 
     .req_i(req_i),
-    .di_i(select_data_q),
+    .di_i(select_di_q),
     .res_o(res_o),
     .di_o(di_o),
+    .data_s_o(data_s),
 
     .valid_i(mdu_valid_i),
     .ready_o(mdu_ready_o),
     .valid_o(mdu_valid_o),
-    .ready_i(mdu_ready_i),
+    .ready_i(mdu_ready_i)
 );
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

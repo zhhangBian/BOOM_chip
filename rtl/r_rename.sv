@@ -1,6 +1,6 @@
-`include "a_define.h"
+`include "a_defines.svh"
 
-module r_rename #(
+module rename #(
     parameter int unsigned DEPTH = 32,
     parameter int unsigned ADDR_DEPTH   = (DEPTH > 1) ? $clog2(DEPTH) : 1
 )(
@@ -16,7 +16,7 @@ module r_rename #(
     input  logic c_flush_i,
     // 是否有指令退休
     input  logic [1 :0] c_retire_i,
-    input  retire_pkg_t [1 :0] c_retire_info_i,
+    input  retire_pkg_t [1 :0] c_retire_info_i
     // …… TODO: C级其他信号
 );
 
@@ -128,7 +128,6 @@ commit_rat # (
     .DATA_WIDTH(7),
     .DEPTH(32),
     .R_PORT_COUNT(4 + 2), 
-    .W_PORT_COUNT(2),     
     .NEED_RESET(1),
     .NEED_FORWARD(1)
 ) c_rename_table (
@@ -150,7 +149,6 @@ arf # (
     .DATA_WIDTH(32),
     .DEPTH(32),
     .R_PORT_COUNT(4), 
-    .W_PORT_COUNT(2), 
     .NEED_RESET(1),
     .NEED_FORWARD(1)
 ) arf_inst (
@@ -170,14 +168,16 @@ assign d_r_pkg_i = d_r_receiver.data;
 assign r_p_sender.data = r_p_pkg_o;
 logic   [3 : 0]  r_p_arfdata_valid;
 for (genvar i = 0; i < 4; i++) begin
-    r_p_arfdata_valid[i] = '0;
-    if (r_rename_result[i] == cr_result[i]) begin
-        r_p_arfdata_valid[i] |= '1;
+    always_comb begin
+        r_p_arfdata_valid[i] = '0;
+        if (r_rename_result[i] == cr_result[i]) begin
+            r_p_arfdata_valid[i] |= '1;
+        end
     end
 end
 
 always_ff @(posedge clk) begin
-    if (!rst_n || flush_i) begin
+    if (!rst_n || c_flush_i) begin
         r_p_pkg_o <= '0;
     end else begin
         if (r_p_sender.valid & r_p_sender.ready) begin

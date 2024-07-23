@@ -318,6 +318,13 @@ end
 // 只在第二级
 
 logic [1:0] commit_flush_info;
+logic [1:0] predict_success_q;
+logic [1:0][31:0] next_pc_q;
+predict_info_t predict_info_q [1:0];
+logic [1:0] taken_q;
+branch_info_t branch_info_q [1:0];
+logic [1:0][31:0] real_target_q;
+logic [31:0]      exp_pc_q;
 
 always_comb begin
     commit_flush_info = '0;
@@ -451,6 +458,7 @@ always_ff @( posedge clk ) begin
         taken_q           <= '0;
         branch_info_q     <= '0;
         real_target_q     <= '0;
+        exp_pc_q          <= '0;
     end
     else if (stall) begin
         predict_success_q <= predict_success_q;
@@ -459,6 +467,7 @@ always_ff @( posedge clk ) begin
         taken_q           <= taken_q;
         branch_info_q     <= branch_info_q;
         real_target_q     <= real_target_q;
+        exp_pc_q          <= exp_pc_q;
     end
     else if (flush) begin
         predict_success_q <= '0;
@@ -467,6 +476,7 @@ always_ff @( posedge clk ) begin
         taken_q           <= '0;
         branch_info_q     <= '0;
         real_target_q     <= '0;
+        exp_pc_q          <= '0;
     end
     else begin
         predict_success_q <= predict_success;
@@ -475,6 +485,7 @@ always_ff @( posedge clk ) begin
         taken_q           <= taken;
         branch_info_q     <= branch_info;
         real_target_q     <= real_target;
+        exp_pc_q          <= exp_pc;
     end
 end
 
@@ -1384,7 +1395,6 @@ assign commit_icache_req_o = commit_icache_req;
 
 logic axi_back_target, axi_back_target_q;
 
-rob_commit_pkg_t rob_commit_q;
 lsu_iq_pkg_t lsu_info_s, lsu_info_q;
 
 word_t [CACHE_BLOCK_NUM-1:0]     cache_block_data, cache_block_data_q;

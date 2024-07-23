@@ -12,18 +12,18 @@ module fpga_ram_2r1w_64d#(
     input                          wea
 );
 
-    for(genvar i = 0 ; i < WIDTH; i++) begin : gen_qpram
-        qpram_64x1 qpram_inst(
-            .CLK(clk),
-            .CEN(1'b1), 
-            .WEN(wea),
-            .A0(addr0),
-            .A1(addr1),
-            .AW(addrw),
-            .DI(  din[i]),
-            .Q0(dout0[i]),
-            .Q1(dout1[i]),
-        );
-    end
+for(genvar i = 0 ; i < WIDTH; i++) begin : gen_qpram
+    qpram_64x1 qpram_inst(
+        .CLK(clk),
+        .CEN(1'b1), 
+        .WEN(wea),
+        .A0(addr0),
+        .A1(addr1),
+        .AW(addrw),
+        .DI(  din[i]),
+        .Q0(dout0[i]),
+        .Q1(dout1[i])
+    );
+end
 
 endmodule
