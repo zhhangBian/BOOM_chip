@@ -151,7 +151,7 @@ tlb_write_req_t tlb_update_pkg;
 
 logic icache_axi_addr_valid;
 logic [31:0] icache_axi_addr;
-logic [3:0] icache_axi_len;
+logic [7:0] icache_axi_len;
 logic axi_icache_ready;
 logic axi_icache_valid;
 logic [31:0] axi_icache_data;
@@ -544,8 +544,9 @@ rob # () rob (
     .commit_valid(rob_commit_valid)
 );
 
-handshake_if #(.T(commit_cache_req_t)) commit_cache_if();
-handshake_if #(.T(cache_commit_resp_t)) cache_commit_if();
+/* 2024/07/24 fix*/
+// handshake_if #(.T(commit_cache_req_t)) commit_cache_if();
+// handshake_if #(.T(cache_commit_resp_t)) cache_commit_if();
 
 commit_cache_req_t commit_cache_req;
 cache_commit_resp_t cache_commit_resp;
@@ -593,7 +594,7 @@ commit # () commit(
     .axi_commit_rvalid_i(axi_commit_rvalid),
     .axi_commit_last_i(axi_commit_last),
     .commit_axi_awvalid_o(commit_axi_awvalid),
-    .axi_commit_awready_i(axi_commit_arready),
+    .axi_commit_awready_i(axi_commit_awready), /* 2024/07/24 fix axi_commit_arready -> axi_commit_awready*/
     .commit_axi_wvalid_o(commit_axi_wvalid),
     .commit_axi_wlast_o(commit_axi_wlast),
     .axi_commit_wready_i(axi_commit_wready),
@@ -644,21 +645,22 @@ dcache # () dcache(
     .cpu_lsu_receiver(cpu_lsu_if.receiver),
     .lsu_cpu_sender(lsu_cpu_if.sender),
 
-    .commit_cache_req(commit_cache_if.data),
-    .cache_commit_resp(cache_commit_if.data),
+    .commit_cache_req(commit_cache_req), /* 2024/07/24 fix interface to struct*/
+    .cache_commit_resp(cache_commit_resp), /* 2024/07/24 fix interface to struct*/
 
     .tlb_write_req_i(tlb_update_pkg)
 );
 
 /*============================== 2x1 AXI Bridge ==============================*/
 logic [10:0] rubblish_wire;
-
+assign wid = '0;
 axi_crossbar # (
     .S_COUNT(2), // 连接两个cache, == 2
     .M_COUNT(1), // 连接总线，== 1
     .DATA_WIDTH(32), // 数据位宽 官方包是 32 位，需要使用 burst 传输
     .ADDR_WIDTH(32), // 地址位宽， 32 位
     .S_ID_WIDTH(4), // 官方包是 4 
+    .M_ID_WIDTH(4), /* 2024/07/24 fix */
     .M_ADDR_WIDTH(32'd32), // ICACHE和DCACHE的数据位宽应该都是32位？TODO: 取决于物理地址宽度
     .M_CONNECT_WRITE(2'b01) // TODO: 设置成仅 DCache 侧可写
 ) axi_crossbar_2x1_inst (
@@ -677,18 +679,18 @@ axi_crossbar # (
     .s_axi_awprot('0),
     .s_axi_awqos('0),
     .s_axi_awuser('0),
-    .s_axi_awvalid(commit_axi_awvalid),
+    .s_axi_awvalid({1'b0,commit_axi_awvalid}),
     .s_axi_awready({rubblish_wire[0],axi_commit_awready}),
     .s_axi_wdata({32'b0, commit_axi_req.wdata}),
     .s_axi_wstrb({4'b0, commit_axi_req.strb}),
     .s_axi_wlast({'0, commit_axi_wlast}),
     .s_axi_wuser('0),
-    .s_axi_wvalid(commit_axi_wvalid),
+    .s_axi_wvalid({1'b0,commit_axi_wvalid}),
     .s_axi_wready({rubblish_wire[1], axi_commit_wready}),
     .s_axi_bready('1),
     .s_axi_arid('0),
-    .s_axi_araddr({icache_axi_addr, commit_axi_req.waddr}),
-    .s_axi_arlen({icache_axi_len, commit_axi_req.wlen}),
+    .s_axi_araddr({icache_axi_addr, commit_axi_req.raddr}), /*2024/07/24 fix waddr -> raddr*/
+    .s_axi_arlen({icache_axi_len, commit_axi_req.rlen}), /*2024/07/24 fix wlen -> rlen*/
     .s_axi_arsize({3'b010,3'b010}),
     .s_axi_arburst({2'b01,2'b01}),
     .s_axi_arlock('0),
@@ -701,7 +703,7 @@ axi_crossbar # (
     .s_axi_rid(),
     .s_axi_rdata({axi_icache_data, axi_commit_resp.rdata}),
     .s_axi_rresp(),
-    .s_axi_rlast(),
+    .s_axi_rlast(axi_commit_last),
     .s_axi_ruser(),
     .s_axi_rvalid({axi_icache_valid, axi_commit_rvalid}),
     .s_axi_rready('1),

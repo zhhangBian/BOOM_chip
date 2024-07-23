@@ -240,7 +240,7 @@ decode_info_t   select_di, select_di_q, select_di_qq;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
-rob_id_t         wkup_reg_id;
+// rob_id_t         wkup_reg_id; /* 2024/07/24 fix */
 
 always_comb begin
     select_di           = '0;

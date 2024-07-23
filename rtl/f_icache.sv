@@ -20,7 +20,7 @@ module icache #(
     // axi信号
     output  logic               addr_valid_o,
     output  logic  [31:0]       addr_o,
-    output  logic  [3 :0]       data_len_o,
+    output  logic  [7 :0]       data_len_o, /* 2024/07/24 fix*/
     input   logic               axi_resp_ready_i,
     input   logic               axi_data_valid_i,
     input   logic  [31:0]       axi_data_i,
