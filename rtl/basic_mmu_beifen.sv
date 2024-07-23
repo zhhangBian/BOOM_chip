@@ -22,7 +22,7 @@ module mmu #(
 );
 
 //查tlb
-wire  cur_asid = csr.asid;
+wire  [9:0] cur_asid = csr.asid[`_ASID];
 logic tlb_found;
 tlb_key_t   tlb_key_read;
 tlb_value_t tlb_value_read;
@@ -37,6 +37,7 @@ always_comb begin
         && (tlb_key_q[i].g || (tlb_key_q[i].asid == cur_asid))
         && vppn_match(va, tlb_key_q[i].huge_page, tlb_key_q[i].vppn)) begin
             tlb_found = 1;
+            tlb_key_read = tlb_key_q[i];
             if (tlb_key_q[i].huge_page) begin
                 tlb_value_read = tlb_value_q[i][va[21]];   //4MB,2MB，TODO ？
             end else begin
@@ -46,12 +47,12 @@ always_comb begin
     end
 end
 /*===================ok===================*/
-function automatic logic vppn_match(logic [31:0] va, 
+function automatic logic vppn_match(logic [31:0] va_param, 
                                     logic huge_page, logic [18: 0] vppn);//位宽好像错了
     if (huge_page) begin
-        return va[31:22] == vppn[18:9]; //ok
+        return va_param[31:22] == vppn[18:9]; //ok
     end else begin
-        return va[31:13] == vppn;
+        return va_param[31:13] == vppn;
     end
 endfunction
 
@@ -106,7 +107,7 @@ always_comb begin
             trans_result.mat = dmw_read[`_DMW_MAT];
             trans_result.valid = 1;
         end else begin
-            if (tlb_value_read.huge_page) begin
+            if (tlb_key_read.huge_page) begin //fixed
                 trans_result.pa = {tlb_value_read.ppn, va[11:0]};
                 trans_result.mat = tlb_value_read.mat;
             end else begin
@@ -130,7 +131,7 @@ always_comb begin
             end else if(csr.crmd[`_CRMD_PLV] > tlb_value_read.plv) begin
                 trans_result.valid = 0;
                 ecode = `_ECODE_PPI;
-            end else if((mmu_mem_type == `_MEM_STORE) && (!trans_result.d)) begin
+            end else if((mmu_mem_type == `_MEM_STORE) && (!tlb_value_read.d)) begin//fixed
                 trans_result.valid = 0;
                 ecode = `_ECODE_PME;
             end
