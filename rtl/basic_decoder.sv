@@ -36,6 +36,7 @@ always_comb begin
     decode_info_o.decode_err = 1'b0; // 有修改
     decode_info_o.ertn_inst = 1'd0;
     decode_info_o.flush_inst = 1'd0;
+    decode_info_o.inst = ins_i;
     decode_info_o.ibar_inst = 1'd0;
     decode_info_o.idle_inst = 1'd0;
     decode_info_o.imm_type = `_IMM_U12;

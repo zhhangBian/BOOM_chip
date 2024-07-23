@@ -180,6 +180,7 @@ always_comb begin
 
         commit_info_o[i].badva      = commit_data_o[i].ctrl.exc_info.badva; // TODO: 访存异常
 
+        commit_info_o[i].rdcnt_en = commit_inst_o[i].rdcnt_inst;
         commit_info_o[i].rdcntvh_en = commit_inst_o[i].rdcntvh_inst;
         commit_info_o[i].rdcntvl_en = commit_inst_o[i].rdcntvl_inst;
         commit_info_o[i].rdcntid_en = commit_inst_o[i].rdcntid_inst;

@@ -134,6 +134,7 @@ typedef struct packed {
     ibar_inst_t     ibar_inst;
     idle_inst_t     idle_inst; // 仅在 IDLE 指令下置1.
     imm_type_t      imm_type; // 立即数类型 _IMM_...
+    inst_t          inst; // 指令本身
     invtlb_inst_t   invtlb_inst; // 是否是invtlb指令
     jump_inst_t     jump_inst; // 是否是跳转指令
     ll_inst_t       ll_inst; // 是否是原子访问指令
