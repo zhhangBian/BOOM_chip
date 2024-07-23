@@ -78,7 +78,7 @@ module commit #(
     input   axi_commit_resp_t   axi_commit_resp_i,
 
     // commit与ARF的接口
-    output  logic [1:0][31:0]commit_debug_pc_o,
+    output  logic [31:0] commit_debug_pc_o [1:0],
     output  logic   [1:0]   commit_arf_we_o,
     output  word_t  [1:0]   commit_arf_data_o,
     output  logic [1:0][4:0]commit_arf_areg_o,
