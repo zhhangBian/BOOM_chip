@@ -315,7 +315,7 @@ assign result = e_alu_result;
 // 配置wkup的输出信息
 always_ff @(posedge clk) begin
     if(flush || ~rst_n) begin
-        e_alu_result <= '0;
+        e_alu_result_q <= '0;
         result_q     <= '0; 
         real_data_q  <= '0;
     end
