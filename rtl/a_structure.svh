@@ -526,6 +526,7 @@ typedef struct packed {
 typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0] w_preg;
     logic [31             : 0] w_data;
+    logic [1:0][31:0]          s_data;
     logic                      w_valid;  // valid
     rob_ctrl_entry_t           ctrl;
     lsu_iq_pkg_t                 lsu_info;
@@ -541,6 +542,7 @@ typedef struct packed {
     logic    w_reg;    // 要写寄存器
     rob_id_t rob_id;   // rob_id
     word_t   w_data;   // 写的数据
+    word_t [1:0] s_data;
     // else information for control
     // predict_info_t predict_info; // predict_info is in rob
     lsu_iq_pkg_t lsu_info;
@@ -615,6 +617,7 @@ typedef struct packed {
 typedef struct packed {
     logic [`ROB_WIDTH - 1:0] w_preg;
     logic [31: 0]            data;
+    logic [1:0][31: 0]       s_data;
     logic                    w_valid;  // valid
     rob_ctrl_entry_t         ctrl;
     lsu_iq_pkg_t               lsu_info;

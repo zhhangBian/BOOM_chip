@@ -78,9 +78,9 @@ mmu #(
     .TLB_ENTRY_NUM(64),
     .TLB_SWITCH_OFF(0)
 ) mmu_inst (
-    .clk,
-    .rst_n,
-    .flush_i,
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush_i(flush_i),
     .va(pc/*改成PC*/),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // icache中，取指
@@ -95,9 +95,9 @@ mmu #(
     .TLB_ENTRY_NUM(64),
     .TLB_SWITCH_OFF(0)
 ) mmu_commit (
-    .clk,
-    .rst_n,
-    .flush_i,
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush_i(flush_i),
     .va(commit_cache_req.addr),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // icache中，取指

@@ -139,6 +139,7 @@ always_comb begin
     // C级
     for (integer i = 0; i < 2; i++) begin
         commit_info_o[i].w_data = commit_data_o[i].data;
+        commit_info_o[i].s_data = commit_data_o[i].s_data;
         commit_info_o[i].arf_id = commit_inst_o[i].areg;
         commit_info_o[i].rob_id = commit_inst_o[i].w_preg;
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
@@ -147,8 +148,8 @@ always_comb begin
         commit_info_o[i].c_valid  = commit_inst_o[i].w_valid; // TODO
 
         commit_info_o[i].pc = commit_inst_o[i].pc;
-        commit_info_o[i].data_rk = /*TODO*/;
-        commit_info_o[i].data_rj = /*TODO*/;
+        commit_info_o[i].data_rk = commit_data_o[i].s_data[0];
+        commit_info_o[i].data_rj = commit_data_o[i].s_data[1];
         commit_info_o[i].data_imm = commit_inst_o[i].addr_imm;
 
         commit_info_o[i].first_commit = '0; // TODO: check with zhx
@@ -241,11 +242,12 @@ always_comb begin
         cdb_preg_i[i] = cdb_info_i[i].w_preg;
         cdb_valid_i[i] = cdb_info_i[i].w_valid;
 
-        cdb_data_i[i].w_preg = cdb_info_i[i].w_preg;
-        cdb_data_i[i].data = cdb_info_i[i].w_data;
-        cdb_data_i[i].w_valid = cdb_info_i[i].w_valid;
-        cdb_data_i[i].ctrl = cdb_info_i[i].ctrl;
-        cdb_data_i[i].lsu_info = cdb_info_i[i].lsu_info;
+        cdb_data_i[i].w_preg    = cdb_info_i[i].w_preg;
+        cdb_data_i[i].data      = cdb_info_i[i].w_data;
+        cdb_data_i[i].s_data    = cdb_info_i[i].s_data;
+        cdb_data_i[i].w_valid   = cdb_info_i[i].w_valid;
+        cdb_data_i[i].ctrl      = cdb_info_i[i].ctrl;
+        cdb_data_i[i].lsu_info  = cdb_info_i[i].lsu_info;
         // C级
         commit_info_o[i].w_data = commit_data_o[i].data;
     end

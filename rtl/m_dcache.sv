@@ -63,7 +63,7 @@ tlb_exception_t tlb_exception;
 mmu #(
     .TLB_ENTRY_NUM(64),
     .TLB_SWITCH_OFF(0)
-) (
+) mmu_inst (
     .clk,
     .rst_n,
     .flush_i,

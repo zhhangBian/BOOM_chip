@@ -308,7 +308,7 @@ always_comb begin
     result_o.ctrl.exc_info.badva                =  select_di_q.fetch_exc_info.badv;
 end
 
-e_mdu mdu (
+mdu mdu_inst (
     .clk,
     .rst_n,
     .flush,

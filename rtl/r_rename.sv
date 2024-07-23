@@ -1,6 +1,6 @@
 `include "a_defines.svh"
 
-module r_rename #(
+module rename #(
     parameter int unsigned DEPTH = 32,
     parameter int unsigned ADDR_DEPTH   = (DEPTH > 1) ? $clog2(DEPTH) : 1
 )(
