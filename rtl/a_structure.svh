@@ -483,6 +483,7 @@ typedef struct packed {
 
     logic   [31:0] badva;
 
+    logic   rdcnt_en;
     logic   rdcntvh_en;
     logic   rdcntvl_en;
     logic   rdcntid_en;

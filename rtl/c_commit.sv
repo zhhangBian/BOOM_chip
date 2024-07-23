@@ -136,13 +136,13 @@ logic [1:0] first_commit;
 always_comb begin
     //在有效的情况下是不是单提交的情况
     first_commit[0]     = rob_commit_i[0].flush_inst | //一定flush指令
-                          (|(rob_commit_i[1].lsu_info.strb)) | //store
+                          (|rob_commit_i[0].lsu_info.strb) | //store
                           cur_exception | //异常
                           ~rob_commit_i[0].lsu_info.hit | //cache miss
                           ~predict_success[0];//预测错
 
     first_commit[1]     = rob_commit_i[1].flush_inst | 
-                          (|(rob_commit_i[1].lsu_info.strb)) | 
+                          (|rob_commit_i[1].lsu_info.strb) | 
                           another_exception | 
                           ~rob_commit_i[1].lsu_info.hit;//仅第二条分支预测失败也可以双提
 
@@ -297,7 +297,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         is_lsu_read[i]  = |lsu_info[i].rmask;
 
         is_lsu[i]       = is_lsu_write[i] | is_lsu_read[i];
-        is_uncached[i]  = lsu_info[i].uncached;
+        is_uncached[i]  = rob_commit_q[i].is_uncached;
         is_csr_fix[i]   = rob_commit_q[i].is_csr_fix;
         is_cache_fix[i] = rob_commit_q[i].is_cache_fix;
         is_tlb_fix[i]   = rob_commit_q[i].is_tlb_fix;
@@ -1091,14 +1091,14 @@ always_comb begin
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_D]  = tlb_entry.value[0].d;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_PLV]= tlb_entry.value[0].plv;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_MAT]= tlb_entry.value[0].mat;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.value[0].g;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.key.g;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_PPN]= tlb_entry.value[0].ppn;
 
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_V]  = tlb_entry.value[1].v;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_D]  = tlb_entry.value[1].d;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_PLV]= tlb_entry.value[1].plv;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_MAT]= tlb_entry.value[1].mat;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.value[1].g;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.key.g;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_PPN]= tlb_entry.value[1].ppn;
         end
         else begin
