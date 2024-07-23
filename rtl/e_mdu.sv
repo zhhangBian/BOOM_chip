@@ -20,6 +20,7 @@ module mdu (
 
 mdu_o_t mul_res_o, div_res_o;
 word_t [1:0] data_s;
+logic mul_valid_i, div_valid_i;
 logic mul_valid_o, div_valid_o;
 logic mul_ready_o, div_ready_o;
 
