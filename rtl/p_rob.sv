@@ -138,9 +138,6 @@ always_comb begin
     end
     // C级
     for (integer i = 0; i < 2; i++) begin
-        commit_info_o[i].= commit_data_o[i].;
-        commit_info_o[i].= commit_inst_o[i].;
-
         commit_info_o[i].w_data = commit_data_o[i].data;
         commit_info_o[i].arf_id = commit_inst_o[i].areg;
         commit_info_o[i].rob_id = commit_inst_o[i].w_preg;
@@ -150,11 +147,11 @@ always_comb begin
         commit_info_o[i].c_valid  = commit_inst_o[i].w_valid; // TODO
 
         commit_info_o[i].pc = commit_inst_o[i].pc;
-        commit_info_o[i].data_rk = /*TODO*/;
+        commit_info_o[i].data_rk = /*TODO*/; // TODO: 要从 I 级流水下来。
         commit_info_o[i].data_rj = /*TODO*/;
         commit_info_o[i].data_imm = commit_inst_o[i].addr_imm;
 
-        commit_info_o[i].first_commit = '0; // TODO: check with zhx
+        commit_info_o[i].first_commit = '0;
         commit_info_o[i].lsu_info = commit_data_o[i].lsu_info;
 
         commit_info_o[i].is_ll = commit_inst_o[i].ll_inst;
@@ -162,7 +159,7 @@ always_comb begin
         commit_info_o[i].is_uncached = commit_data_o[i].lsu_info.uncached;
         commit_info_o[i].exc_code = commit_data_o[i].ctrl.exc_info.exc_code;   // 位宽随便定的，之后调整
         commit_info_o[i].is_csr_fix = |commit_info_o[i].csr_op_type;
-        commit_info_o[i].csr_type = commit_info_o[i].csr_op_type; // 往后传
+        commit_info_o[i].csr_type = commit_info_o[i].csr_op_type;
         commit_info_o[i].csr_num = commit_info_o[i].csr_num;
         commit_info_o[i].is_cache_fix = commit_inst_o[i].cacop_inst;
         commit_info_o[i].cache_code = commit_inst_o[i].inst_4_0;
