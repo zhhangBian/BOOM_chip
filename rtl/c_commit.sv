@@ -78,6 +78,7 @@ module commit #(
     input   axi_commit_resp_t   axi_commit_resp_i,
 
     // commit与ARF的接口
+    output  logic [1:0][31:0]commit_debug_pc_o,
     output  logic   [1:0]   commit_arf_we_o,
     output  word_t  [1:0]   commit_arf_data_o,
     output  logic [1:0][4:0]commit_arf_areg_o,
@@ -209,6 +210,7 @@ always_comb begin
         commit_arf_we_o[i]   = retire_request_o[i] & rob_commit_q[i].w_reg & !cur_exception_q;
         //接到rename级的要用这个！
 
+        commit_debug_pc_o[i]   = rob_commit_q[i].pc;
         commit_arf_data_o[i] = rob_commit_q[i].rdcnt_en  ? rdcnt_data_q:
                                |rob_commit_q[i].csr_type ? commit_csr_data_q:
                                rob_commit_q[i].w_data;
@@ -220,6 +222,7 @@ always_comb begin
 
     if(ls_fsm_q == S_UNCACHED_RD) begin
         if(axi_commit_rvalid_i) begin
+            commit_debug_pc_o[0]   = rob_commit_q[0].pc;
             commit_arf_we_o[0]   = |rob_commit_q[0].lsu_info.rmask;
             commit_arf_data_o[0] = offset(axi_commit_resp_i.rdata, rob_commit_q[0].lsu_info.msize, rob_commit_q[0].lsu_info.rmask, rob_commit_q[0].lsu_info.msigned);//TODO rdata mask
             commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
@@ -664,9 +667,9 @@ always_comb begin
         7'b01?????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].pc; //存badv
+            csr_exception_update.badv                    = rob_commit_i[0].badv; //存badv
             if (rob_commit_i[0].exc_code != `_ECODE_ADEF) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].pc[31:13];        //tlb例外存vppn
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badv[31:13];        //tlb例外存vppn
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
