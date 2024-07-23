@@ -408,7 +408,7 @@ assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         next_pc[i] = rob_commit_i[i].pc + 4;
-        predict_branch[i] = predict_info[i].taken;
+        predict_branch[i] = predict_info[i].is_branch;
 
         case (branch_info[i].br_type)
             // 比较结果由ALU进行计算
