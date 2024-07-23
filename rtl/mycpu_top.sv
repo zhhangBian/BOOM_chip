@@ -1,5 +1,8 @@
 `include "a_defines.svh"
 
+// 我们是双提交
+`define CPU_2CMT
+
 `ifdef _VERILATOR
 module core_top (
     input    [ 7:0] intrpt,
@@ -68,8 +71,15 @@ module mycpu_top (
     output [31:0] debug0_wb_pc,
     output [ 3:0] debug0_wb_rf_wen,
     output [ 4:0] debug0_wb_rf_wnum,
-    output [31:0] debug0_wb_rf_wdata,
-    output [31:0] debug0_wb_inst
+    output [31:0] debug0_wb_rf_wdata
+    // ,output [31:0] debug0_wb_inst
+`ifdef CPU_2CMT
+    // 我们是双提交
+    output [31:0] debug1_wb_pc,
+    output [ 3:0] debug1_wb_rf_wen,
+    output [ 4:0] debug1_wb_rf_wnum,
+    output [31:0] debug1_wb_rf_wdata
+`endif
 `endif
 `ifdef _FPGA
     // 官方发布包接口
@@ -565,7 +575,8 @@ commit # () commit(
     `endif
     `ifdef _FPGA
         ext_int
-    `endif),
+    `endif
+    ),
 
     .rob_commit_valid_i(rob_commit_valid),
     .rob_commit_i(commit_infos),
