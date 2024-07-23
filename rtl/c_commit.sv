@@ -1567,9 +1567,9 @@ always_comb begin
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
                 commit_axi_awvalid_o = '1;
-                axi_block_data = lsu_info[i].wdata;
+                axi_block_data = lsu_info[0].wdata;
                 // 进行AXI握手
-                axi_wait = ~axi_commit_axready_i;
+                axi_wait = ~axi_commit_awready_i;
             end
         end
         // 如果是一般的访存指令
@@ -1625,7 +1625,7 @@ always_comb begin
                         commit_axi_req.wlen = 4;
                         commit_axi_req.strb = '1;
                         commit_axi_awvalid_o = '1;
-                        axi_wait = ~axi_commit_axready_i;
+                        axi_wait = ~axi_commit_awready_i;
                         // 设置相应的指针
                         axi_block_ptr = '0;
                         axi_block_len = 4;
@@ -1669,7 +1669,7 @@ always_comb begin
                         // 发送Cache请求
                         commit_cache_req.addr       = lsu_info[0].paddr;
                         commit_cache_req.way_choose = lsu_info[0].refill;
-                        commit_cache_req.tag_data   = get_cache_tag(lus_info.paddr, '1, '0);
+                        commit_cache_req.tag_data   = get_cache_tag(lsu_info[0].paddr, '1, '0);
                         commit_cache_req.tag_we     = '1;
                         commit_cache_req.data_data  = '0;
                         commit_cache_req.strb       = '0;
@@ -1700,7 +1700,7 @@ always_comb begin
                         commit_axi_req.wlen = 4;
                         commit_axi_req.strb = '1;
                         commit_axi_awvalid_o = '1;
-                        axi_wait = ~axi_commit_axready_i;
+                        axi_wait = ~axi_commit_awready_i;
                         // 设置相应的指针
                         axi_block_ptr = '0;
                         axi_block_len = 4;
@@ -1797,7 +1797,7 @@ always_comb begin
         else begin
 			commit_axi_wvalid_o = (cache_block_ptr_q > axi_block_ptr_q);
             commit_axi_req.wdata = cache_block_data[axi_block_ptr_q];
-            commit_axi_wlast = (axi_block_ptr_q == axi_block_len - 1);
+            commit_axi_wlast_o = (axi_block_ptr_q == axi_block_len - 1);
 
             if(axi_commit_wready_i) begin
                 axi_block_ptr = axi_block_ptr_q + 1;
