@@ -223,7 +223,7 @@ always_comb begin
             commit_arf_data_o[0] = offset(axi_commit_resp_i.rdata, rob_commit_q[0].lsu_info.msize, rob_commit_q[0].lsu_info.rmask, rob_commit_q[0].lsu_info.msigned);//TODO rdata mask
             commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
             commit_arf_preg_o[0] = rob_commit_q[0].rob_id;
-            commit_arf_check_o[i] = rob_commit_q[i].check;
+            commit_arf_check_o[0] = rob_commit_q[0].check;
             //有了上面哪个时序，这个rob_commit_q就可以直接用了
         end
     end
