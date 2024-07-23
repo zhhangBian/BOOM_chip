@@ -67,7 +67,7 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= iq_tail;
         free_cnt_q      <= free_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (free_cnt >= 2);
+        entry_ready_o   <= (free_cnt_q >= 2); /* 2024/07/24 fix *_q */
     end
 end
 
@@ -166,7 +166,7 @@ end
 
 // ------------------------------------------------------------------
 // 生成执行信号
-assign excute_ready = (!excute_valid_q) || mdu_ready_i;
+assign excute_ready = (!excute_valid_q) | mdu_ready_o; /* 2024/07/24 fix mdu_ready_i -> mdu_ready_o*/
 assign excute_valid = |entry_ready;
 
 always_ff @(posedge clk) begin
@@ -231,7 +231,7 @@ decode_info_t   select_di, select_di_q;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
-logic            wkup_valid_o;
+// logic            wkup_valid_o; /* 2024/07/24 fix not driven*/
 
 always_comb begin
     select_di           = '0;

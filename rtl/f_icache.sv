@@ -62,11 +62,11 @@ assign commit_resp_ready_o = !stall_q;
 // stall逻辑，重填和维护都阻塞，阻塞时注意要
 b_f_pkg_t b_f_pkg, b_f_pkg_q;
 logic [31:0] pc;
-logic [1 :0] mask;
+// logic [1 :0] mask; /* 2024/07/24 fix */
 
 assign b_f_pkg = fetch_icache_receiver.data;
 assign pc      = b_f_pkg.pc & 32'hfffffff8; //对齐
-assign mask    = b_f_pkg.mask;
+// assign mask    = b_f_pkg.mask;
 
 // MMU
 wire [1:0] mem_type = `_MEM_FETCH;

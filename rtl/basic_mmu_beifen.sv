@@ -90,7 +90,7 @@ wire [31:0] dmw_read = dmw0_hit ? dmw0 :
 trans_result_t trans_result;
 
 wire da = csr.crmd[`_CRMD_DA];
-wire pg = csr.crmd[`_CRMD_PG];
+// wire pg = csr.crmd[`_CRMD_PG]; /*2024/07/24 fix ??? 没有改，这个好像没用，逻辑上是不是要和DA结合起来*/
 
 logic [5:0] ecode;
 logic [8:0] esubcode;

@@ -43,7 +43,11 @@ end
 
 always_ff @(posedge clk) begin
     for (integer i = 0; i < 2; i++) begin
-        cdb_data_o[i] <= cdb_data_sel[i];
+        if (!rst_n | flush) begin
+            cdb_data_o[i] <= '0;
+        end else begin
+            cdb_data_o[i] <= cdb_data_sel[i];
+        end
     end
 end
 

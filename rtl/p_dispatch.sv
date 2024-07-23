@@ -172,7 +172,7 @@ assign p_lsu_sender.valid   = '1;
 
 
 p_i_pkg_t [3 : 0] p_i_pkg; // 对应四个发射队列：[3:0]对应lsu,mdu,alu1,alu0
-p_i_pkg_t [3 : 0] p_i_pkg_q; // 握手缓存
+// p_i_pkg_t [3 : 0] p_i_pkg_q; // 握手缓存 /* 2024/07/24 fix*/
 
 // 到四个发射队列的信号的逻辑
 always_comb begin

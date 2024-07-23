@@ -315,13 +315,13 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_alu_handshake_0.data.inst_choose), 
+    .choose(p_alu_handshake_0.data.inst_choose & {2{p_alu_handshake_0.ready}}), /* 2024/07/24 fix*/ 
     .p_di_c(p_alu_handshake_0.data.di), //两条指令各自的译码信息  TODO
     .p_data_c(p_alu_handshake_0.data.data), //从P级传入的两条指令各自的两个data数值
     .p_reg_id_c(p_alu_handshake_0.data.preg), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
     .other_ready(p_alu_handshake_0.valid),
-    .p_valid_c(p_alu_handshake_0.data.data_valid),   // 实际上不是握手的valid信号，而是r_valid，指令有效信号，含义是|p_alu_handshake_0.data.inst_choose（有一个指令选中iq则允许写入）
-
+    .p_valid_c(p_alu_handshake_0.data.data_valid),   
+    
     .entry_ready_o(p_alu_handshake_0.ready), // ready信号
 
     .cdb_data_i(cdb_data), // cdb传入的数据
@@ -359,7 +359,7 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_alu_handshake_1.data.inst_choose),
+    .choose(p_alu_handshake_1.data.inst_choose & {2{p_alu_handshake_1.ready}}), /* 2024/07/24 fix*/
     .p_di_c(p_alu_handshake_1.data.di),
     .p_data_c(p_alu_handshake_1.data.data),
     .p_reg_id_c(p_alu_handshake_1.data.preg),
@@ -408,7 +408,7 @@ lsu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_lsu_handshake.data.inst_choose),
+    .choose(p_lsu_handshake.data.inst_choose & {2{p_lsu_handshake.ready}}), /* 2024/07/24 fix*/
     .p_di_i(p_lsu_handshake.data.di),
     .p_data_i(p_lsu_handshake.data.data),
     .p_reg_id_i(p_lsu_handshake.data.preg),
@@ -458,7 +458,7 @@ mdu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_mdu_handshake.data.inst_choose),
+    .choose(p_mdu_handshake.data.inst_choose & {2{p_mdu_handshake.ready}}), /* 2024/07/24 fix*/
     .p_di_i(p_mdu_handshake.data.di),
     .p_data_i(p_mdu_handshake.data.data),
     .p_reg_id_i(p_mdu_handshake.data.preg),
