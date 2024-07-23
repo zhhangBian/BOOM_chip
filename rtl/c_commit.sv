@@ -865,6 +865,7 @@ end
 `define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
 
 task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
+    timer_interrupt_clear = 0;
     begin
         unique case (csr_num_param)
             `_CSR_CRMD: begin
@@ -1000,7 +1001,6 @@ endtask
 //第一级
 always_comb begin
     csr = csr_q;
-    timer_interrupt_clear = 0;
 
     unique case (csr_type)
         `_CSR_CSRRD: begin
