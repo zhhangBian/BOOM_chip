@@ -13,7 +13,7 @@ function cache_tag_t get_cache_tag(
     return cache_tag;
 endfunction
 
-function automatic offset(input logic [31:0] data, input [1:0] m_size, input [3:0] mask, input msigned);
+function automatic logic [31:0] offset(input logic [31:0] data, input [1:0] m_size, input [3:0] mask, input msigned);
     logic [31:0] lw_data;
     logic        sign;
     lw_data = '0;
@@ -453,7 +453,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         is_branch[i] = branch_info[i].is_branch;
         taken[i] = ((branch_info[i].br_type != BR_NORMAL) ||
                     (rob_commit_i[i].w_data == 1));
-        predict_success[i] = predict_info[i].next_pc == next_pc;
+        predict_success[i] = predict_info[i].next_pc == next_pc[i];
     end
 end
 
@@ -642,7 +642,7 @@ wire priv_excp     = rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 //执行异常  访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
 wire execute_excp  = rob_commit_i[0].execute_exception;
 
-wire [7:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
+wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
 always_comb begin
     /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
@@ -1078,9 +1078,9 @@ always_comb begin
         tlb_update_csr.tlbidx[`_TLBIDX_NE] = 1;
         for (integer i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
             if (tlb_entries_q[i].key.e
-                && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid))
+                && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid[`_ASID]))
                 && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
-                    tlb_update_csr.tlbidx[`_TLBIDX_INDEX] = i; //不知道这里语法有没有问题
+                    tlb_update_csr.tlbidx[`_TLBIDX_INDEX] = i[$clog2(`_TLB_ENTRY_NUM) - 1:0]; //不知道这里语法有没有问题
                     tlb_update_csr.tlbidx[`_TLBIDX_NE] = 0;
                     //写csr
             end
@@ -1480,7 +1480,7 @@ always_comb begin
                 ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
                 fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
-                fsm_npc = (icache_cacop_flush_i ^ 2'b01) ? (pc_s + 4) :
+                fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
                           (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                           csr_q.eentry;
                 icache_wait = ~icache_commit_ready_i;
@@ -1939,7 +1939,7 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
-                fsm_npc = (icache_cacop_flush_i ^ 2'b01) ? (pc_s + 4) :
+                fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
                           (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                           csr_q.eentry;
             end
