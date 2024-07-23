@@ -20,13 +20,13 @@ function automatic offset(input logic [31:0] data, input [1:0] m_size, input [3:
     sign    = '0;
     if (m_size == 2'd0) begin
         for (integer i = 0; i < 4; i++) begin
-            lw_data[7 : 0]     |= mask[i] ? data[8 * i + 7 : 8 * i] : '0;
+            lw_data[7 : 0]     |= mask[i] ? data[8 * i + 7 -: 8] : '0;
             sign               |= mask[i] ? data[8 * i + 7]         : '0;
         end
         lw_data[31: 8]         |= {24{sign & msigned}};
     end else if (m_size == 2'd1) begin
         for (integer i = 0; i < 2; i++) begin
-            lw_data[15: 0]     |= mask[2*i] ? data[16 * i + 15 : 16 * i] : '0;
+            lw_data[15: 0]     |= mask[2*i] ? data[16 * i + 15 -: 16] : '0;
             sign               |= mask[2*i] ? data[16 * i + 15]          : '0;
         end
         lw_data[31:16]         |= {16{sign & msigned}};
