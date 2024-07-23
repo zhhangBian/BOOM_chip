@@ -1063,6 +1063,7 @@ always_comb begin
     tlb_update_csr = csr_q;
     tlb_update_entry = '0;
     tlb_wr_req     = '0;
+    tlb_entry      = '0;
 
     if (cur_tlbsrch) begin
         //下面找对应的表项，同mmu里面的找法
