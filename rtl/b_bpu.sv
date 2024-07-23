@@ -54,7 +54,7 @@ module bpu(
     input wire [31:0]           redir_addr_i,
 
     input  correct_info_t [1:0] correct_infos_i, // 后端反馈的修正信息
-    handshake_if.sender         sender // predict_infos_t type
+    handshake_if.sender         sender // predict_info_t [1:0] type
 );
 
 /* ============================== correct_info ============================== */
@@ -249,7 +249,7 @@ always_comb begin
 end
 
 // Output
-predict_infos_t predict_infos[1:0];
+predict_info_t predict_infos[1:0];
 b_f_pkg_t b_f_pkg;
 
 for (genvar i = 0; i < 2; i=i+1) begin
