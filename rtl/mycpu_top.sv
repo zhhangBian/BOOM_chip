@@ -626,6 +626,7 @@ dcache # () dcache(
 );
 
 /*============================== 2x1 AXI Bridge ==============================*/
+logic [10:0] rubblish_wire;
 
 axi_crossbar # (
     .S_COUNT(2), // 连接两个cache, == 2
@@ -652,13 +653,13 @@ axi_crossbar # (
     .s_axi_awqos('0),
     .s_axi_awuser('0),
     .s_axi_awvalid(commit_axi_awvalid),
-    .s_axi_awready({'0,axi_commit_awready}),
+    .s_axi_awready({rubblish_wire[0],axi_commit_awready}),
     .s_axi_wdata({32'b0, commit_axi_req.wdata}),
     .s_axi_wstrb({4'b0, commit_axi_req.strb}),
     .s_axi_wlast({'0, commit_axi_wlast}),
     .s_axi_wuser('0),
     .s_axi_wvalid(commit_axi_wvalid),
-    .s_axi_wready({'0, axi_commit_wready}),
+    .s_axi_wready({rubblish_wire[1], axi_commit_wready}),
     .s_axi_bready('1),
     .s_axi_arid('0),
     .s_axi_araddr({icache_axi_addr, commit_axi_req.waddr}),
@@ -692,7 +693,7 @@ axi_crossbar # (
     .m_axi_awcache(awcache),
     .m_axi_awprot(awprot),
     .m_axi_awqos(/*TODO: 悬空，官方接口不会用到*/),
-    .m_axi_awregion(/*TODO: check: 默认参数下只有一个 REGION, 即 0 号 region*/'0),
+    .m_axi_awregion(/*TODO: check: 默认参数下只有一个 REGION, 即 0 号 region*/),
     .m_axi_awuser(/*TODO: 悬空，在默认参数下不会使用到这个信号*/),
     .m_axi_awvalid(awvalid),
     .m_axi_awready(awready),
