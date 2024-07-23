@@ -90,8 +90,8 @@ trans_result_t trans_result;
 wire da = csr.crmd[`_CRMD_DA];
 wire pg = csr.crmd[`_CRMD_PG];
 
-wire [5:0] ecode;
-wire [8:0] esubcode;
+logic [5:0] ecode;
+logic [8:0] esubcode;
 
 always_comb begin
     ecode = 6'h0;
