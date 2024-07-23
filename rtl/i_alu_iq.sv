@@ -249,7 +249,7 @@ always_comb begin
     select_wkup_hit_q   = '0;
     // 选中了提前唤醒
     wkup_valid_o        = '0;
-    wkup_reg_id         = '0;
+    wkup_reg_id_o       = '0; // ??? wkup_reg_id
 
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
         // 如果发射对应指令

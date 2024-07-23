@@ -376,6 +376,8 @@ always_comb begin
                         fsm_next                               = F_CACOP;
                         cacop_stall                            = '1;
                     end
+                    default : begin
+                    end
                 endcase
             end else if (!(|tag_hit)) begin
                 stall |= '1; // 阻塞
