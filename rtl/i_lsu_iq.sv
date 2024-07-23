@@ -44,7 +44,6 @@ module lsu_iq # (
 
     // 读LSU的读出的数据
     output  cdb_info_t      result_o,
-    output  decode_info_t   di_o,
     // 与后续FIFO的握手信号
     input   logic           fifo_ready,
     output  logic           entry_valid_o

@@ -34,7 +34,6 @@ module mdu_iq # (
 
     // 区分了wkup和输入到后续FIFO的数据
     output  cdb_info_t      result_o,
-    output  decode_info_t   di_o,
     // 后续的FIFO是否ready
     input   logic           fifo_ready,
     output  logic           entry_valid_o
@@ -278,6 +277,7 @@ data_wkup #(
 mdu_i_t req_i;
 mdu_o_t res_o;
 word_t [1:0] data_s;
+decode_info_t di_o;
 
 logic   mdu_valid_i, mdu_ready_o;
 logic   mdu_valid_o, mdu_ready_i;

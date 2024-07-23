@@ -39,7 +39,6 @@ module alu_iq # (
     
     // 区分了wkup和输入到后续FIFO的数据
     output  cdb_info_t      result_o,
-    output  decode_info_t   di_o,
     // 与后续FIFO的握手信号
     input   logic           fifo_ready,
     output  logic           excute_valid_o
