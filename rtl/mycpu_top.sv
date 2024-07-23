@@ -562,6 +562,8 @@ logic commit_axi_wvalid;
 logic commit_axi_wlast;
 logic axi_commit_wready;
 
+word_t commit_debug_pc [1:0];
+
 commit # () commit(
     .clk(clk),
     .rst_n(rst_n),
@@ -599,6 +601,7 @@ commit # () commit(
     .commit_axi_req_o(commit_axi_req),
     .axi_commit_resp_i(axi_commit_resp),
 
+    .commit_debug_pc_o(commit_debug_pc),
     .commit_arf_we_o(commit_arf_we),
     .commit_arf_data_o(commit_arf_data),
     .commit_arf_areg_o(commit_arf_areg),
@@ -619,6 +622,17 @@ commit # () commit(
     .icache_commit_ready_i(icache_commit_ready),
     .icache_commit_valid_i(icache_commit_valid)
 );
+
+assign debug0_wb_pc = commit_debug_pc[0];
+assign debug0_wb_rf_wen = commit_arf_we[0];
+assign debug0_wb_rf_wnum = commit_arf_areg[0];
+assign debug0_wb_rf_wdata = commit_arf_data[0];
+
+assign debug1_wb_pc = commit_debug_pc[1];
+assign debug1_wb_rf_wen = commit_arf_we[1];
+assign debug1_wb_rf_wnum = commit_arf_areg[1];
+assign debug1_wb_rf_wdata = commit_arf_data[1];
+
 //我要一个硬中断
 dcache # () dcache(
     .clk(clk),
