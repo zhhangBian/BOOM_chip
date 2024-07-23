@@ -80,7 +80,7 @@ mmu #(
 ) mmu_inst (
     .clk(clk),
     .rst_n(rst_n),
-    .flush_i(flush_i),
+    .flush(flush_i),
     .va(pc/*改成PC*/),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // icache中，取指
@@ -97,7 +97,7 @@ mmu #(
 ) mmu_commit (
     .clk(clk),
     .rst_n(rst_n),
-    .flush_i(flush_i),
+    .flush(flush_i),
     .va(commit_cache_req.addr),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // icache中，取指
@@ -192,7 +192,7 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
 end
 
 // data sram
-logic [WAY_NUM - 1 : 0][DATA_WIDTH - 1 : 0] data_ans0, data_ans1;
+logic [WAY_NUM - 1 : 0][WORD_SIZE - 1 : 0] data_ans0, data_ans1;
 for (genvar i = 0 ; i < WAY_NUM ; i++) begin
     // conflict 逻辑
     logic conflict, conflict_q;
@@ -200,7 +200,7 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
     always_ff @(posedge clk) begin
         conflict_q <= conflict;
     end 
-    logic [DATA_WIDTH - 1 : 0] rdata0, rdata1; 
+    logic [WORD_SIZE - 1 : 0] rdata0, rdata1; 
     assign data_ans0[i] = conflict_q ? rdata1 : rdata0;
     assign data_ans1[i] = rdata1;
     // sram 本体

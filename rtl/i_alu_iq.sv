@@ -305,7 +305,7 @@ e_alu alu(
 
     .grand_op_i(select_di_q.grand_op),
     .op_i(select_di_q.op),
-    .res_o(e_alu_result)
+    .result_o(e_alu_result)
 );
 
 word_t result, result_q;

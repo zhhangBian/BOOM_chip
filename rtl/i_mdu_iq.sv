@@ -275,7 +275,7 @@ data_wkup #(
 
 // ------------------------------------------------------------------
 // 创建IQ相联的部件
-mud_i_t req_i;
+mdu_i_t req_i;
 mdu_o_t res_o;
 word_t [1:0] data_s;
 
@@ -287,8 +287,8 @@ assign entry_valid_o= mdu_valid_o;
 assign mdu_ready_i  = fifo_ready;
 
 always_comb begin
-    req_i.data      = select_data_q;
-    req_i.op        = op;
+    req_i.data      = real_data;
+    req_i.op        = select_di_q.op;
     req_i.reg_id    = select_di_q.wreg_id;
 
     result_o.w_data   = res_o.data;
