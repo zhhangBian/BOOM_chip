@@ -284,6 +284,7 @@ data_wkup #(
 // 创建IQ相联的部件
 mud_i_t req_i;
 mdu_o_t res_o;
+word_t [1:0] data_s;
 
 logic   mdu_valid_i, mdu_ready_o;
 logic   mdu_valid_o, mdu_ready_i;
@@ -299,13 +300,13 @@ always_comb begin
 
     result_o.w_data   = res_o.data;
     result_o.rob_id   = res_o.reg_id;
-    result_o.w_reg    = select_di_q.wreg;
-    result_o.r_valid  = select_di_q.inst_valid;
+    result_o.w_reg    = di_o.wreg;
+    result_o.r_valid  = di_o.inst_valid;
     result_o.lsu_info = '0;
-    result_o.ctrl.exc_info.fetch_exception      =  select_di_q.fetch_exc_info.fetch_exception;
+    result_o.ctrl.exc_info.fetch_exception      =  di_o.fetch_exc_info.fetch_exception;
     result_o.ctrl.exc_info.execute_exception    =  '0;
-    result_o.ctrl.exc_info.exc_code             =  select_di_q.fetch_exc_info.exc_code;
-    result_o.ctrl.exc_info.badva                =  select_di_q.fetch_exc_info.badv;
+    result_o.ctrl.exc_info.exc_code             =  di_o.fetch_exc_info.exc_code;
+    result_o.ctrl.exc_info.badva                =  di_o.fetch_exc_info.badv;
 end
 
 e_mdu mdu (
@@ -317,6 +318,7 @@ e_mdu mdu (
     .di_i(select_data_q),
     .res_o(res_o),
     .di_o(di_o),
+    .data_s_o(data_s),
 
     .valid_i(mdu_valid_i),
     .ready_o(mdu_ready_o),

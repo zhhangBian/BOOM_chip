@@ -310,6 +310,7 @@ e_alu alu(
 );
 
 word_t result, result_q;
+word_t [1:0] real_data_q;
 assign result = e_alu_result;
 
 // 配置wkup的输出信息
@@ -317,10 +318,12 @@ always_ff @(posedge clk) begin
     if(flush || ~rst_n) begin
         e_alu_result <= '0;
         result_q     <= '0; 
+        real_data_q  <= '0;
     end
     else begin
         e_alu_result_q  <= e_alu_result;
         result_q        <= result;
+        real_data_q     <= real_data;
     end
 end
 
@@ -329,6 +332,7 @@ always_comb begin
     excute_valid_o = excute_valid_q;
     
     result_o.w_data  = result_q;
+    result_o.s_data  = real_data_q;
     result_o.rob_id  = select_di_qq.wreg_id;
     result_o.w_reg   = select_di_qq.wreg;
     result_o.r_valid = select_di_qq.inst_valid;

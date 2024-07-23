@@ -541,6 +541,7 @@ typedef struct packed {
     logic    w_reg;    // 要写寄存器
     rob_id_t rob_id;   // rob_id
     word_t   w_data;   // 写的数据
+    word_t [1:0] s_data;
     // else information for control
     // predict_info_t predict_info; // predict_info is in rob
     lsu_iq_pkg_t lsu_info;

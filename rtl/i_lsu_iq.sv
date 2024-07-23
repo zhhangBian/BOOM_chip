@@ -72,7 +72,7 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= '0;
         free_cnt_q      <= IQ_SIZE;
         entry_ready_o   <= '1;
-    end 
+    end
     else begin
         iq_head_q       <= iq_head;
         iq_tail_q       <= iq_tail;
@@ -266,14 +266,18 @@ always_comb begin
     end
 end
 
+word_t [1:0] real_data_q;
+
 always_ff @(posedge clk) begin
     if (!rst_n | flush) begin
         select_di_q  <= '0;
         select_di_qq <= '0;
+        real_data_q  <= '0;
     end
     else if(excute_ready) begin
         select_di_q  <= select_di;
         select_di_qq <= select_di_q;
+        real_data_q  <= real_data;
     end
 end
 
@@ -312,13 +316,16 @@ always_comb begin
     // 约定0号为数据，1号为地址
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
     iq_lsu_request.wdata    = real_data[0];
-    iq_lsu_request.rmask    = msize == 0 ? 1'b1 << iq_lsu_request.vaddr[1:0] : msize == 1 ? 2'b11 << iq_lsu_request.vaddr[1] : 4'b1111;
+    iq_lsu_request.rmask    = (msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
+                              (msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
+                              4'b1111;
     iq_lsu_request.strb     = iq_lsu_request.rmask;
 end
 
 // 配置lsu到iq的信息，向FIFO输出
 always_comb begin
     result_o.w_data   = lsu_iq_resp_i.rdata;
+    result_o.s_data   = real_data_q;
     result_o.rob_id   = select_di_qq.wreg_id;
     result_o.w_reg    = select_di_qq.wreg;
     result_o.r_valid  = select_di_qq.inst_valid;
