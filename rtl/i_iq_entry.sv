@@ -66,7 +66,7 @@ word_t [REG_COUNT - 1:0]                    wkup_result;
 
 // 没有准备好的数据都有相应的转发
 assign ready_o = &(data_ready_q | wkup_hit_qq);
-assign di_o = di;
+assign di_o = entry_di;
 for(genvar i = 0; i < REG_COUNT; i += 1) begin
     always_comb begin
         // 打两排以后数据来了
@@ -121,15 +121,6 @@ for(genvar i = 0; i < REG_COUNT; i += 1) begin
         else if(|wkup_hit_qq[i]) begin
             entry_data[i]   <= wkup_result[i];
         end
-    end
-end
-
-always_ff @(posedge clk) begin
-    if(~rst_n || flush) begin
-        entry_ready_q <= '0;
-    end
-    else begin
-        entry_ready_q <= entry_ready;
     end
 end
 

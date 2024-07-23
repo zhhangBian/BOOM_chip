@@ -171,7 +171,7 @@ always_comb begin
         commit_info_o[i].fetch_exception = commit_data_o[i].ctrl.exc_info.fetch_exception;/* TODO */;
         commit_info_o[i].syscall_inst = commit_inst_o[i].syscall_inst;
         commit_info_o[i].break_inst = commit_inst_o[i].break_inst;
-        commit_info_o[i].decode_err = decode_err;
+        commit_info_o[i].decode_err = commit_inst_o[i].decode_err;
         commit_info_o[i].priv_inst = commit_inst_o[i].priv_inst; //要求：不包含hit类cacop
         commit_info_o[i].execute_exception = commit_data_o[i].ctrl.exc_info.execute_exception;// TODO: 访存异常???
 
@@ -198,8 +198,8 @@ always_comb begin
         commit_info_o[i].branch_info.is_branch = commit_inst_o[i].is_branch;
         commit_info_o[i].branch_info.target = '0; // TODO: branch_info 似乎不需要 target 域
 
-        commit_info_o[i].csr_op_type = comit_inst_o[i].csr_op_type;
-        commit_info_o[i].csr_num = comit_inst_o[i].csr_num;
+        commit_info_o[i].csr_op_type = commit_inst_o[i].csr_op_type;
+        commit_info_o[i].csr_num = commit_inst_o[i].csr_num;
         end
 end
 
@@ -293,7 +293,7 @@ end
 
 // P级写
 registers_file_banked # (
-    .DATA_WITH($bits(rob_valid_entry_t)),
+    .DATA_WIDTH($bits(rob_valid_entry_t)),
     .DEPTH(1 << `ROB_WIDTH),
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),
@@ -313,7 +313,7 @@ registers_file_banked # (
 
 // CDB级写
 registers_file_banked # (
-    .DATA_WITH($bits(rob_valid_entry_t)),
+    .DATA_WIDTH($bits(rob_valid_entry_t)),
     .DEPTH(1 << `ROB_WIDTH),
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),

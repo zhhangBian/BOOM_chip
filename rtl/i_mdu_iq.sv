@@ -57,7 +57,7 @@ logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 logic [PTR_LEN - 1:0]   iq_tail, iq_tail_q;
 
 always_ff @(posedge clk) begin
-    if(!rst_n || flush_i) begin
+    if(!rst_n || flush) begin
         iq_head_q       <= '0;
         iq_tail_q       <= '0;
         free_cnt_q      <= IQ_SIZE;
