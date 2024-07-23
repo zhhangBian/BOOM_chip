@@ -170,7 +170,7 @@ logic          execute_exception;
 logic   [5:0]  exc_code_new;
 logic   [31:0] badv;
 logic          ade_exc;
-assign  ade_exc  = (m1_iq_lsu_pkg.msized == 3) ? |badv : (m1_iq_lsu_pkg.msized == 1) ? badv[1] : '0;
+assign  ade_exc  = (m1_iq_lsu_pkg.msize == 3) ? |badv : (m1_iq_lsu_pkg.msize == 1) ? badv[1] : '0;
 assign  exc_code_new  =  ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
 assign  execute_exception = ade_exc | (|tlb_exception.ecode);
 assign  badv     = m1_iq_lsu_pkg.vaddr;
@@ -230,8 +230,8 @@ always_comb begin
         for (integer j = 0; j < 4; j++) begin
             if (sb_entry[i].valid & sb_entry[i].wstrb[j] & (sb_entry[i].target_addr[31:2] == paddr[31:2])) begin
                 sb_hit[j]     |= '1;
-                sb_tmp_data[8*j+7:8*j]  = '0;
-                sb_tmp_data[8*j+7:8*j] |= sb_entry[i].write_data[8*j+7:8*j];
+                sb_tmp_data[8*j+7-:8]  = '0;
+                sb_tmp_data[8*j+7-:8] |= sb_entry[i].write_data[8*j+7-:8];
             end
         end
     end
@@ -270,15 +270,15 @@ logic           sign;
 always_comb begin
     lw_data = '0;
     sign    = '0;
-    if (m1_iq_lsu_pkg.msized == 2'd0) begin
+    if (m1_iq_lsu_pkg.msize == 2'd0) begin
         for (integer i = 0; i < 4; i++) begin
-            lw_data[7 : 0]     |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7 : 8 * i] : '0;
+            lw_data[7 : 0]     |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7 -: 8]    : '0;
             sign               |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7]         : '0;
         end
         lw_data[31: 8]         |= {24{sign & m1_iq_lsu_pkg.msigned}};
-    end else if (m1_iq_lsu_pkg.msized == 2'd1) begin
+    end else if (m1_iq_lsu_pkg.msize == 2'd1) begin
         for (integer i = 0; i < 2; i++) begin
-            lw_data[15: 0]     |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15 : 16 * i] : '0;
+            lw_data[15: 0]     |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15 -: 16]    : '0;
             sign               |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15]          : '0;
         end
         lw_data[31:16]         |= {16{sign & m1_iq_lsu_pkg.msigned}};
@@ -322,7 +322,7 @@ end
 always_comb begin
     cache_commit_resp.addr = commit_addr_q;
     cache_commit_resp.data = commit_way_choose_q[0] ? data_ans1[0] : data_ans1[1];
-    cache_commit_resp.data_ohter = data_ans1[1];
+    cache_commit_resp.data_other = data_ans1[1];
     cache_commit_resp.sb_entry = r_sb_entry;
 end
 

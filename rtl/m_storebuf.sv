@@ -32,7 +32,7 @@ logic push, pop;
 
 assign push = sb_entry_receiver.ready & sb_entry_receiver.valid & !flush_i;
 assign pop  = sb_entry_sender.ready   & sb_entry_sender.valid;
-assign sb_stall = (sb_cnt == SB_SIZE);
+assign sb_stall = (sb_cnt == SB_SIZE[2:0]);
 always_comb begin
     sb_cnt      = sb_cnt_q + push - pop;
     sb_ptr_head = sb_ptr_head_q + push;
@@ -53,7 +53,7 @@ end
 
 // 例化storebuffer_entry
 
-sb_entry_t [SB_SIZE - 1 : 0] sb_entry_inst;
+sb_entry_t [3 : 0] sb_entry_inst;
 sb_entry_t                   sb_entry_in;
 
 // assign top_entry_o = sb_entry_inst[sb_ptr_head_q - '1];
@@ -80,7 +80,7 @@ always_ff @(posedge clk) begin
     end
 end
 
-assign sb_entry_receiver.ready = (sb_cnt_q < SB_SIZE);
+assign sb_entry_receiver.ready = (sb_cnt_q < SB_SIZE[2:0]);
 assign sb_entry_sender.valid   = sb_entry_inst[sb_ptr_tail_q].valid; 
 
 
