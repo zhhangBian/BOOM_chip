@@ -138,6 +138,8 @@ always_comb begin
     end
     // C级
     for (integer i = 0; i < 2; i++) begin
+        // rename补充check
+        commit_info_o[i].check  = commit_inst_o[i].check;
         commit_info_o[i].w_data = commit_data_o[i].data;
         commit_info_o[i].s_data = commit_data_o[i].s_data;
         commit_info_o[i].arf_id = commit_inst_o[i].areg;

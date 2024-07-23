@@ -82,6 +82,7 @@ module commit #(
     output  word_t  [1:0]   commit_arf_data_o,
     output  logic [1:0][4:0]commit_arf_areg_o,
     output  logic [1:0][5:0]commit_arf_preg_o,
+    output  logic   [1:0]   commit_arf_check_o,
 
     output  logic [1:0]     retire_request_o,//新增
 
@@ -201,6 +202,7 @@ always_comb begin
     commit_arf_data_o = '0;
     commit_arf_areg_o = '0;
     commit_arf_preg_o = '0;
+    commit_arf_check_o = '0;
 
     for (integer i = 0; i < 2; i = i + 1) begin
         commit_arf_we_o[i]   = retire_request_o[i] & rob_commit_q[i].w_reg & !cur_exception_q;
@@ -212,6 +214,7 @@ always_comb begin
 
         commit_arf_areg_o[i] = rob_commit_q[i].arf_id;
         commit_arf_preg_o[i] = rob_commit_q[i].rob_id;
+        commit_arf_check_o[i] = rob_commit_q[i].check;
     end
 
     if(ls_fsm_q == S_UNCACHED_RD) begin
@@ -220,6 +223,7 @@ always_comb begin
             commit_arf_data_o[0] = offset(axi_commit_resp_i.rdata, rob_commit_q[0].lsu_info.msize, rob_commit_q[0].lsu_info.rmask, rob_commit_q[0].lsu_info.msigned);//TODO rdata mask
             commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
             commit_arf_preg_o[0] = rob_commit_q[0].rob_id;
+            commit_arf_check_o[i] = rob_commit_q[i].check;
             //有了上面哪个时序，这个rob_commit_q就可以直接用了
         end
     end
