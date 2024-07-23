@@ -316,10 +316,14 @@ always_comb begin
     // 约定0号为数据，1号为地址
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
     iq_lsu_request.wdata    = real_data[0];
-    iq_lsu_request.rmask    = (msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
+    iq_lsu_request.rmask    = select_di_q.wmem ? '0 :
+                              (msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
                               (msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
                               4'b1111;
-    iq_lsu_request.strb     = iq_lsu_request.rmask;
+    iq_lsu_request.strb     = ~select_di_q.wmem ? '0 :
+                              (msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
+                              (msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
+                              4'b1111;
 end
 
 // 配置lsu到iq的信息，向FIFO输出
