@@ -17,7 +17,7 @@ module mmu #(
     input  tlb_write_req_t  tlb_write_req_i,   //tlb维护的请求，包括写的独热码，见a_mmu_defines
 
     output trans_result_t trans_result_o,    //包含pa，mat，valid，见a_mmu_defines
-    output tlb_exception_t tlb_exception_o,  //tlb相关的例外，例外代码的编号在a_csr里面，默认为零，只有在result里面valid为0的时候这个错误码才有意义
+    output tlb_exception_t tlb_exception_o  //tlb相关的例外，例外代码的编号在a_csr里面，默认为零，只有在result里面valid为0的时候这个错误码才有意义
     //output tlb_entry_t    tlb_entry_o        //tlb维护（读）时找到的tlb_entry，暂时写成一拍后得到结果，但也可以马上得到
 );
 
