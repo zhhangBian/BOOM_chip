@@ -171,7 +171,7 @@ assign rob_commit_flow[1] = commit_request_o[1] ? rob_commit_i[1] : '0;
 always_ff @( posedge clk ) begin
     if (~rst_n) begin
         commit_request_q <= '0;
-        rob_commit_q <= '0;
+        rob_commit_q <= '{'0,'0};
     end
     else if (stall) begin
         //注意：对于stall的情况，我保留了之前的请求，这意味着retire的时候不能直接用commit_request_q
@@ -180,7 +180,7 @@ always_ff @( posedge clk ) begin
     end
     else if (flush) begin//TODO 放在stall后面，也就是说如果stall（进状态机）会保留信息
         commit_request_q <= '0;
-        rob_commit_q <= '0;
+        rob_commit_q <= '{'0,'0};
     end
     else begin
         commit_request_q <= commit_request_o;
@@ -454,9 +454,9 @@ always_ff @( posedge clk ) begin
     if (~rst_n) begin
         predict_success_q <= '0;
         next_pc_q         <= '0;
-        predict_info_q    <= '0;
+        predict_info_q    <= '{'0,'0};
         taken_q           <= '0;
-        branch_info_q     <= '0;
+        branch_info_q     <= '{'0,'0};
         real_target_q     <= '0;
         exp_pc_q          <= '0;
         predict_branch_q  <= '0;
@@ -476,9 +476,9 @@ always_ff @( posedge clk ) begin
     else if (flush) begin
         predict_success_q <= '0;
         next_pc_q         <= '0;
-        predict_info_q    <= '0;
+        predict_info_q    <= '{'0,'0};
         taken_q           <= '0;
-        branch_info_q     <= '0;
+        branch_info_q     <= '{'0,'0};
         real_target_q     <= '0;
         exp_pc_q          <= '0;
         predict_branch_q  <= '0;
@@ -487,9 +487,9 @@ always_ff @( posedge clk ) begin
     else begin
         predict_success_q <= predict_success;
         next_pc_q         <= next_pc;
-        predict_info_q    <= predict_info;
+        predict_info_q    <= {predict_info[1],predict_info[0]};
         taken_q           <= taken;
-        branch_info_q     <= branch_info;
+        branch_info_q     <= {branch_info[1],branch_info[0]};
         real_target_q     <= real_target;
         exp_pc_q          <= exp_pc;
         predict_branch_q  <= predict_branch;
