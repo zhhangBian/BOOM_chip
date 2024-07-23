@@ -32,6 +32,8 @@ tlb_value_t [TLB_ENTRY_NUM - 1:0][1:0] tlb_value_q;
 /*===================ok===================*/
 always_comb begin
     tlb_found = 0;
+    tlb_key_read = '0;
+    tlb_value_read = '0;
     for (integer i = 0; i < TLB_ENTRY_NUM; i+= 1) begin
         if (tlb_key_q[i].e 
         && (tlb_key_q[i].g || (tlb_key_q[i].asid == cur_asid))
@@ -96,6 +98,8 @@ logic [8:0] esubcode;
 always_comb begin
     ecode = 6'h0;
     esubcode = 9'h0;
+    trans_result = '0;
+
     if (da) begin
         trans_result.pa = va;
         trans_result.mat = (mmu_mem_type == `_MEM_FETCH) ? 
