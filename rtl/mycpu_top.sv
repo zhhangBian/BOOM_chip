@@ -75,7 +75,7 @@ module mycpu_top (
     // ,output [31:0] debug0_wb_inst
 `ifdef CPU_2CMT
     // 我们是双提交
-    output [31:0] debug1_wb_pc,
+    ,output [31:0] debug1_wb_pc,
     output [ 3:0] debug1_wb_rf_wen,
     output [ 4:0] debug1_wb_rf_wnum,
     output [31:0] debug1_wb_rf_wdata
