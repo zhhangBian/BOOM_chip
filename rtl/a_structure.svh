@@ -126,7 +126,6 @@ typedef struct packed {
     break_inst_t    break_inst; // 是否是 break 指令
     br_type_t       br_type; // 是否是 break 指令
     cacop_inst_t    cacop_inst; // 是否是 cacop 指令
-    cmp_type_t      cmp_type; // TODO: 不需要。跳转条件类型，包括无条件跳转。实际上是一个独热码。四位分别表示{小于，等于，大于，有符号}。比如BLE就是1101(有符号)
     csr_op_type_t   csr_op_type; // csr 指令类型
     dbar_inst_t     dbar_inst; // 是否是 DBAR 指令
     logic           decode_err; // 出现未知指令
@@ -135,9 +134,8 @@ typedef struct packed {
     ibar_inst_t     ibar_inst;
     idle_inst_t     idle_inst; // 仅在 IDLE 指令下置1.
     imm_type_t      imm_type; // 立即数类型 _IMM_...
-    inst_t          inst; // 指令本身
     invtlb_inst_t   invtlb_inst; // 是否是invtlb指令
-    jump_inst_t     jump_inst; // 是否是跳转指令 // TODO: 目前似乎还没有用到
+    jump_inst_t     jump_inst; // 是否是跳转指令
     ll_inst_t       ll_inst; // 是否是原子访问指令
     lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
     mem_read_t      mem_read; // 是否需要读取内存
@@ -145,18 +143,15 @@ typedef struct packed {
     mem_size_t      mem_size; // 读取出来的数据的字节数目-1; WORD 为 3, HALF-WORD 为 1, BYTE 为 0.
     mem_write_t     mem_write; // 是否会写入内存
     mdu_inst_t      mdu_inst; // 是否是 mdu 指令
-    need_fa_t       need_fa; // 完全没有用到 TODO
     priv_inst_t     priv_inst; // 是否是特权指令
     rdcnt_inst_t    rdcnt_inst; // 是否是 rdcnt 类型指令
     rdcntid_inst_t  rdcntid_inst;
     rdcntvh_inst_t  rdcntvh_inst;
     rdcntvl_inst_t  rdcntvl_inst;
-    refetch_t       refetch; // TODO: CSR, CACOP, ERTN, IDLE, TLB-relate, DBAR, IBAR, RDCNTVL.W, RD
     reg_type_r0_t   reg_type_r0; // 
     reg_type_r1_t   reg_type_r1; // 
     reg_type_w_t    reg_type_w; // RD, RJD(RJ寄存器，仅RDCNTID指令会用), BL1(R1寄存器), None
     sc_inst_t       sc_inst; // 是否是原子存储指令
-    slot0_t         slot0; // TODO:不懂，一些奇怪的指令都会用到, 保罗ertn这些
     syscall_inst_t  syscall_inst; // 是否是 syscall 指令
     target_type_t   target_type; // 只有JIRL的目标地址和寄存器有关，其余均之和PC有关，因此要做区分
     tlb_inst_t      tlb_inst;

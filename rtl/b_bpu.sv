@@ -120,7 +120,7 @@ always_ff @(posedge clk ) begin : btb_logic
     end
     // 写入
     else if (btb_we) begin
-        btb[correct_info.pc[2]][btb_waddr].target_pc <= btb_wdata;
+        btb[correct_info.pc[2]][btb_waddr]<= btb_wdata;
     end
 end
 
@@ -188,7 +188,7 @@ always_ff @(posedge clk ) begin
 end
 
 /* ============================== PHT ============================== */
-(* ramstyle = "distributed" *) reg [`BPU_PHT_DEPTH - 1 : 0][$bits(bpu_pht_entry_t)-1:0] pht [1:0];
+(* ramstyle = "distributed" *) bpu_pht_entry_t [`BPU_PHT_DEPTH - 1 : 0] pht [1:0];
 
 bpu_pht_entry_t  [1:0]              pht_rdata;
 bpu_pht_entry_t  [1:0]              pht_wdata;
@@ -198,10 +198,13 @@ logic                               pht_we;
 
 assign pht_we = correct_info.update;
 
+
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign pht[pht_waddr[i]].scnt = next_scnt(correct_info.scnt, correct_info.taken);
-    assign pht[pht_raddr[i]].scnt = {bht_rdata[i].history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
+    assign pht_wdata[i] = next_scnt(correct_info.scnt, correct_info.taken);
+    assign pht_raddr[i] = {bht_rdata[i].history, pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
 end
+
+assign pht_waddr = {correct_info.history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
 
 always_ff @(posedge clk ) begin : pht_logic
     if (!rst_n) begin
@@ -223,7 +226,7 @@ logic [1:0] mask;
 logic [1:0][31:0] next_pc; // 每一条指令的下一条 pc ; pc_next 是 pc 的下一个值
 logic [1:0][31:0] target_pc;
 logic [31:0] pc_add_4_8;
-assign pc_add_4_8 = {pc[31:3]+1, 3'b0};
+assign pc_add_4_8 = {pc[31:3] + 29'b1, 3'b0};
 
 for (genvar i = 0; i < 2; i=i+1) begin
     // branch[i] 表示第 i 条指令是否要分支出去 TODO: 
@@ -231,11 +234,11 @@ for (genvar i = 0; i < 2; i=i+1) begin
     // 1. !btb_rdata[i].is_cond_br 
     // 2. pht_rdata[i].scnt[1]
     assign branch[i] = btb_valid[i] & (btb_rdata[i].br_type !=  BR_NORMAL | pht_rdata[i].scnt[1]);
-    assign target_pc[i] = btb_rdata[i].br_info.br_type == BR_RET ? ras_rdata : btb_rdata[i].target_pc;
+    assign target_pc[i] = btb_rdata[i].br_type == BR_RET ? ras_rdata : btb_rdata[i].target_pc;
 end
 
-assign next_pc[0] = !branch[0] ? {pc[31:3], 3'b100} : target_pc;
-assign next_pc[1] = !branch[1] ? pc_add_4_8 : target_pc;
+assign next_pc[0] = !branch[0] ? {pc[31:3], 3'b100} : target_pc[0];
+assign next_pc[1] = !branch[1] ? pc_add_4_8 : target_pc[1];
 
 assign mask = {!branch[0] | pc[2], !pc[2]};
 always_comb begin
@@ -263,7 +266,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign predict_infos[i].history     =  bht_rdata[i].history;
 end
 
-assign b_f_pkg.predict_infos = predict_infos;
+assign b_f_pkg.predict_infos = {predict_infos[1], predict_infos[0]};
 assign b_f_pkg.pc = pc;
 assign b_f_pkg.mask = mask;
 
