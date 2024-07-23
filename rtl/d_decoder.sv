@@ -69,7 +69,7 @@ assign d_r_pkg.predict_infos = receiver.data.predict_infos;
 assign d_r_pkg.fetch_exc_info = receiver.data.fetch_exc_info;
 for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.w_reg[i] = |decode_infos[i].reg_type_w;
-    assign d_r_pkg.w_mem[i] = |decode_infos[i].mem_type_write;
+    assign d_r_pkg.w_mem[i] = decode_infos[i].mem_write;
     assign d_r_pkg.reg_need[2*i    ] = decode_infos[i].reg_type_r0 != `_REG_ZERO; // & decode_infos[i].reg_type_r0 != `_REG_IMM;
     assign d_r_pkg.reg_need[2*i + 1] = decode_infos[i].reg_type_r1 != `_REG_ZERO; // & decode_infos[i].reg_type_r1 != `_REG_IMM;
 
@@ -130,10 +130,10 @@ end
 
 // ALU 信号逻辑
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign d_r_pkg.grand_op = decode_infos[i].alu_grand_op;
-    assign d_r_pkg.op = decode_infos[i].alu_op;
-    assign d_r_pkg.msigned = decode_infos[i].mem_signed;
-    assign d_r_pkg.msize = decode_infos[i].mem_size;
+    assign d_r_pkg.grand_op[i] = decode_infos[i].alu_grand_op;
+    assign d_r_pkg.op[i] = decode_infos[i].alu_op;
+    assign d_r_pkg.msigned[i] = decode_infos[i].mem_signed;
+    assign d_r_pkg.msize[i] = decode_infos[i].mem_size;
 end
 
 // 指令类型
