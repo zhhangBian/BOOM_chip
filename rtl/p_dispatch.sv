@@ -190,7 +190,7 @@ always_comb begin
         p_i_pkg[i].msigned = r_p_pkg.msigned;
         p_i_pkg[i].msize = r_p_pkg.msize; // 没啥用
         p_i_pkg[i].w_mem = r_p_pkg.w_mem;
-        p_i_pkg[i].di = p_di;
+        p_i_pkg[i].di = {p_di[1], p_di[0]};
     end
     p_i_pkg[0].inst_choose = choose_alu[0];
     p_i_pkg[1].inst_choose = choose_alu[1];
