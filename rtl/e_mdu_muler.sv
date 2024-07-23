@@ -38,14 +38,14 @@ always_ff @(posedge clk) begin
         valid_s_3 <= '0;
     end
     else if(ready_i) begin
-        r0_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data0[31], req_i.data0[0]};
-        r1_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data1[31], req_i.data1[0]};
+        r0_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[0][31], req_i.data[0][0]};
+        r1_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[1][31], req_i.data[1][0]};
 
         cal_result_q <= $signed(r0_q) * $signed(r1_q);
         result_q <= cal_result_q;
 
         valid_s_1 <= valid_i;
-        reg_addr_s_1 <= req_i.reg_addr;
+        reg_addr_s_1 <= req_i.reg_id;
         op_s_1 <= req_i.op;
 
         valid_s_2 <= valid_s_1;
@@ -60,24 +60,24 @@ end
 
 // assign ready_o = ready_i;
 assign valid_o = valid_s_3;
-assign res_o.reg_addr = reg_addr_s_3;
+assign res_o.reg_id = reg_addr_s_3;
 
 always_comb begin
     case (op_s_3)
         `_MDU_MUL: begin
-            res_o.result = result_q[31:0];
+            res_o.data = result_q[31:0];
         end
 
         `_MDU_MULH: begin
-            res_o.result = result_q[63:32];
+            res_o.data = result_q[63:32];
         end
 
         `_MDU_MULHU: begin
-            res_o.result = result_q[63:32];
+            res_o.data = result_q[63:32];
         end
 
         default: begin
-            res_o.result = '0;
+            res_o.data = '0;
         end
     endcase
 end

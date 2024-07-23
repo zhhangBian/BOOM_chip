@@ -31,7 +31,7 @@ always_ff @(posedge clk) begin
     else if(ready_o) begin
         valid_q <= valid_i;
         op_q <= req_i.op;
-        reg_addr_q <= req_i.reg_addr;
+        reg_addr_q <= req_i.reg_id;
     end
 end
 
@@ -40,8 +40,8 @@ divide_high_pace divider(
     .clk(clk),
     .rst_n(rst_n),
 
-    .num0(req_i.data0),
-    .num1(req_i.data1),
+    .num0(req_i.data[0]),
+    .num1(req_i.data[1]),
 
     .start(valid_i & ready_o),
     .sign((req_i.op == `_MDU_DIV) | (req_i.op == `_MDU_MOD)),
@@ -53,7 +53,7 @@ divide_high_pace divider(
 
 assign valid_o = valid_q & ~busy;
 assign ready_o = (ready_i && !busy) || !valid_q;
-assign res_o.reg_addr = reg_addr_q;
-assign res_o.result = (op_q == `_MDU_DIV) ? div_res : mod_res;
+assign res_o.reg_id = reg_addr_q;
+assign res_o.data = (op_q == `_MDU_DIV) ? div_res : mod_res;
 
 endmodule
