@@ -1384,7 +1384,6 @@ assign commit_icache_req_o = commit_icache_req;
 
 logic axi_back_target, axi_back_target_q;
 
-rob_commit_pkg_t rob_commit_q;
 lsu_iq_pkg_t lsu_info_s, lsu_info_q;
 
 word_t [CACHE_BLOCK_NUM-1:0]     cache_block_data, cache_block_data_q;

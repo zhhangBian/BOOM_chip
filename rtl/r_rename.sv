@@ -128,7 +128,6 @@ commit_rat # (
     .DATA_WIDTH(7),
     .DEPTH(32),
     .R_PORT_COUNT(4 + 2), 
-    .W_PORT_COUNT(2),     
     .NEED_RESET(1),
     .NEED_FORWARD(1)
 ) c_rename_table (
@@ -150,7 +149,6 @@ arf # (
     .DATA_WIDTH(32),
     .DEPTH(32),
     .R_PORT_COUNT(4), 
-    .W_PORT_COUNT(2), 
     .NEED_RESET(1),
     .NEED_FORWARD(1)
 ) arf_inst (
@@ -179,7 +177,7 @@ for (genvar i = 0; i < 4; i++) begin
 end
 
 always_ff @(posedge clk) begin
-    if (!rst_n || flush_i) begin
+    if (!rst_n || c_flush_i) begin
         r_p_pkg_o <= '0;
     end else begin
         if (r_p_sender.valid & r_p_sender.ready) begin

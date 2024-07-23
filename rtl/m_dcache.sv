@@ -17,7 +17,7 @@ module dcache #(
     input csr_t csr_i,
     // cpu侧信号
     handshake_if.receiver cpu_lsu_receiver,
-    hadnshake_if.sender   lsu_cpu_sender,
+    handshake_if.sender   lsu_cpu_sender,
     // commit级信号
     input logic              stall_i, // 全局stall信号
     input commit_cache_req_t commit_cache_req,
@@ -48,8 +48,6 @@ always_ff @(posedge clk) begin
     commit_way_choose_q <= commit_way_choose;
     commit_addr_q       <= commit_addr;
 end
-// 传给commit的请求
-cache_commit_resp_t cache_commit_resp;
 // cpu传入数据
 iq_lsu_pkg_t iq_lsu_pkg;
 assign iq_lsu_pkg = cpu_lsu_receiver.data;
@@ -63,10 +61,10 @@ tlb_exception_t tlb_exception;
 mmu #(
     .TLB_ENTRY_NUM(64),
     .TLB_SWITCH_OFF(0)
-) mmu_inst (
-    .clk,
-    .rst_n,
-    .flush_i,
+) mmu_ins (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flush(flush_i),
     .va(iq_lsu_pkg.vaddr),
     .csr(csr_i),
     .mmu_mem_type(mem_type), // ? dcache中，只有读和写两种情况:分别是
@@ -130,7 +128,7 @@ always_ff @(posedge clk) begin
 end
 
 // DATA SRAM
-logic [WAY_NUM - 1 : 0][DATA_WIDTH - 1 : 0] data_ans0, data_ans1;
+logic [WAY_NUM - 1 : 0][WORD_SIZE - 1 : 0] data_ans0, data_ans1;
 for (genvar i = 0 ; i < WAY_NUM ; i++) begin
     // conflict 逻辑
     logic conflict, conflict_q;
@@ -138,7 +136,7 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
     always_ff @(posedge clk) begin
         conflict_q <= conflict;
     end 
-    logic [DATA_WIDTH - 1 : 0] rdata0, rdata1; 
+    logic [WORD_SIZE - 1 : 0] rdata0, rdata1; 
     assign data_ans0[i] = conflict_q ? rdata1 : rdata0;
     assign data_ans1[i] = rdata1;
     // sram 本体
@@ -185,8 +183,8 @@ logic      [31          : 0] sb_tmp_data; // , sb_w_data;
 sb_entry_t [SB_SIZE - 1 : 0] sb_entry;
 sb_entry_t                   w_sb_entry, r_sb_entry;
 // sb_entry_t                   top_sb_entry;
-hadnshake_if #(.T(sb_entry_t)) sb_entry_receiver();
-hadnshake_if #(.T(sb_entry_t)) sb_entry_sender();
+handshake_if #(.T(sb_entry_t)) sb_entry_receiver();
+handshake_if #(.T(sb_entry_t)) sb_entry_sender();
 
 // handshake
 assign sb_entry_receiver.valid = !flush_i & !stall_q & |m1_iq_lsu_pkg.strb & valid_q;
@@ -230,7 +228,7 @@ always_comb begin
     sb_tmp_data = '0;
     for (integer i = 0; i < SB_SIZE; i++) begin
         for (integer j = 0; j < 4; j++) begin
-            if (sb_entry[i].valid & sb_entry[i].wstrb[j] & (sb_entry[i].target_addr[31:2] == pa[31:2])) begin
+            if (sb_entry[i].valid & sb_entry[i].wstrb[j] & (sb_entry[i].target_addr[31:2] == paddr[31:2])) begin
                 sb_hit[j]     |= '1;
                 sb_tmp_data[8*j+7:8*j]  = '0;
                 sb_tmp_data[8*j+7:8*j] |= sb_entry[i].write_data[8*j+7:8*j];
@@ -268,6 +266,7 @@ assign lsu_cpu_sender.valid = valid_q & !stall_q & !flush_i;
 
 lsu_iq_pkg_t lsu_iq_pkg;
 logic  [31 : 0] lw_data;
+logic           sign;
 always_comb begin
     lw_data = '0;
     sign    = '0;

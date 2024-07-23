@@ -68,7 +68,7 @@ logic ready_i;
 logic [31:0 ] pc;
 logic [31:0 ] pc_next; // wire 类型 组合逻辑得出。
 
-always_ff @(clk) begin : pc_logic
+always_ff @(posedge clk) begin : pc_logic
     if (!rst_n) begin
         pc <= `BPU_INIT_PC;
     end
@@ -112,7 +112,7 @@ assign btb_wdata.tag = get_tag(correct_info.pc);
 assign btb_wdata.br_type = correct_info.br_type;
 assign btb_wdata.is_branch = correct_info.is_branch;
 
-always_ff @( clk ) begin : btb_logic
+always_ff @(posedge clk ) begin : btb_logic
     // reset btb to ZERO
     if (!rst_n) begin
         btb <= '0; // TODO: there is a error about it;
@@ -148,7 +148,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign bht_rdata[i] = bht[i][bht_raddr];
 end
 
-always_ff @( clk ) begin : bht_logic
+always_ff @(posedge clk ) begin : bht_logic
     if (!rst_n) begin
         bht <= '0;
     end
@@ -170,7 +170,7 @@ logic [31:0]                        ras_wdata;
 assign ras_wdata = correct_info.target_type == BR_CALL ? correct_info.pc + 32'd4 : '0;
 assign ras_rdata = ras[ras_top_ptr];
 
-always_ff @( clk ) begin
+always_ff @(posedge clk ) begin
     if (!rst_n) begin
         ras <= '0;
         ras_top_ptr <= {`BPU_RAS_LEN{1'b1}};
@@ -203,7 +203,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign pht_raddr[i] = {bht_rdata[i].history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
 end
 
-always_ff @( clk ) begin : pht_logic
+always_ff @(posedge clk ) begin : pht_logic
     if (!rst_n) begin
         pht <= '0; // TODO: there is a warning about it
     end

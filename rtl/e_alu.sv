@@ -50,13 +50,13 @@ end
 
 // BW
 always_comb begin
-    case (op)
+    case (op_i)
     `_BW_AND: begin
         bw_result = r0_i & r1_i;
     end
 
     `_BW_OR: begin
-        bw_result = r1 | r1_i;
+        bw_result = r0_i | r1_i;
     end
 
     `_BW_NOR: begin
@@ -83,7 +83,7 @@ end
 
 // LI
 always_comb begin
-    case (op)
+    case (op_i)
     `_LI_LUI: begin
         li_result = {r1_i[19:0], 12'b0};
     end
@@ -100,7 +100,7 @@ end
 
 // INT
 always_comb begin
-    case (op)
+    case (op_i)
     `_INT_ADD: begin
         int_result = r0_i + r1_i;
     end
@@ -125,7 +125,7 @@ end
 
 // SFT
 always_comb begin
-    case (op)
+    case (op_i)
     `_SFT_SLL: begin
         sft_result = r0_i >> r1_i[4:0];
     end
@@ -150,7 +150,7 @@ end
 
 // COM
 always_comb begin
-    case (op)
+    case (op_i)
         `_COM_EQ: begin
             com_result = (sub_result == 0);
         end 

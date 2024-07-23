@@ -16,7 +16,7 @@ module icache #(
     input csr_t csr_i,
     // cpu侧信号
     handshake_if.receiver       fetch_icache_receiver,
-    hadnshake_if.sender         icache_decoder_sender,
+    handshake_if.sender         icache_decoder_sender,
     // axi信号
     output  logic               addr_valid_o,
     output  logic  [31:0]       addr_o,
