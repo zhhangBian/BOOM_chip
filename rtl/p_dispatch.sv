@@ -55,7 +55,7 @@ always_comb begin
         dispatch_rob_o[i].tlb_inst = r_p_pkg.tlb_inst[i];
         // control info, temp, 根据需要自己调整
         dispatch_rob_o[i].predict_info = r_p_pkg.predict_infos[i];
-        dispatch_rob_o[i].if_jump = r_p_pkg.if_jump[i]; // 是否跳转 TODO: 什么意思？
+        // dispatch_rob_o[i].if_jump = r_p_pkg.if_jump[i]; // 是否跳转 TODO: 什么意思？
         // 特殊指令独热码
         dispatch_rob_o[i].break_inst = r_p_pkg.break_inst[i];
         dispatch_rob_o[i].cacop_inst = r_p_pkg.cacop_inst[i]; // lsu iq
@@ -202,7 +202,7 @@ end
 for (genvar i = 0; i < 2; i=i+1) begin
     assign p_di[i].pc = r_p_pkg.pc[i];
     assign p_di[i].imm = r_p_pkg.addr_imm[i];
-    assign p_di[i].if_jump = r_p_pkg.if_jump[i];
+    // assign p_di[i].if_jump = r_p_pkg.if_jump[i];
     
     assign p_di[i].grand_op = r_p_pkg.grand_op[i];
     assign p_di[i].op = r_p_pkg.op[i];
