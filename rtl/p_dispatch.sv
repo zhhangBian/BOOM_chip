@@ -258,4 +258,3 @@ assign p_lsu_sender.valid   = r_p_receiver.ready & (|choose_lsu);
 
 
 endmodule
-

@@ -1,4 +1,4 @@
-`include "a_define.h"
+`include "a_defines.h"
 
 module r_rename #(
     parameter int unsigned DEPTH = 32,
@@ -16,7 +16,7 @@ module r_rename #(
     input  logic c_flush_i,
     // 是否有指令退休
     input  logic [1 :0] c_retire_i,
-    input  retire_pkg_t [1 :0] c_retire_info_i,
+    input  retire_pkg_t [1 :0] c_retire_info_i
     // …… TODO: C级其他信号
 );
 

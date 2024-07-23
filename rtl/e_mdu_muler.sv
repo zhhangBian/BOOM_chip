@@ -12,7 +12,7 @@ module mdu_muler (
     input   logic   valid_i,
     output  logic   ready_o,
     output  logic   valid_o,
-    input   logic   ready_i,
+    input   logic   ready_i
 
     // 定义握手信号的接口
     // handshake_if.receiver receiver,

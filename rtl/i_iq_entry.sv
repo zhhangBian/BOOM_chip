@@ -40,7 +40,7 @@ module iq_entry # (
     // 唤醒数据源
     output  logic   [REG_COUNT - 1:0][WKUP_COUNT - 1:0] wkup_hit_q_o,
     output  word_t  [REG_COUNT - 1:0] data_o,
-    output  decode_info_t di_o,
+    output  decode_info_t di_o
 );
 
 // ------------------------------------------------------------------

@@ -23,7 +23,7 @@ module dcache #(
     input commit_cache_req_t commit_cache_req,
     output cache_commit_resp_t cache_commit_resp,
 
-    input tlb_write_req_t  tlb_write_req_i,
+    input tlb_write_req_t  tlb_write_req_i
 );
 // global stall
 logic sb_stall;
@@ -327,4 +327,4 @@ always_comb begin
     cache_commit_resp.sb_entry = r_sb_entry;
 end
 
-endmodule;
+endmodule
