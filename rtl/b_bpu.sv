@@ -93,7 +93,7 @@ logic [1:0]                 btb_valid;
 
 assign btb_raddr = hash(pc);
 assign btb_waddr = hash(correct_info.pc);
-assign btb_we = correct_info.updata & (correct_info.type_miss | correct_info.target_miss);
+assign btb_we = correct_info.update & (correct_info.type_miss | correct_info.target_miss);
 
 for (genvar i = 0; i < 2; i=i+1) begin
     // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
@@ -109,7 +109,7 @@ end
 
 assign btb_wdata.target_pc = correct_info.target_pc;
 assign btb_wdata.tag = get_tag(correct_info.pc);
-assign btb_wdata.br_type = correct_info.br_type;
+assign btb_wdata.br_type = correct_info.branch_type;
 assign btb_wdata.is_branch = correct_info.is_branch;
 
 always_ff @(posedge clk ) begin : btb_logic
@@ -167,7 +167,7 @@ logic [31:0]                        ras_wdata;
 // RAS 的更新来自两个方面. 首先，如果前端预测到了 CALL 或者 RET 类型指令，则正常入栈出栈
 // 如果后端发现预测信息有误，则也需要更新。
 // 但是为了简单起见先**暂时**一致由后端进行更新，即后端但凡遇到 CALL 或者 RET 就反馈给前端进行更新
-assign ras_wdata = correct_info.target_type == BR_CALL ? correct_info.pc + 32'd4 : '0;
+assign ras_wdata = correct_info.branch_type == BR_CALL ? correct_info.pc + 32'd4 : '0;
 assign ras_rdata = ras[ras_top_ptr];
 
 always_ff @(posedge clk ) begin
@@ -176,12 +176,12 @@ always_ff @(posedge clk ) begin
         ras_top_ptr <= {`BPU_RAS_LEN{1'b1}};
         ras_w_ptr <= '0;
     end
-    if (correct_info.target_type == BR_CALL) begin
+    if (correct_info.branch_type == BR_CALL) begin
         ras[ras_w_ptr] <= ras_wdata;
         ras_w_ptr <= ras_w_ptr + 1;
         ras_top_ptr <= ras_w_ptr;
     end
-    if (correct_info.target_type == BR_RET) begin
+    if (correct_info.branch_type == BR_RET) begin
         ras_w_ptr <= ras_top_ptr;
         ras_top_ptr <= ras_top_ptr - 1;
     end
@@ -199,8 +199,8 @@ logic                               pht_we;
 assign pht_we = correct_info.update;
 
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign pht_waddr[i].scnt = next_scnt(correct_info.scnt, correct_info.taken);
-    assign pht_raddr[i] = {bht_rdata[i].history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
+    assign pht[pht_waddr[i]].scnt = next_scnt(correct_info.scnt, correct_info.taken);
+    assign pht[pht_raddr[i]].scnt = {bht_rdata[i].history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
 end
 
 always_ff @(posedge clk ) begin : pht_logic

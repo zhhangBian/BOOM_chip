@@ -48,7 +48,6 @@ always_comb begin
     decode_info_o.jump_inst = 1'd0;
     decode_info_o.cacop_inst = 1'd0;
     decode_info_o.mem_read = 1'd0;
-    decode_info_o.mem_type = 3'd0;
     decode_info_o.mem_signed = 1'd0;
     decode_info_o.mem_size = 1'd0;
     decode_info_o.mem_write = 1'd0;
@@ -507,7 +506,6 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S14;
             decode_info_o.slot0 = 1'd1;
-            decode_info_o.mem_type = `_MEM_TYPE_WORD;
             decode_info_o.mem_size = 2'd3;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
@@ -522,7 +520,6 @@ always_comb begin
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S14;
             decode_info_o.slot0 = 1'd1;
-            decode_info_o.mem_type = `_MEM_TYPE_WORD;
             decode_info_o.mem_size = 2'd3;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
@@ -538,7 +535,6 @@ always_comb begin
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.slot0 = 1'd1;
             decode_info_o.refetch = 1'd1;
-            decode_info_o.mem_type = `_MEM_TYPE_BYTE;
             decode_info_o.mem_size = 2'd0;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.cacop_inst = 1'd1;
@@ -550,7 +546,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
-            decode_info_o.mem_type = `_MEM_TYPE_BYTE;
             decode_info_o.mem_size = 2'd0;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
@@ -561,7 +556,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
-            decode_info_o.mem_type = `_MEM_TYPE_HALF;
             decode_info_o.mem_size = 2'd1;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
@@ -572,7 +566,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
-            decode_info_o.mem_type = `_MEM_TYPE_WORD;
             decode_info_o.mem_size = 2'd3;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_read = 1'd1;
@@ -584,7 +577,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.slot0 = 1'd1;
-            decode_info_o.mem_type = `_MEM_TYPE_BYTE;
             decode_info_o.mem_size = 2'd0;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
@@ -596,7 +588,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.slot0 = 1'd1;
-            decode_info_o.mem_type = `_MEM_TYPE_HALF;
             decode_info_o.mem_size = 2'd1;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
@@ -608,7 +599,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
             decode_info_o.slot0 = 1'd1;
-            decode_info_o.mem_type = `_MEM_TYPE_WORD;
             decode_info_o.mem_size = 2'd3;
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
@@ -619,7 +609,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
-            decode_info_o.mem_type = `_MEM_TYPE_UBYTE;
             decode_info_o.mem_size = 2'd0;
             decode_info_o.mem_signed = 1'd0;
             decode_info_o.mem_read = 1'd1;
@@ -630,7 +619,6 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
-            decode_info_o.mem_type = `_MEM_TYPE_UHALF;
             decode_info_o.mem_size = 2'd1;
             decode_info_o.mem_signed = 1'd0;
             decode_info_o.mem_read = 1'd1;
