@@ -132,6 +132,7 @@ assign stall_o = stall;
 //这个部分在第一级：整理信号，判断有无异常，判断分支预测结果
 
 logic [1:0] first_commit;
+logic cur_exception;       //提交的第0条是不是异常指令
 
 always_comb begin
     //在有效的情况下是不是单提交的情况
@@ -609,7 +610,6 @@ end
 */
 
 //都不是寄存器
-logic cur_exception;       //提交的第0条是不是异常指令
 logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
 csr_t csr_exception_update;//周期结束时候写入csr_q
 
@@ -622,17 +622,19 @@ csr_t csr_exception_update_q;
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
 wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec;
 
+//TODO 现在为了消除“环”，cur_excpetion信号在无效的时候也可能为1
 //取指异常  判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
-wire fetch_excp    = commit_request_o[0] & rob_commit_i[0].fetch_exception;
+wire fetch_excp    = rob_commit_i[0].fetch_exception;
+
 
 //译码异常 下面的信号来自decoder
-wire syscall_excp  = commit_request_o[0] & rob_commit_i[0].syscall_inst;
-wire break_excp    = commit_request_o[0] & rob_commit_i[0].break_inst;
-wire ine_excp      = commit_request_o[0] & rob_commit_i[0].decode_err;
-wire priv_excp     = commit_request_o[0] & rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
+wire syscall_excp  = rob_commit_i[0].syscall_inst;
+wire break_excp    = rob_commit_i[0].break_inst;
+wire ine_excp      = rob_commit_i[0].decode_err;
+wire priv_excp     = rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 
 //执行异常  访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
-wire execute_excp  = commit_request_o[0] & rob_commit_i[0].execute_exception;
+wire execute_excp  = rob_commit_i[0].execute_exception;
 
 wire [7:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
 
@@ -1913,7 +1915,9 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
-                fsm_npc = pc_s + 4;
+                fsm_npc = (icache_cacop_flush_i ^ 2'b01) ? (pc_s + 4) :
+                          (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
+                          csr_q.eentry;
             end
         end
     end
