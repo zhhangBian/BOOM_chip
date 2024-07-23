@@ -227,12 +227,14 @@ generate
 
     for (m = 0; m < S_COUNT; m = m + 1) begin : s_ifaces
         // address decode and admission control
-        wire [CL_M_COUNT-1:0] a_select;
+        // wire [CL_M_COUNT-1:0] a_select;
+        wire [CL_M_COUNT:0] a_select;
 
         wire m_axi_avalid;
         wire m_axi_aready;
 
-        wire [CL_M_COUNT-1:0] m_wc_select;
+        // wire [CL_M_COUNT-1:0] m_wc_select;
+        wire [CL_M_COUNT:0] m_wc_select;
         wire m_wc_decerr;
         wire m_wc_valid;
         wire m_wc_ready;
@@ -307,7 +309,8 @@ generate
         assign m_axi_aready = int_axi_awready[a_select*S_COUNT+m];
 
         // write command handling
-        reg [CL_M_COUNT-1:0] w_select_reg = 0, w_select_next;
+        // reg [CL_M_COUNT-1:0] w_select_reg = 0, w_select_next;
+        reg [CL_M_COUNT:0] w_select_reg = 0, w_select_next;
         reg w_drop_reg = 1'b0, w_drop_next;
         reg w_select_valid_reg = 1'b0, w_select_valid_next;
 

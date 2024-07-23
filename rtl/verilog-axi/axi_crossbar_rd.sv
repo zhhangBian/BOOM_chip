@@ -201,7 +201,8 @@ generate
 
     for (m = 0; m < S_COUNT; m = m + 1) begin : s_ifaces
         // address decode and admission control
-        wire [CL_M_COUNT-1:0] a_select;
+        // wire [CL_M_COUNT-1:0] a_select;
+        wire [CL_M_COUNT:0] a_select;
 
         wire m_axi_avalid;
         wire m_axi_aready;

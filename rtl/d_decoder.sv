@@ -176,6 +176,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.inst_4_0[i] = decode_infos[i].inst[4:0];
     assign d_r_pkg.decode_err[i] = decode_infos[i].decode_err;
     assign d_r_pkg.is_branch[i] = decode_infos[i].jump_inst;
+    assign d_r_pkg.br_type[i] = decode_infos[i].br_type;
 end
 
 endmodule

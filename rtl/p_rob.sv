@@ -107,7 +107,7 @@ always_comb begin
         dispatch_inst_i[i].tlb_inst     = dispatch_info_i[i].tlb_inst;
         // control info, temp, 根据需要自己调整
         dispatch_inst_i[i].predict_info = dispatch_info_i[i].predict_info ;
-        dispatch_inst_i[i].if_jump      = dispatch_info_i[i].if_jump ; // 是否跳转 TODO: 什么意思？
+        // dispatch_inst_i[i].if_jump      = dispatch_info_i[i].if_jump ; // 是否跳转 TODO: 什么意思？
         // 特殊指令独热码
         dispatch_inst_i[i].break_inst   = dispatch_info_i[i].break_inst ;
         dispatch_inst_i[i].cacop_inst   = dispatch_info_i[i].cacop_inst ; // lsu iq

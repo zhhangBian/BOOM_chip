@@ -204,7 +204,7 @@ always_comb begin
     r_p_pkg_temp.data_valid= (~d_r_pkg_i.reg_need) | r_p_arfdata_valid;
     // 2024/07/22 ADD
     r_p_pkg_temp.predict_infos = d_r_pkg_i.predict_infos;
-    r_p_pkg_temp.if_jump = d_r_pkg_i.if_jump;
+    // r_p_pkg_temp.if_jump = d_r_pkg_i.if_jump;
 
     // 指令类型
     r_p_pkg_temp.alu_type       = d_r_pkg_i.alu_type;

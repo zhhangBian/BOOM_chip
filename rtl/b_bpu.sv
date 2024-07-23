@@ -89,7 +89,7 @@ logic [`BPU_BTB_LEN-1 : 0]  btb_waddr;
 logic [1:0]                 btb_tag_match;
 logic                       btb_we;
 logic [1:0]                 btb_valid;
-(* ramstyle = "distributed" *)  bpu_btb_entry_t [1:0] btb [`BPU_BTB_DEPTH - 1 : 0];
+(* ramstyle = "distributed" *)  bpu_btb_entry_t [`BPU_BTB_DEPTH - 1 : 0] btb [1:0] ;
 
 assign btb_raddr = hash(pc);
 assign btb_waddr = hash(correct_info.pc);

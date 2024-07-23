@@ -124,7 +124,7 @@ typedef struct packed {
     alu_inst_t      alu_inst; // 是否是需要使用 alu 的指令
     alu_op_t        alu_op; // alu 子类，在不同大类下有不同含义
     break_inst_t    break_inst; // 是否是 break 指令
-    br_type_t       br_type; // 是否是 break 指令
+    br_type_t       br_type; // 分支类型
     cacop_inst_t    cacop_inst; // 是否是 cacop 指令
     csr_op_type_t   csr_op_type; // csr 指令类型
     dbar_inst_t     dbar_inst; // 是否是 DBAR 指令
@@ -221,7 +221,7 @@ typedef struct packed {
     tlb_inst_t   [1:0]tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t [1 :0] predict_infos;
-    logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
+    // logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
     // ALU & MDU 信号
     logic [1:0][2:0]   grand_op; 
     logic [1:0][2:0]   op;
@@ -290,7 +290,7 @@ typedef struct packed {
     logic  [1 :0]     tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t [1 :0]predict_infos;
-    logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
+    // logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
     // ALU & MDU 信号
     logic [1:0][2:0]   grand_op; 
     logic [1:0][2:0]   op;
@@ -380,7 +380,7 @@ typedef struct packed {
     logic  tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t predict_info;
-    logic if_jump; // 是否跳转 TODO: 什么意思？
+    // logic if_jump; // 是否跳转 TODO: 什么意思？
     // 特殊指令独热码
     logic break_inst;
     logic cacop_inst; // lsu iq
@@ -578,7 +578,7 @@ typedef struct packed {
     logic  tlb_inst;
     // control info, temp, 根据需要自己调整
     predict_info_t predict_info;
-    logic if_jump; // 是否跳转 TODO: 什么意思？
+    // logic if_jump; // 是否跳转 TODO: 什么意思？
     // 特殊指令独热码
     logic break_inst;
     logic cacop_inst; // lsu iq
@@ -632,7 +632,7 @@ typedef struct packed {
 typedef struct packed {
     word_t  pc;
     word_t  imm;
-    logic   if_jump;
+    // logic   if_jump;
 
     logic   [2:0]   grand_op;
     logic   [2:0]   op;

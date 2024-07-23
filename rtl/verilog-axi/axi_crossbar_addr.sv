@@ -83,14 +83,16 @@ module axi_crossbar_addr #
      * Address output
      */
     output wire [3:0]                 m_axi_aregion,
-    output wire [$clog2(M_COUNT)-1:0] m_select,
+    // output wire [$clog2(M_COUNT)-1:0] m_select,
+    output wire [$clog2(M_COUNT):0]   m_select,
     output wire                       m_axi_avalid,
     input  wire                       m_axi_aready,
 
     /*
      * Write command output
      */
-    output wire [$clog2(M_COUNT)-1:0] m_wc_select,
+    // output wire [$clog2(M_COUNT)-1:0] m_wc_select,
+    output wire [$clog2(M_COUNT):0]   m_wc_select,
     output wire                       m_wc_decerr,
     output wire                       m_wc_valid,
     input  wire                       m_wc_ready,
@@ -238,7 +240,8 @@ reg [2:0] state_reg = STATE_IDLE, state_next;
 reg s_axi_aready_reg = 0, s_axi_aready_next;
 
 reg [3:0] m_axi_aregion_reg = 4'd0, m_axi_aregion_next;
-reg [CL_M_COUNT-1:0] m_select_reg = 0, m_select_next;
+// reg [CL_M_COUNT-1:0] m_select_reg = 0, m_select_next;
+reg [CL_M_COUNT:0] m_select_reg = 0, m_select_next;
 reg m_axi_avalid_reg = 1'b0, m_axi_avalid_next;
 reg m_decerr_reg = 1'b0, m_decerr_next;
 reg m_wc_valid_reg = 1'b0, m_wc_valid_next;
@@ -266,7 +269,8 @@ wire trans_limit = trans_count_reg >= S_ACCEPT && !trans_complete;
 
 // transfer ID thread tracking
 reg [ID_WIDTH-1:0] thread_id_reg[S_INT_THREADS-1:0];
-reg [CL_M_COUNT-1:0] thread_m_reg[S_INT_THREADS-1:0];
+// reg [CL_M_COUNT-1:0] thread_m_reg[S_INT_THREADS-1:0];
+reg [CL_M_COUNT:0] thread_m_reg[S_INT_THREADS-1:0];
 reg [3:0] thread_region_reg[S_INT_THREADS-1:0];
 reg [$clog2(S_ACCEPT+1)-1:0] thread_count_reg[S_INT_THREADS-1:0];
 
@@ -278,8 +282,8 @@ wire [S_INT_THREADS-1:0] thread_trans_start/*verilator split_var*/;
 wire [S_INT_THREADS-1:0] thread_trans_complete;
 
 
-for (genvar i = 1; i < S_INT_THREADS; i=i+1) begin
-	assign thread_trans_start[i] = (thread_match[i] || (!thread_active[i] && !thread_match && !(thread_trans_start[i-1:0]))) && trans_start;
+for (genvar n = 1; n < S_INT_THREADS; n=n+1) begin
+	assign thread_trans_start[n] = (thread_match[n] || (!thread_active[n] && !thread_match && !(thread_trans_start[n-1:0]))) && trans_start;
 end
 assign thread_trans_start[0] = (thread_match[0] || (!thread_active[0] && !thread_match)) && trans_start;
 
@@ -327,7 +331,8 @@ always @* begin
     s_axi_aready_next = 1'b0;
 
     m_axi_aregion_next = m_axi_aregion_reg;
-    m_select_next = m_select_reg;
+    // m_select_next = m_select_reg;
+    m_select_next = 0;
     m_axi_avalid_next = m_axi_avalid_reg && !m_axi_aready;
     m_decerr_next = m_decerr_reg;
     m_wc_valid_next = m_wc_valid_reg && !m_wc_ready;
@@ -343,7 +348,8 @@ always @* begin
                 for (i = 0; i < M_COUNT; i = i + 1) begin
                     for (j = 0; j < M_REGIONS; j = j + 1) begin
                         if (M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32] && (!M_SECURE[i] || !s_axi_aprot[1]) && (M_CONNECT & (1 << (S+i*S_COUNT))) && (s_axi_aaddr >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32]) == (M_BASE_ADDR_INT[(i*M_REGIONS+j)*ADDR_WIDTH +: ADDR_WIDTH] >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32])) begin
-                            m_select_next = i;
+                            // m_select_next = i;
+                            m_select_next = 0;
                             m_axi_aregion_next = j;
                             match = 1'b1;
                         end
