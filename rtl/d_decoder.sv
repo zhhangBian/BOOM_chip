@@ -42,6 +42,7 @@ logic [1:0]         mask;
 logic [1:0][31:0]   pc;
 logic [1:0][31:0]   insts_i;
 d_r_pkg_t           d_r_pkg;
+d_decode_info_t decode_infos [1:0];
 
 assign mask = receiver.data.mask;
 assign pc = {receiver.data.pc | 32'h00000004, receiver.data.pc};
@@ -124,7 +125,7 @@ end
 
 // predict_infos 逻辑
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign d_r_pkg.predict_infos[i] = receiver.predict_infos[i];
+    assign d_r_pkg.predict_infos[i] = receiver.data.predict_infos[i];
 end
 
 // ALU 信号逻辑
@@ -132,7 +133,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.grand_op = decode_infos[i].alu_grand_op;
     assign d_r_pkg.op = decode_infos[i].alu_op;
     assign d_r_pkg.msigned = decode_infos[i].mem_signed;
-    assign d_r_pkg.msize = mem_size;
+    assign d_r_pkg.msize = decode_infos[i].mem_size;
 end
 
 // 指令类型
