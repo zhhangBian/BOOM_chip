@@ -302,7 +302,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         is_cache_fix[i] = rob_commit_q[i].is_cache_fix;
         is_tlb_fix[i]   = rob_commit_q[i].is_tlb_fix;
 
-        cache_commit_hit[i] = lsu_info[i].hit;
+        cache_commit_hit[i]   = lsu_info[i].hit;
         cache_commit_dirty[i] = lsu_info[i].dirty;
 
         is_ll[i]        = rob_commit_q[i].is_ll;
@@ -548,7 +548,7 @@ end
 // 在第一级
 
 // 维护一个提交级的时钟
-logic [5:0] timer_64, timer_64_q;
+logic [63:0] timer_64, timer_64_q;
 
 always_ff @(posedge clk) begin
     if(~rst_n) begin

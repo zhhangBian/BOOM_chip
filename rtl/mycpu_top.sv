@@ -180,6 +180,8 @@ icache # (
 
 /*============================== Decoder ==============================*/
 
+handshake_if #(.T(f_d_pkg_t)) fifo_d_handshake();
+
 // decode 前的队列
 fifo #(
     .DEPTH(`D_BEFORE_QUEUE_DEPTH),
@@ -189,7 +191,7 @@ fifo #(
     .clk(clk),
     .rst_n(rst_n),
     .receiver(f_fifo_handshake.receiver),
-    .sender(d_fifo_handshake.sender)
+    .sender(fifo_d_handshake.sender)
 );
 
 handshake_if #(.T(d_r_pkg_t)) d_fifo_handshake();
