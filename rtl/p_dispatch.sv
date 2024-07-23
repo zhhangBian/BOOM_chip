@@ -40,6 +40,7 @@ always_comb begin
         dispatch_rob_o[i].w_reg     = r_p_pkg.w_reg[i];
         dispatch_rob_o[i].w_mem     = r_p_pkg.w_mem[i];
         dispatch_rob_o[i].check     = r_p_pkg.check[i];
+        dispatch_rob_o[i].r_valid   = r_p_pkg.r_valid[i];
 
         dispatch_rob_o[i].addr_imm  = r_p_pkg.addr_imm[i];
 

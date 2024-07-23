@@ -365,6 +365,7 @@ typedef struct packed {
     logic                                          w_reg;
     logic                                          w_mem;
     logic                                          check;
+    logic                                          r_valid;
 
     logic [31:0]                                   addr_imm;
 
@@ -467,7 +468,7 @@ typedef struct packed {
     logic   is_uncached;
     logic   [5:0]   exc_code;   // 位宽随便定的，之后调整
     logic   is_csr_fix;
-    logic   [2:0]   csr_type;
+    logic   [1:0]   csr_type;
     logic   [13:0]  csr_num;
     logic   is_cache_fix;
     logic   [4:0]   cache_code;
@@ -560,6 +561,7 @@ typedef struct packed {
     logic [5 : 0] preg;
     logic         w_reg;
     logic         check;
+    logic         r_valid;
 
     logic         w_mem;
 
@@ -600,6 +602,7 @@ typedef struct packed {
 
     // csr
     csr_op_type_t csr_op_type;
+    logic[13:0] csr_num;
     logic [4:0]  inst_4_0; // cache_op 和 tlb_op
 
     //tlb
