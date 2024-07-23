@@ -308,7 +308,7 @@ always_comb begin
     lsu_iq_pkg.rdata    = lw_data; //组合逻辑有点长，后续考虑拆两级流水
     lsu_iq_pkg.tlb_exception = tlb_exception;
     lsu_iq_pkg.refill   = refill_way;
-    lsu_iq_pkg.cache_dirty_addr = refill_way[0] ? {tag_ans0[0].tag, paddr[19:0]} : {tag_ans0[1].tag, paddr[19:0]};
+    lsu_iq_pkg.cache_dirty_addr = refill_way[0] ? {tag_ans0[0].tag, paddr[11:0]} : {tag_ans0[1].tag, paddr[11:0]};
     lsu_iq_pkg.dirty    = refill_way[0] ? tag_ans0[0].d : tag_ans0[1].d;
     lsu_iq_pkg.tag_hit  = tag_hit;
     lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;

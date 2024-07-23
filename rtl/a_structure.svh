@@ -227,7 +227,7 @@ typedef struct packed {
     // LSU 信号
     logic [1:0]        msigned; // 是否符号拓展（ld指令）
     logic [1:0][1:0]   msize;   // 读字节数目 - 1
-    logic  [1 :0]  w_mem; // 加在这里了
+    logic [1:0]        w_mem; // 加在这里了
 
     // 特殊指令独热码
     logic [1:0]        break_inst;
@@ -288,15 +288,15 @@ typedef struct packed {
     logic  [1 :0]     rdcnt_inst;
     logic  [1 :0]     tlb_inst;
     // control info, temp, 根据需要自己调整
-    predict_info_t [1 :0] predict_infos;
+    predict_info_t [1 :0]predict_infos;
     logic [1:0]        if_jump; // 是否跳转 TODO: 什么意思？
     // ALU & MDU 信号
     logic [1:0][2:0]   grand_op; 
     logic [1:0][2:0]   op;
     // LSU 信号
     logic [1:0]        msigned; // 是否符号拓展（ld指令）
-    logic [1:0][1:0]   msize;   // 读字节数目 - 1
-    logic  [1 :0]      w_mem;
+    logic [1:0][1:0]   msize ;   // 读字节数目 - 1
+    logic [1:0]        w_mem;
 
     // 特殊指令独热码
     logic [1:0]        break_inst;
@@ -668,7 +668,7 @@ typedef struct packed {
     logic [1:0][1:0]   msize;   // 读字节数目 - 1
     logic [1 :0]       w_mem;
 
-    decode_info_t [1:0] di;
+    decode_info_t      di[1:0];
 } p_i_pkg_t;
 
 /**********************store buffer pkg******************/

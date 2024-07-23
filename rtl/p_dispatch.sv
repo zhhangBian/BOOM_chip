@@ -187,7 +187,7 @@ always_comb begin
         p_i_pkg[i].op = r_p_pkg.op;
         // LSU 信号
         p_i_pkg[i].msigned = r_p_pkg.msigned;
-        p_i_pkg[i].msize = r_p_pkg.msize;
+        p_i_pkg[i].msize = r_p_pkg.msize; // 没啥用
         p_i_pkg[i].w_mem = r_p_pkg.w_mem;
         p_i_pkg[i].di = p_di;
     end
