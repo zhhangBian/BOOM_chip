@@ -20,13 +20,13 @@ function automatic offset(input logic [31:0] data, input [1:0] m_size, input [3:
     sign    = '0;
     if (m_size == 2'd0) begin
         for (integer i = 0; i < 4; i++) begin
-            lw_data[7 : 0]     |= mask[i] ? data[8 * i + 7 : 8 * i] : '0;
+            lw_data[7 : 0]     |= mask[i] ? data[8 * i + 7 -: 8] : '0;
             sign               |= mask[i] ? data[8 * i + 7]         : '0;
         end
         lw_data[31: 8]         |= {24{sign & msigned}};
     end else if (m_size == 2'd1) begin
         for (integer i = 0; i < 2; i++) begin
-            lw_data[15: 0]     |= mask[2*i] ? data[16 * i + 15 : 16 * i] : '0;
+            lw_data[15: 0]     |= mask[2*i] ? data[16 * i + 15 -: 16] : '0;
             sign               |= mask[2*i] ? data[16 * i + 15]          : '0;
         end
         lw_data[31:16]         |= {16{sign & msigned}};
@@ -136,15 +136,15 @@ logic [1:0] first_commit;
 always_comb begin
     //在有效的情况下是不是单提交的情况
     first_commit[0]     = rob_commit_i[0].flush_inst | //一定flush指令
-                          rob_commit_i[0].lsu_info.is_lsu_write | //store
+                          (|rob_commit_i[0].lsu_info.strb) | //store
                           cur_exception | //异常
-                          ~rob_commit_i[0].cache_commit_hit | //cache miss
+                          ~rob_commit_i[0].lsu_info.hit | //cache miss
                           ~predict_success[0];//预测错
 
     first_commit[1]     = rob_commit_i[1].flush_inst | 
-                          rob_commit_i[1].lsu_info.is_lsu_write | 
+                          (|rob_commit_i[1].lsu_info.strb) | 
                           another_exception | 
-                          ~rob_commit_i[1].cache_commit_hit;//仅第二条分支预测失败也可以双提
+                          ~rob_commit_i[1].lsu_info.hit;//仅第二条分支预测失败也可以双提
 
     commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
 
@@ -297,12 +297,12 @@ for(genvar i = 0; i < 2; i += 1) begin
         is_lsu_read[i]  = |lsu_info[i].rmask;
 
         is_lsu[i]       = is_lsu_write[i] | is_lsu_read[i];
-        is_uncached[i]  = lsu_info[i].is_uncached;
+        is_uncached[i]  = rob_commit_q[i].is_uncached;
         is_csr_fix[i]   = rob_commit_q[i].is_csr_fix;
         is_cache_fix[i] = rob_commit_q[i].is_cache_fix;
         is_tlb_fix[i]   = rob_commit_q[i].is_tlb_fix;
 
-        cache_commit_hit[i] = lsu_info[i].hit;
+        cache_commit_hit[i]   = lsu_info[i].hit;
         cache_commit_dirty[i] = lsu_info[i].dirty;
 
         is_ll[i]        = rob_commit_q[i].is_ll;
@@ -548,7 +548,7 @@ end
 // 在第一级
 
 // 维护一个提交级的时钟
-logic [5:0] timer_64, timer_64_q;
+logic [63:0] timer_64, timer_64_q;
 
 always_ff @(posedge clk) begin
     if(~rst_n) begin
@@ -1091,14 +1091,14 @@ always_comb begin
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_D]  = tlb_entry.value[0].d;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_PLV]= tlb_entry.value[0].plv;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_MAT]= tlb_entry.value[0].mat;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.value[0].g;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.key.g;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_PPN]= tlb_entry.value[0].ppn;
 
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_V]  = tlb_entry.value[1].v;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_D]  = tlb_entry.value[1].d;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_PLV]= tlb_entry.value[1].plv;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_MAT]= tlb_entry.value[1].mat;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.value[1].g;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.key.g;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_PPN]= tlb_entry.value[1].ppn;
         end
         else begin
@@ -1589,7 +1589,6 @@ always_comb begin
                     fsm_flush = '0;
                 end
                 else begin
-                    ls_fsm = '1;
                     // 不是脏的，发起AXI请求写入Cache
                     if(~cache_commit_dirty[0]) begin
                         ls_fsm = S_AXI_RD;
@@ -1780,7 +1779,7 @@ always_comb begin
             cache_block_ptr = cache_block_ptr_q + 1;
             // 设置相应的Cache请求
             commit_cache_req.addr       = commit_cache_req_q.addr + 4;
-            commit_cache_req.way_choose = commit_cache_req_q.refill;
+            commit_cache_req.way_choose = commit_cache_req_q.way_choose;
             commit_cache_req.tag_data   = '0;
             commit_cache_req.tag_we     = '0;
             commit_cache_req.data_data  = '0;
@@ -1882,9 +1881,9 @@ always_comb begin
                 // 设置相应的Cache数据
                 cache_block_ptr = cache_block_ptr_q + 1;
                 // 对齐一块的数据
-                commit_cache_req.addr       = (lsu_info_s[0].paddr & 32'hfffffff0) | (cache_block_ptr_q << 2);
-                commit_cache_req.way_choose = lsu_info_s[0].refill;
-                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s[0].paddr & 32'hfffffff0, '1, '0);
+                commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) | (cache_block_ptr_q << 2);
+                commit_cache_req.way_choose = lsu_info_s.refill;
+                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '0);
                 commit_cache_req.tag_we     = '1;
                 commit_cache_req.data_data  = axi_block_data[cache_block_ptr_q];
                 commit_cache_req.strb       = '1;

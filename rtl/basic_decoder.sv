@@ -36,7 +36,8 @@ always_comb begin
     decode_info_o.decode_err = 1'b0; // 有修改
     decode_info_o.ertn_inst = 1'd0;
     decode_info_o.flush_inst = 1'd0;
-    decode_info_o.ibar = 1'd0;
+    decode_info_o.inst = ins_i;
+    decode_info_o.ibar_inst = 1'd0;
     decode_info_o.idle_inst = 1'd0;
     decode_info_o.imm_type = `_IMM_U12;
     decode_info_o.invtlb_inst = 1'd0;
@@ -46,7 +47,7 @@ always_comb begin
     decode_info_o.cacop_inst = 1'd0;
     decode_info_o.mem_read = 1'd0;
     decode_info_o.mem_signed = 1'd0;
-    decode_info_o.mem_size = 1'd0;
+    decode_info_o.mem_size = 2'd0;
     decode_info_o.mem_write = 1'd0;
     decode_info_o.mdu_inst = 1'd0;
     decode_info_o.priv_inst = 1'd0;
@@ -630,7 +631,7 @@ always_comb begin
         // IBAR
         32'b00111000011100101???????????????: begin
             decode_info_o.alu_inst = 1'd1;
-            decode_info_o.ibar = 1'd1;
+            decode_info_o.ibar_inst = 1'd1;
             decode_info_o.flush_inst = 1'd1;
         end
         32'b0000000000000000011000??????????: begin

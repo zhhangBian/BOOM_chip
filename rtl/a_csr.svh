@@ -62,7 +62,7 @@ typedef struct packed {
     logic [31:0] tcfg;
     logic [31:0] tval;
     logic [31:0] ticlr;
-    logic [31:2] llbctl;
+    logic [31:0] llbctl;
     logic        llbit;
     logic [31:0] tlbrentry;
     logic [31:0] dmw0;

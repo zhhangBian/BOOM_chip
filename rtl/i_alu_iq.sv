@@ -142,7 +142,7 @@ always_ff @(posedge clk) begin
 end
 
 always_comb begin
-    entry_init[i] = '0;
+    entry_init = '0;
     for(integer  i = 0; i < IQ_SIZE; i += 1) begin
         if(entry_empty_q[i]) begin
             entry_init[i] = other_ready;
