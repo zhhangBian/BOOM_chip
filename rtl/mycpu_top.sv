@@ -99,6 +99,8 @@ csr_t csr;
 handshake_if #(b_f_pkg_t) b_fifo_handshake();
 correct_info_t [1:0] correct_infos;
 
+logic [31:0] redir_addr;
+
 bpu bpu_inst(
     .clk(clk),
     .rst_n(rst_n),
@@ -591,6 +593,7 @@ commit # () commit(
     .commit_arf_check_o(commit_arf_check),
 
     .correct_info_o(correct_infos),
+    .redir_addr_o(redir_addr),
     
     .csr_o(csr),
     .tlb_write_req_o(tlb_update_pkg),
