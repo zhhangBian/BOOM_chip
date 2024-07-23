@@ -63,12 +63,10 @@ assign commit_resp_ready_o = !stall_q;
 b_f_pkg_t b_f_pkg, b_f_pkg_q;
 logic [31:0] pc;
 logic [1 :0] mask;
-predict_info_t predict_info;
 
 assign b_f_pkg = fetch_icache_receiver.data;
 assign pc      = b_f_pkg.pc & 32'hfffffff8; //对齐
 assign mask    = b_f_pkg.mask;
-assign predict_info = b_f_pkg.predict_infos;
 
 // MMU
 wire [1:0] mem_type = `_MEM_FETCH;
@@ -151,7 +149,7 @@ logic [1 :0] real_we;
 cache_tag_t  real_tag;
 
 assign real_addr = stall ? refill_addr    : commit_cache_req.addr;
-assign read_we   = stall ? refill_tag_we  : (commit_cache_req.way_choose & {2{commit_cache_req.tag_we}});
+assign real_we   = stall ? refill_tag_we  : (commit_cache_req.way_choose & {2{commit_cache_req.tag_we}});
 assign real_tag  = stall ? refill_tag     : commit_cache_req.tag_data;  
 
 // tag sram
@@ -185,7 +183,7 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
         .rst_n1(rst_n),
         .addr1_i(real_addr[11 : TAG_ADDR_LOW]),
         .en1_i('1),
-        .we1_i(real_we),
+        .we1_i(real_we[i]),
         .wdata1_i(real_tag),
         .rdata1_o(rtag1)
     );
@@ -222,7 +220,7 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         .rst_n1(rst_n),
         .addr1_i(refill_addr[11 : DATA_ADDR_LOW]),
         .en1_i('1),
-        .we1_i(refill_we),
+        .we1_i(refill_we[i]),
         .wdata1_i(refill_data),
         .rdata1_o(rdata1)
     );
@@ -387,7 +385,7 @@ always_comb begin
                 // TODO 请求地址和valid_o
                 addr_o    = paddr & 32'hffffffe0; // 块对齐，一个块8个字
                 addr_valid_o = '1;
-                data_len_o   = req_num;
+                data_len_o   = req_num[3:0];
                 if (axi_resp_ready_i) begin
                     fsm_next = F_MISS_S;
                     temp_data_block = '0;
