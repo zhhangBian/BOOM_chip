@@ -1091,14 +1091,14 @@ always_comb begin
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_D]  = tlb_entry.value[0].d;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_PLV]= tlb_entry.value[0].plv;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_MAT]= tlb_entry.value[0].mat;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.value[0].g;
+            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.key.g;
             tlb_update_csr.tlbelo0[`_TLBELO_TLB_PPN]= tlb_entry.value[0].ppn;
 
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_V]  = tlb_entry.value[1].v;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_D]  = tlb_entry.value[1].d;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_PLV]= tlb_entry.value[1].plv;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_MAT]= tlb_entry.value[1].mat;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.value[1].g;
+            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.key.g;
             tlb_update_csr.tlbelo1[`_TLBELO_TLB_PPN]= tlb_entry.value[1].ppn;
         end
         else begin
