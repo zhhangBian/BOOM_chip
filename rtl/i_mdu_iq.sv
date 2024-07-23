@@ -233,15 +233,11 @@ word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
 logic            wkup_valid_o;
-rob_id_t         wkup_reg_id;
 
 always_comb begin
     select_di           = '0;
     select_data         = '0;
     select_wkup_hit_q   = '0;
-    // 选中了提前唤醒
-    wkup_valid_o        = '0;
-    wkup_reg_id         = '0;
 
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
         // 如果发射对应指令
@@ -249,9 +245,6 @@ always_comb begin
             select_di       |= entry_di[i];
             select_data     |= entry_data[i];
             select_wkup_hit_q |= wkup_hit_q[i];
-            // 选中了提前唤醒
-            wkup_valid_o    |= excute_ready;
-            wkup_reg_id_o   |= entry_di[i].wreg_id;
         end
     end
 end
@@ -296,7 +289,7 @@ assign mdu_ready_i  = fifo_ready;
 always_comb begin
     req_i.data      = select_data_q;
     req_i.op        = op;
-    req_i.reg_id    = wkup_reg_id;
+    req_i.reg_id    = select_di_q.wreg_id;
 
     result_o.w_data   = res_o.data;
     result_o.rob_id   = res_o.reg_id;
@@ -315,7 +308,7 @@ mdu mdu_inst (
     .flush,
 
     .req_i(req_i),
-    .di_i(select_data_q),
+    .di_i(select_di_q),
     .res_o(res_o),
     .di_o(di_o),
     .data_s_o(data_s),
@@ -323,7 +316,7 @@ mdu mdu_inst (
     .valid_i(mdu_valid_i),
     .ready_o(mdu_ready_o),
     .valid_o(mdu_valid_o),
-    .ready_i(mdu_ready_i),
+    .ready_i(mdu_ready_i)
 );
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
