@@ -78,6 +78,7 @@ module commit #(
     input   axi_commit_resp_t   axi_commit_resp_i,
 
     // commit与ARF的接口
+    output  logic [1:0][31:0]commit_debug_pc_o,
     output  logic   [1:0]   commit_arf_we_o,
     output  word_t  [1:0]   commit_arf_data_o,
     output  logic [1:0][4:0]commit_arf_areg_o,
@@ -159,8 +160,8 @@ end
 
 //下面两个是第二级的数据来源，这样也避免了一些情况，比如说刷掉流水导致找不到之前的数据
 //flush对1->2部分的数据不应该刷掉自己
-logic            [1:0] commit_request_q;
-rob_commit_pkg_t rob_commit_q[1:0];
+logic [1:0] commit_request_q;
+rob_commit_pkg_t rob_commit_q [1:0];
 //__forward()
 //下面只是一个组合逻辑，如果传指令过去就一起传包，否则全0
 rob_commit_pkg_t rob_commit_flow[1:0];
@@ -209,6 +210,7 @@ always_comb begin
         commit_arf_we_o[i]   = retire_request_o[i] & rob_commit_q[i].w_reg & !cur_exception_q;
         //接到rename级的要用这个！
 
+        commit_debug_pc_o[i]   = rob_commit_q[i].pc;
         commit_arf_data_o[i] = rob_commit_q[i].rdcnt_en  ? rdcnt_data_q:
                                |rob_commit_q[i].csr_type ? commit_csr_data_q:
                                rob_commit_q[i].w_data;
@@ -220,6 +222,7 @@ always_comb begin
 
     if(ls_fsm_q == S_UNCACHED_RD) begin
         if(axi_commit_rvalid_i) begin
+            commit_debug_pc_o[0]   = rob_commit_q[0].pc;
             commit_arf_we_o[0]   = |rob_commit_q[0].lsu_info.rmask;
             commit_arf_data_o[0] = offset(axi_commit_resp_i.rdata, rob_commit_q[0].lsu_info.msize, rob_commit_q[0].lsu_info.rmask, rob_commit_q[0].lsu_info.msigned);//TODO rdata mask
             commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
@@ -286,7 +289,7 @@ logic [1:0] is_ll;
 logic [1:0] is_sc;
 
 // 与DCache的一级流水交互
-lsu_iq_pkg_t lsu_info[1:0];
+lsu_iq_pkg_t lsu_info [1:0];
 assign lsu_info[0] = rob_commit_q[0].lsu_info;
 assign lsu_info[1] = rob_commit_q[1].lsu_info;
 
@@ -667,9 +670,9 @@ always_comb begin
         7'b01?????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].pc; //存badv
+            csr_exception_update.badv                    = rob_commit_i[0].badv; //存badv
             if (rob_commit_i[0].exc_code != `_ECODE_ADEF) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].pc[31:13];        //tlb例外存vppn
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badv[31:13];        //tlb例外存vppn
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
@@ -1415,11 +1418,13 @@ logic axi_back_target, axi_back_target_q;
 
 lsu_iq_pkg_t lsu_info_s, lsu_info_q;
 
-word_t [CACHE_BLOCK_NUM-1:0]     cache_block_data, cache_block_data_q;
+word_t cache_block_data [CACHE_BLOCK_NUM-1:0];
+word_t cache_block_data_q [CACHE_BLOCK_NUM-1:0];
 logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr,  cache_block_ptr_q;
 logic [$bits(CACHE_BLOCK_NUM):0] cache_block_len,  cache_block_len_q;
 
-word_t [CACHE_BLOCK_NUM-1:0]     axi_block_data,   axi_block_data_q;
+word_t axi_block_data [CACHE_BLOCK_NUM-1:0];
+word_t axi_block_data_q [CACHE_BLOCK_NUM-1:0];
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr,    axi_block_ptr_q;
 logic [$bits(CACHE_BLOCK_NUM):0] axi_block_len,    axi_block_len_q;
 
@@ -1519,7 +1524,9 @@ always_comb begin
                             // 设置后续状态机的属性
                             cache_block_ptr = '0;
                             cache_block_len = 4;
-                            cache_block_data = '0;
+                            for(int i =0; i < CACHE_BLOCK_NUM; i += 1) begin
+                                cache_block_data[i] = '0;
+                            end
                         end
                         // 否则即完成
                         else begin
@@ -1578,7 +1585,7 @@ always_comb begin
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
                 commit_axi_awvalid_o = '1;
-                axi_block_data = lsu_info[0].wdata;
+                axi_block_data[0] = lsu_info[0].wdata;
                 // 进行AXI握手
                 axi_wait = ~axi_commit_awready_i;
             end
@@ -1607,7 +1614,9 @@ always_comb begin
                         // 进行AXI握手
                         axi_wait = ~axi_commit_arready_i;
                         // 设置相应的指针
-                        axi_block_data = '0;
+                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                            cache_block_data[i] = '0;
+                        end
                         axi_block_ptr = '0;
                         axi_block_len = 1;
                     end
@@ -1625,7 +1634,9 @@ always_comb begin
                         commit_cache_req.strb       = '0;
                         commit_cache_req.fetch_sb   = '0;
                         // 设置相应的指针
-                        cache_block_data = '0;
+                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                            cache_block_data[i] = '0;
+                        end
                         cache_block_ptr = '0;
                         cache_block_len = 4;
                         cache_dirty_addr = lsu_info[0].cache_dirty_addr;
@@ -1639,7 +1650,9 @@ always_comb begin
                         // 设置相应的指针
                         axi_block_ptr = '0;
                         axi_block_len = 4;
-                        axi_block_data = '0;
+                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                            cache_block_data[i] = '0;
+                        end
                     end
                 end
             end
@@ -1700,7 +1713,9 @@ always_comb begin
                         commit_cache_req.strb       = '0;
                         commit_cache_req.fetch_sb   = |lsu_info[0].strb;
                         // 设置相应的指针
-                        cache_block_data = '0;
+                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                            cache_block_data[i] = '0;
+                        end
                         cache_block_ptr = '0;
                         cache_block_len = 4;
                         cache_dirty_addr = lsu_info[0].cache_dirty_addr;
@@ -1714,7 +1729,9 @@ always_comb begin
                         // 设置相应的指针
                         axi_block_ptr = '0;
                         axi_block_len = 4;
-                        axi_block_data = '0;
+                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                            axi_block_data[i] = '0;
+                        end
                     end
                 end
             end
@@ -1835,14 +1852,18 @@ always_comb begin
                 // 设置相应的指针
                 axi_block_ptr = '0;
                 axi_block_len = 4;
-                axi_block_data = '0;
+                for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                    axi_block_data[i] = '0;
+                end
 
                 if(axi_commit_arready_i) begin
                     axi_wait = '0;
                     // 设置相应的指针
                     cache_block_ptr = '0;
                     cache_block_len = 4;
-                    cache_block_data = '0;
+                    for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                        cache_block_data[i] = '0;
+                    end
                 end
                 else begin
                     axi_wait = '1;
@@ -1950,11 +1971,15 @@ always_ff @(posedge clk) begin
         commit_cache_req_q  <= '0;
         commit_axi_req_q    <= '0;
 
-        cache_block_data_q  <= '0;
+        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+            cache_block_data_q[i] <= '0;
+        end
         cache_block_ptr_q   <= '0;
         cache_block_len_q   <= '0;
 
-        axi_block_data_q    <= '0;
+        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+            axi_block_data_q[i] <= '0;
+        end
         axi_block_ptr_q     <= '0;
         axi_block_len_q     <= '0;
     end

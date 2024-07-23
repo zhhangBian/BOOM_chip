@@ -78,15 +78,15 @@ logic [IQ_SIZE - 1:0] entry_empty_q;// 对应的表项是否空闲
 // 根据AGING选择指令
 localparam int half_IQ_SIZE = IQ_SIZE / 2;
 // 对应的aging位
-logic [IQ_SIZE - 1:0][AGING_LENGTH - 1:0]   aging_q;
+logic [AGING_LENGTH - 1:0]  aging_q [IQ_SIZE - 1:0];
 // 目前只处理了IQ为4的情况
-logic [half_IQ_SIZE:0][$bits(IQ_SIZE):0]    aging_select_1;
+logic [$bits(IQ_SIZE):0]    aging_select_1 [half_IQ_SIZE:0];
 // 选择出发射的指令：一定ready
-logic [$bits(IQ_SIZE):0]                    aging_select;
+logic [$bits(IQ_SIZE):0]    aging_select;
 
 always_comb begin
-    aging_select_1[0] = ({entry_ready[1], aging_q[1]} > {entry_ready[0], aging_q[0]}) ? 1 : 0;
-    aging_select_1[1] = ({entry_ready[3], aging_q[3]} > {entry_ready[2], aging_q[2]}) ? 3 : 2;
+    aging_select_1[0] = ({entry_ready[1], aging_q[1]} > {entry_ready[0], aging_q[0]}) ? 3'h1 : 3'h0;
+    aging_select_1[1] = ({entry_ready[3], aging_q[3]} > {entry_ready[2], aging_q[2]}) ? 3'h3 : 3'h2;
     // 根据aging选出发射的指令
     aging_select = ({entry_ready[aging_select_1[0]], aging_q[aging_select_1[0]]} >
                     {entry_ready[aging_select_1[1]], aging_q[aging_select_1[1]]}) ?
