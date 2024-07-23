@@ -67,7 +67,7 @@ logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 logic [PTR_LEN - 1:0]   iq_tail, iq_tail_q;
 
 always_ff @(posedge clk) begin
-    if(!rst_n || flush_i) begin
+    if(!rst_n || flush) begin
         iq_head_q       <= '0;
         iq_tail_q       <= '0;
         free_cnt_q      <= IQ_SIZE;
@@ -242,16 +242,10 @@ decode_info_t   select_di, select_di_q, select_di_qq;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
-logic            wkup_valid_o;
-rob_id_t         wkup_reg_id;
-
 always_comb begin
     select_di           = '0;
     select_data         = '0;
     select_wkup_hit_q   = '0;
-    // 选中了提前唤醒
-    wkup_valid_o        = '0;
-    wkup_reg_id         = '0;
 
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
         // 如果发射对应指令
@@ -259,9 +253,6 @@ always_comb begin
             select_di       |= entry_di[i];
             select_data     |= entry_data[i];
             select_wkup_hit_q |= wkup_hit_q[i];
-            // 选中了提前唤醒
-            wkup_valid_o    |= excute_ready;
-            wkup_reg_id_o   |= entry_di[i].wreg_id;
         end
     end
 end
@@ -317,12 +308,12 @@ always_comb begin
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
     iq_lsu_request.wdata    = real_data[0];
     iq_lsu_request.rmask    = select_di_q.wmem ? '0 :
-                              (msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
-                              (msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
+                              (select_di_q.msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
+                              (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
                               4'b1111;
     iq_lsu_request.strb     = ~select_di_q.wmem ? '0 :
-                              (msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
-                              (msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
+                              (select_di_q.msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
+                              (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
                               4'b1111;
 end
 

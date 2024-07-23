@@ -89,25 +89,25 @@ for (genvar i = 0; i < 2; i=i+1) begin
     always_comb begin
         // 第一个读寄存器
         case (decode_infos[i].reg_type_r0)
-        _REG_RD: d_r_pkg.arf_table.r_arfid[2*i] = rd;
-        _REG_RJ: d_r_pkg.arf_table.r_arfid[2*i] = rj;
-        _REG_RK: d_r_pkg.arf_table.r_arfid[2*i] = rk;
+        `_REG_RD: d_r_pkg.arf_table.r_arfid[2*i] = rd;
+        `_REG_RJ: d_r_pkg.arf_table.r_arfid[2*i] = rj;
+        `_REG_RK: d_r_pkg.arf_table.r_arfid[2*i] = rk;
         default: d_r_pkg.arf_table.r_arfid[2*i] = '0; // 默认不使用 GR 的时候即为使用 GR[0], 哪怕是使用 IMM 也会传入0
         endcase
 
         // 第二个读寄存器
         case (decode_infos[i].reg_type_r1)
-        _REG_RD: d_r_pkg.arf_table.r_arfid[2*i+1] = rd;
-        _REG_RJ: d_r_pkg.arf_table.r_arfid[2*i+1] = rj;
-        _REG_RK: d_r_pkg.arf_table.r_arfid[2*i+1] = rk;
+        `_REG_RD: d_r_pkg.arf_table.r_arfid[2*i+1] = rd;
+        `_REG_RJ: d_r_pkg.arf_table.r_arfid[2*i+1] = rj;
+        `_REG_RK: d_r_pkg.arf_table.r_arfid[2*i+1] = rk;
         default: d_r_pkg.arf_table.r_arfid[2*i+1] = '0; // 默认不使用 GR 的时候即为使用 GR[0], 哪怕是使用 IMM 也会传入0
         endcase
 
         // 第一个写寄存器
         case (decode_infos[i].reg_type_w)
-        _REG_W_RD: d_r_pkg.arf_table.w_arfid[i] = rd;
-        _REG_W_RJ: d_r_pkg.arf_table.w_arfid[i] = rj;
-        _REG_W_R1: d_r_pkg.arf_table.w_arfid[i] = 1; // 仅出现在 BL 指令中
+        `_REG_W_RD: d_r_pkg.arf_table.w_arfid[i] = rd;
+        `_REG_W_RJ: d_r_pkg.arf_table.w_arfid[i] = rj;
+        `_REG_W_R1: d_r_pkg.arf_table.w_arfid[i] = 1; // 仅出现在 BL 指令中
         default:   d_r_pkg.arf_table.w_arfid[i] = '0; // 默认不写入寄存器的时候即为写入 GR[0]
         endcase
     end

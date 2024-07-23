@@ -198,7 +198,7 @@ end
 assign retire_request_o[0] = commit_request_q[0] & ~stall;
 assign retire_request_o[1] = commit_request_q[1] & ~stall;
 
-wire   pc_s                = commit_request_q[0].pc;
+assign pc_s = commit_request_q[0].pc;
 
 
 // 处理对ARF的接口
