@@ -414,6 +414,7 @@ assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 // 
 for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
+        real_target[i] = '0;
         next_pc[i] = rob_commit_i[i].pc + 4;
         predict_branch[i] = predict_info[i].is_branch;//fixed
 
@@ -436,6 +437,8 @@ for(genvar i = 0; i < 2; i += 1) begin
             BR_RET: begin
                 real_target[i] = rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
                 next_pc[i] = real_target[i]; // TODO: check
+            end
+            default: begin
             end
         endcase
     end

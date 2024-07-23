@@ -131,6 +131,8 @@ always_comb begin
                         ecode = `_ECODE_PIL;
                     `_MEM_STORE:
                         ecode = `_ECODE_PIS;
+                    default: begin
+                    end
                 endcase
             end else if(csr.crmd[`_CRMD_PLV] > tlb_value_read.plv) begin
                 trans_result.valid = 0;

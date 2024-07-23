@@ -265,6 +265,7 @@ assign cpu_lsu_receiver.ready = lsu_cpu_sender.ready & sb_entry_receiver.ready &
 assign lsu_cpu_sender.valid = valid_q & !stall_q & !flush_i;
 
 lsu_iq_pkg_t lsu_iq_pkg;
+assign lsu_cpu_sender.data  = lsu_iq_pkg;
 logic  [31 : 0] lw_data;
 logic           sign;
 always_comb begin
