@@ -110,12 +110,6 @@ module commit #(
 logic stall, stall_q;
 assign stall_o = stall;
 
-assign commit_cache_ready = '1;
-
-logic [31:0] commit_data, commit_data_q;
-assign commit_data_o = commit_data_q;
-
-
 // 正常情况都不需要进入状态机，直接提交即可
 // 特殊处理
 // - cache没有命中（在LSU中判断）：进入状态机
@@ -1441,14 +1435,9 @@ always_comb begin
     axi_block_ptr       = axi_block_ptr_q;
     axi_block_len       = axi_block_len_q;
 
-    commit_axi_araddr_o = '0;
-    commit_axi_rlen_o   = '0;
+    commit_axi_req      = '0;
     commit_axi_arvalid_o= '0;
-
-    commit_axi_wlen_o   = '0;
-    commit_axi_awarrd_o = '0;
     commit_axi_awvalid_o= '0;
-    commit_axi_wdata_o  = '0;
     commit_axi_wvalid_o = '0;
     commit_axi_wlast_o  = '0;
 
@@ -1750,7 +1739,7 @@ always_comb begin
             // 发送AXI请求
             commit_axi_req.wdata = axi_block_data[axi_block_ptr_q];
             commit_axi_wvalid_o = '1;
-            commit_axi_wlast = '1;
+            commit_axi_wlast_o = '1;
 
             if(axi_commit_wready_i) begin
                 ls_fsm = S_NORMAL;
@@ -1855,7 +1844,7 @@ always_comb begin
             // 读入数据
             else begin
                 if(axi_commit_rvalid_i) begin
-                    axi_block_data[axi_block_ptr_q] = axi_commit_rep_i.rdata;
+                    axi_block_data[axi_block_ptr_q] = axi_commit_resp_i.rdata;
                     axi_block_ptr = axi_block_ptr_q + 1;
                 end
                 else begin
