@@ -446,6 +446,7 @@ typedef struct packed {
 
     // 在CSR指令中复用为rd寄存器的值
     logic   [31: 0] w_data;
+    logic   [1:0][31: 0] s_data;
     logic   [4 : 0] arf_id;
     logic   [`ROB_WIDTH - 1 :0] rob_id;
     logic   w_reg;
@@ -556,6 +557,7 @@ typedef struct packed {
     logic [31: 0] pc;
     // ARF 相关
     logic [4 : 0] areg;
+    logic [5 : 0] preg;
     logic         w_reg;
     logic         check;
 

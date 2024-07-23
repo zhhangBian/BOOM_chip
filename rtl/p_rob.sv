@@ -87,6 +87,7 @@ always_comb begin
     // P级
     for (integer i = 0; i < 2; i++) begin
         dispatch_inst_i[i].areg  = dispatch_info_i[i].areg;
+        dispatch_inst_i[i].preg  = dispatch_info_i[i].preg;
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
@@ -143,7 +144,7 @@ always_comb begin
         commit_info_o[i].w_data = commit_data_o[i].data;
         commit_info_o[i].s_data = commit_data_o[i].s_data;
         commit_info_o[i].arf_id = commit_inst_o[i].areg;
-        commit_info_o[i].rob_id = commit_inst_o[i].w_preg;
+        commit_info_o[i].rob_id = commit_inst_o[i].preg;
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
         commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;
 
