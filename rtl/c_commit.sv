@@ -856,9 +856,9 @@ end
 //定义软件写csr寄存器的行为
 `define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
 
-task write_csr(input [31:0] write_data, input [13:0] csr_num);
+task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
     begin
-        unique case (csr_num)
+        unique case (csr_num_param)
             `_CSR_CRMD: begin
                 `write_csr_mask(crmd, `_CRMD_PLV);
                 `write_csr_mask(crmd, `_CRMD_IE);
