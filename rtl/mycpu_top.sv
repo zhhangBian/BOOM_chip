@@ -205,7 +205,7 @@ handshake_if #(.T(d_r_pkg_t)) fifo_r_handshake();
 fifo #(
     .DEPTH(`D_AFTER_QUEUE_DEPTH),
     .BYPASS(0), // 不允许 BYPASS ，充当前后端之间的流水寄存器
-    .T(d_r_pkd_t)
+    .T(d_r_pkg_t)
 ) d_r_fifo (
     .clk(clk),
     .rst_n(rst_n),

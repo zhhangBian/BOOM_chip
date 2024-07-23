@@ -15,6 +15,7 @@ endfunction
 
 function automatic offset(input logic [31:0] data, input [1:0] m_size, input [3:0] mask, input msigned);
     logic [31:0] lw_data;
+    logic        sign;
     lw_data = '0;
     sign    = '0;
     if (m_size == 2'd0) begin
