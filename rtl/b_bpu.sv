@@ -82,14 +82,14 @@ end
 
 /* ============================== BTB ============================== */
 // BTB 应当存储除了正常指令和 ret(JIRL) 类型指令以外的所有分支指令的目标地址
-bpu_btb_entry_t [1:0]       btb_rdata;
+bpu_btb_entry_t             btb_rdata [1:0] ;
 bpu_btb_entry_t             btb_wdata;
 logic [`BPU_BTB_LEN-1 : 0]  btb_raddr;
 logic [`BPU_BTB_LEN-1 : 0]  btb_waddr;
 logic [1:0]                 btb_tag_match;
 logic                       btb_we;
 logic [1:0]                 btb_valid;
-(* ramstyle = "distributed" *) bpu_btb_entry_t btb [1:0][`BPU_BTB_DEPTH - 1 : 0];
+(* ramstyle = "distributed" *)  bpu_btb_entry_t [1:0] btb [`BPU_BTB_DEPTH - 1 : 0];
 
 assign btb_raddr = hash(pc);
 assign btb_waddr = hash(correct_info.pc);
@@ -115,15 +115,15 @@ assign btb_wdata.is_branch = correct_info.is_branch;
 always_ff @(posedge clk ) begin : btb_logic
     // reset btb to ZERO
     if (!rst_n) begin
-        for (int i = 0; i < 2; i++) begin
-            for (int j = 0; j < `BPU_BTB_DEPTH; j++) begin
-                btb[i][j] <= '0;
-            end
+        for (integer i = 0; i < 2; i++) begin
+            // for (integer j = 0; j < `BPU_BTB_DEPTH; j++) begin
+                btb[i] <= '0;
+            // end
         end
-        btb_rdata <= '0;
     end
     // 写入
-    else if (btb_we) begin
+    else 
+    if (btb_we) begin
         btb[correct_info.pc[2]][btb_waddr]<= btb_wdata;
     end
 end
@@ -153,13 +153,13 @@ for (genvar i = 0; i < 2; i=i+1) begin
 end
 
 always_ff @(posedge clk ) begin : bht_logic
-    if (!rst_n) begin
-        for (int i = 0; i < 2; i++) begin
-            for (int j = 0; j < `BPU_BHT_DEPTH; j++) begin
-                bht[i][j] <= '0;
-            end
-        end
-    end
+    // if (!rst_n) begin
+    //     for (int i = 0; i < 2; i++) begin
+    //         for (int j = 0; j < `BPU_BHT_DEPTH; j++) begin
+    //             bht[i][j] <= '0;
+    //         end
+    //     end
+    // end
     if (bht_we) begin
         bht[correct_info.pc[2]][bht_waddr] <= bht_wdata[correct_info.pc[2]];
     end
@@ -196,7 +196,7 @@ always_ff @(posedge clk ) begin
 end
 
 /* ============================== PHT ============================== */
-(* ramstyle = "distributed" *) bpu_pht_entry_t [`BPU_PHT_DEPTH - 1 : 0] pht [1:0];
+(* ramstyle = "distributed" *) bpu_pht_entry_t [`BPU_PHT_DEPTH - 1 : 0][1:0] pht ;
 
 bpu_pht_entry_t  [1:0]              pht_rdata;
 bpu_pht_entry_t  [1:0]              pht_wdata;
