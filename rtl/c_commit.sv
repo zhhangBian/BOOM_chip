@@ -670,9 +670,9 @@ always_comb begin
         7'b01?????: begin
             csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
             csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].badv; //存badv
+            csr_exception_update.badv                    = rob_commit_i[0].badva; //存badv
             if (rob_commit_i[0].exc_code != `_ECODE_ADEF) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badv[31:13];        //tlb例外存vppn
+                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badva[31:13];        //tlb例外存vppn
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
