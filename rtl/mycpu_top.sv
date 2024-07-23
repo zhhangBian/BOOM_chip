@@ -196,7 +196,7 @@ handshake_if #(.T(d_r_pkg_t)) d_fifo_handshake();
 
 // decoder 是纯组合逻辑的，其流水寄存器是前面的FIFO
 decoder decoder_inst(
-    .receiver(d_fifo_handshake.receiver),
+    .receiver(fifo_d_handshake.receiver),
     .sender(d_fifo_handshake.sender)
 );
 
