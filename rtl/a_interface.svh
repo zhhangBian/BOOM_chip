@@ -2,7 +2,7 @@
 `define _BOOM_INTERFACE_HEAD
 
 // 握手信号的Interface实现
-interface handshake_if#(type T);
+interface handshake_if#(type T = logic[31:0]);
     logic ready, valid;
     T     data;
     modport sender (
