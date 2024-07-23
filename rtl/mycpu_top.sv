@@ -187,14 +187,14 @@ fifo #(
     .clk(clk),
     .rst_n(rst_n),
     .receiver(f_fifo_handshake.receiver),
-    .sender(fifo_d_handshake.sender)
+    .sender(d_fifo_handshake.sender)
 );
 
 handshake_if #(.T(d_r_pkg_t)) d_fifo_handshake();
 
 // decoder 是纯组合逻辑的，其流水寄存器是前面的FIFO
 decoder decoder_inst(
-    .receiver(fifo_d_handshake.receiver),
+    .receiver(d_fifo_handshake.receiver),
     .sender(d_fifo_handshake.sender)
 );
 
@@ -292,7 +292,7 @@ logic [WKUP_COUNT - 1 : 0][5 :0] wkup_reg_id;
 logic [WKUP_COUNT - 1 : 0]       wkup_valid;
 
 alu_iq #(
-    .CDB_CONUT(CDB_CONUT),
+    .CDB_COUNT(CDB_COUNT),
     .WKUP_COUNT(WKUP_COUNT)
 ) i_alu_iq_0 (
     .clk(clk),
@@ -303,7 +303,7 @@ alu_iq #(
     .p_di_c(p_alu_handshake_0.data.di), //两条指令各自的译码信息  TODO
     .p_data_c(p_alu_handshake_0.data.data), //从P级传入的两条指令各自的两个data数值
     .p_reg_id_c(p_alu_handshake_0.data.preg), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
-    .ohter_ready(p_alu_handshake_0.valid),
+    .other_ready(p_alu_handshake_0.valid),
     .p_valid_c(p_alu_handshake_0.data.data_valid),   // 实际上不是握手的valid信号，而是r_valid，指令有效信号，含义是|p_alu_handshake_0.data.inst_choose（有一个指令选中iq则允许写入）
 
     .entry_ready_o(p_alu_handshake_0.ready), // ready信号
@@ -336,7 +336,7 @@ fifo # (
 );
 
 alu_iq #(
-    .CDB_CONUT(CDB_CONUT),
+    .CDB_COUNT(CDB_COUNT),
     .WKUP_COUNT(WKUP_COUNT)
 ) i_alu_iq_1 (
     .clk(clk),
@@ -397,7 +397,7 @@ lsu_iq # (
     .p_data_i(p_lsu_handshake.data.data),
     .p_reg_id_i(p_lsu_handshake.data.preg),
     .p_valid_i(p_lsu_handshake.data.data_valid),
-    .ohter_ready(p_lsu_handshake.valid),
+    .other_ready(p_lsu_handshake.valid),
 
     .entry_ready_o(p_lsu_handshake.ready),
 
@@ -419,7 +419,7 @@ lsu_iq # (
 
     .result_o(fu_cdb_data[2]),
     .fifo_ready(fu_fifo[2].ready),
-    .excute_valid_o(fu_fifo[2].valid)
+    .entry_valid_o(fu_fifo[2].valid)
 );
 
 // handshake_if #(.T(cdb_info_t)) lsu_cdb();
@@ -447,7 +447,7 @@ mdu_iq # (
     .p_data_i(p_mdu_handshake.data.data),
     .p_reg_id_i(p_mdu_handshake.data.preg),
     .p_valid_i(p_mdu_handshake.data.data_valid),
-    .ohter_ready(p_mdu_handshake.valid),
+    .other_ready(p_mdu_handshake.valid),
 
     .entry_ready_o(p_mdu_handshake.ready),
 
@@ -461,7 +461,7 @@ mdu_iq # (
 
     .result_o(fu_cdb_data[3]),
     .fifo_ready(fu_fifo[3].ready),
-    .excute_valid_o(fu_fifo[3].valid)
+    .entry_valid_o(fu_fifo[3].valid)
 );
 
 // handshake_if #(.T(cdb_info_t)) mdu_cdb();

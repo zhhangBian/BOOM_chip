@@ -24,7 +24,7 @@ always_ff @(posedge clk ) begin : pc_logic
         pc <= `BPU_INIT_PC;
     end
     else if (g_flush) begin
-        pc <= correct_info_i.redir_addr;
+        pc <= correct_infos_i.redir_addr;
     end
     else if (ready_i) begin
         pc <= npc;
