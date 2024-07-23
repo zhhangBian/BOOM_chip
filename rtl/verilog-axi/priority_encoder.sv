@@ -50,8 +50,8 @@ parameter W = 2**LEVELS;
 // pad input to even power of two
 wire [W-1:0] input_padded = {{W-WIDTH{1'b0}}, input_unencoded};
 
-wire [W/2-1:0] stage_valid[LEVELS-1:0];
-wire [W/2-1:0] stage_enc[LEVELS-1:0];
+wire [W/2-1:0] stage_valid[LEVELS-1:0]/*verilator split_var*/;
+wire [W/2-1:0] stage_enc[LEVELS-1:0]/*verilator split_var*/;
 
 generate
     genvar l, n;

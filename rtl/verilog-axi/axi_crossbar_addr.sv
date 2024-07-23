@@ -274,8 +274,14 @@ wire [S_INT_THREADS-1:0] thread_active;
 wire [S_INT_THREADS-1:0] thread_match;
 wire [S_INT_THREADS-1:0] thread_match_dest;
 wire [S_INT_THREADS-1:0] thread_cpl_match;
-wire [S_INT_THREADS-1:0] thread_trans_start;
+wire [S_INT_THREADS-1:0] thread_trans_start/*verilator split_var*/;
 wire [S_INT_THREADS-1:0] thread_trans_complete;
+
+
+for (genvar i = 1; i < S_INT_THREADS; i=i+1) begin
+	assign thread_trans_start[i] = (thread_match[i] || (!thread_active[i] && !thread_match && !(thread_trans_start[i-1:0]))) && trans_start;
+end
+assign thread_trans_start[0] = (thread_match[0] || (!thread_active[0] && !thread_match)) && trans_start;
 
 generate
     genvar n;
@@ -289,7 +295,6 @@ generate
         assign thread_match[n] = thread_active[n] && thread_id_reg[n] == s_axi_aid;
         assign thread_match_dest[n] = thread_match[n] && thread_m_reg[n] == m_select_next && (M_REGIONS < 2 || thread_region_reg[n] == m_axi_aregion_next);
         assign thread_cpl_match[n] = thread_active[n] && thread_id_reg[n] == s_cpl_id;
-        assign thread_trans_start[n] = (thread_match[n] || (!thread_active[n] && !thread_match && !(thread_trans_start & ({S_INT_THREADS{1'b1}} >> (S_INT_THREADS-n))))) && trans_start;
         assign thread_trans_complete[n] = thread_cpl_match[n] && trans_complete;
 
         always @(posedge clk) begin
@@ -379,6 +384,7 @@ always @* begin
                 state_next = STATE_DECODE;
             end
         end
+		default: ;
     endcase
 
     // manage completions

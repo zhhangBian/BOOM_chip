@@ -22,3 +22,7 @@ VERILATOR_SRC += rtl/verilog-axi/*.sv
 
 all:
 	$(VERILATOR_HOME) $(VERILATOR_INCLUDE) $(VERILATOR_FLAG) $(VERILATOR_SRC) 
+
+.PHONY: clean
+clean:
+	rm -rf ./obj_dir
