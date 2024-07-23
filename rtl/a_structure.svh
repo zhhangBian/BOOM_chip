@@ -283,7 +283,6 @@ typedef struct packed {
     logic  [3 :0]       data_valid; // 对应数据是否为有效，要么不需要使用该数据，要么已经准备好
     logic  [1 :0][31:0] data_imm; // 立即数
     logic  [1 :0][31:0] addr_imm; // 立即数
-    predict_info_t [1 :0] predict_infos;
     // 指令类型
     logic  [1 :0]     alu_type; // 指令类型
     logic  [1 :0]     mdu_type;

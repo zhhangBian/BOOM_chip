@@ -222,14 +222,14 @@ retire_pkg_t [1:0] c_retire_infos;
 logic [1:0] commit_arf_we;
 logic [1:0][31:0] commit_arf_data;
 logic [1:0][4:0] commit_arf_areg;
-logic [1:0][5:0] commit_rob_areg;
+logic [1:0][5:0] commit_arf_preg;
 
 assign c_retire = commit_arf_we;
 for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         c_retire_infos[i].w_valid = commit_arf_we[i];
         c_retire_infos[i].arf_id = commit_arf_areg[i];
-        c_retire_infos[i].rob_id = commit_arf_preg[i];
+        c_retire_infos[i].rob_id = commit_arf_preg[i]; // TODO
         c_retire_infos[i].data = commit_arf_data[i];
     end
 end
@@ -585,6 +585,7 @@ commit # () commit(
     .commit_arf_we_o(commit_arf_we),
     .commit_arf_data_o(commit_arf_data),
     .commit_arf_areg_o(commit_arf_areg),
+    .commit_arf_preg_o(commit_arf_preg), // TODO: recheck
 
     .correct_info_o(correct_infos),
     

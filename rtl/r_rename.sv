@@ -1,4 +1,4 @@
-`include "a_defines.h"
+`include "a_defines.svh"
 
 module r_rename #(
     parameter int unsigned DEPTH = 32,
@@ -170,9 +170,11 @@ assign d_r_pkg_i = d_r_receiver.data;
 assign r_p_sender.data = r_p_pkg_o;
 logic   [3 : 0]  r_p_arfdata_valid;
 for (genvar i = 0; i < 4; i++) begin
-    r_p_arfdata_valid[i] = '0;
-    if (r_rename_result[i] == cr_result[i]) begin
-        r_p_arfdata_valid[i] |= '1;
+    always_comb begin
+        r_p_arfdata_valid[i] = '0;
+        if (r_rename_result[i] == cr_result[i]) begin
+            r_p_arfdata_valid[i] |= '1;
+        end
     end
 end
 

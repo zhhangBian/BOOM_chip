@@ -138,9 +138,6 @@ always_comb begin
     end
     // C级
     for (integer i = 0; i < 2; i++) begin
-        commit_info_o[i].= commit_data_o[i].;
-        commit_info_o[i].= commit_inst_o[i].;
-
         commit_info_o[i].w_data = commit_data_o[i].data;
         commit_info_o[i].arf_id = commit_inst_o[i].areg;
         commit_info_o[i].rob_id = commit_inst_o[i].w_preg;
