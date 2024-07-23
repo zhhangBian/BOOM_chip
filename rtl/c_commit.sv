@@ -198,9 +198,6 @@ end
 assign retire_request_o[0] = commit_request_q[0] & ~stall;
 assign retire_request_o[1] = commit_request_q[1] & ~stall;
 
-wire   pc_s                = commit_request_q[0].pc;
-
-
 // 处理对ARF的接口
 always_comb begin
     commit_arf_we_o = '0;
@@ -325,6 +322,8 @@ logic [1:0] taken_q;
 branch_info_t branch_info_q [1:0];
 logic [1:0][31:0] real_target_q;
 logic [31:0]      exp_pc_q;
+logic [1:0]       predict_branch_q;
+logic [1:0]       is_branch_q;
 
 always_comb begin
     commit_flush_info = '0;
@@ -414,7 +413,7 @@ assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         next_pc[i] = rob_commit_i[i].pc + 4;
-        predict_branch[i] = predict_info[i].taken;
+        predict_branch[i] = predict_info[i].is_branch;//fixed
 
         case (branch_info[i].br_type)
             // 比较结果由ALU进行计算
@@ -459,6 +458,8 @@ always_ff @( posedge clk ) begin
         branch_info_q     <= '0;
         real_target_q     <= '0;
         exp_pc_q          <= '0;
+        predict_branch_q  <= '0;
+        is_branch_q       <= '0;
     end
     else if (stall) begin
         predict_success_q <= predict_success_q;
@@ -468,6 +469,8 @@ always_ff @( posedge clk ) begin
         branch_info_q     <= branch_info_q;
         real_target_q     <= real_target_q;
         exp_pc_q          <= exp_pc_q;
+        predict_branch_q  <= predict_branch_q;
+        is_branch_q       <= is_branch_q;
     end
     else if (flush) begin
         predict_success_q <= '0;
@@ -477,6 +480,8 @@ always_ff @( posedge clk ) begin
         branch_info_q     <= '0;
         real_target_q     <= '0;
         exp_pc_q          <= '0;
+        predict_branch_q  <= '0;
+        is_branch_q       <= '0;
     end
     else begin
         predict_success_q <= predict_success;
@@ -486,6 +491,8 @@ always_ff @( posedge clk ) begin
         branch_info_q     <= branch_info;
         real_target_q     <= real_target;
         exp_pc_q          <= exp_pc;
+        predict_branch_q  <= predict_branch;
+        is_branch_q       <= is_branch;
     end
 end
 
@@ -520,7 +527,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         correct_info_o[i].pc = rob_commit_q[i].pc;
 
         correct_info_o[i].target_miss = (predict_info_q[i].target_pc != real_target_q[i]);
-        corrext_info_o[i].type_miss = (predict_info_q[i].br_type != branch_info_q[i].br_type);
+        correct_info_o[i].type_miss = (predict_info_q[i].br_type != branch_info_q[i].br_type);
 
         correct_info_o[i].taken = taken_q[i];
         correct_info_o[i].is_branch = branch_info_q[i].is_branch;
@@ -608,7 +615,7 @@ csr_t csr_exception_update;//周期结束时候写入csr_q
 //__forward()
 logic cur_exception_q;
 logic cur_tlbr_exception_q;
-csr_t cur_exception_update_q;
+csr_t csr_exception_update_q;
 
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
@@ -1234,6 +1241,8 @@ always_ff @( posedge clk ) begin
     end
 end
 
+csr_t csr_update;
+
 //下面这个组合逻辑内部顺序不要更改
 always_comb begin
     if (retire_request_o[0]) begin
@@ -1384,6 +1393,8 @@ ls_fsm_s ls_fsm, ls_fsm_q;
 logic fsm_flush;
 logic [31:0] fsm_npc;
 logic [31:0] pc_s;
+
+assign       pc_s = rob_commit_q[0].pc;
 
 commit_cache_req_t  commit_cache_req,  commit_cache_req_q;
 commit_axi_req_t    commit_axi_req,    commit_axi_req_q;
