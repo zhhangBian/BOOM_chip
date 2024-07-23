@@ -24,7 +24,11 @@ logic   [REG_COUNT - 1:0][WKUP_COUNT - 1:0] wkup_hit_qq;
 word_t  [REG_COUNT - 1:0] data_q;
 
 always_ff @(posedge clk) begin
-    if(ready_i) begin
+    if (!rst_n | flush) begin /* 2024/07/24 fix */
+        wkup_hit_qq <= '0;
+        data_q <= '0;
+    end
+    else if(ready_i) begin
         wkup_hit_qq <= wkup_hit_q_i;
         data_q <= data_i;
     end
@@ -39,7 +43,7 @@ always_comb begin
         real_data_o[i] = (|(wkup_hit_qq[i])) ? '0 : data_q[i];
 
         for(integer j = 0 ; j < WKUP_COUNT - 1 ; j += 1) begin
-            real_data_o[i] |= wkup_hit_qq[i][j] ? wkup_data_i[i][j] : '0;
+            real_data_o[i] |= (wkup_hit_qq[i][j] == 1) ? wkup_data_i[j] : '0;/* 2024/07/24 fix */
         end
     end
 end

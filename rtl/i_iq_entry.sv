@@ -52,6 +52,16 @@ logic   [REG_COUNT - 1:0]   data_ready, data_ready_q;
 logic                       entry_valid;
 decode_info_t               entry_di;
 
+/* 2024/07/24 fix begin*/
+always_ff @(posedge clk) begin
+    if (!rst_n | flush) begin
+        data_ready_q <= '0;
+    end else begin
+        data_ready_q <= data_ready;
+    end
+end
+/* 2024/07/24 fix end*/
+
 // 第i个reg是否hit了第j个CDB
 logic [REG_COUNT - 1:0][CDB_COUNT - 1:0]    cdb_hit;
 // 获得第i个reg的结果
@@ -65,7 +75,7 @@ logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0]   wkup_hit_qq;
 word_t [REG_COUNT - 1:0]                    wkup_result;
 
 // 没有准备好的数据都有相应的转发
-assign ready_o = &(data_ready_q | wkup_hit_qq);
+assign ready_o = &(data_ready_q | {(wkup_hit_qq[1][1] | wkup_hit_qq[1][0]),(wkup_hit_qq[0][1] | wkup_hit_qq[0][0])}); /* 2024/07/24 fix */
 assign di_o = entry_di;
 for(genvar i = 0; i < REG_COUNT; i += 1) begin
     always_comb begin
@@ -111,15 +121,19 @@ for(genvar i = 0; i < REG_COUNT; i += 1) begin
     always_ff @(posedge clk) begin
         if(~rst_n || flush) begin
             entry_data[i]   <= '0;
+            entry_reg_id[i] <= '0;
         end
         else if(init_i) begin
             entry_data[i]   <= data_i[i];
+            entry_reg_id[i] <= data_reg_id_i[i]; /*2024/07/24 fix*/
         end
         else if(|cdb_hit[i]) begin
             entry_data[i]   <= cdb_result[i];
+            entry_reg_id[i] <= entry_reg_id[i];  
         end
         else if(|wkup_hit_qq[i]) begin
             entry_data[i]   <= wkup_result[i];
+            entry_reg_id[i] <= entry_reg_id[i];
         end
     end
 end
@@ -200,6 +214,7 @@ for(genvar i = 0; i < REG_COUNT; i += 1) begin
         for(integer j = 0; j < CDB_COUNT; j += 1) begin
             cdb_hit[i][j] = (cdb_reg_id_i[j] == entry_reg_id[i]) &
                             cdb_valid_i[i] &
+                            entry_valid & /* 2024/07/24 fix*/
                             (~data_ready_q[i]);
 
             cdb_result[i] |= cdb_hit[i][j] ? cdb_data_i[j] : '0;
