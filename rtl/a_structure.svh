@@ -345,7 +345,7 @@ typedef struct packed {
     logic [`ARF_WIDTH - 1 :0] arf_id;
     logic [31 :0] data;
     logic w_valid; // 需要写register
-    // logic w_check;
+    logic w_check;
     // else information for retirement
 } retire_pkg_t;
 
@@ -445,6 +445,9 @@ typedef struct packed {
 } lsu_iq_pkg_t;
 
 typedef struct packed {
+    // 给rename的check信号
+    logic           check;
+
     // 在CSR指令中复用为rd寄存器的值
     logic   [31: 0] w_data;
     logic   [4 : 0] arf_id;

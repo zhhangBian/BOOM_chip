@@ -77,8 +77,8 @@ rat_entry_t  [1 :0] c_new;
 arf_id_t     [1 :0] c_warid;
 logic        [1 :0] c_we;
 
-assign r_rarid = d_r_receiver.data.arftable.r_arfid;
-assign r_warid = d_r_receiver.data.arftable.w_arfid;
+assign r_rarid = d_r_receiver.data.arf_table.r_arfid;
+assign r_warid = d_r_receiver.data.arf_table.w_arfid;
 assign r_issue = d_r_receiver.data.r_valid & 
                 {d_r_receiver.valid, d_r_receiver.valid} & 
                 {d_r_receiver.ready, d_r_receiver.ready};
