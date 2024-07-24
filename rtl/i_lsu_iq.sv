@@ -54,7 +54,6 @@ logic excute_valid, excute_valid_q; // 执行结果是否有效
 logic [IQ_SIZE - 1:0] entry_ready;  // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] entry_select; // 指令是否发射
 logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
-logic [IQ_SIZE - 1:0] entry_empty_q;// 对应的表项是否空闲
 
 // ------------------------------------------------------------------
 // 配置IQ逻辑
@@ -129,22 +128,6 @@ always_comb begin
     else if(&choose) begin
         entry_init[iq_tail_q]     |= other_ready;
         entry_init[iq_tail_q + 1] |= other_ready;
-    end
-end
-
-always_ff @(posedge clk) begin
-    if(!rst_n || flush) begin
-        entry_empty_q <= other_ready;
-    end
-    else begin
-        for(integer i = 0; i < IQ_SIZE; i += 1) begin
-            if(entry_select[i]) begin
-                entry_empty_q[i] <= 1;
-            end
-            else if(entry_init[i]) begin
-                entry_empty_q[i] <= 0;
-            end
-        end
     end
 end
 

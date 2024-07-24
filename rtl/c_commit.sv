@@ -390,8 +390,6 @@ end
 
 // 分支预测是否正确：按照第一条错误的分支指令来
 
-word_t [1:0] pc;
-word_t [1:0] pc_add_4;
 word_t [1:0] next_pc;
 word_t [1:0] real_target;
 
@@ -1364,13 +1362,13 @@ end
 //在第二级
 // Cache维护指令：也需要进入状态机
 
-logic [4:0] cache_code, cache_code_q;
+logic [4:0] cache_code;
 assign cache_code = rob_commit_q[0].cache_code;//用于状态机，在第二级
 // code[2:0]指示操作的Cache对象
-logic [2:0] cache_tar, cache_tar_q;
+logic [2:0] cache_tar;
 assign cache_tar = cache_code[2:0];
 // code[4:3]指示操作类型
-logic [1:0] cache_op, cache_op_q;
+logic [1:0] cache_op;
 assign cache_op = cache_code[4:3];
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

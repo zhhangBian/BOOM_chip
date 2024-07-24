@@ -24,7 +24,7 @@ logic   [REG_COUNT - 1:0][WKUP_COUNT - 1:0] wkup_hit_qq;
 word_t  [REG_COUNT - 1:0] data_q;
 
 always_ff @(posedge clk) begin
-    if (!rst_n | flush) begin /* 2024/07/24 fix */
+    if (~rst_n || flush) begin /* 2024/07/24 fix */
         wkup_hit_qq <= '0;
         data_q <= '0;
     end

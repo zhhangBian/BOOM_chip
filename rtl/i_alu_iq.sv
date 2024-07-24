@@ -4,7 +4,6 @@ module alu_iq # (
     // 设置IQ共有4个表项
     parameter int IQ_SIZE = 4,
     parameter int AGING_LENGTH = 4,
-    parameter int IQ_ID = 0,
     parameter int DISPATCH_CNT = 2,
     parameter int REG_COUNT  = 2,
     parameter int CDB_COUNT  = 2,
@@ -294,7 +293,6 @@ data_wkup #(
 
 // ------------------------------------------------------------------
 // 创建IQ相联的部件
-word_t e_result;
 word_t e_alu_result, e_alu_result_q;
 
 e_alu alu(
