@@ -1553,7 +1553,7 @@ always_comb begin
 
                     2: begin
                         // 如果命中再维护
-                        if(cache_commit_hit) begin
+                        if(cache_commit_hit[0]) begin
                             ls_fsm = lsu_info[0].hit_dirty ? S_CACHE_RD : S_NORMAL;
                             stall = lsu_info[0].hit_dirty;
                             axi_back_target = lsu_info[0].hit_dirty;
