@@ -413,7 +413,7 @@ typedef struct packed {
 typedef struct packed {
     logic    [31:0] target_pc;
     logic           is_branch;
-    br_type_t [1:0] br_type;
+    br_type_t       br_type;
 } branch_info_t;
 
 // LSU 到 LSU IQ 的响应

@@ -131,9 +131,30 @@ assign stall_o = stall;
 //选择往后流水的逻辑，逻辑是要么传过去能提交的指令，要么传过去的第一条是要进状态机的
 
 //这个部分在第一级：整理信号，判断有无异常，判断分支预测结果
+logic [1:0] is_branch;
+logic [1:0] taken;
+logic [1:0] predict_success;
 
 logic [1:0] first_commit;
 logic cur_exception;       //提交的第0条是不是异常指令
+
+//都不是寄存器
+logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
+csr_t csr_exception_update;//周期结束时候写入csr_q
+
+//__forward()
+logic cur_exception_q;
+logic cur_tlbr_exception_q;
+csr_t csr_exception_update_q;
+
+logic fsm_flush;
+logic [31:0] fsm_npc;
+logic [31:0] pc_s;
+
+//idle指令
+logic wait_for_int_q, wait_for_int;
+
+csr_t csr_q;//这个是正宗的csr本体
 
 always_comb begin
     //在有效的情况下是不是单提交的情况
@@ -203,7 +224,25 @@ end
 assign retire_request_o[0] = commit_request_q[0] & ~stall;
 assign retire_request_o[1] = commit_request_q[1] & ~stall;
 
+logic [31:0] rdcnt_data;
+logic [31:0] rdcnt_data_q;
+logic [31:0] commit_csr_data_q;
 
+// 定义写的状态机
+typedef enum logic[4:0] {
+    // 正常状态
+    S_NORMAL,
+    // 将Cache的内容读出
+    S_CACHE_RD,
+    // 通过AXI总线读出内容
+    S_AXI_RD,
+    // UnCached情况下直接发起AXI请求
+    S_UNCACHED_RD,
+    S_UNCACHED_WB,
+    // 等待ICache请求完成
+    S_ICACHE
+} ls_fsm_s;
+ls_fsm_s ls_fsm, ls_fsm_q;
 
 // 处理对ARF的接口
 always_comb begin
@@ -413,9 +452,6 @@ branch_info_t [1:0] branch_info;
 assign branch_info[0] = rob_commit_i[0].branch_info;
 assign branch_info[1] = rob_commit_i[1].branch_info;
 
-logic [1:0] is_branch;
-logic [1:0] taken;
-logic [1:0] predict_success;
 
 // 异常PC入口
 logic [31:0] exp_pc;
@@ -579,8 +615,6 @@ always_comb begin
 end
 
 //rdcnt命令
-logic [31:0] rdcnt_data;
-logic [31:0] rdcnt_data_q;
 //__forward()
 
 //第一级读取
@@ -623,14 +657,7 @@ end
         end
 */
 
-//都不是寄存器
-logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常，用于判断异常入口，上面信号为1才有意义
-csr_t csr_exception_update;//周期结束时候写入csr_q
 
-//__forward()
-logic cur_exception_q;
-logic cur_tlbr_exception_q;
-csr_t csr_exception_update_q;
 
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
@@ -750,7 +777,7 @@ wire a_priv_excp     = rob_commit_i[1].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3
 
 wire a_execute_excp  = rob_commit_i[1].execute_exception;
 
-wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
+assign another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
 //上面是1表示两条指令的后一条有例外
 //注意：这个信号只用来判断是不是单个提交，所以不用判断指令是否有效，其他地方后面不能直接用！！！
 
@@ -781,7 +808,7 @@ end
 
 // ------------------------------------------------------------------
 // CSR特权指令
-csr_t csr_q;//这个是正宗的csr本体
+
 
 csr_t csr, csr_maintain_q, csr_init;
 wire  [1:0] csr_type = rob_commit_i[0].csr_type;
@@ -799,7 +826,7 @@ always_comb begin
     csr_init.tid            = CPU_ID;
 end
 
-logic [31:0] commit_csr_data_o, commit_csr_data_q;
+logic [31:0] commit_csr_data_o;
 //__forward();
 
 // 从CSR读取的旧值（默认在第一级读出来）
@@ -1201,8 +1228,8 @@ always_comb begin
     end//不是将要提交的命令，则上面全部不用，注意可能有异常！！！
 end
 
-function automatic logic vppn_match(logic [31:0] va,
-                                    logic huge_page, logic [18: 0] vppn);
+function automatic logic vppn_match(input logic [31:0] va,
+                                    input logic huge_page, input logic [18: 0] vppn);
     if (huge_page) begin
         return va[31:22] == vppn[18:9]; //this right
     end else begin
@@ -1342,8 +1369,7 @@ end
 // -------------------------------------------------------------------
 
 //在第二级
-//idle指令
-logic wait_for_int_q, wait_for_int;
+
 
 always_comb begin
     wait_for_int = wait_for_int_q;
@@ -1387,30 +1413,13 @@ assign cache_op = cache_code[4:3];
 // 对于lsu访存的状态机
 // 涉及到Cache和AXI的多个子状态机
 
-// 定义写的状态机
-typedef enum logic[4:0] {
-    // 正常状态
-    S_NORMAL,
-    // 将Cache的内容读出
-    S_CACHE_RD,
-    // 通过AXI总线读出内容
-    S_AXI_RD,
-    // UnCached情况下直接发起AXI请求
-    S_UNCACHED_RD,
-    S_UNCACHED_WB,
-    // 等待ICache请求完成
-    S_ICACHE
-} ls_fsm_s;
 // 如果是is_uncached指令，直接发起AXI请求
 // 状态机流程：
 // 1. normal命中 -> write cache即可
 // 2. miss -> 为脏需要写回：先read cache -> axi write back -> axi read -> write cache
 // 3. miss -> 不需要写回，通过AXI读相应的内容
 
-ls_fsm_s ls_fsm, ls_fsm_q;
-logic fsm_flush;
-logic [31:0] fsm_npc;
-logic [31:0] pc_s;
+
 
 assign       pc_s = rob_commit_q[0].pc;
 

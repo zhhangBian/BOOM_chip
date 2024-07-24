@@ -49,8 +49,8 @@ always_comb begin
     end
 end
 /*===================ok===================*/
-function automatic logic vppn_match(logic [31:0] va_param, 
-                                    logic huge_page, logic [18: 0] vppn);//位宽好像错了
+function automatic logic vppn_match(input logic [31:0] va_param, 
+                                    input logic huge_page, input logic [18: 0] vppn);//位宽好像错了
     if (huge_page) begin
         return va_param[31:22] == vppn[18:9]; //ok
     end else begin

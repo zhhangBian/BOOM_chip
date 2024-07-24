@@ -670,7 +670,7 @@ axi_crossbar # (
     .M_COUNT(1), // 连接总线，== 1
     .DATA_WIDTH(32), // 数据位宽 官方包是 32 位，需要使用 burst 传输
     .ADDR_WIDTH(32), // 地址位宽， 32 位
-    .S_ID_WIDTH(3), // 官方包是 4 
+    .S_ID_WIDTH(4), // 官方包是 4 
     .M_ID_WIDTH(4), /* 2024/07/24 fix */
     .M_ADDR_WIDTH(32'd32), // ICACHE和DCACHE的数据位宽应该都是32位？TODO: 取决于物理地址宽度
     .M_CONNECT_WRITE(2'b01) // TODO: 设置成仅 DCache 侧可写
