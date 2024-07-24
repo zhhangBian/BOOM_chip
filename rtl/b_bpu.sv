@@ -122,7 +122,7 @@ always_ff @(posedge clk ) begin : btb_logic
     //     end
     // end
     // 写入
-    else 
+    // else 
     if (btb_we) begin
         btb[correct_info.pc[2]][btb_waddr]<= btb_wdata;
     end
