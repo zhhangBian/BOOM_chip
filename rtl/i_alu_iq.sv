@@ -319,7 +319,7 @@ end
 
 always_comb begin
     wkup_data_o = e_alu_result_q;
-    excute_valid_o = excute_valid_q;
+    excute_valid_o = excute_valid_qq;
     
     result_o.w_data  = result_q;
     result_o.s_data  = real_data_q;

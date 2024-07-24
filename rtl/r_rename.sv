@@ -42,18 +42,6 @@ always_ff @(posedge clk) begin
     end
 end
 
-always_comb begin
-    rob_cnt       = rob_cnt_q  + r_issue[0] + r_issue[1] - c_retire_i[0] - c_retire_i[1];
-    rob_ptr1      = rob_ptr1_q + r_issue[0] + r_issue[1];
-    rob_ptr2      = rob_ptr2_q + r_issue[0] + r_issue[1];
-    rob_available = (rob_cnt_q <= 60);
-end
-
-assign d_r_receiver.ready = rob_available_q & !c_flush_i & r_p_sender.ready; 
-// 和前模块握手的ready信号当且仅当rob能继续进指令，且非flush，且后模块也ready
-assign r_p_sender.valid   = '1;
-// 始终允许向后模块发送指令，区分指令有效仅依靠于r_valid
-
 // rat entry
 typedef struct packed {
     logic check;
@@ -68,6 +56,21 @@ rob_id_t [3 :0] r_rrobid; // 读寄存器的rob_id
 rob_id_t [1 :0] r_wrobid; // 写寄存器的rob_id
 rat_entry_t  [3 :0] r_rename_result; 
 rat_entry_t  [1 :0] r_rename_new;
+
+always_comb begin
+    rob_cnt       = rob_cnt_q  + r_issue[0] + r_issue[1] - c_retire_i[0] - c_retire_i[1];
+    rob_ptr1      = rob_ptr1_q + r_issue[0] + r_issue[1];
+    rob_ptr2      = rob_ptr2_q + r_issue[0] + r_issue[1];
+    rob_available = (rob_cnt_q <= 60);
+end
+
+
+assign d_r_receiver.ready = rob_available_q & !c_flush_i & r_p_sender.ready; 
+// 和前模块握手的ready信号当且仅当rob能继续进指令，且非flush，且后模块也ready
+assign r_p_sender.valid   = '1;
+// 始终允许向后模块发送指令，区分指令有效仅依靠于r_valid
+
+
 logic  [1 :0] r_we;     // 写寄存器是否发射
 assign r_we = r_issue & {{(|r_warid[1])}, {(|r_warid[0])}} & {d_r_receiver.data.w_reg};
 // commit 表结果

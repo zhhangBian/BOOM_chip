@@ -26,10 +26,10 @@ logic  [1 : 0]    alu_ready;
 assign alu_ready = {p_alu_sender_1.ready, p_alu_sender_0.ready};
 assign lsu_ready = p_lsu_sender.ready;
 assign mdu_ready = p_mdu_sender.ready;
-
+r_p_pkg_t   r_p_pkg;
 assign r_p_receiver.ready = (&alu_ready) & lsu_ready & mdu_ready;
 assign r_p_pkg            = r_p_receiver.data;
-r_p_pkg_t   r_p_pkg;
+
 always_comb begin
     for (integer i = 0; i < 2; i++) begin
         dispatch_rob_o[i].areg      = r_p_pkg.areg[i];
