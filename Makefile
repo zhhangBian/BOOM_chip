@@ -43,4 +43,4 @@ compile: $(VERILATOR_SRC)
 	$(VERILATOR_HOME) $(VERILATOR_INCLUDE) $(VERILATOR_FLAG) $(VERILATOR_SRC) 
 
 chiplab:
-	./deploy.sh chiplab
+	./src/deploy.sh chiplab
