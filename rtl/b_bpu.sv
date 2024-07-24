@@ -210,7 +210,7 @@ assign pht_we = correct_info.update;
 for (genvar i = 0; i < 2; i=i+1) begin
     assign pht_wdata[i] = next_scnt(correct_info.scnt, correct_info.taken);
     assign pht_raddr[i] = {bht_rdata[i].history, pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
-    assign pht_rdata[i] = pht[i][pht_raddr]
+    assign pht_rdata[i] = pht[i][pht_raddr];
 end
 
 assign pht_waddr = {correct_info.history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};

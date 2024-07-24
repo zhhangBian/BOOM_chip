@@ -31,6 +31,9 @@ VERILATOR_SRC += rtl/fpga_mem/*.sv
 VERILATOR_SRC += rtl/verilog-axi/*.sv
 
 .PHONY: clean help
+compile: $(VERILATOR_SRC)
+	$(VERILATOR_HOME) $(VERILATOR_INCLUDE) $(VERILATOR_FLAG) $(VERILATOR_SRC) 
+
 help:
 	@echo "'make compile' to compile"
 	@echo "'make chiplab' to deploy to CHIPLAB_HOME/IP/myCPU"
@@ -38,9 +41,6 @@ help:
 
 clean:
 	rm -rf ./obj_dir
-
-compile: $(VERILATOR_SRC)
-	$(VERILATOR_HOME) $(VERILATOR_INCLUDE) $(VERILATOR_FLAG) $(VERILATOR_SRC) 
 
 chiplab:
 	./src/deploy.sh chiplab

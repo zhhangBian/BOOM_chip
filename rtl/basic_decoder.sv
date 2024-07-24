@@ -945,7 +945,6 @@ always_comb begin
             decode_info_o.fbranch_inst = 1'd1;
             decode_info_o.reg_type_w = `_REG_W_RD;
         end
-        /*
         32'b0000000100011010000001??????????: begin
             decode_info_o.fpu_op = fpnew_pkg::F2I;
             decode_info_o.fpu_mode = 1'd0;
