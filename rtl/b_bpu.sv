@@ -100,6 +100,14 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign btb_valid[i] = (btb_rdata[i].is_branch != '0 || btb_rdata[i].is_branch != 'x) & btb_tag_match[i];
 end
 
+initial begin
+    for (integer i = 0; i < `BPU_BTB_DEPTH; i=i+1) begin
+        for (integer j = 0; j < 2; j=j+1) begin
+            btb[j][i] = '0;
+        end
+    end
+end
+
 always_comb begin
     for (integer i = 0; i < 2; i=i+1) begin
         btb_rdata[i] = btb[i][btb_raddr];

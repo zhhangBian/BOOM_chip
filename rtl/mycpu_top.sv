@@ -553,7 +553,7 @@ cache_commit_resp_t cache_commit_resp;
 
 commit_axi_req_t commit_axi_req;
 axi_commit_resp_t axi_commit_resp;
-logic commit_axi_arvalid/*verilator split_var*/;
+logic commit_axi_arvalid;
 logic axi_commit_arready;
 logic axi_commit_rvalid;
 logic axi_commit_last;
