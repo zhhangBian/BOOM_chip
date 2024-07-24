@@ -125,7 +125,7 @@ handshake_if #(b_f_pkg_t) fifo_f_handshake();
 
 // 实际上是一个 skidbuf
 fifo #(
-    .DEPTH(1),
+    .DEPTH(2),
     .BYPASS(1),
     .T(b_f_pkg_t)
 ) b_f_fifo (
@@ -553,7 +553,7 @@ cache_commit_resp_t cache_commit_resp;
 
 commit_axi_req_t commit_axi_req;
 axi_commit_resp_t axi_commit_resp;
-logic commit_axi_arvalid;
+logic commit_axi_arvalid/*verilator split_var*/;
 logic axi_commit_arready;
 logic axi_commit_rvalid;
 logic axi_commit_last;

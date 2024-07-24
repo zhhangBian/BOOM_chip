@@ -579,7 +579,7 @@ assign correct_info_o[1].update = retire_request_o[1] &
                            ((predict_info_q[1].need_update) |
                            (predict_branch_q[1]) |
                            (is_branch_q[1])) &
-                           commit_flush_info[1];//如果是前一条flush则不更新这一条
+                           !commit_flush_info[0];//如果是前一条flush则不更新这一条
                         //表示是第二条带来的flush
                         // 如果是由0发出的flush，则1不update，可以通过第二级的组合逻辑信号commit_flush_info知道是哪个导致了flush
 
@@ -1421,7 +1421,8 @@ assign cache_op = cache_code[4:3];
 assign       pc_s = rob_commit_q[0].pc;
 
 commit_cache_req_t  commit_cache_req,  commit_cache_req_q;
-commit_axi_req_t    commit_axi_req,    commit_axi_req_q;
+commit_axi_req_t    commit_axi_req_q/*verilator split_var*/;
+commit_axi_req_t    commit_axi_req/*verilator split_var*/;
 commit_icache_req_t commit_icache_req, commit_icache_req_q;
 
 assign commit_cache_req_o  = commit_cache_req;

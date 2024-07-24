@@ -97,7 +97,7 @@ assign btb_we = correct_info.update & (correct_info.type_miss | correct_info.tar
 
 for (genvar i = 0; i < 2; i=i+1) begin
     // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
-    assign btb_valid[i] = btb_rdata[i].is_branch & btb_tag_match[i];
+    assign btb_valid[i] = (btb_rdata[i].is_branch != '0 || btb_rdata[i].is_branch != 'x) & btb_tag_match[i];
 end
 
 always_comb begin
@@ -114,15 +114,15 @@ assign btb_wdata.is_branch = correct_info.is_branch;
 
 always_ff @(posedge clk ) begin : btb_logic
     // reset btb to ZERO
-    if (!rst_n) begin
-        for (integer i = 0; i < 2; i++) begin
-            // for (integer j = 0; j < `BPU_BTB_DEPTH; j++) begin
-                btb[i] <= '0;
-            // end
-        end
-    end
+    // if (!rst_n) begin
+    //     for (integer i = 0; i < 2; i++) begin
+    //         // for (integer j = 0; j < `BPU_BTB_DEPTH; j++) begin
+    //             btb[i] <= '0;
+    //         // end
+    //     end
+    // end
     // 写入
-    else 
+    // else 
     if (btb_we) begin
         btb[correct_info.pc[2]][btb_waddr]<= btb_wdata;
     end
@@ -134,7 +134,7 @@ end
  * 而历史（也就是跳转或者不跳）可以在前端更新。也可以因后端而更新.
  * 目前为了简便暂时全部使用后端进行更新。
  */
-(* ramstyle = "distributed" *) bpu_bht_entry_t bht [1:0][`BPU_BHT_DEPTH - 1 : 0];
+(* ramstyle = "distributed" *) bpu_bht_entry_t [1:0][`BPU_BHT_DEPTH - 1 : 0] bht ;
 
 bpu_bht_entry_t [1:0]               bht_rdata;
 bpu_bht_entry_t [1:0]               bht_wdata;
@@ -180,8 +180,7 @@ assign ras_rdata = ras[ras_top_ptr];
 
 always_ff @(posedge clk ) begin
     if (!rst_n) begin
-        ras <= '0;
-        ras_top_ptr <= {`BPU_RAS_LEN{1'b1}};
+        ras_top_ptr <= '1;
         ras_w_ptr <= '0;
     end
     if (correct_info.branch_type == BR_CALL) begin
