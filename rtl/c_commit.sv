@@ -1676,7 +1676,7 @@ always_comb begin
                 if(cache_commit_hit[0]) begin
                     fsm_flush = '0;
                     // SC但没有LLbit，返回normal状态
-                    if(is_sc && ~ll_bit) begin
+                    if(is_sc[0] && ~ll_bit) begin
                         ls_fsm = S_NORMAL;
                         stall = '0;
                     end
