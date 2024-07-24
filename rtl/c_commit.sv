@@ -150,11 +150,18 @@ always_comb begin
 
     commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
 
+`ifdef _VERILATOR
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~stall &
                           ~first_commit[0] &
                           ~first_commit[1];
+`endif
+
+`ifdef _FPGA
+    commit_request_o[1]  = 0;
+`endif
+
 end
 
 
@@ -390,8 +397,9 @@ end
 
 // 分支预测是否正确：按照第一条错误的分支指令来
 
-word_t [1:0] pc;
-word_t [1:0] pc_add_4;
+//word_t [1:0] pc;   
+//word_t [1:0] pc_add_4; 
+//2024/7/24 zhx 没用到
 word_t [1:0] next_pc;
 word_t [1:0] real_target;
 

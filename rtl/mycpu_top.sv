@@ -69,14 +69,14 @@ module mycpu_top (
 `ifdef _VERILATOR
     // chiplab 的接口
     output [31:0] debug0_wb_pc,
-    output [ 3:0] debug0_wb_rf_wen,
+    output      debug0_wb_rf_wen,
     output [ 4:0] debug0_wb_rf_wnum,
     output [31:0] debug0_wb_rf_wdata
     // ,output [31:0] debug0_wb_inst
 `ifdef CPU_2CMT
     // 我们是双提交
     ,output [31:0] debug1_wb_pc,
-    output [ 3:0] debug1_wb_rf_wen,
+    output      debug1_wb_rf_wen,
     output [ 4:0] debug1_wb_rf_wnum,
     output [31:0] debug1_wb_rf_wdata
 `endif
@@ -624,15 +624,26 @@ commit # () commit(
     .icache_commit_valid_i(icache_commit_valid)
 );
 
+`ifdef _VERILATOR
 assign debug0_wb_pc = commit_debug_pc[0];
 assign debug0_wb_rf_wen = commit_arf_we[0];
 assign debug0_wb_rf_wnum = commit_arf_areg[0];
 assign debug0_wb_rf_wdata = commit_arf_data[0];
 
+`ifdef CPU_2CMT
 assign debug1_wb_pc = commit_debug_pc[1];
 assign debug1_wb_rf_wen = commit_arf_we[1];
 assign debug1_wb_rf_wnum = commit_arf_areg[1];
 assign debug1_wb_rf_wdata = commit_arf_data[1];
+`endif
+`endif
+
+`ifdef _FPGA
+assign debug_wb_pc = commit_debug_pc[0];
+assign debug_wb_rf_we = {4{commit_arf_we[0]}};
+assign debug_wb_rf_wnum = commit_arf_areg[0];
+assign debug_wb_rf_wdata = commit_arf_data[0];
+`endif
 
 //我要一个硬中断
 dcache # () dcache(
