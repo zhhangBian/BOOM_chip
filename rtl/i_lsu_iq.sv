@@ -58,7 +58,7 @@ logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
 // ------------------------------------------------------------------
 // 配置IQ逻辑
 // 当前的表项数
-logic [PTR_LEN - 1:0]   free_cnt, free_cnt_q;
+logic [PTR_LEN    :0]   free_cnt, free_cnt_q;
 // 执行的指针
 logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 // 写的指针
@@ -76,7 +76,7 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= iq_tail;
         free_cnt_q      <= free_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (free_cnt_q >= 2); /* 2024/07/24 fix *_q */
+        entry_ready_o   <= (free_cnt >= 2);
     end
 end
 

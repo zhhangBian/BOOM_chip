@@ -39,10 +39,10 @@ always_ff @(posedge clk) begin
 end
 
 always_comb begin
-    for(integer i = 0; i < REG_COUNT - 1; i += 1) begin
+    for(integer i = 0; i < REG_COUNT; i += 1) begin
         real_data_o[i] = (|(wkup_hit_qq[i])) ? '0 : data_q[i];
 
-        for(integer j = 0 ; j < WKUP_COUNT - 1 ; j += 1) begin
+        for(integer j = 0 ; j < WKUP_COUNT; j += 1) begin
             real_data_o[i] |= (wkup_hit_qq[i][j] == 1) ? wkup_data_i[j] : '0;/* 2024/07/24 fix */
         end
     end

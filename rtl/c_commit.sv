@@ -1421,7 +1421,8 @@ assign cache_op = cache_code[4:3];
 assign       pc_s = rob_commit_q[0].pc;
 
 commit_cache_req_t  commit_cache_req,  commit_cache_req_q;
-commit_axi_req_t    commit_axi_req,    commit_axi_req_q;
+commit_axi_req_t    commit_axi_req_q/*verilator split_var*/;
+commit_axi_req_t    commit_axi_req/*verilator split_var*/;
 commit_icache_req_t commit_icache_req, commit_icache_req_q;
 
 assign commit_cache_req_o  = commit_cache_req;

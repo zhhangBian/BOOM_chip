@@ -65,7 +65,7 @@ always_comb begin
 end
 
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
-logic excute_valid, excute_valid_q; // 执行结果是否有效
+logic excute_valid, excute_valid_q, excute_valid_qq; // 执行结果是否有效
 logic [IQ_SIZE - 1:0] entry_ready;  // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] entry_select; // 指令是否发射
 logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
@@ -97,21 +97,13 @@ end
 // AGING的移位逻辑
 always_ff @(posedge clk) begin
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
-        if(entry_select[i]) begin
+        if(~rst_n || flush || entry_select[i]) begin
             aging_q[i] <= '0;
         end
         else begin
             aging_q[i] <= (aging_q[i] == 0) ? 1 :
                           (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
                           aging_q[i] : (aging_q[i] << 1);
-            // if(entry_ready[i]) begin
-            //     aging_q[i] <= (aging_q[i] == 0) ? 1 :
-            //                   (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
-            //                   aging_q[i] : (aging_q[i] << 1);
-            // end
-            // else begin
-            //     aging_q[i] <= '0;
-            // end
         end
     end
 end
@@ -127,7 +119,7 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    entry_ready_o <= (free_cnt_q >= 1); /* 2024/07/24 fix *_q */
+    entry_ready_o <= (free_cnt >= 1);
 end
 
 always_ff @(posedge clk) begin
@@ -174,8 +166,10 @@ assign excute_valid = |entry_ready;
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin
         excute_valid_q <= '0;
+        excute_valid_qq <= '0;
     end
     else begin
+        excute_valid_qq <= excute_valid_q;
         if(excute_ready) begin
             excute_valid_q <= excute_valid;
         end
