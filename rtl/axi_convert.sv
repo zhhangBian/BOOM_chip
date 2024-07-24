@@ -1,6 +1,6 @@
 `include "a_defines.svh" 
 
-module moduleName #(
+module axi_convert #(
     // Number of AXI inputs (slave interfaces)
     parameter S_COUNT = 4,
     // Number of AXI outputs (master interfaces)
@@ -192,18 +192,18 @@ module moduleName #(
     output wire [M_COUNT-1:0]               m_axi_rready
 );
 
-assign m_axi_awid      =  s_axi_awid[0];
-assign m_axi_awaddr    =  s_axi_awaddr[0];  
-assign m_axi_awlen     =  s_axi_awlen[0];  
-assign m_axi_awsize    =  s_axi_awsize[0];
-assign m_axi_awburst   =  s_axi_awburst[0];
-assign m_axi_awlock    =  s_axi_awlock[0];
-assign m_axi_awcache   =  s_axi_awcache[0];
-assign m_axi_awprot    =  s_axi_awprot[0];
+assign m_axi_awid      =  s_axi_awid[S_ID_WIDTH - 1:0];
+assign m_axi_awaddr    =  s_axi_awaddr[31:0];  
+assign m_axi_awlen     =  s_axi_awlen[7:0];  
+assign m_axi_awsize    =  s_axi_awsize[2:0];
+assign m_axi_awburst   =  s_axi_awburst[1:0];
+assign m_axi_awlock    =  s_axi_awlock[1:0];
+assign m_axi_awcache   =  s_axi_awcache[3:0];
+assign m_axi_awprot    =  s_axi_awprot[2:0];
 assign m_axi_awvalid   =  s_axi_awvalid[0];
 assign s_axi_awready   =  {1'b0,m_axi_awready}; 
-assign m_axi_wdata     =  s_axi_wdata[0];
-assign m_axi_wstrb     =  s_axi_wstrb[0];
+assign m_axi_wdata     =  s_axi_wdata[31:0];
+assign m_axi_wstrb     =  s_axi_wstrb[3:0];
 assign m_axi_wlast     =  s_axi_wlast[0];
 assign m_axi_wvalid    =  s_axi_wvalid[0];
 assign s_axi_wready    =  {1'b0,m_axi_wready};
@@ -213,13 +213,13 @@ assign m_axi_bready    =  1'b1;
 logic choose, choose_q;
 wire  i = choose;
 
-assign m_axi_araddr    =  s_axi_araddr[i];          
-assign m_axi_arlen     =  s_axi_arlen[i];          
-assign m_axi_arsize    =  s_axi_arsize[i];
-assign m_axi_arburst   =  s_axi_arburst[i];
-assign m_axi_arlock    =  s_axi_arlock[i];
-assign m_axi_arcache   =  s_axi_arcache[i];
-assign m_axi_arprot    =  s_axi_arprot[i];
+assign m_axi_araddr    =  s_axi_araddr[32*i+:32];          
+assign m_axi_arlen     =  s_axi_arlen[i*8+:8];          
+assign m_axi_arsize    =  s_axi_arsize[i*3+:3];
+assign m_axi_arburst   =  s_axi_arburst[i*2+:2];
+assign m_axi_arlock    =  s_axi_arlock[i*2+:2];
+assign m_axi_arcache   =  s_axi_arcache[i*4+:4];
+assign m_axi_arprot    =  s_axi_arprot[i*3+:3];
 assign m_axi_arvalid   =  s_axi_arvalid[i];
 assign s_axi_arready   =  (i) ? {m_axi_arready,1'b0} : {1'b0,m_axi_arready};
 assign s_axi_rdata     =  {m_axi_rdata, m_axi_rdata};
@@ -227,6 +227,9 @@ assign s_axi_rresp     =  2'b11;
 assign s_axi_rlast     =  {m_axi_rlast, m_axi_rlast};
 assign s_axi_rvalid    =  (i) ? {m_axi_rvalid,1'b0} : {1'b0,m_axi_rvalid};
 assign m_axi_rready    =  s_axi_rready[i];
+
+assign m_axi_arid      = '0;
+assign m_axi_awid      = '0;
 
 
 typedef enum logic [3:0] {
@@ -249,7 +252,7 @@ end
 
 always_comb begin
     fsm_next = fsm_cur;
-    choose   = choose_q;
+    choose   = '0;
     case(fsm_cur) 
         IDLE:begin
             if (s_axi_awvalid[0]) begin
@@ -280,9 +283,10 @@ always_comb begin
         end
         ICACHE: begin
             if (s_axi_rready[1] & m_axi_rvalid & m_axi_rlast) begin
-                choose   = '0;
+                choose   = '1;
                 fsm_next = IDLE;
             end else begin
+                choose   = '1;
                 fsm_next = ICACHE;
             end
         end

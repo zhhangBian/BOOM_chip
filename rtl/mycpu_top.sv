@@ -665,7 +665,7 @@ dcache # () dcache(
 /*============================== 2x1 AXI Bridge ==============================*/
 logic [10:0] rubblish_wire;
 assign wid = '0;
-axi_crossbar # (
+axi_convert # (
     .S_COUNT(2), // 连接两个cache, == 2
     .M_COUNT(1), // 连接总线，== 1
     .DATA_WIDTH(32), // 数据位宽 官方包是 32 位，需要使用 burst 传输
@@ -676,7 +676,7 @@ axi_crossbar # (
     .M_CONNECT_WRITE(2'b01) // TODO: 设置成仅 DCache 侧可写
 ) axi_crossbar_2x1_inst (
     .clk(aclk),
-    .rst(!aresetn), // TODO: recheck
+    .rst_n(aresetn), // TODO: recheck
     /*
      * AXI slave interfaces
      */
@@ -699,7 +699,7 @@ axi_crossbar # (
     .s_axi_wvalid({1'b0,commit_axi_wvalid}),
     .s_axi_wready({rubblish_wire[1], axi_commit_wready}),
     .s_axi_bready('1),
-    .s_axi_arid('0),
+    .s_axi_arid({4'b0001, 4'b0000}),
     .s_axi_araddr({icache_axi_addr, commit_axi_req.raddr}), /*2024/07/24 fix waddr -> raddr*/
     .s_axi_arlen({icache_axi_len, commit_axi_req.rlen}), /*2024/07/24 fix wlen -> rlen*/
     .s_axi_arsize({3'b010,3'b010}),

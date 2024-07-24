@@ -330,6 +330,18 @@ always_ff @(posedge clk) begin
     end
 end
 
+logic [31:0] addr_q;
+logic [7 :0] data_len_q;
+always_ff @(posedge clk) begin
+    if (!rst_n) begin
+        addr_q <= '0;
+        data_len_q <= '0;
+    end else begin
+        addr_q <= addr_o;
+        data_len_q <= data_len_o;
+    end
+end
+
 always_comb begin
     stall    = stall_q;
     cacop_stall = cacop_stall_q;
@@ -347,9 +359,9 @@ always_comb begin
     commit_cache_req = '0;
     icache_cacop_flush_o = '0;
     icache_cacop_tlb_exc = '0;
-    addr_o          = '0;
+    addr_o          = addr_q;
     addr_valid_o    = '0;
-    data_len_o      = '0;
+    data_len_o      = data_len_q;
     commit_resp_valid_o  = '0;
     icache_cacop_bvaddr  = '0;
     case(fsm_cur) 
@@ -358,7 +370,11 @@ always_comb begin
             refill_we       = '0;
             insts = tag_hit[0] ? data_ans0[0] : data_ans0[1];
             stall = '0; // 解除stall状态
-            if (commit_req_valid_i) begin
+            if (b_f_pkg_q.mask == '0) begin
+                stall = '0;
+                fsm_next = F_NORMAL;
+            end
+            else if (commit_req_valid_i) begin
                 case(commit_icache_req.cache_op)
                     0, 1: begin
                         commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
