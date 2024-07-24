@@ -37,6 +37,7 @@ compile: $(VERILATOR_SRC)
 help:
 	@echo "'make compile' to compile using verilator"
 	@echo "'make chiplab' to deploy to CHIPLAB_HOME/IP/myCPU"
+	@echo "'make nscscc ' to deploy to NSCSCC_HOME/myCPU"
 	@echo "'make help   ' to display this massage"
 
 clean:
@@ -44,3 +45,6 @@ clean:
 
 chiplab:
 	./src/deploy.sh chiplab
+
+vivado:
+	./src/deploy.sh vivado
