@@ -58,7 +58,7 @@ logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
 // ------------------------------------------------------------------
 // 配置IQ逻辑
 // 当前的表项数
-logic [PTR_LEN - 1:0]   free_cnt, free_cnt_q;
+logic [PTR_LEN    :0]   free_cnt, free_cnt_q;
 // 执行的指针
 logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 // 写的指针

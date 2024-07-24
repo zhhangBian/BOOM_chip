@@ -176,6 +176,8 @@ for (genvar i = 0; i < 4; i++) begin
     end
 end
 
+wire ready = r_p_sender.ready;
+
 always_ff @(posedge clk) begin
     if (!rst_n || c_flush_i) begin
         r_p_pkg_o <= '0;
