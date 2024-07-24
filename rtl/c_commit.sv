@@ -6,7 +6,7 @@ function cache_tag_t get_cache_tag(
     input logic d
 );
     cache_tag_t cache_tag;
-    cache_tag.tag = addr[31:20];
+    cache_tag.tag = addr[31:12];
     cache_tag.v = v;
     cache_tag.d = d;
 
