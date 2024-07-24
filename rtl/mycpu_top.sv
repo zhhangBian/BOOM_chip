@@ -125,7 +125,7 @@ handshake_if #(b_f_pkg_t) fifo_f_handshake();
 
 // 实际上是一个 skidbuf
 fifo #(
-    .DEPTH(1),
+    .DEPTH(2),
     .BYPASS(1),
     .T(b_f_pkg_t)
 ) b_f_fifo (

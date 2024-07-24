@@ -35,7 +35,7 @@ compile: $(VERILATOR_SRC)
 	$(VERILATOR_HOME) $(VERILATOR_INCLUDE) $(VERILATOR_FLAG) $(VERILATOR_SRC) 
 
 help:
-	@echo "'make compile' to compile"
+	@echo "'make compile' to compile using verilator"
 	@echo "'make chiplab' to deploy to CHIPLAB_HOME/IP/myCPU"
 	@echo "'make help   ' to display this massage"
 
