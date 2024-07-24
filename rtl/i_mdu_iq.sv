@@ -95,10 +95,10 @@ end
 
 // ------------------------------------------------------------------
 // 选择进入IQ的数据
-word_t   [IQ_SIZE - 1:0]    iq_data;
-rob_id_t [IQ_SIZE - 1:0]    iq_reg_id;
-logic    [IQ_SIZE - 1:0]    iq_valid;
-decode_info_t [IQ_SIZE - 1:0] iq_di;
+word_t   [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_data;
+rob_id_t [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_reg_id;
+logic    [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_valid;
+decode_info_t [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_di;
 
 always_comb begin
     entry_select = '0;
@@ -193,9 +193,9 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin
         .select_i(entry_select[i] & excute_ready),
         .init_i(entry_init[i]),
 
-        .data_i(iq_data),
-        .data_reg_id_i(iq_reg_id),
-        .data_valid_i(iq_valid),
+        .data_i(iq_data[i]),
+        .data_reg_id_i(iq_reg_id[i]),
+        .data_valid_i(iq_valid[i]),
         .di_i(iq_di[i]),
 
         .wkup_data_i(wkup_data_i),
