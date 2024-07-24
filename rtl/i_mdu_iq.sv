@@ -146,6 +146,14 @@ always_comb begin
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+mdu_i_t req_i;
+mdu_o_t res_o;
+word_t [1:0] data_s;
+decode_info_t di_o;
+
+logic   mdu_valid_i, mdu_ready_o;
+logic   mdu_valid_o, mdu_ready_i;
+
 // ------------------------------------------------------------------
 // 生成执行信号
 assign excute_ready = (!excute_valid_q) | mdu_ready_o; /* 2024/07/24 fix mdu_ready_i -> mdu_ready_o*/
@@ -185,9 +193,9 @@ for(genvar i = 0; i < IQ_SIZE; i += 1) begin
         .select_i(entry_select[i] & excute_ready),
         .init_i(entry_init[i]),
 
-        .data_i(iq_data[i]),
-        .data_reg_id_i(iq_reg_id[i]),
-        .data_valid_i(iq_valid[i]),
+        .data_i(iq_data),
+        .data_reg_id_i(iq_reg_id),
+        .data_valid_i(iq_valid),
         .di_i(iq_di[i]),
 
         .wkup_data_i(wkup_data_i),
@@ -256,13 +264,6 @@ data_wkup #(
 
 // ------------------------------------------------------------------
 // 创建IQ相联的部件
-mdu_i_t req_i;
-mdu_o_t res_o;
-word_t [1:0] data_s;
-decode_info_t di_o;
-
-logic   mdu_valid_i, mdu_ready_o;
-logic   mdu_valid_o, mdu_ready_i;
 
 assign mdu_valid_i  = excute_valid_q;
 assign entry_valid_o= mdu_valid_o;

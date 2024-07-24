@@ -162,11 +162,10 @@ end
 
 // ------------------------------------------------------------------
 // 生成wkup数据
-for(genvar i = 0; i < REG_COUNT; i += 1) begin
-    always_comb begin
-        wkup_hit = '0;
-        wkup_result[i] = '0;
 
+always_comb begin
+    wkup_hit = '0;
+    for(integer i = 0; i < REG_COUNT; i += 1) begin
         for(integer j = 0; j < WKUP_COUNT; j += 1) begin
             wkup_hit[i][j] |= (wkup_reg_id_i[j] == entry_reg_id[i]) &
                               wkup_valid_i[j] &
