@@ -221,8 +221,6 @@ decode_info_t   select_di, select_di_q;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
-// logic            wkup_valid_o; /* 2024/07/24 fix not driven*/
-
 always_comb begin
     select_di           = '0;
     select_data         = '0;

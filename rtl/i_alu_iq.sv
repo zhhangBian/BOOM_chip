@@ -97,21 +97,13 @@ end
 // AGING的移位逻辑
 always_ff @(posedge clk) begin
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
-        if(entry_select[i]) begin
+        if(~rst_n || flush || entry_select[i]) begin
             aging_q[i] <= '0;
         end
         else begin
             aging_q[i] <= (aging_q[i] == 0) ? 1 :
                           (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
                           aging_q[i] : (aging_q[i] << 1);
-            // if(entry_ready[i]) begin
-            //     aging_q[i] <= (aging_q[i] == 0) ? 1 :
-            //                   (aging_q[i] == (1 << (AGING_LENGTH - 1))) ? 
-            //                   aging_q[i] : (aging_q[i] << 1);
-            // end
-            // else begin
-            //     aging_q[i] <= '0;
-            // end
         end
     end
 end
@@ -127,7 +119,7 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    entry_ready_o <= (free_cnt_q >= 1); /* 2024/07/24 fix *_q */
+    entry_ready_o <= (free_cnt >= 1);
 end
 
 always_ff @(posedge clk) begin
