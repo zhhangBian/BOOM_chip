@@ -70,8 +70,8 @@ assign d_r_pkg.fetch_exc_info = receiver.data.fetch_exc_info;
 for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.w_reg[i] = |decode_infos[i].reg_type_w;
     assign d_r_pkg.w_mem[i] = decode_infos[i].mem_write;
-    assign d_r_pkg.reg_need[2*i    ] = decode_infos[i].reg_type_r0 != `_REG_ZERO; // & decode_infos[i].reg_type_r0 != `_REG_IMM;
-    assign d_r_pkg.reg_need[2*i + 1] = decode_infos[i].reg_type_r1 != `_REG_ZERO; // & decode_infos[i].reg_type_r1 != `_REG_IMM;
+    assign d_r_pkg.reg_need[2*i    ] = decode_infos[i].reg_type_r0 != `_REG_ZERO & decode_infos[i].reg_type_r0 != `_REG_IMM;
+    assign d_r_pkg.reg_need[2*i + 1] = decode_infos[i].reg_type_r1 != `_REG_ZERO & decode_infos[i].reg_type_r1 != `_REG_IMM;
 
     assign d_r_pkg.use_imm[2*i    ] = decode_infos[i].reg_type_r0 == `_REG_IMM;
     assign d_r_pkg.use_imm[2*i + 1] = decode_infos[i].reg_type_r1 == `_REG_IMM;
