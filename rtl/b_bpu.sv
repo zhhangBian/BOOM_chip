@@ -196,7 +196,7 @@ always_ff @(posedge clk ) begin
 end
 
 /* ============================== PHT ============================== */
-(* ramstyle = "distributed" *) bpu_pht_entry_t [`BPU_PHT_DEPTH - 1 : 0][1:0] pht ;
+(* ramstyle = "distributed" *) bpu_pht_entry_t [1:0][`BPU_PHT_DEPTH - 1 : 0] pht ;
 
 bpu_pht_entry_t  [1:0]              pht_rdata;
 bpu_pht_entry_t  [1:0]              pht_wdata;
@@ -210,6 +210,7 @@ assign pht_we = correct_info.update;
 for (genvar i = 0; i < 2; i=i+1) begin
     assign pht_wdata[i] = next_scnt(correct_info.scnt, correct_info.taken);
     assign pht_raddr[i] = {bht_rdata[i].history, pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
+    assign pht_rdata[i] = pht[i][pht_raddr]
 end
 
 assign pht_waddr = {correct_info.history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};

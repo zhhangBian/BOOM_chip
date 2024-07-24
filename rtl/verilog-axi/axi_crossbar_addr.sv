@@ -347,7 +347,11 @@ always @* begin
                 match = 1'b0;
                 for (i = 0; i < M_COUNT; i = i + 1) begin
                     for (j = 0; j < M_REGIONS; j = j + 1) begin
-                        if (M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32] && (!M_SECURE[i] || !s_axi_aprot[1]) && (M_CONNECT & (1 << (S+i*S_COUNT))) && (s_axi_aaddr >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32]) == (M_BASE_ADDR_INT[(i*M_REGIONS+j)*ADDR_WIDTH +: ADDR_WIDTH] >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32])) begin
+                        if (M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32] &&
+                                (!M_SECURE[i] || !s_axi_aprot[1]) &&
+                                (M_CONNECT & (1 << (S+i*S_COUNT))) &&
+                                (s_axi_aaddr >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32]) ==
+                                        (M_BASE_ADDR_INT[(i*M_REGIONS+j)*ADDR_WIDTH +: ADDR_WIDTH] >> M_ADDR_WIDTH[(i*M_REGIONS+j)*32 +: 32])) begin
                             // m_select_next = i;
                             m_select_next = 0;
                             m_axi_aregion_next = j;
