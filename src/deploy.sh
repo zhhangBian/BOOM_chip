@@ -8,7 +8,6 @@ then
 	then
 		echo "variable CHIPLAB_HOME not set"
 	else
-	then
 		mkdir ${CHIPLAB_HOME}/IP/myCPU &> /dev/null
 		rm -rf ${CHIPLAB_HOME}/IP/myCPU/*
 		for f in $src
@@ -22,7 +21,6 @@ then
 	then
 		echo "variable NSCSCC_HOME not set"
 	else
-	then
 		mkdir ${NSCSCC}/IP/myCPU &> /dev/null
 		rm -rf ${NSCSCC}/IP/myCPU/*
 		for f in $src
