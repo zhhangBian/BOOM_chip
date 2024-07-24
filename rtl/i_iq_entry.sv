@@ -23,12 +23,12 @@ module iq_entry # (
     input   rob_id_t[REG_COUNT - 1:0] data_reg_id_i,
     input   logic   [REG_COUNT - 1:0] data_valid_i,
     // 新指令的控制数据
-    input   decode_info_t di_i,
+    input   decode_info_t             di_i,
 
     // 背靠背唤醒
-    input   word_t  [WKUP_COUNT - 1:0] wkup_data_i,
-    input   rob_id_t[WKUP_COUNT - 1:0] wkup_reg_id_i,
-    input   logic   [WKUP_COUNT - 1:0] wkup_valid_i,
+    input   word_t  [WKUP_COUNT - 1:0]wkup_data_i,
+    input   rob_id_t[WKUP_COUNT - 1:0]wkup_reg_id_i,
+    input   logic   [WKUP_COUNT - 1:0]wkup_valid_i,
     // CDB数据前递
     input   word_t  [CDB_COUNT - 1:0] cdb_data_i,
     input   rob_id_t[CDB_COUNT - 1:0] cdb_reg_id_i,

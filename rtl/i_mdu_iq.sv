@@ -98,7 +98,7 @@ end
 word_t   [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_data;
 rob_id_t [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_reg_id;
 logic    [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_valid;
-decode_info_t [IQ_SIZE - 1:0][REG_COUNT - 1:0] iq_di;
+decode_info_t           [IQ_SIZE - 1:0]   iq_di;
 
 always_comb begin
     entry_select = '0;
