@@ -26,9 +26,9 @@ module icache #(
     input   logic  [31:0]       axi_data_i,
     // commit交互信号
     input   commit_icache_req_t commit_icache_req,
-    output  [1:0]               icache_cacop_flush_o,
+    output  logic   [1:0]       icache_cacop_flush_o,
     output  tlb_exception_t     icache_cacop_tlb_exc,
-    output  [31:0]              icache_cacop_bvaddr, 
+    output  logic   [31:0]      icache_cacop_bvaddr, 
     input   logic               commit_req_valid_i, // commit发维护请求需要读（cacop op为2的时候）的时候
     output  logic               commit_resp_ready_o, // 状态处理完毕，即为NORMAL状态时
     output  logic               commit_resp_valid_o,
