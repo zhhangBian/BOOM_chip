@@ -531,7 +531,7 @@ typedef struct packed {
     logic [1:0][31:0]          s_data;
     logic                      w_valid;  // valid
     rob_ctrl_entry_t           ctrl;
-    lsu_iq_pkg_t                 lsu_info;
+    lsu_iq_pkg_t               lsu_info;
 } cdb_rob_pkg_t;
 
 typedef struct packed {

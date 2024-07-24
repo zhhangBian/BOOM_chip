@@ -156,6 +156,20 @@ logic wait_for_int_q, wait_for_int;
 
 csr_t csr_q;//这个是正宗的csr本体
 
+//下面识别rob_commit[1]是不是有例外
+wire a_fetch_excp    = rob_commit_i[1].fetch_exception;
+
+wire a_syscall_excp  = rob_commit_i[1].syscall_inst;
+wire a_break_excp    = rob_commit_i[1].break_inst;
+wire a_ine_excp      = rob_commit_i[1].decode_err;
+wire a_priv_excp     = rob_commit_i[1].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
+
+wire a_execute_excp  = rob_commit_i[1].execute_exception;
+
+assign another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
+//上面是1表示两条指令的后一条有例外
+//注意：这个信号只用来判断是不是单个提交，所以不用判断指令是否有效，其他地方后面不能直接用！！！
+
 always_comb begin
     //在有效的情况下是不是单提交的情况
     first_commit[0]     = rob_commit_i[0].flush_inst | //一定flush指令
@@ -763,20 +777,6 @@ always_comb begin
     endcase
 
 end
-
-//下面识别rob_commit[1]是不是有例外
-wire a_fetch_excp    = rob_commit_i[1].fetch_exception;
-
-wire a_syscall_excp  = rob_commit_i[1].syscall_inst;
-wire a_break_excp    = rob_commit_i[1].break_inst;
-wire a_ine_excp      = rob_commit_i[1].decode_err;
-wire a_priv_excp     = rob_commit_i[1].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
-
-wire a_execute_excp  = rob_commit_i[1].execute_exception;
-
-assign another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
-//上面是1表示两条指令的后一条有例外
-//注意：这个信号只用来判断是不是单个提交，所以不用判断指令是否有效，其他地方后面不能直接用！！！
 
 always_ff @( posedge clk ) begin
     if (~rst_n) begin
@@ -1432,15 +1432,15 @@ logic axi_back_target, axi_back_target_q;
 
 lsu_iq_pkg_t lsu_info_s, lsu_info_q;
 
-word_t cache_block_data [CACHE_BLOCK_NUM-1:0];
-word_t cache_block_data_q [CACHE_BLOCK_NUM-1:0];
-logic [$bits(CACHE_BLOCK_NUM):0] cache_block_ptr,  cache_block_ptr_q;
-logic [$bits(CACHE_BLOCK_NUM):0] cache_block_len,  cache_block_len_q;
+word_t cache_block_data [CACHE_BLOCK_NUM:0];
+word_t cache_block_data_q [CACHE_BLOCK_NUM:0];
+logic [$clog2(CACHE_BLOCK_NUM):0] cache_block_ptr,  cache_block_ptr_q;
+logic [$clog2(CACHE_BLOCK_NUM):0] cache_block_len,  cache_block_len_q;
 
-word_t axi_block_data [CACHE_BLOCK_NUM-1:0];
-word_t axi_block_data_q [CACHE_BLOCK_NUM-1:0];
-logic [$bits(CACHE_BLOCK_NUM):0] axi_block_ptr,    axi_block_ptr_q;
-logic [$bits(CACHE_BLOCK_NUM):0] axi_block_len,    axi_block_len_q;
+word_t axi_block_data [CACHE_BLOCK_NUM:0];
+word_t axi_block_data_q [CACHE_BLOCK_NUM:0];
+logic [$clog2(CACHE_BLOCK_NUM):0] axi_block_ptr,    axi_block_ptr_q;
+logic [$clog2(CACHE_BLOCK_NUM):0] axi_block_len,    axi_block_len_q;
 
 logic axi_wait,    axi_wait_q;
 logic icache_wait, icache_wait_q;
@@ -1922,7 +1922,8 @@ always_comb begin
                 // 设置相应的Cache数据
                 cache_block_ptr = cache_block_ptr_q + 1;
                 // 对齐一块的数据
-                commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) | (cache_block_ptr_q << 2);
+                commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) | 
+                                              ({29'b0, cache_block_ptr_q} << 2);
                 commit_cache_req.way_choose = lsu_info_s.refill;
                 commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '0);
                 commit_cache_req.tag_we     = '1;

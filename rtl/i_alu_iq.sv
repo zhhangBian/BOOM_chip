@@ -78,9 +78,9 @@ localparam int half_IQ_SIZE = IQ_SIZE / 2;
 // 对应的aging位
 logic [AGING_LENGTH - 1:0]  aging_q [IQ_SIZE - 1:0];
 // 目前只处理了IQ为4的情况
-logic [$bits(IQ_SIZE):0]    aging_select_1 [half_IQ_SIZE:0];
+logic [$clog2(IQ_SIZE):0]   aging_select_1 [half_IQ_SIZE:0];
 // 选择出发射的指令：一定ready
-logic [$bits(IQ_SIZE):0]    aging_select;
+logic [$clog2(IQ_SIZE):0]   aging_select;
 
 always_comb begin
     aging_select_1[0] = ({entry_ready[1], aging_q[1]} > {entry_ready[0], aging_q[0]}) ? 3'h1 : 3'h0;
@@ -119,8 +119,8 @@ end
 
 // ------------------------------------------------------------------
 // 更新entry_ready信号
-logic [$bits(IQ_SIZE):0] free_cnt;
-logic [$bits(IQ_SIZE):0] free_cnt_q;
+logic [$clog2(IQ_SIZE):0] free_cnt;
+logic [$clog2(IQ_SIZE):0] free_cnt_q;
 
 always_comb begin
     free_cnt = free_cnt_q - (|choose) + (excute_ready & excute_valid);
