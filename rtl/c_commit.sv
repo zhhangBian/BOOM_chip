@@ -166,7 +166,7 @@ wire a_priv_excp     = rob_commit_i[1].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3
 
 wire a_execute_excp  = rob_commit_i[1].execute_exception;
 
-assign another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
+wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_excp,a_priv_excp, a_execute_excp};
 //上面是1表示两条指令的后一条有例外
 //注意：这个信号只用来判断是不是单个提交，所以不用判断指令是否有效，其他地方后面不能直接用！！！
 
