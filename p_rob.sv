@@ -154,8 +154,8 @@ always_comb begin
 
         commit_info_o[i].pc = commit_inst_o[i].pc;
 
-        commit_info_o[i].data_rk = commit_data_o[i].s_data[0];
-        commit_info_o[i].data_rj = commit_data_o[i].s_data[1];
+        commit_info_o[i].data_rj = commit_data_o[i].s_data[0];
+        commit_info_o[i].data_rk = commit_data_o[i].s_data[1];
         commit_info_o[i].data_imm = commit_inst_o[i].addr_imm;
 
         commit_info_o[i].first_commit = '0;
