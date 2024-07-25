@@ -29,13 +29,11 @@
 
 ### 1.1 总体设计
 
-#### 1.1.1 前端 Frontend
-
-#### 1.1.2 后端 Backend
-
-#### 1.1.3 访存 Memory
+![Overview](images/Structure.png)
 
 ### 1.2 分支预测 Branch Predict
+
+![BPU](images/BPU.jpg)
 
 ### 1.3 取指 Inst Fetch
 
@@ -55,7 +53,9 @@
 
 #### 1.8.3 访存指令 LSU
 
-### 1.9 转发 CDB
+### 1.9 转发 & 唤醒 CDB
+
+![wkup_forward](images/wkup_forward.png)
 
 ### 1.10 重排序 Re-ordered
 
