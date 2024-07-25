@@ -85,11 +85,11 @@ end
 always_comb begin
     case (op_i)
     `_LI_LUI: begin
-        li_result = {r1_i[19:0], 12'b0};
+        li_result = {r0_i[19:0], 12'b0};
     end
 
     `_LI_PCADDUI: begin
-        li_result = {r1_i[19:0], 12'b0} + pc_i;
+        li_result = {r0_i[19:0], 12'b0} + pc_i;
     end
 
     default: begin
@@ -127,11 +127,11 @@ end
 always_comb begin
     case (op_i)
     `_SFT_SLL: begin
-        sft_result = r0_i >> r1_i[4:0];
+        sft_result = ((r0_i) >> (r1_i[4:0]));
     end
 
     `_SFT_SRL: begin
-        sft_result = r0_i << r1_i[4:0];
+        sft_result = ((r0_i) << (r1_i[4:0]));
     end
 
     `_SFT_SLA: begin
