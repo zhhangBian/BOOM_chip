@@ -1486,7 +1486,6 @@ always_comb begin
     axi_block_ptr       = axi_block_ptr_q;
     axi_block_len       = axi_block_len_q;
 
-    commit_axi_req      = '0;
     commit_axi_arvalid_o= '0;
     commit_axi_awvalid_o= '0;
     commit_axi_wvalid_o = '0;
@@ -1847,7 +1846,7 @@ always_comb begin
         end
         // 读入数据
         else begin
-			commit_axi_wvalid_o = (cache_block_ptr_q > axi_block_ptr_q);
+            commit_axi_wvalid_o = (cache_block_ptr_q > axi_block_ptr_q);
             commit_axi_req.wdata = cache_block_data[axi_block_ptr_q];
             commit_axi_wlast_o = (axi_block_ptr_q == axi_block_len - 1);
 
