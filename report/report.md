@@ -20,6 +20,8 @@
   - 1.9 转发 CDB
   - 1.10 重排序 Re-ordered
   - 1.11 提交 Commit
+    - 1.11.1 异常处理 Exception
+    - 1.11.2 cache逻辑 D-Cache
 - 二、SoC 与外设实现
   - ???
 - 三、系统软件支持
@@ -82,6 +84,8 @@ BOOM 处理器流水级较深。当后端阻塞时前端的指令会被阻塞到
 ### 1.10 重排序 Re-ordered
 
 ### 1.11 提交 Commit
+
+### 1.12 异常终端 Exception
 
 
 
