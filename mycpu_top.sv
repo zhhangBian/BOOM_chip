@@ -250,6 +250,7 @@ for(genvar i = 0; i < 2; i += 1) begin
     end
 end
 
+logic [1:0] retire_request;
 rename # () rename (
     .clk(clk),
     .rst_n(rst_n),
@@ -258,7 +259,7 @@ rename # () rename (
     .d_r_receiver(fifo_r_handshake.receiver),
     .r_p_sender(r_p_handshake.sender),
 
-    .c_retire_i(c_retire),
+    .c_retire_i(retire_request),
     .c_retire_info_i(c_retire_infos)
 );
 
@@ -585,6 +586,7 @@ commit # () commit(
     .rob_commit_i(commit_infos),
 
     .commit_request_o(commit_request),
+    .retire_request_o(retire_request),
 
     .commit_cache_req_o(commit_cache_req),
     .cache_commit_resp_i(cache_commit_resp),

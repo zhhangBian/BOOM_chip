@@ -44,7 +44,7 @@ logic [1:0][31:0]   insts_i;
 d_r_pkg_t           d_r_pkg;
 d_decode_info_t decode_infos [1:0];
 
-assign mask = receiver.data.mask;
+assign mask = receiver.data.mask & {sender.ready, sender.ready} & {receiver.valid, receiver.valid};
 assign pc = {receiver.data.pc | 32'h00000004, receiver.data.pc};
 assign insts_i = receiver.data.insts;
 

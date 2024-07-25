@@ -217,6 +217,10 @@ always_ff @( posedge clk ) begin
         commit_request_q <= '0;
         rob_commit_q <= '{'0,'0};
     end
+    else if (fsm_flush) begin
+        commit_request_q <= '0;
+        rob_commit_q <= rob_commit_q;
+    end
     else if (stall) begin
         //注意：对于stall的情况，我保留了之前的请求，这意味着retire的时候不能直接用commit_request_q
         commit_request_q <= commit_request_q;
@@ -271,7 +275,8 @@ always_comb begin
         //接到rename级的要用这个！
 
         commit_debug_pc_o[i]   = rob_commit_q[i].pc;
-        commit_arf_data_o[i] = rob_commit_q[i].rdcnt_en  ? rdcnt_data_q:
+        commit_arf_data_o[i] =  (rob_commit_q[i].is_branch && (rob_commit_q[i].branch_info.br_type == BR_CALL || rob_commit_q[i].branch_info.br_type == BR_RET)) ? rob_commit_q[i].pc + 4 :
+                                rob_commit_q[i].rdcnt_en  ? rdcnt_data_q:
                                |rob_commit_q[i].csr_type ? commit_csr_data_q:
                                rob_commit_q[i].w_data;
 
@@ -475,7 +480,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         real_target[i] = '0;
         next_pc[i] = rob_commit_i[i].pc + 4;
         predict_branch[i] = predict_info[i].is_branch;//fixed
-        
+
         if (branch_info[i].is_branch) begin
             case (branch_info[i].br_type)
                 // 比较结果由ALU进行计算
@@ -490,8 +495,8 @@ for(genvar i = 0; i < 2; i += 1) begin
                     end
                 end
                 BR_CALL: begin
-                    real_target[i] = rob_commit_i[i].data_imm;
-                    next_pc[i] = rob_commit_i[i].data_imm;
+                    real_target[i] = rob_commit_i[i].pc + rob_commit_i[i].data_imm;
+                    next_pc[i] = real_target[i];
                 end
                 BR_RET: begin
                     real_target[i] = rob_commit_i[i].data_imm + rob_commit_i[i].data_rj;
@@ -1289,6 +1294,7 @@ csr_t csr_update;
 
 //下面这个组合逻辑内部顺序不要更改
 always_comb begin
+    csr_update = csr_q;
     if (retire_request_o[0]) begin
         if (rob_commit_q[0].is_tlb_fix) begin
             csr_update = tlb_update_csr_q;

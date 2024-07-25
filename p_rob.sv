@@ -285,12 +285,26 @@ logic [1 : 0]           commit_complete_cdb_o;
 logic [1 : 0][1 : 0]    rob_dispatch_complete_cdb_o;
 logic [1 : 0]           cdb_in_complete_o;      // 写的两项对应的结果
 
+
+// global_valid & inglobal_valid logic
+logic [63 : 0]  global_valid;
+always_ff @(posedge clk) begin
+    if (!rst_n || flush_i) begin
+        global_valid <= '0;
+    end else begin
+        global_valid[tail_ptr0_q] <= !commit_req[0];
+        global_valid[tail_ptr1_q] <= !commit_req[1];
+        global_valid[dispatch_preg_i[0]] <= dispatch_issue_i[0];
+        global_valid[dispatch_preg_i[1]] <= dispatch_issue_i[1];
+    end
+end
+
 always_comb begin
     for (integer i = 0 ; i < 2; i++) begin
         rob_dispatch_o[i].rob_complete = (rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]); //debug
     end
-    commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
-    commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1);
+    commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0) & global_valid[tail_ptr0_q];
+    commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1) & global_valid[tail_ptr1_q];
     commit_valid[0] = commit_info_o[0].c_valid;
     commit_valid[1] = commit_info_o[1].c_valid;
 end
@@ -333,6 +347,8 @@ registers_file_banked # (
     .we_i(cdb_valid_i),
     .wdata_i(~cdb_in_complete_o)
 );
+
+
 
 
 endmodule

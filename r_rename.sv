@@ -21,7 +21,7 @@ module rename #(
 );
 
 // rob控制信号及分配
-logic   [`ROB_WIDTH - 1 :0] rob_cnt, rob_cnt_q;
+logic   [`ROB_WIDTH    :0] rob_cnt, rob_cnt_q;
 logic   rob_available, rob_available_q;
 // rob的相应写指针
 rob_id_t  rob_ptr1, rob_ptr2;
@@ -61,7 +61,7 @@ always_comb begin
     rob_cnt       = rob_cnt_q  + r_issue[0] + r_issue[1] - c_retire_i[0] - c_retire_i[1];
     rob_ptr1      = rob_ptr1_q + r_issue[0] + r_issue[1];
     rob_ptr2      = rob_ptr2_q + r_issue[0] + r_issue[1];
-    rob_available = (rob_cnt_q <= 60);
+    rob_available = (rob_cnt_q <= 7'd60);
 end
 
 
@@ -85,7 +85,7 @@ assign r_warid = d_r_receiver.data.arf_table.w_arfid;
 assign r_issue = d_r_receiver.data.r_valid & 
                 {d_r_receiver.valid, d_r_receiver.valid} & 
                 {d_r_receiver.ready, d_r_receiver.ready};
-assign r_wrobid = r_issue[0] ? {rob_ptr2_q, rob_ptr1_q} : {rob_ptr1_q, rob_ptr1_q};
+assign r_wrobid = (!r_issue[0] & r_issue[1]) ?  {rob_ptr1_q, rob_ptr2_q} : {rob_ptr2_q, rob_ptr1_q};
 
 for (genvar i = 0; i < 4; i++) begin
     assign r_rrobid[i] = r_rename_result[i].robid;
@@ -188,7 +188,7 @@ always_ff @(posedge clk) begin
         if (r_p_sender.valid & r_p_sender.ready) begin
             r_p_pkg_o <= r_p_pkg_temp;
         end else begin
-            r_p_pkg_o <= r_p_pkg_o;
+            r_p_pkg_o <= '0;
         end
     end
 end
@@ -199,7 +199,7 @@ always_comb begin
     r_p_pkg_temp.src_preg  = r_rrobid; 
     r_p_pkg_temp.arf_data  = r_arf_data;
     r_p_pkg_temp.pc        = d_r_pkg_i.pc;
-    r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid;
+    r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid & {d_r_receiver.valid, d_r_receiver.valid} & {r_p_sender.ready, r_p_sender.ready};
     r_p_pkg_temp.w_reg     = d_r_pkg_i.w_reg;
     r_p_pkg_temp.w_mem     = d_r_pkg_i.w_mem;
     r_p_pkg_temp.check     = {r_rename_new[1].check, r_rename_new[0].check};
