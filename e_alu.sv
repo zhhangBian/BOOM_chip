@@ -111,15 +111,15 @@ always_comb begin
     end
 
     `_INT_SLT: begin
-        int_result = ($signed(r0_i) < $signed(r1_i)) ? 1: 0;
+        int_result = ($signed(r0_i) < $signed(r1_i)) ? 32'h1: 32'h0;
     end
 
     `_INT_SLTU: begin
-        int_result = r0_i < r1_i ? 1 : 0;
+        int_result = (r0_i < r1_i ? 32'h1 : 32'h0);
     end
 
     default: begin
-        int_result = 32'b0;
+        int_result = 32'h0;
     end
     endcase
 end
@@ -169,15 +169,15 @@ always_comb begin
         end
 
         `_COM_LTU: begin
-            com_result = (r0_i < r1_i);
+            com_result = (r0_i < r1_i ? 32'h1 : 32'h0);
         end
 
         `_COM_GEU: begin
-            com_result = (r0_i >= r1_i);
+            com_result = (r0_i >= r1_i ? 32'h1 : 32'h0);
         end
 
         default: begin
-            com_result = '0;
+            com_result = 32'b0;
         end
     endcase
 end
