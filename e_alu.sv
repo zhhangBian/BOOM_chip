@@ -17,7 +17,8 @@ logic [31:0] int_result;    // 常规运算
 logic [31:0] sft_result;    // SFT移位
 logic [31:0] com_result;    // 比较结果
 
-logic [31:0] sub_result = r0_i - r1_i;
+logic [31:0] sub_result;
+assign sub_result = r0_i - r1_i;
 
 // GRAND_OP
 always_comb begin
@@ -127,11 +128,11 @@ end
 always_comb begin
     case (op_i)
     `_SFT_SLL: begin
-        sft_result = ((r0_i) >> (r1_i[4:0]));
+        sft_result = ((r0_i) << (r1_i[4:0]));
     end
 
     `_SFT_SRL: begin
-        sft_result = ((r0_i) << (r1_i[4:0]));
+        sft_result = ((r0_i) >> (r1_i[4:0]));
     end
 
     `_SFT_SLA: begin

@@ -268,6 +268,7 @@ typedef struct packed {
     logic  [1 :0][`ARF_WIDTH - 1:0] areg;
     logic  [1 :0][`ROB_WIDTH - 1:0] preg;
     logic  [3 :0][`ROB_WIDTH - 1:0] src_preg;
+    logic  [3 :0]                   reg_need;
     logic  [3 :0][31:0] arf_data;
     logic  [1 :0][31:0] pc ; // 指令地址
     logic  [1 :0]       r_valid;
@@ -644,7 +645,7 @@ typedef struct packed {
     // logic   dbar;
     // logic   llsc;
     logic   msigned;
-    logic   msize;
+    logic   [1:0] msize;
 
     logic   inst_valid; 
 

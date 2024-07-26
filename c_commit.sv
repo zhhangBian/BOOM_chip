@@ -223,7 +223,7 @@ always_ff @( posedge clk ) begin
     end
     else if (stall) begin
         //注意：对于stall的情况，我保留了之前的请求，这意味着retire的时候不能直接用commit_request_q
-        commit_request_q <= commit_request_q;
+        commit_request_q <= '0;
         rob_commit_q     <= rob_commit_q;
     end
     else if (flush) begin//TODO 放在stall后面，也就是说如果stall（进状态机）会保留信息
@@ -341,13 +341,24 @@ end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // ------------------------------------------------------------------
+rob_commit_pkg_t  rob_commit_will_flush_q [1:0];
+
+always_ff @( posedge clk ) begin
+    if (~rst_n || flush) begin
+        rob_commit_will_flush_q <= '{'0, '0};
+    end
+    else begin
+        rob_commit_will_flush_q <= {'0, commit_request_o[0] ? rob_commit_i[0] : '0};
+    end
+end
+
 // 代表相应的指令属性
 //这些全部都是第二级的，但是没有加_q！！！！！！！！！！！！！！！！！！！！
 logic [1:0] is_lsu_write, is_lsu_read, is_lsu;
 logic [1:0] is_uncached;    // 指令为Uncached指令
-logic [1:0] is_csr_fix;     // 指令为CSR特权指令
+//logic [1:0] is_csr_fix;     // 指令为CSR特权指令
 logic [1:0] is_cache_fix;   // 指令为Cache维护指令
-logic [1:0] is_tlb_fix;     // 指令为TLB维护指令
+//logic [1:0] is_tlb_fix;     // 指令为TLB维护指令
 logic [1:0] cache_commit_hit; // 此周期输入到cache的地址没有命中
 logic [1:0] cache_commit_dirty;
 logic [1:0] is_ll;
@@ -355,8 +366,8 @@ logic [1:0] is_sc;
 
 // 与DCache的一级流水交互
 lsu_iq_pkg_t lsu_info [1:0];
-assign lsu_info[0] = rob_commit_q[0].lsu_info;
-assign lsu_info[1] = rob_commit_q[1].lsu_info;
+assign lsu_info[0] = rob_commit_will_flush_q[0].lsu_info;
+assign lsu_info[1] = rob_commit_will_flush_q[1].lsu_info;
 
 // 判断指令类型
 for(genvar i = 0; i < 2; i += 1) begin
@@ -366,16 +377,16 @@ for(genvar i = 0; i < 2; i += 1) begin
         is_lsu_read[i]  = |lsu_info[i].rmask;
 
         is_lsu[i]       = is_lsu_write[i] | is_lsu_read[i];
-        is_uncached[i]  = rob_commit_q[i].is_uncached;
-        is_csr_fix[i]   = rob_commit_q[i].is_csr_fix;
-        is_cache_fix[i] = rob_commit_q[i].is_cache_fix;
-        is_tlb_fix[i]   = rob_commit_q[i].is_tlb_fix;
+        is_uncached[i]  = rob_commit_will_flush_q[i].is_uncached;
+        //is_csr_fix[i]   = rob_commit_q[i].is_csr_fix;
+        is_cache_fix[i] = rob_commit_will_flush_q[i].is_cache_fix;
+        //is_tlb_fix[i]   = rob_commit_q[i].is_tlb_fix;
 
         cache_commit_hit[i]   = lsu_info[i].hit;
         cache_commit_dirty[i] = lsu_info[i].dirty;
 
-        is_ll[i]        = rob_commit_q[i].is_ll;
-        is_sc[i]        = rob_commit_q[i].is_sc;
+        is_ll[i]        = rob_commit_will_flush_q[i].is_ll;
+        is_sc[i]        = rob_commit_will_flush_q[i].is_sc;
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1404,7 +1415,7 @@ end
 // Cache维护指令：也需要进入状态机
 
 logic [4:0] cache_code;
-assign cache_code = rob_commit_q[0].cache_code;//用于状态机，在第二级
+assign cache_code = rob_commit_will_flush_q[0].cache_code;//用于状态机，在第二级
 // code[2:0]指示操作的Cache对象
 logic [2:0] cache_tar;
 assign cache_tar = cache_code[2:0];

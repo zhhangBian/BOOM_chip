@@ -170,7 +170,7 @@ logic          execute_exception;
 logic   [5:0]  exc_code_new;
 logic   [31:0] badv;
 logic          ade_exc;
-assign  ade_exc  = (m1_iq_lsu_pkg.msize == 3) ? |badv : (m1_iq_lsu_pkg.msize == 1) ? badv[1] : '0;
+assign  ade_exc  = (m1_iq_lsu_pkg.msize == 3) ? |badv[1:0] : (m1_iq_lsu_pkg.msize == 1) ? badv[1] : '0;
 assign  exc_code_new  =  ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
 assign  execute_exception = ade_exc | (|tlb_exception.ecode);
 assign  badv     = m1_iq_lsu_pkg.vaddr;

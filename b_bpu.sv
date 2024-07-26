@@ -95,9 +95,13 @@ assign btb_raddr = hash(pc);
 assign btb_waddr = hash(correct_info.pc);
 assign btb_we = correct_info.update & (correct_info.type_miss | correct_info.target_miss);
 
+logic bpu_debug;
+
 for (genvar i = 0; i < 2; i=i+1) begin
     // btb_valid 表示是否有这一项在 BTB 中。表项 !valid 或者 !tag_match 都表示没有这一项
-    assign btb_valid[i] = (btb_rdata[i].is_branch != '0 && btb_rdata[i].is_branch != 'x) & btb_tag_match[i];
+    // 'x'
+    assign btb_valid[i] = ((btb_rdata[i].is_branch != '0 && btb_rdata[i].is_branch != 'x) || btb_rdata[i].is_branch == '1) & btb_tag_match[i];
+    assign bpu_debug    = (btb_rdata[i].is_branch != '0 && btb_rdata[i].is_branch != 'x);
 end
 
 initial begin

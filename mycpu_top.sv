@@ -519,6 +519,7 @@ always_comb begin
         // cdb_dispatch_pkg[i].w_mem  =  /* TODO */
         cdb_dispatch_pkg[i].w_valid=  cdb_infos[i].r_valid;           
 
+        cdb_rob_pkgs[i].s_data    =  cdb_infos[i].s_data;
         cdb_rob_pkgs[i].w_preg    =  cdb_infos[i].rob_id;
         cdb_rob_pkgs[i].w_data    =  cdb_infos[i].w_data;
         cdb_rob_pkgs[i].w_valid   =  cdb_infos[i].r_valid;

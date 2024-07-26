@@ -116,9 +116,8 @@ rename_rat # (
 // C级RAT表的实现
 // TODO: C级RAT表的实现
 
-assign c_we = c_retire_i & 
-            {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} & 
-            {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
+assign c_we = {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} & 
+              {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
 
 assign c_warid = {c_retire_info_i[1].arf_id, c_retire_info_i[0].arf_id};
 
@@ -197,6 +196,7 @@ always_comb begin
     r_p_pkg_temp.areg      = d_r_pkg_i.arf_table.w_arfid;
     r_p_pkg_temp.preg      = r_wrobid;
     r_p_pkg_temp.src_preg  = r_rrobid; 
+    r_p_pkg_temp.reg_need  = d_r_pkg_i.reg_need;
     r_p_pkg_temp.arf_data  = r_arf_data;
     r_p_pkg_temp.pc        = d_r_pkg_i.pc;
     r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid & {d_r_receiver.valid, d_r_receiver.valid} & {r_p_sender.ready, r_p_sender.ready};

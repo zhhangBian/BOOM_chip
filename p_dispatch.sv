@@ -125,6 +125,8 @@ always_comb begin
         sel_data[i] = r_p_pkg.data_valid[i] ? gen_data[i] : rob_data[i];
         data_valid[i] = cdb_data_hit[i] | r_p_pkg.data_valid[i] | rob_data_hit[i];
     end
+    data_valid[2] &= !(r_p_pkg.src_preg[2] == r_p_pkg.preg[0] && r_p_pkg.w_reg[0] && r_p_pkg.r_valid[0]) || !r_p_pkg.reg_need[2] || r_p_pkg.data_valid[2];
+    data_valid[3] &= !(r_p_pkg.src_preg[3] == r_p_pkg.preg[0] && r_p_pkg.w_reg[0] && r_p_pkg.r_valid[0]) || !r_p_pkg.reg_need[3] || r_p_pkg.data_valid[3];
 end
 
 
