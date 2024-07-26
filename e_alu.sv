@@ -175,7 +175,9 @@ always_comb begin
         `_COM_GEU: begin
             com_result = (r0_i >= r1_i ? 32'h1 : 32'h0);
         end
-
+        `_COM_PCADD4: begin
+            com_result = pc_i + 32'h4;
+        end
         default: begin
             com_result = 32'b0;
         end

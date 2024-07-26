@@ -347,7 +347,7 @@ fifo # (
     .T(cdb_info_t)
 ) alu_iq_fifo_0 (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[0].receiver),
     .sender(fu_cdb[0].sender)
 );
@@ -393,7 +393,7 @@ fifo # (
     .T(cdb_info_t)
 ) alu_iq_fifo_1 (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[1].receiver),
     .sender(fu_cdb[1].sender)
 );
@@ -446,7 +446,7 @@ fifo # (
     .T(cdb_info_t)
 ) lsu_iq_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[2].receiver),
     .sender(fu_cdb[2].sender)
 );
@@ -488,7 +488,7 @@ fifo # (
     .T(cdb_info_t)
 ) mdu_iq_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[3].receiver),
     .sender(fu_cdb[3].sender)
 );

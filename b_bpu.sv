@@ -112,6 +112,14 @@ initial begin
     end
 end
 
+initial begin
+    for (integer i = 0; i < 2; i=i+1) begin
+        for (integer j = 0; j < `BPU_PHT_DEPTH; j=j+1) begin
+            pht[i][j] = 2'b00;
+        end
+    end
+end
+
 always_comb begin
     for (integer i = 0; i < 2; i=i+1) begin
         btb_rdata[i] = btb[i][btb_raddr];
@@ -221,7 +229,7 @@ assign pht_we = correct_info.update;
 for (genvar i = 0; i < 2; i=i+1) begin
     assign pht_wdata[i] = next_scnt(correct_info.scnt, correct_info.taken);
     assign pht_raddr[i] = {bht_rdata[i].history, pc[`BPU_PHT_PC_LEN + 3 - 1:3]};
-    assign pht_rdata[i] = pht[i][pht_raddr];
+    assign pht_rdata[i] = pht[i][pht_raddr[i]];
 end
 
 assign pht_waddr = {correct_info.history, correct_info.pc[`BPU_PHT_PC_LEN + 3 - 1:3]};

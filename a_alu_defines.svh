@@ -36,5 +36,6 @@
 `define _COM_GE         (3'b100)
 `define _COM_LTU        (3'b101)
 `define _COM_GEU        (3'b110)
+`define _COM_PCADD4     (3'b111)
 
 `endif

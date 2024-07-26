@@ -244,7 +244,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_IMM;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_S12;
-            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
             decode_info_o.alu_op = `_INT_SLT;
         end
         // SLTUI
@@ -254,7 +254,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_IMM;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_S12;
-            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
             decode_info_o.alu_op = `_INT_SLTU;
         end
         // ADDI.W
@@ -274,8 +274,8 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_IMM;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.imm_type = `_IMM_U12;
-            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
-            decode_info_o.alu_op = `_INT_ADD;
+            decode_info_o.alu_grand_op = `_GRAND_OP_BW;
+            decode_info_o.alu_op = `_BW_AND;
         end
         // ORI
         32'b0000001110??????????????????????: begin
@@ -362,8 +362,8 @@ always_comb begin
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
-            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
-            decode_info_o.alu_op = `_INT_ADD;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
+            decode_info_o.alu_op = `_COM_PCADD4;
             decode_info_o.target_type = `_TARGET_ABS;
             decode_info_o.jump_inst = 1'd1;
         end
@@ -381,8 +381,8 @@ always_comb begin
             decode_info_o.br_type = BR_CALL;
             decode_info_o.reg_type_w = `_REG_W_R1;
             decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
-            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
-            decode_info_o.alu_op = `_INT_ADD;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
+            decode_info_o.alu_op = `_COM_PCADD4;
             decode_info_o.target_type = `_TARGET_REL;
             decode_info_o.jump_inst = 1'd1;
         end
