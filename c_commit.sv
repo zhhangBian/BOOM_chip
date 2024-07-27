@@ -2068,7 +2068,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .wdest         (commit_arf_areg_o[i]),
         .wdata         (commit_arf_data_o[i]),
         .csr_rstat     ((csr_type[i] == `_CSR_CSRRD || csr_type[i] == `_CSR_CSRWR || csr_type[i] == `_CSR_CSRXCHG) & (csr_num[i] == `_CSR_ESTAT)),
-        .csr_data      (commit_csr_data_o),
+        .csr_data      (commit_csr_data_o)
         // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && l_commit_o[p]),
         // .scw_llbit     (l_data_o[p][0])
     );
