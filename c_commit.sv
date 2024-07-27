@@ -1331,10 +1331,10 @@ always_comb begin
             csr_update.estat[`_ESTAT_ESUBCODE] = '0;
             csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
             csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
-        end//cacop维护出现的异常
+        end//cacop维护出现的异常 //注意：retire-request-o是不是无效了？TODO
     end
 
-    //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效或者是中断
+    //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效
     if(cur_exception_q) begin
         csr_update = csr_exception_update_q;
     end
@@ -1344,17 +1344,17 @@ always_comb begin
     //如果放在前面会被覆盖掉，放在后面，由于是软件不能改的位，不会把前面的覆盖掉
     csr_update.estat[`_ESTAT_HARD_IS]  = hard_is_i; //从外面连过来中断
 
-    //下面维护定时器
-    csr_update.estat[`_ESTAT_TIMER_IS] = 0;
+    //下面维护定时器 定时器中断默认和之前一样
     if (csr_q.tcfg[`_TCFG_EN]) begin
         if (csr_q.tval != 0) begin
-            csr_update.tval = csr_update.tval - 1;
+            csr_update.tval = csr_q.tval - 1;
         end
         else if (csr_q.tcfg[`_TCFG_PERIODIC]) begin
             csr_update.estat[`_ESTAT_TIMER_IS] = 1;
             csr_update.tval = {csr_q.tcfg[`_TCFG_INITVAL], 2'b0};
         end
         else begin
+            csr_update.tcfg[`_TCFG_EN]         = 0;
             csr_update.estat[`_ESTAT_TIMER_IS] = 1;
         end
     end
@@ -1371,12 +1371,9 @@ always_ff @(posedge clk) begin
     if(~rst_n) begin
         csr_q <= csr_init; // 初始化 CSR
     end
-    else if (retire_request_o[0]) begin
-        csr_q <= csr_update;
-    end
     else begin
-        csr_q <= csr_q;
-    end
+        csr_q <= csr_update;
+    end//这里更改了，每周期都要更新csr，只不过常常除了定时器以外，常常是原来的值
 end
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
