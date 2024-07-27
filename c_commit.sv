@@ -2083,6 +2083,59 @@ for(genvar i = 0; i < 2; i += 1) begin
     );
 end
 
+logic[63:0][31:0] ref_regs;
+
+for(genvar i = 0 ; i < 32 ; i ++) begin
+    always_ff @(posedge clk) begin
+        if(~rst_n) begin
+            ref_regs[i] <= '0;
+        end
+        else if(commit_request_o[1] && commit_arf_areg_o[1] == i[5:0] && i != 0) begin
+            ref_regs[i] <= l_data[1];
+        end
+        else if(commit_request_o[0] && commit_arf_areg_o[0] == i[5:0] && i != 0) begin
+            ref_regs[i] <= l_data[0];
+        end
+    end
+end
+
+DifftestGRegState DifftestGRegState (
+    .clock (clk         ),
+    .coreid(0           ),
+    .gpr_0 (ref_regs[0] ),
+    .gpr_1 (ref_regs[1] ),
+    .gpr_2 (ref_regs[2] ),
+    .gpr_3 (ref_regs[3] ),
+    .gpr_4 (ref_regs[4] ),
+    .gpr_5 (ref_regs[5] ),
+    .gpr_6 (ref_regs[6] ),
+    .gpr_7 (ref_regs[7] ),
+    .gpr_8 (ref_regs[8] ),
+    .gpr_9 (ref_regs[9] ),
+    .gpr_10(ref_regs[10]),
+    .gpr_11(ref_regs[11]),
+    .gpr_12(ref_regs[12]),
+    .gpr_13(ref_regs[13]),
+    .gpr_14(ref_regs[14]),
+    .gpr_15(ref_regs[15]),
+    .gpr_16(ref_regs[16]),
+    .gpr_17(ref_regs[17]),
+    .gpr_18(ref_regs[18]),
+    .gpr_19(ref_regs[19]),
+    .gpr_20(ref_regs[20]),
+    .gpr_21(ref_regs[21]),
+    .gpr_22(ref_regs[22]),
+    .gpr_23(ref_regs[23]),
+    .gpr_24(ref_regs[24]),
+    .gpr_25(ref_regs[25]),
+    .gpr_26(ref_regs[26]),
+    .gpr_27(ref_regs[27]),
+    .gpr_28(ref_regs[28]),
+    .gpr_29(ref_regs[29]),
+    .gpr_30(ref_regs[30]),
+    .gpr_31(ref_regs[31])
+);
+
 DifftestExcpEvent DifftestExcpEvent(
     .clock     (clk),
     .coreid    (0),
