@@ -719,8 +719,9 @@ always_comb begin
     csr_exception_update.crmd[`_CRMD_PLV]  = '0;
     csr_exception_update.crmd[`_CRMD_IE]   = '0;
     /*对应文档的1，进入核心态和关中断*/
-    csr_exception_update.era               = rob_commit_i[0].pc;
-    /*对应2，TODO:要pc，如果在状态机里面要去其他地方拿!!!*/
+    csr_exception_update.era               = (rob_commit_i[0].exc_code == `_ECODE_ADEF) ? rob_commit_i[0].badva :
+                                              rob_commit_i[0].pc;
+    /*对应2，要pc，如果在状态机里面要去其他地方拿!!!*//*不用了*/
 
     //例外的仲裁部分，取最优先的例外将例外号存入csr，对应文档的例外操作3
     //部分操作包含4和5，即存badv和vppn的部分
@@ -899,14 +900,18 @@ end
 //csr写处理在第一级，写入在第二级
 logic timer_interrupt_clear;
 logic timer_interrupt_clear_q;
+logic timer_set;
+logic timer_set_q;
 //__forward()
 
 always_ff @( posedge clk ) begin
     if (~rst_n) begin
         timer_interrupt_clear_q <= '0;
+        timer_set_q <= '0;
     end
     else begin
         timer_interrupt_clear_q <= timer_interrupt_clear;
+        timer_set_q             <= timer_set;
     end
 end
 
@@ -915,6 +920,7 @@ end
 
 task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
     timer_interrupt_clear = 0;
+    timer_set             = 0;
     begin
         unique case (csr_num_param)
             `_CSR_CRMD: begin
@@ -1029,6 +1035,7 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
                 `write_csr_mask(tcfg, `_TCFG_EN);
                 `write_csr_mask(tcfg, `_TCFG_PERIODIC);
                 `write_csr_mask(tcfg, `_TCFG_INITVAL);
+                timer_set = 1;//设置定时器初始状态
             end
             `_CSR_TVAL: begin
                 //do nothing
@@ -1051,6 +1058,7 @@ endtask
 always_comb begin
     csr = csr_q;
     timer_interrupt_clear = '0;
+    timer_set             = '0;
 
     unique case (csr_type)
         `_CSR_CSRRD: begin
@@ -1360,8 +1368,14 @@ always_comb begin
     end
 
     //这个优先级最高，如果clear了就将其写入
-    if (retire_request_o[0] & !cur_exception_q & timer_interrupt_clear_q) begin
-        csr_update.estat[`_ESTAT_TIMER_IS] = 0;
+    if (retire_request_o[0] & !cur_exception_q)  begin
+        if (timer_interrupt_clear_q) begin
+            csr_update.estat[`_ESTAT_TIMER_IS] = 0;
+        end
+        else if (timer_set_q) begin
+            csr_update.tval[1:0]            = '0;
+            csr_update.tval[`_TCFG_INITVAL] = csr_maintain_q.tcfg[`_TCFG_INITVAL];
+        end
     end//要提交且是csr写，且写入对应位，且无例外
 
 end

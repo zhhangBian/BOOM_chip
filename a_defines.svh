@@ -1,9 +1,9 @@
 `ifndef _BOOM_HEAD
 `define _BOOM_HEAD
 
-`define _VERILATOR
+//`define _VERILATOR
 // `define _ASIC
-// `define _FPGA
+ `define _FPGA
 
 // `define _DIFFTEST
 
