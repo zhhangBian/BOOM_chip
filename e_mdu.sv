@@ -65,9 +65,7 @@ assign res_o = (op_q == `_MDU_MUL || op_q == `_MDU_MULH || op_q == `_MDU_MULHU) 
 
 assign data_s_o = data_s;
 
-assign ready_o = (~is_wait) & 
-                ((req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
-                mul_ready_o : div_ready_o);
+assign ready_o = ~is_wait;
 
 assign valid_o = (op_q == `_MDU_MUL || op_q == `_MDU_MULH || op_q == `_MDU_MULHU) ?
                 mul_valid_o : div_valid_o;
