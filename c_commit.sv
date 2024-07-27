@@ -2088,10 +2088,10 @@ for(genvar i = 0 ; i < 32 ; i ++) begin
             ref_regs[i] <= '0;
         end
         else if(commit_request_o[1] && commit_arf_areg_o[1] == i[5:0] && i != 0) begin
-            ref_regs[i] <= l_data[1];
+            ref_regs[i] <= commit_arf_data_o[1];
         end
         else if(commit_request_o[0] && commit_arf_areg_o[0] == i[5:0] && i != 0) begin
-            ref_regs[i] <= l_data[0];
+            ref_regs[i] <= commit_arf_data_o[0];
         end
     end
 end
