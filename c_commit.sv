@@ -2076,8 +2076,8 @@ for(genvar i = 0; i < 2; i += 1) begin
     DifftestLoadEvent DifftestLoadEvent_p (
         .clock (clk),
         .coreid(0),
-        .index (I),
-        .valid (l_commit_o[p] && df_entry_q[p].di.mem_read),
+        .index (i),
+        .valid (is_lsu_read[i]),
         .paddr (lsu_info[i].paddr),
         .vaddr (rob_commit_q[i].data_rj)
     );
@@ -2112,7 +2112,7 @@ DifftestCSRRegState DifftestCSRRegState_inst (
     .crmd     (csr_q.crmd                     ),
     .prmd     (csr_q.prmd                     ),
     .euen     (csr_q.euen                     ),
-    .ecfg     (csr_q.ectl                     ),
+    .ecfg     (csr_q.ecfg                     ),
     .estat    (csr_q.estat                    ),
     .era      (csr_q.era                      ),
     .badv     (csr_q.badv                     ),
