@@ -497,7 +497,7 @@ always_comb begin
                 temp_data_block[req_ptr_q[0]] = axi_data_i;
                 // refill TODO
                 req_ptr = req_ptr_q + 1;
-                if (!req_ptr[0] && (req_ptr[2:1] == b_f_pkg_q.pc[4:3] + 'd1)) begin
+                if (!req_ptr[0] && (req_ptr[3:1] == (b_f_pkg_q.pc[5:3] & 3'b011) + 'd1)) begin
                     insts = temp_data_block;
                 end
                 if (!req_ptr[0]) begin
