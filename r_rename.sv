@@ -179,15 +179,17 @@ for (genvar i = 0; i < 4; i++) begin
 end
 
 wire ready = r_p_sender.ready;
+r_p_pkg_t r_p_pkg_q;
+assign r_p_pkg_o = r_p_pkg_q;
 
 always_ff @(posedge clk) begin
     if (!rst_n || c_flush_i) begin
-        r_p_pkg_o <= '0;
+        r_p_pkg_q <= '0;
     end else begin
         if (r_p_sender.valid & r_p_sender.ready) begin
-            r_p_pkg_o <= r_p_pkg_temp;
+            r_p_pkg_q <= r_p_pkg_temp;
         end else begin
-            r_p_pkg_o <= '0;
+            r_p_pkg_q <= r_p_pkg_q;
         end
     end
 end
@@ -199,7 +201,7 @@ always_comb begin
     r_p_pkg_temp.reg_need  = d_r_pkg_i.reg_need;
     r_p_pkg_temp.arf_data  = r_arf_data;
     r_p_pkg_temp.pc        = d_r_pkg_i.pc;
-    r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid & {d_r_receiver.valid, d_r_receiver.valid} & {r_p_sender.ready, r_p_sender.ready};
+    r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid & {d_r_receiver.valid, d_r_receiver.valid} & {r_p_sender.ready, r_p_sender.ready} & {2{rob_available_q}};
     r_p_pkg_temp.w_reg     = d_r_pkg_i.w_reg;
     r_p_pkg_temp.w_mem     = d_r_pkg_i.w_mem;
     r_p_pkg_temp.check     = {r_rename_new[1].check, r_rename_new[0].check};

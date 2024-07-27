@@ -54,6 +54,6 @@ divide_high_pace divider(
 assign valid_o = valid_q & ~busy;
 assign ready_o = (ready_i && !busy) || !valid_q;
 assign res_o.reg_id = reg_addr_q;
-assign res_o.data = (op_q == `_MDU_DIV) ? div_res : mod_res;
+assign res_o.data = (op_q == `_MDU_DIV || op_q == `_MDU_DIVU) ? div_res : mod_res;
 
 endmodule

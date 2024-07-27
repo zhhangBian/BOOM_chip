@@ -27,8 +27,8 @@ logic neg_div_res_q, neg_mod_res_q;
 
 logic[63:0] sub_result;
 
-assign div_res = neg_div_res_q ? -dividend_q[31:0] : dividend_q[31:0];
-assign mod_res = neg_mod_res_q ? -mod_res_q : mod_res_q;
+assign mod_res = neg_div_res_q ? -dividend_q[31:0] : dividend_q[31:0];
+assign div_res = neg_mod_res_q ? -mod_res_q : mod_res_q;
 assign sub_result = {31'd0, dividend_q} - divisor_q[62:0];
 
 always_ff @(posedge clk) begin

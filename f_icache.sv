@@ -117,7 +117,7 @@ always_ff @(posedge clk) begin
     if (!rst_n) begin
         paddr_q <= '0;
         tlb_exception_q <= '0;
-    end else if (!stall_q) begin
+    end else if (!stall_q && icache_decoder_sender.ready) begin
         paddr_q <= paddr; 
         tlb_exception_q <= tlb_exception;
     end else begin
@@ -126,6 +126,15 @@ always_ff @(posedge clk) begin
     end
 end
 
+
+logic back_ready_q;
+always_ff @(posedge clk) begin
+    if (!rst_n) begin
+        back_ready_q <= '0;
+    end else begin
+        back_ready_q <= icache_decoder_sender.ready;
+    end
+end
 
 // 写入信息
 logic [31:0] refill_addr, refill_addr_q;
@@ -241,7 +250,7 @@ assign cache_commit_resp.tlb_exception  = tlb_exception_c;
 always_ff @(posedge clk) begin
     if (!rst_n || flush_i) begin // flush 问题解决了
         b_f_pkg_q <= '0;
-    end else if (!stall) begin
+    end else if (!stall && icache_decoder_sender.ready) begin
         b_f_pkg_q <= b_f_pkg  ;
     end else begin
         b_f_pkg_q <= b_f_pkg_q;
@@ -277,7 +286,7 @@ end
 // TODO fetch_icache_receiver.ready
 assign icache_decoder_sender.data  = f_d_pkg;
 assign icache_decoder_sender.valid = !stall & |f_d_pkg.mask & !flush_i;
-assign fetch_icache_receiver.ready = !stall ;
+assign fetch_icache_receiver.ready = !stall & icache_decoder_sender.ready;
 
 
 assign tlb_exception_tmp = stall_q ? tlb_exception_q : tlb_exception;
@@ -298,7 +307,8 @@ typedef enum logic [4:0] {
     F_UNCACHE_S, // uncache握手成功
     F_MISS,      // 缺失
     F_MISS_S,    // miss握手成功
-    F_CACOP
+    F_CACOP,
+    F_STALL
 } fsm_state;
 
 fsm_state fsm_cur, fsm_next;
@@ -370,7 +380,7 @@ always_comb begin
         F_NORMAL:begin
             temp_data_block = '0;
             refill_we       = '0;
-            insts = tag_hit[0] ? data_ans0[0] : data_ans0[1];
+            insts = !icache_decoder_sender.ready ? insts_q : tag_hit[0] ? data_ans0[0] : data_ans0[1];
             stall = '0; // 解除stall状态
             if (b_f_pkg_q.mask == '0) begin
                 stall = '0;
@@ -423,6 +433,8 @@ always_comb begin
                     fsm_next = F_UNCACHE_S;
                     temp_data_block = '0;
                 end
+            end else if (!icache_decoder_sender.ready) begin
+                fsm_next = F_STALL;
             end
         end
         F_UNCACHE:begin
@@ -441,7 +453,11 @@ always_comb begin
                 stall    = '0;
                 req_ptr  = '0;
                 req_num  = '0;
-                fsm_next = F_NORMAL;
+                if (!icache_decoder_sender.ready) begin
+                    fsm_next = F_STALL;
+                end else begin
+                    fsm_next = F_NORMAL;
+                end
                 insts    = temp_data_block;
             end
             // 等待数据,axi_data_i
@@ -467,7 +483,11 @@ always_comb begin
                 stall    = '0;
                 req_ptr  = '0;
                 req_num  = '0;
-                fsm_next = F_NORMAL;
+                if (!icache_decoder_sender.ready) begin
+                    fsm_next = F_STALL;
+                end else begin
+                    fsm_next = F_NORMAL;
+                end
                 // refill对应位改路
                 refill_way[paddr_q[11:5]] = !refill_way_q[paddr_q[11:5]];       
             end
@@ -508,6 +528,13 @@ always_comb begin
             end else begin
                 icache_cacop_flush_o                   = 2'b10;
                 cacop_stall                            = '0;
+            end
+        end
+        F_STALL: begin
+            if (!icache_decoder_sender.ready) begin
+                fsm_next = F_STALL;
+            end else begin
+                fsm_next = F_NORMAL;
             end
         end
         default:begin

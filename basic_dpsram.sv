@@ -91,20 +91,20 @@ module dpsram #(
   assign rdata0_o = rdata0_split_q;
   assign rdata1_o = rdata1_split_q;
   
-  // // initial
-  // always_ff @(posedge clk0) begin
-  //   if (!rst_n0) begin
-  //     for (integer i = 0; i < DATA_DEPTH ; i++) begin
-  //       for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
-  //         sim_ram[i][j] <= '0;
-  //       end
-  //     end
-  //     for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
-  //         rdata0_split_q[j] <= '0;
-  //         rdata1_split_q[j] <= '0;
-  //     end
-  //   end
-  // end
+  // initial
+  always_ff @(posedge clk0) begin
+    if (!rst_n0) begin
+      for (integer i = 0; i < DATA_DEPTH ; i++) begin
+        for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
+          sim_ram[i][j] = '0;
+        end
+      end
+      for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
+          rdata0_split_q[j] = '0;
+          rdata1_split_q[j] = '0;
+      end
+    end
+  end
 
   // PORT A
   always_ff @(posedge clk0) begin

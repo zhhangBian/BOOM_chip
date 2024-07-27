@@ -105,17 +105,9 @@ for (genvar i = 0; i < 2; i=i+1) begin
 end
 
 initial begin
-    for (integer i = 0; i < `BPU_BTB_DEPTH; i=i+1) begin
-        for (integer j = 0; j < 2; j=j+1) begin
-            btb[j][i] = '0;
-        end
-    end
-end
-
-initial begin
     for (integer i = 0; i < 2; i=i+1) begin
-        for (integer j = 0; j < `BPU_PHT_DEPTH; j=j+1) begin
-            pht[i][j] = 2'b00;
+        for (integer j = 0; j < `BPU_BTB_DEPTH; j=j+1) begin
+            btb[i][j] = '0;
         end
     end
 end
@@ -166,6 +158,14 @@ assign bht_raddr = btb_raddr; // = hash(pc);
 assign bht_waddr = btb_waddr; // = hash(correct_info.pc);
 assign bht_we = correct_info.update;
 
+initial begin
+    for (integer i = 0; i < 2; i=i+1) begin
+        for (integer j = 0; j < `BPU_BHT_DEPTH; j=j+1) begin
+            bht[i][j] = '0;
+        end
+    end
+end
+
 for (genvar i = 0; i < 2; i=i+1) begin
     assign bht_wdata[i].history = correct_info.type_miss ? {{(`BPU_HISTORY_LEN-1){1'b0}}, correct_info.taken} :
                                     {correct_info.history[3:0], correct_info.taken};
@@ -198,6 +198,14 @@ logic [31:0]                        ras_wdata;
 assign ras_wdata = correct_info.branch_type == BR_CALL ? correct_info.pc + 32'd4 : '0;
 assign ras_rdata = ras[ras_top_ptr];
 
+initial begin
+    for (integer i = 0; i < `BPU_RAS_DEPTH; i=i+1) begin
+        ras[i] = '0;
+    end
+    // ras_top_ptr = '1;
+    // ras_w_ptr = '0;
+end
+
 always_ff @(posedge clk ) begin
     if (!rst_n) begin
         ras_top_ptr <= '1;
@@ -225,6 +233,13 @@ logic                               pht_we;
 
 assign pht_we = correct_info.update;
 
+initial begin
+    for (integer i = 0; i < 2; i=i+1) begin
+        for (integer j = 0; j < `BPU_PHT_DEPTH; j=j+1) begin
+            pht[i][j] = '0;
+        end
+    end
+end
 
 for (genvar i = 0; i < 2; i=i+1) begin
     assign pht_wdata[i] = next_scnt(correct_info.scnt, correct_info.taken);

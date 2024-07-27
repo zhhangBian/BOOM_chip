@@ -199,7 +199,7 @@ fifo #(
     .T(f_d_pkg_t)
 ) f_d_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(f_fifo_handshake.receiver),
     .sender(fifo_d_handshake.sender)
 );
@@ -222,7 +222,7 @@ fifo #(
     .T(d_r_pkg_t)
 ) d_r_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(d_fifo_handshake.receiver),
     .sender(fifo_r_handshake.sender)
 );
@@ -316,7 +316,7 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_alu_handshake_0.data.inst_choose & {2{p_alu_handshake_0.ready}}), /* 2024/07/24 fix*/ 
+    .choose(p_alu_handshake_0.data.inst_choose & {2{p_alu_handshake_0.ready}} & {2{p_alu_handshake_0.valid}}), /* 2024/07/24 fix*/ 
     .p_di_c(p_alu_handshake_0.data.di), //两条指令各自的译码信息  TODO
     .p_data_c(p_alu_handshake_0.data.data), //从P级传入的两条指令各自的两个data数值
     .p_reg_id_c(p_alu_handshake_0.data.preg), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
@@ -360,7 +360,7 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_alu_handshake_1.data.inst_choose & {2{p_alu_handshake_1.ready}}), /* 2024/07/24 fix*/
+    .choose(p_alu_handshake_1.data.inst_choose & {2{p_alu_handshake_1.ready}} & {2{p_alu_handshake_1.valid}}), /* 2024/07/24 fix*/
     .p_di_c(p_alu_handshake_1.data.di),
     .p_data_c(p_alu_handshake_1.data.data),
     .p_reg_id_c(p_alu_handshake_1.data.preg),
