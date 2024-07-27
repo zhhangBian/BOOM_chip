@@ -1129,7 +1129,7 @@ always_comb begin
         */
         default: begin
             decode_info_o.decode_err = 1'b1; // 修改
-            deocde_info_o.alu_inst = 1'b1;
+            decode_info_o.alu_inst = 1'b1;
         end
     endcase
 end
