@@ -288,14 +288,16 @@ always_comb begin
     iq_lsu_request.msize    = select_di_q.msize;
     // 约定0号为数据，1号为地址
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
-    iq_lsu_request.wdata    = real_data[0];
+    iq_lsu_request.wdata    = (select_di_q.msize == 0) ? real_data[0] << (iq_lsu_request.vaddr[1:0] << 3) :
+                              (select_di_q.msize == 1) ? real_data[0] << (iq_lsu_request.vaddr[1  ] << 4) :
+                              real_data[0];
     iq_lsu_request.rmask    = select_di_q.wmem ? '0 :
                               (select_di_q.msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
-                              (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
+                              (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1:0]) :
                               4'b1111;
     iq_lsu_request.strb     = ~select_di_q.wmem ? '0 :
                               (select_di_q.msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
-                              (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1]) :
+                              (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1:0]) :
                               4'b1111;
 end
 

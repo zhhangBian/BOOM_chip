@@ -229,7 +229,7 @@ always_comb begin
     for(integer i = 0; i < IQ_SIZE; i += 1) begin
         // 如果发射对应指令
         if(entry_select[i]) begin
-            selec t_di       |= entry_di[i];
+            select_di       |= entry_di[i];
             select_data     |= entry_data[i];
             select_wkup_hit_q |= wkup_hit_q[i];
         end

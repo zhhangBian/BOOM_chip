@@ -303,8 +303,8 @@ always_comb begin
     for (integer i = 0 ; i < 2; i++) begin
         rob_dispatch_o[i].rob_complete = (rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]); //debug
     end
-    commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0) & global_valid[tail_ptr0_q];
-    commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1) & global_valid[tail_ptr1_q];
+    commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0); //& global_valid[tail_ptr0_q];
+    commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1); //& global_valid[tail_ptr1_q];
     commit_valid[0] = commit_info_o[0].c_valid;
     commit_valid[1] = commit_info_o[1].c_valid;
 end

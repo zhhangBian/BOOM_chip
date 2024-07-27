@@ -1817,6 +1817,8 @@ always_comb begin
             commit_axi_wlast_o = '1;
 
             if(axi_commit_wready_i) begin
+                // fsm_flush = '1;
+                // fsm_npc = pc_s + 4;
                 ls_fsm = S_NORMAL;
                 stall = '0;
             end
