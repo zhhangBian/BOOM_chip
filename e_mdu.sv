@@ -106,7 +106,7 @@ always_ff @(posedge clk) begin
     else begin
         if(is_wait) begin
             if(valid_o) begin
-                is_wait <= '0;
+                is_wait <= valid_i;
             end
             else begin
                 is_wait <= is_wait;
