@@ -407,19 +407,6 @@ always_comb begin
                     default : begin
                     end
                 endcase
-            end else if (!(|tag_hit)) begin
-                stall |= '1; // 阻塞
-                fsm_next = F_MISS;
-                req_num  = 8;
-                req_ptr  = 0;
-                // TODO 请求地址和valid_o
-                addr_o    = paddr & 32'hffffffe0; // 块对齐，一个块8个字
-                addr_valid_o = '1;
-                data_len_o   = {3'b0, req_num[4:0]};
-                if (axi_resp_ready_i) begin
-                    fsm_next = F_MISS_S;
-                    temp_data_block = '0;
-                end
             end else if (uncache) begin
                 stall |= '1;
                 fsm_next = F_UNCACHE;
@@ -431,6 +418,19 @@ always_comb begin
                 data_len_o   = (b_f_pkg_q.mask == 2'b11) ? 8'd2 : (|b_f_pkg_q.mask) ? 8'd1 : 8'd0;
                 if (axi_resp_ready_i) begin
                     fsm_next = F_UNCACHE_S;
+                    temp_data_block = '0;
+                end
+            end else if (!(|tag_hit)) begin
+                stall |= '1; // 阻塞
+                fsm_next = F_MISS;
+                req_num  = 8;
+                req_ptr  = 0;
+                // TODO 请求地址和valid_o
+                addr_o    = paddr & 32'hffffffe0; // 块对齐，一个块8个字
+                addr_valid_o = '1;
+                data_len_o   = {3'b0, req_num[4:0]};
+                if (axi_resp_ready_i) begin
+                    fsm_next = F_MISS_S;
                     temp_data_block = '0;
                 end
             end else if (!icache_decoder_sender.ready) begin

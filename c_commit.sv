@@ -413,13 +413,12 @@ always_comb begin
         commit_flush_info = 2'b01;
     end//访存相关的flush
 
-    else if (cur_exception_q) begin
-        commit_flush_info = 2'b01;
-    end
-    //异常则flush
-
     else if (retire_request_o[0]) begin
-        if (rob_commit_q[0].flush_inst) begin
+        if (cur_exception_q) begin
+        commit_flush_info = 2'b01;
+        end
+        //异常则flush
+        else if (rob_commit_q[0].flush_inst) begin
             commit_flush_info = 2'b01;
         end//要提交且一定会flush的指令
         else if (~predict_success_q[0])begin
@@ -706,7 +705,7 @@ wire priv_excp     = rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 //执行异常  访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
 wire execute_excp  = rob_commit_i[0].execute_exception;
 
-wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp};
+wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp} & {7{rob_commit_valid_i[0]}};
 
 always_comb begin
     /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
@@ -1051,6 +1050,7 @@ endtask
 //第一级
 always_comb begin
     csr = csr_q;
+    timer_interrupt_clear = '0;
 
     unique case (csr_type)
         `_CSR_CSRRD: begin
@@ -1061,8 +1061,8 @@ always_comb begin
         end
 
         `_CSR_CSRXCHG: begin
-            write_csr((rob_commit_i[0].data_rk & rob_commit_i[0].data_rj), csr_num);//rk是rd
-        end
+            write_csr(((rob_commit_i[0].data_rk & rob_commit_i[0].data_rj) | (commit_csr_data_o & (~rob_commit_i[0].data_rj))), csr_num);//rk是rd
+        end/*rk与上rj，再或上其他位置*/
 
         default: begin//do nothing
         end
@@ -1993,7 +1993,7 @@ end
 
 // 时序逻辑只保存状态
 always_ff @(posedge clk) begin
-    if(~rst_n || cur_exception) begin
+    if(~rst_n || cur_exception_q) begin
         ls_fsm_q            <= S_NORMAL;
         stall_q             <= '0;
 
