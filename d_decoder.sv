@@ -66,7 +66,7 @@ assign d_r_pkg.r_valid = mask;
 assign d_r_pkg.pc = pc;
 `ifdef _DIFFTEST
 assign d_r_pkg.instr = insts_i;
-`endif macro
+`endif
 // 2024/07/22 ADD
 assign d_r_pkg.predict_infos = receiver.data.predict_infos;
 assign d_r_pkg.fetch_exc_info = receiver.data.fetch_exc_info;
