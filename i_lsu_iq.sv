@@ -280,6 +280,8 @@ assign iq_lsu_valid_o   = excute_valid_q;
 assign lsu_iq_ready_o   = fifo_ready;
 assign entry_valid_o    = lsu_iq_valid_i;
 
+wire  [1:0]  addr_mask = iq_lsu_request.vaddr[1:0];
+
 // 配置iq到lsu的信息
 always_comb begin
     iq_lsu_request          = '0;
@@ -288,9 +290,13 @@ always_comb begin
     iq_lsu_request.msize    = select_di_q.msize;
     // 约定0号为数据，1号为地址
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
-    iq_lsu_request.wdata    = (select_di_q.msize == 0) ? real_data[0] << (iq_lsu_request.vaddr[1:0] << 3) :
-                              (select_di_q.msize == 1) ? real_data[0] << (iq_lsu_request.vaddr[1  ] << 4) :
-                              real_data[0];
+    iq_lsu_request.wdata    = addr_mask == 2'b00 ? real_data[0] :
+                              addr_mask == 2'b01 ? real_data[0] << 8 :
+                              addr_mask == 2'b10 ? real_data[0] << 16:
+                                                   real_data[0] << 24;
+    // (select_di_q.msize == 0) ? real_data[0] << (iq_lsu_request.vaddr[4:0] & 5'b00011 << 3) :
+    //                           (select_di_q.msize == 1) ? real_data[0] << (iq_lsu_request.vaddr[4:1] & 4'b0001  << 4) :
+    //                           real_data[0];
     iq_lsu_request.rmask    = select_di_q.wmem ? '0 :
                               (select_di_q.msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
                               (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1:0]) :
