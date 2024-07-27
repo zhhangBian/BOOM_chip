@@ -608,7 +608,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         correct_info_o[i].pc = rob_commit_q[i].pc;
 
         correct_info_o[i].target_miss = (predict_info_q[i].target_pc != real_target_q[i]);
-        correct_info_o[i].type_miss = (predict_info_q[i].br_type != branch_info_q[i].br_type);
+        correct_info_o[i].type_miss = (predict_info_q[i].br_type != branch_info_q[i].br_type) | predict_info_q[i].need_update | (predict_info_q[i].is_branch != is_branch_q[i]);
 
         correct_info_o[i].taken = taken_q[i];
         correct_info_o[i].is_branch = branch_info_q[i].is_branch;
