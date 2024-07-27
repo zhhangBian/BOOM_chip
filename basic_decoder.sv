@@ -28,7 +28,7 @@ module basic_decoder (
 always_comb begin
     decode_info_o.addr_imm_type = `_ADDR_IMM_S26;
     decode_info_o.alu_grand_op = 3'd0;
-    decode_info_o.alu_inst = 1'd0;
+    decode_info_o.alu_inst = 1'd1; // 默认是alu指令，把非法指令送入alu发射队列
     decode_info_o.alu_op = 3'd0;
     decode_info_o.break_inst = 1'd0;
     decode_info_o.csr_op_type = `_CSR_CSRNONE;
