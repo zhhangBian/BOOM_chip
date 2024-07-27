@@ -201,6 +201,9 @@ always_comb begin
     r_p_pkg_temp.reg_need  = d_r_pkg_i.reg_need;
     r_p_pkg_temp.arf_data  = r_arf_data;
     r_p_pkg_temp.pc        = d_r_pkg_i.pc;
+    `ifdef _DIFFTEST
+    r_p_pkg_temp.instr     = d_r_pkg_i.instr;
+    `endif
     r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid & {d_r_receiver.valid, d_r_receiver.valid} & {r_p_sender.ready, r_p_sender.ready} & {2{rob_available_q}};
     r_p_pkg_temp.w_reg     = d_r_pkg_i.w_reg;
     r_p_pkg_temp.w_mem     = d_r_pkg_i.w_mem;

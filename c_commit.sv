@@ -2047,4 +2047,97 @@ always_ff @(posedge clk) begin
     end
 end
 
+// 接入差分测试
+`ifdef _DIFFTEST
+
+for(genvar i = 0; i < 2; i += 1) begin
+    DifftestInstrCommit DifftestInstrCommit(
+        .clock         (clk),
+        .coreid        ('0),
+        .index         (i),
+        .valid         (commit_request_o[i]),
+        .pc            (commit_debug_pc_o[i]),
+        .instr         (rob_commit_q[i].instr),
+        .skip          ('0),
+        
+        .is_TLBFILL    (cur_tlbfill), // TODO: CHECK
+        .TLBFILL_index (timer_64_q[$clog2(`_TLB_ENTRY_NUM) - 1:0]),
+        .is_CNTinst    (rob_commit_i[i].rdcntvl_en || rob_commit_i[i].rdcntvh_en || rob_commit_i[i].rdcntid_en),
+        .timer_64_value(timer_64_q),
+        .wen           (commit_arf_we_o[i]),
+        .wdest         (commit_arf_areg_o[i]),
+        .wdata         (commit_arf_data_o[i]),
+        .csr_rstat     ((csr_type[i] == `_CSR_CSRRD || csr_type[i] == `_CSR_CSRWR || csr_type[i] == `_CSR_CSRXCHG) & (csr_num[i] == `_CSR_ESTAT)),
+        .csr_data      (commit_csr_data_o),
+        // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && l_commit_o[p]),
+        // .scw_llbit     (l_data_o[p][0])
+    );
+
+    DifftestLoadEvent DifftestLoadEvent_p (
+        .clock (clk),
+        .coreid(0),
+        .index (I),
+        .valid (l_commit_o[p] && df_entry_q[p].di.mem_read),
+        .paddr (lsu_info[i].paddr),
+        .vaddr (rob_commit_q[i].data_rj)
+    );
+end
+
+DifftestExcpEvent DifftestExcpEvent(
+    .clock     (clk),
+    .coreid    (0),
+    .excp_valid(cur_exception),
+    // .excp_valid         ('0),
+    // .eret      (l_commit_o[0] && df_entry_q[0].di.ertn_inst),
+    .eret               ('0),
+    .intrNo    (csr_q.estat[12:2]),
+    .cause     (csr_q.estat[21:16]),
+    .exceptionPC(rob_commit_i[0].pc),
+    .exceptionInst(rob_commit_i[0].instr)
+);
+
+DifftestTrapEvent DifftestTrapEvent (
+    .clock   (clk       ),
+    .coreid  (0         ),
+    .valid   ('0/*TODO*/),
+    .code    ('0/*TODO*/),
+    .pc      ('0/*TODO*/),
+    .cycleCnt('0/*TODO*/),
+    .instrCnt('0/*TODO*/)
+);
+
+DifftestCSRRegState DifftestCSRRegState_inst (
+    .clock    (clk                            ),
+    .coreid   (0                              ),
+    .crmd     (csr_q.crmd                     ),
+    .prmd     (csr_q.prmd                     ),
+    .euen     (csr_q.euen                     ),
+    .ecfg     (csr_q.ectl                     ),
+    .estat    (csr_q.estat                    ),
+    .era      (csr_q.era                      ),
+    .badv     (csr_q.badv                     ),
+    .eentry   (csr_q.eentry                   ),
+    .tlbidx   (csr_q.tlbidx                   ),
+    .tlbehi   (csr_q.tlbehi                   ),
+    .tlbelo0  (csr_q.tlbelo0                  ),
+    .tlbelo1  (csr_q.tlbelo1                  ),
+    .asid     (csr_q.asid                     ),
+    .pgdl     (csr_q.pgdl                     ),
+    .pgdh     (csr_q.pgdh                     ),
+    .save0    (csr_q.save0                    ),
+    .save1    (csr_q.save1                    ),
+    .save2    (csr_q.save2                    ),
+    .save3    (csr_q.save3                    ),
+    .tid      (csr_q.tid                      ),
+    .tcfg     (csr_q.tcfg                     ),
+    .tval     (csr_q.tval                     ),
+    .ticlr    (csr_q.ticlr                    ),
+    .tlbrentry(csr_q.tlbrentry                ),
+    .dmw0     (csr_q.dmw0                     ),
+    .dmw1     (csr_q.dmw1                     ),
+    .llbctl   ({csr_q.llbctl,1'b0,csr_q.llbit})
+);
+
+`endif
+
 endmodule

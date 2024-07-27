@@ -199,6 +199,9 @@ typedef struct packed {
 
 typedef struct packed {
     logic  [1 :0][31:0] pc ; // 指令地址
+    `ifdef _DIFFTEST
+    logic  [1:0][31:0]  instr;
+    `endif
     logic  [1 :0]  r_valid; // 前端发射出来的指令有效
     // ARF 与 源操作数 相关信号
     arf_table_t  arf_table; // 读写地址寄存器表
@@ -271,6 +274,9 @@ typedef struct packed {
     logic  [3 :0]                   reg_need;
     logic  [3 :0][31:0] arf_data;
     logic  [1 :0][31:0] pc ; // 指令地址
+    `ifdef _DIFFTEST
+    logic  [1:0][31:0] instr;
+    `endif
     logic  [1 :0]       r_valid;
     logic  [1 :0]       w_reg;
     logic  [1 :0]       check;
@@ -360,6 +366,9 @@ typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器
     logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
     logic [31             : 0]                     pc;    // 指令地址
+    `ifdef _DIFFTEST
+    logic [31:0] instr;
+    `endif
     logic                                          issue; // 是否被分配到ROB valid
     logic                                          w_reg;
     logic                                          w_mem;
@@ -455,6 +464,9 @@ typedef struct packed {
     logic   c_valid;
 
     logic   [31:0]  pc;
+    `ifdef _DIFFTEST
+    logic   [31:0]  instr;
+    `endif
     logic   [31:0]  data_rk;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
@@ -555,6 +567,9 @@ typedef struct packed {
 // 指令信息表项
 typedef struct packed {
     logic [31: 0] pc;
+    `ifdef _DIFFTEST
+    logic   [31:0]  instr;
+    `endif
     // ARF 相关
     logic [4 : 0] areg;
     logic [5 : 0] preg;

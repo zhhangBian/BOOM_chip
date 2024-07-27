@@ -88,6 +88,9 @@ always_comb begin
     for (integer i = 0; i < 2; i++) begin
         dispatch_inst_i[i].areg  = dispatch_info_i[i].areg;
         dispatch_inst_i[i].preg  = dispatch_info_i[i].preg;
+        `ifdef _DIFFTEST
+        dispatch_inst_i[i].instr    = dispatch_info_i[i].instr;
+        `endif
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
@@ -152,6 +155,9 @@ always_comb begin
 
         commit_info_o[i].c_valid  = commit_inst_o[i].r_valid; // TODO
 
+        `ifdef _DIFFTEST
+        commit_info_o[i].instr = commit_inst_o[i].instr;
+        `endif
         commit_info_o[i].pc = commit_inst_o[i].pc;
 
         commit_info_o[i].data_rj = commit_data_o[i].s_data[0];

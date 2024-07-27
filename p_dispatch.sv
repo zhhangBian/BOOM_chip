@@ -36,6 +36,9 @@ always_comb begin
         dispatch_rob_o[i].preg      = r_p_pkg.preg[i];
         dispatch_rob_o[i].src_preg  = {r_p_pkg.src_preg[i * 2 + 1],r_p_pkg.src_preg[i * 2]};
         dispatch_rob_o[i].pc        = r_p_pkg.pc[i];
+        `ifdef _DIFFTEST
+        dispatch_rob_o[i].instr        = r_p_pkg.instr[i];
+        `endif
         dispatch_rob_o[i].issue     = r_p_pkg.r_valid[i] & r_p_receiver.ready & {2{!flush_i}};
         dispatch_rob_o[i].w_reg     = r_p_pkg.w_reg[i];
         dispatch_rob_o[i].w_mem     = r_p_pkg.w_mem[i];

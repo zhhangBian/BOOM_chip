@@ -5,6 +5,8 @@
 // `define _ASIC
 `define _FPGA
 
+`deifne _DIFFTEST
+
 
 `include "a_macros.svh"
 `include "a_csr.svh"
