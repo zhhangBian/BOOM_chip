@@ -3,7 +3,7 @@
 
 //`define _VERILATOR
 // `define _ASIC
- `define _FPGA
+`define _FPGA
 
 
 `include "a_macros.svh"

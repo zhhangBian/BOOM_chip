@@ -38,8 +38,8 @@ always_ff @(posedge clk) begin
         valid_s_3 <= '0;
     end
     else if(ready_i) begin
-        r0_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[0][31], req_i.data[0][0]};
-        r1_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[1][31], req_i.data[1][0]};
+        r0_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[0][31], req_i.data[0]};
+        r1_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[1][31], req_i.data[1]};
 
         cal_result_q <= $signed(r0_q) * $signed(r1_q);
         result_q <= cal_result_q;
