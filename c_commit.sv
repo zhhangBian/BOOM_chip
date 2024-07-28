@@ -2088,8 +2088,8 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock (clk),
         .coreid(0),
         .index (i),
-        .valid (|(rob_commit_i[0].lsu_info.rmask)),
-        .paddr (rob_commit_i[0].paddr),
+        .valid (|(rob_commit_i[i].lsu_info.rmask)),
+        .paddr (rob_commit_i[i].lsu_info.paddr),
         .vaddr (rob_commit_i[i].data_rj)
     );
 
@@ -2097,10 +2097,10 @@ for(genvar i = 0; i < 2; i += 1) begin
       .clock(clk),
       .coreid(0),
       .index(i),
-      .valid(|(rob_commit_i[0].lsu_info.strb)),
-      .storePAddr(rob_commit_i[0].lsu_info.paddr),
+      .valid(|(rob_commit_i[i].lsu_info.strb)),
+      .storePAddr(rob_commit_i[i].lsu_info.paddr),
       .storeVAddr(rob_commit_i[i].data_rj),
-      .storeData(rob_commit_i[0].lsu_info.wdata)
+      .storeData(rob_commit_i[i].lsu_info.wdata)
     );
 end
 
