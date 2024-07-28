@@ -288,6 +288,8 @@ always_comb begin
     iq_lsu_request.wid      = select_di_q.wreg_id;
     iq_lsu_request.msigned  = select_di_q.msigned;
     iq_lsu_request.msize    = select_di_q.msize;
+    iq_lsu_request.cache_code = select_di_q.cache_code;
+    iq_lsu_request.is_cacop   = select_di_q.is_cacop;
     // 约定0号为数据，1号为地址
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
     iq_lsu_request.wdata    = addr_mask == 2'b00 ? real_data[0] :

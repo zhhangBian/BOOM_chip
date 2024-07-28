@@ -665,6 +665,9 @@ typedef struct packed {
     logic   msigned;
     logic   [1:0] msize;
 
+    logic         is_cacop;
+    logic   [4:0] cache_code;
+
     logic   inst_valid; 
 
     fetch_exc_info_t    fetch_exc_info;
@@ -716,6 +719,8 @@ typedef struct packed {
     logic [31:0] wdata;     // 写数据
     logic [3 :0] rmask;     // 读掩码
     logic [3 :0] strb ;     // 写掩码
+    logic        is_cacop;
+    logic [4 :0] cache_code;// cacop_code    
 } iq_lsu_pkg_t;
 
 typedef struct packed {

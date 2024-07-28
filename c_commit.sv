@@ -690,6 +690,7 @@ end
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
 wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec;
+logic invtlb_ine;
 
 //TODO 现在为了消除“环”，cur_excpetion信号在无效的时候也可能为1
 //取指异常  判断的信号从fetch来，要求fetch如果有例外要传一个fetch_exception
@@ -699,7 +700,7 @@ wire fetch_excp    = rob_commit_i[0].fetch_exception;
 //译码异常 下面的信号来自decoder
 wire syscall_excp  = rob_commit_i[0].syscall_inst;
 wire break_excp    = rob_commit_i[0].break_inst;
-wire ine_excp      = rob_commit_i[0].decode_err;
+wire ine_excp      = rob_commit_i[0].decode_err | invtlb_ine;
 wire priv_excp     = rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 
 //执行异常  访存级别如果有地址不对齐错误或者tlb错要传execute_exception信号
@@ -740,6 +741,8 @@ always_comb begin
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
+                csr_exception_update.crmd[`_CRMD_DA] = 1;
+                csr_exception_update.crmd[`_CRMD_PG] = 0;
             end
         end
         /*取指例外 判断的信号从fetch来，
@@ -775,6 +778,8 @@ always_comb begin
             end
             if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
                 cur_tlbr_exception = 1'b1;
+                csr_exception_update.crmd[`_CRMD_DA] = 1;
+                csr_exception_update.crmd[`_CRMD_PG] = 0;
             end
         end
         /*执行例外，
@@ -1130,6 +1135,7 @@ always_comb begin
     tlb_update_entry = '0;
     tlb_wr_req     = '0;
     tlb_entry      = '0;
+    invtlb_ine     = 0;
 
     if (cur_tlbsrch) begin
         //下面找对应的表项，同mmu里面的找法
@@ -1151,6 +1157,8 @@ always_comb begin
             //找到了要存到特定的csr寄存器里面
             tlb_update_csr.tlbidx[`_TLBIDX_PS]      = tlb_entry.key.huge_page ? 21 : 12;
             tlb_update_csr.tlbidx[`_TLBIDX_NE]      = 0;
+
+            tlb_update_csr.asid[`_ASID]             = tlb_entry.key.asid;
 
             tlb_update_csr.tlbehi[`_TLBEHI_VPPN]    = tlb_entry.key.vppn;
 
@@ -1242,6 +1250,7 @@ always_comb begin
                 end
             end
             default: begin
+                invtlb_ine = 1;
             end
         endcase
     end
@@ -1324,6 +1333,10 @@ always_comb begin
         else if (rob_commit_q[0].ertn_en) begin
             csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
             csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
+            if (csr_q.estat[`_ESTAT_ECODE] == `_ECODE_TLBR) begin
+                csr_update.crmd[`_CRMD_DA] = 0;
+                csr_update.crmd[`_CRMD_PG] = 1;
+            end//返回变成映射翻译
             if (csr_q.llbctl[`_LLBCT_KLO]) begin
                 csr_update.llbctl[`_LLBCT_KLO] = 0;
             end
@@ -1334,13 +1347,14 @@ always_comb begin
         else if (is_ll[0]) begin//注意，这个信号虽然没有_q，但是的确是第二拍的！
             csr_update.llbit = 1;
         end
-        else if (|icache_cacop_tlb_exc_i) begin
-            csr_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.ecode;
-            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
-            csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
-        end//cacop维护出现的异常 //注意：retire-request-o是不是无效了？TODO
     end
+
+    if (|icache_cacop_tlb_exc_i) begin
+        csr_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.ecode;
+        csr_update.estat[`_ESTAT_ESUBCODE] = '0;
+        csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
+        csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
+    end//cacop维护出现的异常 //注意：retire-request-o是不是无效了？TODO
 
     //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效
     if(cur_exception_q) begin
@@ -1513,6 +1527,8 @@ always_comb begin
     commit_axi_wvalid_o = '0;
     commit_axi_wlast_o  = '0;
 
+    commit_icache_valid_o = '0;
+
     if(ls_fsm_q == S_NORMAL) begin
         // 如果是Cache维护指令
         if (!rob_commit_q[0].c_valid | cur_exception_q) begin
@@ -1653,9 +1669,9 @@ always_comb begin
                         ls_fsm = S_AXI_RD;
                         stall = '1;
                         // 设置相应的AXI请求
-                        commit_axi_req.raddr = lsu_info[0].paddr;
-                        commit_axi_req.rlen = 1;
-                        commit_axi_req.rmask = lsu_info[0].rmask;
+                        commit_axi_req.raddr = lsu_info[0].paddr & 32'hfffffff0;
+                        commit_axi_req.rlen  = 4;
+                        commit_axi_req.rmask = 4'b1;
                         commit_axi_arvalid_o = '1;
                         // 进行AXI握手
                         axi_wait = ~axi_commit_arready_i;
@@ -1664,7 +1680,9 @@ always_comb begin
                             cache_block_data[i] = '0;
                         end
                         axi_block_ptr = '0;
-                        axi_block_len = 1;
+                        axi_block_len = 4;
+                        cache_block_len = 4;
+                        cache_block_ptr = '0;
                     end
                     // 开始重填，将Cache原始数据读出
                     else begin
@@ -1719,8 +1737,8 @@ always_comb begin
                         // 发送Cache请求
                         commit_cache_req.addr       = lsu_info[0].paddr;
                         commit_cache_req.way_choose = lsu_info[0].tag_hit;
-                        commit_cache_req.tag_data   = '0;
-                        commit_cache_req.tag_we     = '0;
+                        commit_cache_req.tag_data   = get_cache_tag(lsu_info[0].paddr, 1, 1); // 
+                        commit_cache_req.tag_we     = '1;
                         commit_cache_req.data_data  = lsu_info[0].wdata;
                         commit_cache_req.strb       = lsu_info[0].strb;
                         commit_cache_req.fetch_sb   = |lsu_info[0].strb;
@@ -1740,9 +1758,9 @@ always_comb begin
                         commit_cache_req.way_choose = lsu_info[0].refill;
                         commit_cache_req.tag_data   = get_cache_tag(lsu_info[0].paddr, '1, '0);
                         commit_cache_req.tag_we     = '1;
-                        commit_cache_req.data_data  = '0;
-                        commit_cache_req.strb       = '0;
-                        commit_cache_req.fetch_sb   = '0;
+                        commit_cache_req.data_data  = lsu_info[0].wdata;
+                        commit_cache_req.strb       = lsu_info[0].strb;
+                        commit_cache_req.fetch_sb   = |lsu_info[0].strb;
                     end
                     // 开始重填
                     else begin
@@ -1945,12 +1963,14 @@ always_comb begin
         end
 
         if(cache_block_ptr_q == cache_block_len) begin
+            fsm_flush = '1;
+            fsm_npc   = pc_s;
             ls_fsm = S_NORMAL;
             stall = '0;
         end
         else begin
             ls_fsm = S_AXI_RD;
-            stall = '0;
+            stall = '1;
 
             if(cache_block_ptr_q < axi_block_ptr_q) begin
                 // 设置相应的Cache数据
@@ -1975,14 +1995,23 @@ always_comb begin
     end
 
     else if(ls_fsm_q == S_ICACHE) begin
-        commit_icache_valid_o = icache_wait_q;
+        // commit_icache_valid_o = icache_wait_q;
         icache_wait = icache_wait_q & ~icache_commit_ready_i;
 
-        if(icache_wait_q) begin
-            commit_icache_valid_o      = '1;
+        if(icache_wait) begin
+            commit_icache_valid_o      = icache_wait_q;
+            // if(icache_commit_valid_i) begin
+            //     ls_fsm = S_NORMAL;
+            //     stall = '0;
+            //     fsm_flush = '1;
+            //     fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
+            //               (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
+            //               csr_q.eentry;
+            //     commit_icache_valid_o      = '0;
+            // end
         end
         else begin
-            commit_icache_valid_o      = '0;
+            commit_icache_valid_o      = icache_wait_q ^ icache_wait;
 
             if(icache_commit_valid_i) begin
                 ls_fsm = S_NORMAL;

@@ -59,7 +59,7 @@ trans_result_t trans_result;
 tlb_exception_t tlb_exception;
 // mmu结果 TODO
 mmu #(
-    .TLB_ENTRY_NUM(64),
+    .TLB_ENTRY_NUM(`_TLB_ENTRY_NUM),
     .TLB_SWITCH_OFF(0)
 ) mmu_ins (
     .clk(clk),
@@ -178,9 +178,11 @@ logic          execute_exception;
 logic   [5:0]  exc_code_new;
 logic   [31:0] badv;
 logic          ade_exc;
+logic          not_exc;
+assign  not_exc  = m1_iq_lsu_pkg.is_cacop && (m1_iq_lsu_pkg.cache_code[2:0] == 3'd1) && ((m1_iq_lsu_pkg.cache_code[4:3] == 1) || (m1_iq_lsu_pkg.cache_code[4:3] == 0));
 assign  ade_exc  = (m1_iq_lsu_pkg.msize == 3) ? |badv[1:0] : (m1_iq_lsu_pkg.msize == 1) ? badv[0] : '0;
-assign  exc_code_new  =  ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
-assign  execute_exception = ade_exc | (|tlb_exception.ecode);
+assign  exc_code_new  =  not_exc ? '0 : ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
+assign  execute_exception = ~not_exc & (ade_exc | (|tlb_exception.ecode));
 assign  badv     = m1_iq_lsu_pkg.vaddr;
 
 /**************************HIT DATA***************************/
