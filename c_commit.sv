@@ -1659,6 +1659,7 @@ always_comb begin
         end
         // 如果是一般的访存指令
         else if(is_lsu[0]) begin
+            // lsu指令先存下指令
             lsu_info_s = lsu_info[0];
             // 如果是load指令 且 缺失
             if(is_lsu_read[0]) begin
@@ -2030,7 +2031,7 @@ always_comb begin
                 commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) |
                                               ({29'b0, cache_block_ptr_q} << 2);
                 commit_cache_req.way_choose = lsu_info_s.refill;
-                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '0);
+                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '1);
                 commit_cache_req.tag_we     = '1;
                 commit_cache_req.data_data  = axi_block_data[cache_block_ptr_q];
                 commit_cache_req.strb       = '1;
