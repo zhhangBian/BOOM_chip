@@ -2100,7 +2100,7 @@ for(genvar i = 0; i < 2; i += 1) begin
       .valid(|(rob_commit_i[0].lsu_info.strb)),
       .paddr (lsu_info[i].paddr),
       .vaddr (rob_commit_q[i].data_rj)
-    )
+    );
 end
 
 logic[63:0][31:0] ref_regs;
