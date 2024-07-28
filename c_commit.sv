@@ -1744,7 +1744,7 @@ always_comb begin
                     else begin
                         // 命中一周期即可返回
                         ls_fsm = S_NORMAL;
-                        stall = '1;
+                        stall = '0;
                         // 发送Cache请求
                         commit_cache_req.addr       = lsu_info[0].paddr;
                         commit_cache_req.way_choose = lsu_info[0].tag_hit;
