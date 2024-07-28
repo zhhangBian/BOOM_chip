@@ -2078,20 +2078,29 @@ for(genvar i = 0; i < 2; i += 1) begin
         .wen           (commit_arf_we_o[i]),
         .wdest         (commit_arf_areg_o[i]),
         .wdata         (commit_arf_data_o[i]),
-        .csr_rstat     ((csr_type[i] == `_CSR_CSRRD || csr_type[i] == `_CSR_CSRWR || csr_type[i] == `_CSR_CSRXCHG) & (csr_num[i] == `_CSR_ESTAT)),
+        .csr_rstat     ((csr_type[i] == `_CSR_CSRRD || csr_type[i] == `_CSR_CSRWR || csr_type[i] == `_CSR_CSRXCHG) & (rob_commit_i[i].csr_num == `_CSR_ESTAT)),
         .csr_data      (commit_csr_data_o)
         // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && l_commit_o[p]),
         // .scw_llbit     (l_data_o[p][0])
     );
 
-    DifftestLoadEvent DifftestLoadEvent_p (
+    DifftestLoadEvent DifftestLoadEvent (
         .clock (clk),
         .coreid(0),
         .index (i),
-        .valid (is_lsu_read[i]),
+        .valid (|(rob_commit_i[0].lsu_info.rmask)),
         .paddr (lsu_info[i].paddr),
         .vaddr (rob_commit_q[i].data_rj)
     );
+
+    DifftestStoreEvent DifftestStoreEvent (
+      .clock(clk),
+      .coreid(0),
+      .index(i),
+      .valid(|(rob_commit_i[0].lsu_info.strb)),
+      .paddr (lsu_info[i].paddr),
+      .vaddr (rob_commit_q[i].data_rj)
+    )
 end
 
 logic[63:0][31:0] ref_regs;
@@ -2170,36 +2179,37 @@ DifftestTrapEvent DifftestTrapEvent (
     .instrCnt('0/*TODO*/)
 );
 
+// CSR不需要额外多打一拍
 DifftestCSRRegState DifftestCSRRegState_inst (
-    .clock    (clk                            ),
-    .coreid   (0                              ),
-    .crmd     (csr_q.crmd                     ),
-    .prmd     (csr_q.prmd                     ),
-    .euen     (csr_q.euen                     ),
-    .ecfg     (csr_q.ecfg                     ),
-    .estat    (csr_q.estat                    ),
-    .era      (csr_q.era                      ),
-    .badv     (csr_q.badv                     ),
-    .eentry   (csr_q.eentry                   ),
-    .tlbidx   (csr_q.tlbidx                   ),
-    .tlbehi   (csr_q.tlbehi                   ),
-    .tlbelo0  (csr_q.tlbelo0                  ),
-    .tlbelo1  (csr_q.tlbelo1                  ),
-    .asid     (csr_q.asid                     ),
-    .pgdl     (csr_q.pgdl                     ),
-    .pgdh     (csr_q.pgdh                     ),
-    .save0    (csr_q.save0                    ),
-    .save1    (csr_q.save1                    ),
-    .save2    (csr_q.save2                    ),
-    .save3    (csr_q.save3                    ),
-    .tid      (csr_q.tid                      ),
-    .tcfg     (csr_q.tcfg                     ),
-    .tval     (csr_q.tval                     ),
-    .ticlr    (csr_q.ticlr                    ),
-    .tlbrentry(csr_q.tlbrentry                ),
-    .dmw0     (csr_q.dmw0                     ),
-    .dmw1     (csr_q.dmw1                     ),
-    .llbctl   ({csr_q.llbctl,1'b0,csr_q.llbit})
+    .clock    (clk            ),
+    .coreid   (0              ),
+    .crmd     (csr_q.crmd     ),
+    .prmd     (csr_q.prmd     ),
+    .euen     (csr_q.euen     ),
+    .ecfg     (csr_q.ecfg     ),
+    .estat    (csr_q.estat    ),
+    .era      (csr_q.era      ),
+    .badv     (csr_q.badv     ),
+    .eentry   (csr_q.eentry   ),
+    .tlbidx   (csr_q.tlbidx   ),
+    .tlbehi   (csr_q.tlbehi   ),
+    .tlbelo0  (csr_q.tlbelo0  ),
+    .tlbelo1  (csr_q.tlbelo1  ),
+    .asid     (csr_q.asid     ),
+    .pgdl     (csr_q.pgdl     ),
+    .pgdh     (csr_q.pgdh     ),
+    .save0    (csr_q.save0    ),
+    .save1    (csr_q.save1    ),
+    .save2    (csr_q.save2    ),
+    .save3    (csr_q.save3    ),
+    .tid      (csr_q.tid      ),
+    .tcfg     (csr_q.tcfg     ),
+    .tval     (csr_q.tval     ),
+    .ticlr    (csr_q.ticlr    ),
+    .tlbrentry(csr_q.tlbrentry),
+    .dmw0     (csr_q.dmw0     ),
+    .dmw1     (csr_q.dmw1     ),
+    .llbctl   ({csr_q.llbctl[31:1],csr_q.llbit})
 );
 
 `endif
