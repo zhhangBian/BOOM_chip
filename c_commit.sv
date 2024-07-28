@@ -2066,20 +2066,20 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock         (clk),
         .coreid        ('0),
         .index         (i),
-        .valid         (commit_request_o[i]),
-        .pc            (rob_commit_i[i].pc),
-        .instr         (rob_commit_i[i].instr),
+        .valid         (retire_request_o[i] || (flush && (i == 0))),
+        .pc            (rob_commit_q[i].pc),
+        .instr         (rob_commit_q[i].instr),
         .skip          ('0),
         
-        .is_TLBFILL    (cur_tlbfill), // TODO: CHECK
+        .is_TLBFILL    (rob_commit_q[i].tlbfill_en), // TODO: CHECK
         .TLBFILL_index (timer_64_q[$clog2(`_TLB_ENTRY_NUM) - 1:0]),
-        .is_CNTinst    (rob_commit_i[i].rdcntvl_en || rob_commit_i[i].rdcntvh_en || rob_commit_i[i].rdcntid_en),
+        .is_CNTinst    (rob_commit_q[i].rdcntvl_en || rob_commit_q[i].rdcntvh_en || rob_commit_q[i].rdcntid_en),
         .timer_64_value(timer_64_q),
         .wen           (commit_arf_we_o[i]),
         .wdest         (commit_arf_areg_o[i]),
         .wdata         (commit_arf_data_o[i]),
-        .csr_rstat     ((csr_type[i] == `_CSR_CSRRD || csr_type[i] == `_CSR_CSRWR || csr_type[i] == `_CSR_CSRXCHG) & (rob_commit_i[i].csr_num == `_CSR_ESTAT)),
-        .csr_data      (commit_csr_data_o)
+        .csr_rstat     ((rob_commit_q[i].csr_type[i] == `_CSR_CSRRD || rob_commit_q[i].csr_type[i] == `_CSR_CSRWR || rob_commit_q[i].csr_type[i] == `_CSR_CSRXCHG) & (rob_commit_q[i].csr_num == `_CSR_ESTAT)),
+        .csr_data      (commit_csr_data_q)
         // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && l_commit_o[p]),
         // .scw_llbit     (l_data_o[p][0])
     );
@@ -2088,36 +2088,43 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock (clk),
         .coreid(0),
         .index (i),
-        .valid (|(rob_commit_i[i].lsu_info.rmask)),
-        .paddr (rob_commit_i[i].lsu_info.paddr),
-        .vaddr (rob_commit_i[i].data_rj)
+        .valid (|(rob_commit_q[i].lsu_info.rmask)),
+        .paddr (rob_commit_q[i].lsu_info.paddr),
+        .vaddr (rob_commit_q[i].data_rj)
     );
 
     DifftestStoreEvent DifftestStoreEvent (
       .clock(clk),
       .coreid(0),
       .index(i),
-      .valid(|(rob_commit_i[i].lsu_info.strb)),
-      .storePAddr(rob_commit_i[i].lsu_info.paddr),
-      .storeVAddr(rob_commit_i[i].data_rj),
-      .storeData(rob_commit_i[i].lsu_info.wdata)
+      .valid(|(rob_commit_q[i].lsu_info.strb)),
+      .storePAddr(rob_commit_q[i].lsu_info.paddr),
+      .storeVAddr(rob_commit_q[i].data_rj),
+      .storeData(offset(rob_commit_q[i].lsu_info.wdata, rob_commit_q[i].lsu_info.msize, rob_commit_q[i].lsu_info.rmask, rob_commit_q[i].lsu_info.msigned))
     );
 end
 
 logic[63:0][31:0] ref_regs;
+logic[63:0][31:0] ref_regs_q;
 
-for(genvar i = 0 ; i < 32 ; i ++) begin
-    always_ff @(posedge clk) begin
-        if(~rst_n) begin
-            ref_regs[i] <= '0;
-        end
-        else if(commit_request_o[1] && commit_arf_areg_o[1] == i[5:0] && i != 0) begin
-            ref_regs[i] <= commit_arf_data_o[1];
-        end
-        else if(commit_request_o[0] && commit_arf_areg_o[0] == i[5:0] && i != 0) begin
-            ref_regs[i] <= commit_arf_data_o[0];
-        end
+always_comb begin
+    ref_regs = ref_regs_q;
+
+    for(integer i = 0; i < 32; i += 1) begin
+      if(~rst_n) begin
+          ref_regs[i] = '0;
+      end
+      else if(commit_arf_we_o[1] && commit_arf_areg_o[1] == i[5:0] && i != 0) begin
+          ref_regs[i] = commit_arf_data_o[1];
+      end
+      else if(commit_arf_we_o[0] && commit_arf_areg_o[0] == i[5:0] && i != 0) begin
+          ref_regs[i] = commit_arf_data_o[0];
     end
+    end
+end
+
+always_ff @(posedge clk) begin
+    ref_regs_q <= ref_regs;
 end
 
 DifftestGRegState DifftestGRegState (
@@ -2160,14 +2167,14 @@ DifftestGRegState DifftestGRegState (
 DifftestExcpEvent DifftestExcpEvent(
     .clock     (clk),
     .coreid    (0),
-    .excp_valid(cur_exception),
+    .excp_valid(cur_exception_q),
     // .excp_valid         ('0),
     // .eret      (l_commit_o[0] && df_entry_q[0].di.ertn_inst),
     .eret               ('0),
     .intrNo    (csr_q.estat[12:2]),
     .cause     (csr_q.estat[21:16]),
-    .exceptionPC(rob_commit_i[0].pc),
-    .exceptionInst(rob_commit_i[0].instr)
+    .exceptionPC(rob_commit_q[0].pc),
+    .exceptionInst(rob_commit_q[0].instr)
 );
 
 DifftestTrapEvent DifftestTrapEvent (
