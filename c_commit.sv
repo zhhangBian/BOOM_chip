@@ -1589,8 +1589,8 @@ always_comb begin
                             cache_rd_need_back = '1;
 
                             // 设置Cache请求
-                            cache_dirty_addr = lsu_info[0].cacop_addr;
-                            commit_cache_req.addr         = cache_dirty_addr & 32'hfffffff0;
+                            cache_dirty_addr = lsu_info[0].cacop_addr & 32'hfffffff0;
+                            commit_cache_req.addr         = cache_dirty_addr;
                             commit_cache_req.way_choose   = lsu_info[0].cacop_hit;
                             commit_cache_req.data_data    = '0;
                             commit_cache_req.strb         = '0;
@@ -1973,11 +1973,12 @@ always_comb begin
         end
 
         if(axi_block_ptr_q == axi_block_len) begin
-            if(cache_rd_need_back) begin
+            if(cache_rd_need_back_q) begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
                 fsm_npc = pc_s + 4;
+                cache_rd_need_back = '0;
 
                 cache_block_ptr = '0;
                 cache_block_len = '0;
