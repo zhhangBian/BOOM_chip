@@ -2089,8 +2089,8 @@ for(genvar i = 0; i < 2; i += 1) begin
         .coreid(0),
         .index (i),
         .valid (|(rob_commit_i[0].lsu_info.rmask)),
-        .paddr (lsu_info[i].paddr),
-        .vaddr (rob_commit_q[i].data_rj)
+        .paddr (rob_commit_i[0].paddr),
+        .vaddr (rob_commit_i[i].data_rj)
     );
 
     DifftestStoreEvent DifftestStoreEvent (
@@ -2098,8 +2098,9 @@ for(genvar i = 0; i < 2; i += 1) begin
       .coreid(0),
       .index(i),
       .valid(|(rob_commit_i[0].lsu_info.strb)),
-      .paddr (lsu_info[i].paddr),
-      .vaddr (rob_commit_q[i].data_rj)
+      .storePAddr(rob_commit_i[0].lsu_info.paddr),
+      .storeVAddr(rob_commit_i[i].data_rj),
+      .storeData(rob_commit_i[0].lsu_info.wdata)
     );
 end
 
