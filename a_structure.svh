@@ -437,6 +437,9 @@ typedef struct packed {
     logic           hit;        // 是否命中，总判断
     logic   [1 :0]  tag_hit;    // tag是否命中
     logic   [5 :0]  wid;        // 写回地址
+    `ifdef _DIFFTEST
+    logic   [31:0]  vaddr;
+    `endif
     logic   [31:0]  paddr;      // 物理地址
     logic   [31:0]  rdata;      // 读出的数据结果
     tlb_exception_t tlb_exception; // TLB异常

@@ -72,6 +72,14 @@ mmu #(
     .trans_result_o(trans_result),
     .tlb_exception_o(tlb_exception)
 );
+
+`ifdef _DIFFTEST
+logic [31:0] va_diff;
+always_ff @(posedge clk) begin
+    va_diff <= iq_lsu_pkg.vaddr;
+end
+`endif
+
 logic [31 : 0] paddr; // 假设从mmu打一拍传来的paddr
 logic [19 : 0] ppn;
 logic          uncache;
@@ -272,14 +280,14 @@ always_comb begin
     sign    = '0;
     if (m1_iq_lsu_pkg.msize == 2'd0) begin
         for (integer i = 0; i < 4; i++) begin
-            lw_data[7 : 0]     |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7 -: 8]    : '0;
-            sign               |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7]         : '0;
+            lw_data[7 : 0]     |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[(i << 3) + 7 -: 8]    : '0;
+            sign               |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[(i << 3) + 7]         : '0;
         end
         lw_data[31: 8]         |= {24{sign & m1_iq_lsu_pkg.msigned}};
     end else if (m1_iq_lsu_pkg.msize == 2'd1) begin
         for (integer i = 0; i < 2; i++) begin
-            lw_data[15: 0]     |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15 -: 16]    : '0;
-            sign               |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15]          : '0;
+            lw_data[15: 0]     |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[(i << 4) + 15 -: 16]    : '0;
+            sign               |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[(i << 4) * i + 15]          : '0;
         end
         lw_data[31:16]         |= {16{sign & m1_iq_lsu_pkg.msigned}};
     end else begin
@@ -305,6 +313,9 @@ always_comb begin
     lsu_iq_pkg.hit      = (lw_valid & (|m1_iq_lsu_pkg.rmask)) | (|tag_hit);
     lsu_iq_pkg.wid      = m1_iq_lsu_pkg.wid;
     lsu_iq_pkg.paddr    = paddr;
+    `ifdef _DIFFTEST
+    lsu_iq_pkg.vaddr    = va_diff;
+    `endif
     lsu_iq_pkg.rdata    = lw_data; //组合逻辑有点长，后续考虑拆两级流水
     lsu_iq_pkg.tlb_exception = tlb_exception;
     lsu_iq_pkg.refill   = refill_way;

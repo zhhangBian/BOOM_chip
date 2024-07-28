@@ -20,14 +20,14 @@ function automatic logic [31:0] offset(input logic [31:0] data, input [1:0] m_si
     sign    = '0;
     if (m_size == 2'd0) begin
         for (integer i = 0; i < 4; i++) begin
-            lw_data[7 : 0]     |= mask[i] ? data[i << 3 + 7 -: 8] : '0;
-            sign               |= mask[i] ? data[i << 3 + 7]      : '0;
+            lw_data[7 : 0]     |= mask[i] ? data[(i << 3) + 7 -: 8] : '0;
+            sign               |= mask[i] ? data[(i << 3) + 7]      : '0;
         end
         lw_data[31: 8]         |= {24{sign & msigned}};
     end else if (m_size == 2'd1) begin
         for (integer i = 0; i < 2; i++) begin
-            lw_data[15: 0]     |= mask[i << 1] ? data[i << 4 + 15 -: 16] : '0;
-            sign               |= mask[i << 1] ? data[i << 4 + 15]       : '0;
+            lw_data[15: 0]     |= mask[i << 1] ? data[(i << 4) + 15 -: 16] : '0;
+            sign               |= mask[i << 1] ? data[(i << 4) + 15]       : '0;
         end
         lw_data[31:16]         |= {16{sign & msigned}};
     end else begin
@@ -178,9 +178,9 @@ always_comb begin
                           ~rob_commit_i[0].lsu_info.hit | //cache miss
                           ~predict_success[0];//预测错
 
-    first_commit[1]     = rob_commit_i[1].flush_inst | 
-                          (|rob_commit_i[1].lsu_info.strb) | 
-                          another_exception | 
+    first_commit[1]     = rob_commit_i[1].flush_inst |
+                          (|rob_commit_i[1].lsu_info.strb) |
+                          another_exception |
                           ~rob_commit_i[1].lsu_info.hit;//仅第二条分支预测失败也可以双提
 
     commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
@@ -415,7 +415,7 @@ always_comb begin
 
     else if (retire_request_o[0]) begin
         if (cur_exception_q) begin
-        commit_flush_info = 2'b01;
+            commit_flush_info = 2'b01;
         end
         //异常则flush
         else if (rob_commit_q[0].flush_inst) begin
@@ -484,7 +484,7 @@ logic [31:0] exp_pc;
 assign exp_pc = cur_tlbr_exception ? csr_q.tlbrentry : csr_q.eentry ;
 
 // 计算实际跳转的PC
-// 
+//
 for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         real_target[i] = '0;
@@ -583,9 +583,9 @@ end
 
 //flush的时候才有意义，所以可以省掉一些逻辑
 assign redir_addr_o = (fsm_flush) ? fsm_npc ://fsm来的npc
-                     (cur_exception_q) ? exp_pc_q : //异常入口
-                     (rob_commit_q[0].ertn_en) ? csr_q.era : //异常返回
-                     next_pc_q[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
+                      (cur_exception_q) ? exp_pc_q : //异常入口
+                      (rob_commit_q[0].ertn_en) ? csr_q.era : //异常返回
+                      next_pc_q[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
 
 assign correct_info_o[0].update = retire_request_o[0] &
                            ((predict_info_q[0].need_update) |
@@ -1045,7 +1045,7 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
                     timer_interrupt_clear = 1;
                 end
             end
-            default: //do nothing 
+            default: //do nothing
             begin
             end
         endcase
@@ -1956,7 +1956,7 @@ always_comb begin
                 // 设置相应的Cache数据
                 cache_block_ptr = cache_block_ptr_q + 1;
                 // 对齐一块的数据
-                commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) | 
+                commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) |
                                               ({29'b0, cache_block_ptr_q} << 2);
                 commit_cache_req.way_choose = lsu_info_s.refill;
                 commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '0);
@@ -2070,7 +2070,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .pc            (rob_commit_q[i].pc),
         .instr         (rob_commit_q[i].instr),
         .skip          ('0),
-        
+
         .is_TLBFILL    (rob_commit_q[i].tlbfill_en), // TODO: CHECK
         .TLBFILL_index (timer_64_q[$clog2(`_TLB_ENTRY_NUM) - 1:0]),
         .is_CNTinst    (rob_commit_q[i].rdcntvl_en || rob_commit_q[i].rdcntvh_en || rob_commit_q[i].rdcntid_en),
@@ -2084,23 +2084,39 @@ for(genvar i = 0; i < 2; i += 1) begin
         // .scw_llbit     (l_data_o[p][0])
     );
 
+    wire ld_hu = (|(rob_commit_q[i].lsu_info.rmask)) & (rob_commit_q[i].lsu_info.msize == 2'd1) & (~rob_commit_q[i].lsu_info.msigned);
+    wire ld_h = (|(rob_commit_q[i].lsu_info.rmask)) & (rob_commit_q[i].lsu_info.msize == 2'd1) & rob_commit_q[i].lsu_info.msigned;
+    wire ld_bu = (|(rob_commit_q[i].lsu_info.rmask)) & (rob_commit_q[i].lsu_info.msize == 2'd0) & (~rob_commit_q[i].lsu_info.msigned);
+    wire ld_b = (|(rob_commit_q[i].lsu_info.rmask)) & (rob_commit_q[i].lsu_info.msize == 2'd0) & (rob_commit_q[i].lsu_info.msigned);
+    wire ld_w = (|(rob_commit_q[i].lsu_info.rmask)) & (~ld_hu) & (~ld_h) & (~ld_bu) & (ld_b);
     DifftestLoadEvent DifftestLoadEvent (
         .clock (clk),
         .coreid(0),
         .index (i),
-        .valid (|(rob_commit_q[i].lsu_info.rmask)),
+        .valid ({2'b0, rob_commit_q[i].is_ll, ld_w, ld_hu, ld_h, ld_bu, ld_b}),
         .paddr (rob_commit_q[i].lsu_info.paddr),
         .vaddr (rob_commit_q[i].data_rj)
     );
+
+    wire st_h = (|(rob_commit_q[i].lsu_info.strb)) & (rob_commit_q[i].lsu_info.msize == 2'd0);
+    wire st_b = (|(rob_commit_q[i].lsu_info.strb)) & (rob_commit_q[i].lsu_info.msize == 2'd1);
+    wire st_w = (|(rob_commit_q[i].lsu_info.strb)) & (~st_h) & (~st_b);
+
+    logic [31:0] temp_wdata;
+    always_comb begin
+      for(integer j =0; j < 4; j ++) begin
+          temp_wdata[8*(j+1) - 1 -: 8] = (rob_commit_q[i].lsu_info.strb[j] == 1) ? rob_commit_q[i].lsu_info.wdata[8*(j+1) - 1 -: 8] :8'b0;
+      end
+    end
 
     DifftestStoreEvent DifftestStoreEvent (
       .clock(clk),
       .coreid(0),
       .index(i),
-      .valid(|(rob_commit_q[i].lsu_info.strb)),
+      .valid({4'b0, (ll_bit & rob_commit_q[i].is_sc), st_w, st_h, st_b}),
       .storePAddr(rob_commit_q[i].lsu_info.paddr),
-      .storeVAddr(rob_commit_q[i].data_rj),
-      .storeData(offset(rob_commit_q[i].lsu_info.wdata, rob_commit_q[i].lsu_info.msize, rob_commit_q[i].lsu_info.strb, rob_commit_q[i].lsu_info.msigned))
+      .storeVAddr(rob_commit_q[i].lsu_info.vaddr),
+      .storeData(temp_wdata)
     );
 end
 
@@ -2170,9 +2186,9 @@ DifftestExcpEvent DifftestExcpEvent(
     .excp_valid(cur_exception_q),
     // .excp_valid         ('0),
     // .eret      (l_commit_o[0] && df_entry_q[0].di.ertn_inst),
-    .eret               ('0),
-    .intrNo    (csr_q.estat[12:2]),
-    .cause     (csr_q.estat[21:16]),
+    .eret      ('0),
+    .intrNo    (csr_update.estat[12:2]),
+    .cause     (csr_update.estat[21:16]),
     .exceptionPC(rob_commit_q[0].pc),
     .exceptionInst(rob_commit_q[0].instr)
 );
@@ -2189,35 +2205,35 @@ DifftestTrapEvent DifftestTrapEvent (
 
 // CSR不需要额外多打一拍
 DifftestCSRRegState DifftestCSRRegState_inst (
-    .clock    (clk            ),
-    .coreid   (0              ),
-    .crmd     (csr_q.crmd     ),
-    .prmd     (csr_q.prmd     ),
-    .euen     (csr_q.euen     ),
-    .ecfg     (csr_q.ecfg     ),
-    .estat    (csr_q.estat    ),
-    .era      (csr_q.era      ),
-    .badv     (csr_q.badv     ),
-    .eentry   (csr_q.eentry   ),
-    .tlbidx   (csr_q.tlbidx   ),
-    .tlbehi   (csr_q.tlbehi   ),
-    .tlbelo0  (csr_q.tlbelo0  ),
-    .tlbelo1  (csr_q.tlbelo1  ),
-    .asid     (csr_q.asid     ),
-    .pgdl     (csr_q.pgdl     ),
-    .pgdh     (csr_q.pgdh     ),
-    .save0    (csr_q.save0    ),
-    .save1    (csr_q.save1    ),
-    .save2    (csr_q.save2    ),
-    .save3    (csr_q.save3    ),
-    .tid      (csr_q.tid      ),
-    .tcfg     (csr_q.tcfg     ),
-    .tval     (csr_q.tval     ),
-    .ticlr    (csr_q.ticlr    ),
-    .tlbrentry(csr_q.tlbrentry),
-    .dmw0     (csr_q.dmw0     ),
-    .dmw1     (csr_q.dmw1     ),
-    .llbctl   ({csr_q.llbctl[31:1],csr_q.llbit})
+    .clock    (clk                 ),
+    .coreid   (0                   ),
+    .crmd     (csr_update.crmd     ),
+    .prmd     (csr_update.prmd     ),
+    .euen     (csr_update.euen     ),
+    .ecfg     (csr_update.ecfg     ),
+    .estat    (csr_update.estat    ),
+    .era      (csr_update.era      ),
+    .badv     (csr_update.badv     ),
+    .eentry   (csr_update.eentry   ),
+    .tlbidx   (csr_update.tlbidx   ),
+    .tlbehi   (csr_update.tlbehi   ),
+    .tlbelo0  (csr_update.tlbelo0  ),
+    .tlbelo1  (csr_update.tlbelo1  ),
+    .asid     (csr_update.asid     ),
+    .pgdl     (csr_update.pgdl     ),
+    .pgdh     (csr_update.pgdh     ),
+    .save0    (csr_update.save0    ),
+    .save1    (csr_update.save1    ),
+    .save2    (csr_update.save2    ),
+    .save3    (csr_update.save3    ),
+    .tid      (csr_update.tid      ),
+    .tcfg     (csr_update.tcfg     ),
+    .tval     (csr_update.tval     ),
+    .ticlr    (csr_update.ticlr    ),
+    .tlbrentry(csr_update.tlbrentry),
+    .dmw0     (csr_update.dmw0     ),
+    .dmw1     (csr_update.dmw1     ),
+    .llbctl   ({csr_update.llbctl[31:1],csr_update.llbit})
 );
 
 `endif
