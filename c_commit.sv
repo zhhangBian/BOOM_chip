@@ -2067,8 +2067,8 @@ for(genvar i = 0; i < 2; i += 1) begin
         .coreid        ('0),
         .index         (i),
         .valid         (commit_request_o[i]),
-        .pc            (commit_debug_pc_o[i]),
-        .instr         (rob_commit_q[i].instr),
+        .pc            (rob_commit_i[i].pc),
+        .instr         (rob_commit_i[i].instr),
         .skip          ('0),
         
         .is_TLBFILL    (cur_tlbfill), // TODO: CHECK
