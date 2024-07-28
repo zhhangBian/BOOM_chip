@@ -1591,7 +1591,7 @@ always_comb begin
                             // 设置Cache请求
                             cache_dirty_addr = lsu_info[0].cacop_addr & 32'hfffffff0;
                             commit_cache_req.addr         = cache_dirty_addr;
-                            commit_cache_req.way_choose   = lsu_info[0].cacop_hit;
+                            commit_cache_req.way_choose   = cache_dirty_addr[0] ? 2'b10 : 2'b01;
                             commit_cache_req.data_data    = '0;
                             commit_cache_req.strb         = '0;
                             commit_cache_req.fetch_sb     = '0;
