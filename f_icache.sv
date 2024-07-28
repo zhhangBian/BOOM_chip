@@ -73,7 +73,7 @@ wire [1:0] mem_type = `_MEM_FETCH;
 trans_result_t trans_result;
 tlb_exception_t tlb_exception, tlb_exception_q;
 mmu #(
-    .TLB_ENTRY_NUM(64),
+    .TLB_ENTRY_NUM(`_TLB_ENTRY_NUM),
     .TLB_SWITCH_OFF(0)
 ) mmu_inst (
     .clk(clk),
@@ -90,7 +90,7 @@ mmu #(
 trans_result_t trans_result_c;
 tlb_exception_t tlb_exception_c;
 mmu #(
-    .TLB_ENTRY_NUM(64),
+    .TLB_ENTRY_NUM(`_TLB_ENTRY_NUM),
     .TLB_SWITCH_OFF(0)
 ) mmu_commit (
     .clk(clk),

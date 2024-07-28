@@ -3,7 +3,7 @@
 //用寄存器存的tlb表项，打一拍出结果
 //待测试
 module mmu #(
-    parameter int unsigned TLB_ENTRY_NUM = 64,
+    parameter int unsigned TLB_ENTRY_NUM = 16,
     parameter int TLB_SWITCH_OFF = 0 //这个暂时没用
 ) (
     input  wire  clk,
@@ -121,8 +121,7 @@ always_comb begin
             trans_result.valid = tlb_found;
             if (!tlb_found) begin
                 ecode = `_ECODE_TLBR;
-            end
-            if (!tlb_value_read.v) begin
+            end else if (!tlb_value_read.v) begin
                 trans_result.valid = 0;
                 case (mmu_mem_type)
                     `_MEM_FETCH:

@@ -219,6 +219,9 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign p_di[i].msigned = r_p_pkg.msigned[i];
     assign p_di[i].msize = r_p_pkg.msize[i];
 
+    assign p_di[i].is_cacop   = r_p_pkg.cacop_inst[i];
+    assign p_di[i].cache_code = r_p_pkg.inst_4_0[i];
+
     assign p_di[i].inst_valid = r_p_pkg.r_valid[i];
     assign p_di[i].fetch_exc_info = r_p_pkg.fetch_exc_info;
 end
