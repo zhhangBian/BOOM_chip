@@ -1963,6 +1963,8 @@ always_comb begin
         end
 
         if(cache_block_ptr_q == cache_block_len) begin
+            fsm_flush = '1;
+            fsm_npc   = pc_s;
             ls_fsm = S_NORMAL;
             stall = '0;
         end
