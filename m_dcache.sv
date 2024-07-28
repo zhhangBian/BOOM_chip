@@ -325,7 +325,8 @@ always_comb begin
     lsu_iq_pkg.dirty    = refill_way[0] ? tag_ans0[0].d : tag_ans0[1].d;
     lsu_iq_pkg.tag_hit  = tag_hit;
     lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;
-    lsu_iq_pkg.hit_dirty   = tag_hit[0] ? tag_ans0[0].d : tag_ans0[1].d; 
+    lsu_iq_pkg.hit_dirty   = tag_hit[0] ? tag_ans0[0].d : tag_ans0[1].d;
+    lsu_iq_pkg.cacop_addr  = paddr[0] ? {tag_ans0[0].tag, paddr[11:0]} : {tag_ans0[1].tag, paddr[11:0]};
     lsu_iq_pkg.wdata       = m1_iq_lsu_pkg.wdata;
     lsu_iq_pkg.execute_exc_info.execute_exception  = execute_exception;          
     lsu_iq_pkg.execute_exc_info.exc_code           = exc_code_new; 
