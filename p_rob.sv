@@ -153,7 +153,7 @@ always_comb begin
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
         commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;
 
-        commit_info_o[i].c_valid  = commit_inst_o[i].r_valid; // TODO
+        // commit_info_o[i].c_valid  = commit_inst_o[i].r_valid; // TODO
 
         `ifdef _DIFFTEST
         commit_info_o[i].instr = commit_inst_o[i].instr;

@@ -2008,14 +2008,14 @@ always_comb begin
                 axi_rd_need_wb = '0;
 
                 // 结束时发送Cache请求
-                commit_cache_req.addr       = lsu_info_s[0].paddr;
-                commit_cache_req.way_choose = lsu_info_s[0].refill;
+                commit_cache_req.addr       = lsu_info_s.paddr;
+                commit_cache_req.way_choose = lsu_info_s.refill;
                 // 写上脏位
-                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s[0].paddr, '1, '1);
+                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr, '1, '1);
                 commit_cache_req.tag_we     = '1;
-                commit_cache_req.data_data  = lsu_info_s[0].wdata;
-                commit_cache_req.strb       = lsu_info_s[0].strb;
-                commit_cache_req.fetch_sb   = |lsu_info_s[0].strb;
+                commit_cache_req.data_data  = lsu_info_s.wdata;
+                commit_cache_req.strb       = lsu_info_s.strb;
+                commit_cache_req.fetch_sb   = |lsu_info_s.strb;
             end
             else begin
                 commit_cache_req = '0;
