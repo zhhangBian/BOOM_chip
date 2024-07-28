@@ -1590,8 +1590,11 @@ always_comb begin
                             // 设置后续状态机的属性
                             cache_block_ptr = '0;
                             cache_block_len = 4;
+                            axi_block_ptr = '0;
+                            axi_block_len = 4;
                             for(int i =0; i < CACHE_BLOCK_NUM; i += 1) begin
                                 cache_block_data[i] = '0;
+                                axi_block_data[i] = '0;
                             end
                         end
                         // 否则即完成
@@ -2031,7 +2034,7 @@ always_comb begin
                 commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) |
                                               ({29'b0, cache_block_ptr_q} << 2);
                 commit_cache_req.way_choose = lsu_info_s.refill;
-                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '1);
+                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '0);
                 commit_cache_req.tag_we     = '1;
                 commit_cache_req.data_data  = axi_block_data[cache_block_ptr_q];
                 commit_cache_req.strb       = '1;
