@@ -1587,13 +1587,32 @@ always_comb begin
                             ls_fsm = S_CACHE_RD;
                             stall = '1;
                             cache_rd_need_back = '1;
-                            // 设置后续状态机的属性
+
+                            // 设置Cache请求
+                            cache_dirty_addr = lsu_info[0].cacop_addr;
+                            commit_cache_req.addr         = cache_dirty_addr & 32'hfffffff0;
+                            commit_cache_req.way_choose   = lsu_info[0].cacop_hit;
+                            commit_cache_req.data_data    = '0;
+                            commit_cache_req.strb         = '0;
+                            commit_cache_req.fetch_sb     = '0;
+
                             cache_block_ptr = '0;
                             cache_block_len = 4;
-                            axi_block_ptr = '0;
-                            axi_block_len = 4;
                             for(int i =0; i < CACHE_BLOCK_NUM; i += 1) begin
                                 cache_block_data[i] = '0;
+                            end
+
+                            // 设置相应的AXI请求
+                            commit_axi_req = '0;
+                            commit_axi_req.waddr = cache_dirty_addr;
+                            commit_axi_req.wlen = 4;
+                            commit_axi_req.strb = '1;
+                            commit_axi_awvalid_o = '1;
+                            axi_wait = ~axi_commit_awready_i;
+                            // 设置相应的指针
+                            axi_block_ptr = '0;
+                            axi_block_len = 4;
+                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
                                 axi_block_data[i] = '0;
                             end
                         end
@@ -1609,13 +1628,49 @@ always_comb begin
                     2'd2: begin
                         // 如果命中再维护
                         if(cache_commit_hit[0]) begin
-                            ls_fsm = lsu_info[0].hit_dirty ? S_CACHE_RD : S_NORMAL;
-                            stall = lsu_info[0].hit_dirty;
-                            cache_rd_need_back = lsu_info[0].hit_dirty;
-                            // 将Cache无效化，先读出对应的tag
-                            commit_cache_req.way_choose   = lsu_info[0].tag_hit;
+                            // 无效Cache
                             commit_cache_req.tag_data     = '0;
                             commit_cache_req.tag_we       = '1;
+                            // 脏了就写回
+                            if(lsu_info[0].hit_dirty) begin
+                                ls_fsm = S_CACHE_RD;
+                                stall = '1;
+                                cache_rd_need_back = '1;
+                                // 将Cache无效化，先读出对应的tag
+                                cache_dirty_addr = lsu_info[0].paddr & 32'hfffffff0;
+                                commit_cache_req.addr       = cache_dirty_addr;
+                                commit_cache_req.way_choose = lsu_info[0].tag_hit;
+                                commit_cache_req.data_data  = '0;
+                                commit_cache_req.strb       = '0;
+                                commit_cache_req.fetch_sb   = '0;
+                                cache_block_ptr = '0;
+                                cache_block_len = 4;
+                                for(int i =0; i < CACHE_BLOCK_NUM; i += 1) begin
+                                    cache_block_data[i] = '0;
+                                end
+
+                                // 设置相应的AXI请求
+                                commit_axi_req = '0;
+                                commit_axi_req.waddr = cache_dirty_addr;
+                                commit_axi_req.wlen = 4;
+                                commit_axi_req.strb = '1;
+                                commit_axi_awvalid_o = '1;
+                                axi_wait = ~axi_commit_awready_i;
+                                // 设置相应的指针
+                                axi_block_ptr = '0;
+                                axi_block_len = 4;
+                                for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                                    axi_block_data[i] = '0;
+                                end
+                            end
+                            // 不脏回Normal
+                            else begin
+                                ls_fsm = S_NORMAL;
+                                stall = '0;
+                                fsm_flush = '1;
+                                fsm_npc = pc_s + 4;
+                                cache_rd_need_back = '0;
+                            end
                         end
                         else begin
                             ls_fsm = S_NORMAL;
@@ -1704,7 +1759,7 @@ always_comb begin
                         commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
                         commit_cache_req.way_choose = lsu_info[0].refill;
                         commit_cache_req.tag_data   = '0;
-                        commit_cache_req.tag_we     = '0;
+                        commit_cache_req.tag_we     = '1;
                         commit_cache_req.data_data  = '0;
                         commit_cache_req.strb       = '0;
                         commit_cache_req.fetch_sb   = '0;
@@ -1714,7 +1769,7 @@ always_comb begin
                         end
                         cache_block_ptr = '0;
                         cache_block_len = 4;
-                        cache_dirty_addr = lsu_info[0].cache_dirty_addr;
+                        cache_dirty_addr = lsu_info[0].cache_dirty_addr & 32'hfffffff0;
                         // 设置相应的AXI请求
                         commit_axi_req = '0;
                         commit_axi_req.waddr = cache_dirty_addr;
@@ -1792,7 +1847,7 @@ always_comb begin
                         commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
                         commit_cache_req.way_choose = lsu_info[0].refill;
                         commit_cache_req.tag_data   = '0;
-                        commit_cache_req.tag_we     = '0;
+                        commit_cache_req.tag_we     = '1;
                         commit_cache_req.data_data  = '0;
                         commit_cache_req.strb       = '0;
                         commit_cache_req.fetch_sb   = |lsu_info[0].strb;
