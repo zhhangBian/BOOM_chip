@@ -619,7 +619,7 @@ always_comb begin
         32'b00000110010010001???????????????: begin
             decode_info_o.priv_inst = 1'd1;
             decode_info_o.idle_inst = 1'd1;
-            decode_info_o.flush_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd0;//TODO check
             decode_info_o.alu_inst = 1'd1;
         end
         // DBAR
