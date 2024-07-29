@@ -796,6 +796,10 @@ always_comb begin
         /*没有例外，把开始的东西改回去*/
     endcase
 
+    if (rob_commit_i[0].idle_en) begin
+        csr_exception_update    = csr_q;
+        cur_exception           = 1'b0;
+    end//idle不响应中断
 end
 
 always_ff @( posedge clk ) begin
