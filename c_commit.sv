@@ -1819,63 +1819,69 @@ always_comb begin
                 end
                 // 如果没有命中
                 else begin
-                    // 直接刷掉流水
-                    fsm_flush = '1;
-                    fsm_npc = pc_s;
-                    // 不是脏的，先读出Cache，再写
-                    if(~cache_commit_dirty[0]) begin
-                        ls_fsm = S_AXI_RD;
-                        stall = '1;
-                        axi_rd_need_wb = '1;
-                        // 设置相应的AXI请求
-                        commit_axi_req.raddr = lsu_info[0].paddr & 32'hfffffff0;
-                        commit_axi_req.rlen  = 4;
-                        commit_axi_req.rmask = '1;
-                        commit_axi_arvalid_o = '1;
-                        // 进行AXI握手
-                        axi_wait = ~axi_commit_arready_i;
-                        // 设置相应的指针
-                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                            cache_block_data[i] = '0;
-                        end
-                        axi_block_ptr = '0;
-                        axi_block_len = 4;
-                        cache_block_ptr = '0;
-                        cache_block_len = 4;
+                    if(is_sc[0]) begin
+                        ls_fsm = S_NORMAL;
+                        stall = '0;
                     end
-                    // 开始重填
                     else begin
-                        ls_fsm = S_CACHE_RD;
-                        stall = '1;
-                        cache_rd_need_back = '0;
-                        // 设置相应的Cache数据
-                        // 对齐一块的数据
-                        commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
-                        commit_cache_req.way_choose = lsu_info[0].refill;
-                        commit_cache_req.tag_data   = '0;
-                        commit_cache_req.tag_we     = '1;
-                        commit_cache_req.data_data  = '0;
-                        commit_cache_req.strb       = '0;
-                        commit_cache_req.fetch_sb   = |lsu_info[0].strb;
-                        // 设置相应的指针
-                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                            cache_block_data[i] = '0;
+                        // 直接刷掉流水
+                        fsm_flush = '1;
+                        fsm_npc = pc_s;
+                        // 不是脏的，先读出Cache，再写
+                        if(~cache_commit_dirty[0]) begin
+                            ls_fsm = S_AXI_RD;
+                            stall = '1;
+                            axi_rd_need_wb = '1;
+                            // 设置相应的AXI请求
+                            commit_axi_req.raddr = lsu_info[0].paddr & 32'hfffffff0;
+                            commit_axi_req.rlen  = 4;
+                            commit_axi_req.rmask = '1;
+                            commit_axi_arvalid_o = '1;
+                            // 进行AXI握手
+                            axi_wait = ~axi_commit_arready_i;
+                            // 设置相应的指针
+                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                                cache_block_data[i] = '0;
+                            end
+                            axi_block_ptr = '0;
+                            axi_block_len = 4;
+                            cache_block_ptr = '0;
+                            cache_block_len = 4;
                         end
-                        cache_block_ptr = '0;
-                        cache_block_len = 4;
-                        cache_dirty_addr = lsu_info[0].cache_dirty_addr;
-                        // 设置相应的AXI请求
-                        commit_axi_req = '0;
-                        commit_axi_req.waddr = cache_dirty_addr;
-                        commit_axi_req.wlen = 4;
-                        commit_axi_req.strb = '1;
-                        commit_axi_awvalid_o = '1;
-                        axi_wait = ~axi_commit_awready_i;
-                        // 设置相应的指针
-                        axi_block_ptr = '0;
-                        axi_block_len = 4;
-                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                            axi_block_data[i] = '0;
+                        // 开始重填
+                        else begin
+                            ls_fsm = S_CACHE_RD;
+                            stall = '1;
+                            cache_rd_need_back = '0;
+                            // 设置相应的Cache数据
+                            // 对齐一块的数据
+                            commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
+                            commit_cache_req.way_choose = lsu_info[0].refill;
+                            commit_cache_req.tag_data   = '0;
+                            commit_cache_req.tag_we     = '1;
+                            commit_cache_req.data_data  = '0;
+                            commit_cache_req.strb       = '0;
+                            commit_cache_req.fetch_sb   = |lsu_info[0].strb;
+                            // 设置相应的指针
+                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                                cache_block_data[i] = '0;
+                            end
+                            cache_block_ptr = '0;
+                            cache_block_len = 4;
+                            cache_dirty_addr = lsu_info[0].cache_dirty_addr;
+                            // 设置相应的AXI请求
+                            commit_axi_req = '0;
+                            commit_axi_req.waddr = cache_dirty_addr;
+                            commit_axi_req.wlen = 4;
+                            commit_axi_req.strb = '1;
+                            commit_axi_awvalid_o = '1;
+                            axi_wait = ~axi_commit_awready_i;
+                            // 设置相应的指针
+                            axi_block_ptr = '0;
+                            axi_block_len = 4;
+                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
+                                axi_block_data[i] = '0;
+                            end
                         end
                     end
                 end
