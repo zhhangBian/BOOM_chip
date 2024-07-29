@@ -240,7 +240,7 @@ end
 // hit逻辑，比dcache简单得多
 logic [WAY_NUM - 1 : 0] tag_hit;
 for (genvar i = 0; i < WAY_NUM ; i++) begin
-    assign tag_hit[i] = (tag_ans0[i].tag == ppn) | (b_f_pkg_q.mask == '0);
+    assign tag_hit[i] = (tag_ans0[i].tag == ppn);
     assign cache_commit_resp.way_hit[i] = (tag_ans1[i].tag == trans_result_c.pa[31:12]);
 end
 assign cache_commit_resp.tlb_exception  = tlb_exception_c;
@@ -422,7 +422,7 @@ always_comb begin
                     fsm_next = F_UNCACHE_S;
                     temp_data_block = '0;
                 end
-            end else if (!(|tag_hit)) begin
+            end else if (!(|tag_hit)  | (b_f_pkg_q.mask == '0)) begin
                 stall |= '1; // 阻塞
                 fsm_next = F_MISS;
                 req_num  = 8;

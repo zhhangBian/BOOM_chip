@@ -3,7 +3,7 @@
 //用寄存器存的tlb表项，打一拍出结果
 //待测试
 module mmu #(
-    parameter int unsigned TLB_ENTRY_NUM = 32,
+    parameter int unsigned TLB_ENTRY_NUM = 16,
     parameter int TLB_SWITCH_OFF = 0 //这个暂时没用
 ) (
     input  wire  clk,

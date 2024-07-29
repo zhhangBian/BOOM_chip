@@ -796,6 +796,10 @@ always_comb begin
         /*没有例外，把开始的东西改回去*/
     endcase
 
+    if (rob_commit_i[0].idle_en) begin
+        csr_exception_update    = csr_q;
+        cur_exception           = 1'b0;
+    end//idle不响应中断
 end
 
 always_ff @( posedge clk ) begin
@@ -1535,7 +1539,7 @@ always_comb begin
         if (!rob_commit_q[0].c_valid | cur_exception_q) begin
             ls_fsm = S_NORMAL;
         end
-        else if(commit_request_q && rob_commit_q[0].idle_en) begin
+        else if(commit_request_q[0] && rob_commit_q[0].idle_en) begin
             stall = 1;
             ls_fsm = S_IDLE;
         end//TODO 要做其他的吗？
