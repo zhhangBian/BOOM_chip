@@ -160,7 +160,7 @@ end
 // ------------------------------------------------------------------
 // 生成执行信号
 assign excute_ready = (!excute_valid_q) || iq_lsu_ready_i;
-assign excute_valid = |entry_ready;
+assign excute_valid = entry_ready[iq_head_q];
 
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin

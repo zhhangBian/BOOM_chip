@@ -157,7 +157,7 @@ logic   mdu_valid_o, mdu_ready_i;
 // ------------------------------------------------------------------
 // 生成执行信号
 assign excute_ready = mdu_ready_o; /* 2024/07/24 fix mdu_ready_i -> mdu_ready_o*/
-assign excute_valid = |entry_ready;
+assign excute_valid = entry_ready[iq_head_q];
 
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin

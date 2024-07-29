@@ -2258,7 +2258,7 @@ for(genvar i = 0; i < 2; i += 1) begin
       .clock(clk),
       .coreid(0),
       .index(i),
-      .valid({4'b0, (ll_bit & rob_commit_q[i].is_sc), st_w, st_h, st_b}),
+      .valid({4'b0, (ll_bit & rob_commit_q[i].is_sc & !cur_exception_q), st_w & !cur_exception_q, st_h & !cur_exception_q, st_b & !cur_exception_q}),
       .storePAddr(rob_commit_q[i].lsu_info.paddr),
       .storeVAddr(rob_commit_q[i].lsu_info.vaddr),
       .storeData(temp_wdata)
