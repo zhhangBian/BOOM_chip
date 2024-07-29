@@ -1712,6 +1712,7 @@ always_comb begin
                 fsm_flush = '1;
                 fsm_npc = pc_s + 4;
                 // 发起AXI请求
+                commit_cache_req.fetch_sb = |lsu_info[0].strb;
                 commit_axi_req.waddr = lsu_info[0].paddr;
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
@@ -1979,7 +1980,7 @@ always_comb begin
             commit_axi_req.wdata = cache_block_data[axi_block_ptr_q];
             commit_axi_wlast_o = (axi_block_ptr_q == axi_block_len - 1);
 
-            if(axi_commit_wready_i) begin
+            if(axi_commit_wready_i & commit_axi_wvalid_o) begin
                 axi_block_ptr = axi_block_ptr_q + 1;
             end
         end
