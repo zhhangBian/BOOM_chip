@@ -56,7 +56,7 @@ always_ff @(posedge clk) begin
     end
 end
 
-assign commit_resp_ready_o = !stall_q;
+assign commit_resp_ready_o = !stall_q & !stall;
 // 打一拍整理数据
 
 // stall逻辑，重填和维护都阻塞，阻塞时注意要
@@ -183,7 +183,7 @@ for (genvar i = 0; i < WAY_NUM; i++) begin
         .clk0(clk),
         .rst_n0(rst_n),
         .addr0_i(pc[11 : TAG_ADDR_LOW]),
-        .en0_i(!conflict),
+        .en0_i('1),
         .we0_i('0),
         .wdata0_i('0),
         .rdata0_o(rtag0),
@@ -220,7 +220,7 @@ for (genvar i = 0 ; i < WAY_NUM ; i++) begin
         .clk0(clk),
         .rst_n0(rst_n),
         .addr0_i(pc[11 : DATA_ADDR_LOW]),
-        .en0_i(!conflict),
+        .en0_i('1),
         .we0_i('0),
         .wdata0_i('0),
         .rdata0_o(rdata0),
@@ -380,7 +380,7 @@ always_comb begin
         F_NORMAL:begin
             temp_data_block = '0;
             refill_we       = '0;
-            insts = !icache_decoder_sender.ready ? insts_q : tag_hit[0] ? data_ans0[0] : data_ans0[1];
+            insts = stall_q ? insts_q : tag_hit[0] ? data_ans0[0] : data_ans0[1];
             stall = '0; // 解除stall状态
             if (b_f_pkg_q.mask == '0) begin
                 stall = '0;
@@ -435,6 +435,7 @@ always_comb begin
                 end
             end else if (!icache_decoder_sender.ready) begin
                 fsm_next = F_STALL;
+                stall    = '1;
             end
         end
         F_UNCACHE:begin
@@ -535,6 +536,7 @@ always_comb begin
                 fsm_next = F_STALL;
             end else begin
                 fsm_next = F_NORMAL;
+                stall    = '0;
             end
         end
         default:begin

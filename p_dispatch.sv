@@ -170,10 +170,10 @@ end
 // 1 1 : 
 // 0 0 :
 
-assign p_alu_sender_0.valid = '1;
-assign p_alu_sender_1.valid = '1;
-assign p_mdu_sender.valid   = '1;
-assign p_lsu_sender.valid   = '1;
+// assign p_alu_sender_0.valid = '1;
+// assign p_alu_sender_1.valid = '1;
+// assign p_mdu_sender.valid   = '1;
+// assign p_lsu_sender.valid   = '1;
 
 
 p_i_pkg_t [3 : 0] p_i_pkg; // 对应四个发射队列：[3:0]对应lsu,mdu,alu1,alu0
