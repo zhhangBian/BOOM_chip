@@ -1041,6 +1041,7 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
                 `write_csr_mask(tcfg, `_TCFG_PERIODIC);
                 `write_csr_mask(tcfg, `_TCFG_INITVAL);
                 timer_set = 1;//设置定时器初始状态
+                csr.timer_en = write_data[`_TCFG_EN];  
             end
             `_CSR_TVAL: begin
                 //do nothing
@@ -1367,7 +1368,7 @@ always_comb begin
     csr_update.estat[`_ESTAT_HARD_IS]  = hard_is_i; //从外面连过来中断
 
     //下面维护定时器 定时器中断默认和之前一样
-    if (csr_q.tcfg[`_TCFG_EN]) begin
+    if (csr_q.timer_en) begin//tcfg fix
         if (csr_q.tval != 0) begin
             csr_update.tval = csr_q.tval - 1;
         end
@@ -1376,7 +1377,7 @@ always_comb begin
             csr_update.tval = {csr_q.tcfg[`_TCFG_INITVAL], 2'b0};
         end
         else begin
-            csr_update.tcfg[`_TCFG_EN]         = 0;
+            csr_update.timer_en                = 0;//tcfg fix
             csr_update.estat[`_ESTAT_TIMER_IS] = 1;
         end
     end
@@ -1385,10 +1386,11 @@ always_comb begin
     if (retire_request_o[0] & !cur_exception_q)  begin
         if (timer_interrupt_clear_q) begin
             csr_update.estat[`_ESTAT_TIMER_IS] = 0;
-        end
+        end//tclr
         else if (timer_set_q) begin
             csr_update.tval[1:0]            = '0;
             csr_update.tval[`_TCFG_INITVAL] = csr_maintain_q.tcfg[`_TCFG_INITVAL];
+            csr_update.timer_en             = csr_maintain_q.timer_en;//加入en维护，比硬件优先级高？TODO
         end
     end//要提交且是csr写，且写入对应位，且无例外
 
@@ -2209,7 +2211,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock         (clk),
         .coreid        ('0),
         .index         (i),
-        .valid         (retire_request_o[i] || (flush && (i == 0))),
+        .valid         ((retire_request_o[i] || (flush && (i == 0))) && !cur_exception_q),
         .pc            (rob_commit_q[i].pc),
         .instr         (rob_commit_q[i].instr),
         .skip          ('0),
@@ -2327,9 +2329,7 @@ DifftestExcpEvent DifftestExcpEvent(
     .clock     (clk),
     .coreid    (0),
     .excp_valid(cur_exception_q),
-    // .excp_valid         ('0),
-    // .eret      (l_commit_o[0] && df_entry_q[0].di.ertn_inst),
-    .eret      ('0),
+    .eret      ((retire_request_o[0] || flush) & rob_commit_q[0].ertn_en),
     .intrNo    (csr_update.estat[12:2]),
     .cause     (csr_update.estat[21:16]),
     .exceptionPC(rob_commit_q[0].pc),

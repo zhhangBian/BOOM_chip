@@ -67,6 +67,7 @@ typedef struct packed {
     logic [31:0] tlbrentry;
     logic [31:0] dmw0;
     logic [31:0] dmw1;
+    logic timer_en;
 } csr_t;
 
 typedef struct packed {
