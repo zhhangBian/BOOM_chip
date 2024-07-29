@@ -409,7 +409,7 @@ lsu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_lsu_handshake.data.inst_choose & {2{p_lsu_handshake.ready}} & {2{p_alu_handshake_1.valid}}), /* 2024/07/24 fix*/
+    .choose(p_lsu_handshake.data.inst_choose & {2{p_lsu_handshake.ready}} & {2{p_lsu_handshake.valid}}), /* 2024/07/24 fix*/
     .p_di_i(p_lsu_handshake.data.di),
     .p_data_i(p_lsu_handshake.data.data),
     .p_reg_id_i(p_lsu_handshake.data.preg),
@@ -459,7 +459,7 @@ mdu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_mdu_handshake.data.inst_choose & {2{p_mdu_handshake.ready}} & {2{p_alu_handshake_1.valid}}), /* 2024/07/24 fix*/
+    .choose(p_mdu_handshake.data.inst_choose & {2{p_mdu_handshake.ready}} & {2{p_mdu_handshake.valid}}), /* 2024/07/24 fix*/
     .p_di_i(p_mdu_handshake.data.di),
     .p_data_i(p_mdu_handshake.data.data),
     .p_reg_id_i(p_mdu_handshake.data.preg),

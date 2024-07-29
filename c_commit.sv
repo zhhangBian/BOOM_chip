@@ -1535,7 +1535,7 @@ always_comb begin
         if (!rob_commit_q[0].c_valid | cur_exception_q) begin
             ls_fsm = S_NORMAL;
         end
-        else if(commit_request_q && rob_commit_q[0].idle_en) begin
+        else if(commit_request_q[0] && rob_commit_q[0].idle_en) begin
             stall = 1;
             ls_fsm = S_IDLE;
         end//TODO 要做其他的吗？
