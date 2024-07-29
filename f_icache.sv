@@ -112,12 +112,21 @@ assign paddr   = trans_result.pa;
 assign ppn     = paddr[31:12];
 assign uncache = !trans_result.mat[0];
 
+logic back_ready_q;
+always_ff @(posedge clk) begin
+    if (!rst_n) begin
+        back_ready_q <= '0;
+    end else begin
+        back_ready_q <= icache_decoder_sender.ready;
+    end
+end
+
 // paddr打一拍
 always_ff @(posedge clk) begin
     if (!rst_n) begin
         paddr_q <= '0;
         tlb_exception_q <= '0;
-    end else if (!stall_q && icache_decoder_sender.ready) begin
+    end else if (!stall_q && back_ready_q) begin
         paddr_q <= paddr; 
         tlb_exception_q <= tlb_exception;
     end else begin
@@ -127,14 +136,7 @@ always_ff @(posedge clk) begin
 end
 
 
-logic back_ready_q;
-always_ff @(posedge clk) begin
-    if (!rst_n) begin
-        back_ready_q <= '0;
-    end else begin
-        back_ready_q <= icache_decoder_sender.ready;
-    end
-end
+
 
 // 写入信息
 logic [31:0] refill_addr, refill_addr_q;
