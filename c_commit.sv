@@ -1981,7 +1981,7 @@ always_comb begin
                 fsm_flush = '1;
                 fsm_npc = pc_s + 4;
                 cache_rd_need_back = '0;
-
+                
                 cache_block_ptr = '0;
                 cache_block_len = '0;
                 axi_block_ptr = '0;
