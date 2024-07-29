@@ -2217,9 +2217,9 @@ for(genvar i = 0; i < 2; i += 1) begin
         .skip          ('0),
 
         .is_TLBFILL    (rob_commit_q[i].tlbfill_en), // TODO: CHECK
-        .TLBFILL_index (timer_64[$clog2(`_TLB_ENTRY_NUM) - 1:0]),
+        .TLBFILL_index (timer_64_q[$clog2(`_TLB_ENTRY_NUM) - 1:0]-1),
         .is_CNTinst    (rob_commit_q[i].rdcntvl_en || rob_commit_q[i].rdcntvh_en || rob_commit_q[i].rdcntid_en),
-        .timer_64_value(timer_64),
+        .timer_64_value(timer_64_q-1),
         .wen           (commit_arf_we_o[i]),
         .wdest         (commit_arf_areg_o[i]),
         .wdata         (commit_arf_data_o[i]),
