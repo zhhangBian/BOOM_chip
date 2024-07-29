@@ -258,7 +258,8 @@ typedef enum logic[4:0] {
     S_UNCACHED_RD,
     S_UNCACHED_WB,
     // 等待ICache请求完成
-    S_ICACHE
+    S_ICACHE,
+    S_IDLE
 } ls_fsm_s;
 ls_fsm_s ls_fsm, ls_fsm_q;
 
@@ -411,7 +412,7 @@ always_comb begin
 
     if (fsm_flush) begin
         commit_flush_info = 2'b01;
-    end//访存相关的flush
+    end//访存相关的flush,以及idle
 
     else if (retire_request_o[0]) begin
         if (cur_exception_q) begin
@@ -419,7 +420,7 @@ always_comb begin
         end
         //异常则flush
         else if (rob_commit_q[0].flush_inst) begin
-            commit_flush_info = 2'b01;
+            commit_flush_info = 2'b01;//把idle删掉
         end//要提交且一定会flush的指令
         else if (~predict_success_q[0])begin
             commit_flush_info = 2'b01;
@@ -449,10 +450,6 @@ always_comb begin
     end //存储指令
 */
 
-//这个不太一样，是idle的状态
-    if (wait_for_int_q) begin
-        commit_flush_info = 2'b01;
-    end//idle持续flush
 
     flush = |commit_flush_info;
 end
@@ -689,7 +686,7 @@ end
 
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
-wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec;
+wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec/* && !rob_commit_i[0].idle_en*/;
 logic invtlb_ine;
 
 //TODO 现在为了消除“环”，cur_excpetion信号在无效的时候也可能为1
@@ -1393,7 +1390,6 @@ always_comb begin
             csr_update.timer_en             = csr_maintain_q.timer_en;//加入en维护，比硬件优先级高？TODO
         end
     end//要提交且是csr写，且写入对应位，且无例外
-
 end
 
 // 对csr_q的信息维护，第二级结尾写入
@@ -1414,25 +1410,25 @@ end
 //在第二级
 
 
-always_comb begin
-    wait_for_int = wait_for_int_q;
-    if (wait_for_int) begin
-        wait_for_int = ~int_excep;
-    end
-    else begin
-        wait_for_int = retire_request_o[0] ? 0 : rob_commit_q[0].idle_en;
-    end
-end
-//当处于等待状态时，一直flush，要求rob来的所有指令都不valid！
-
-always_ff @( posedge clk ) begin
-    if (~rst_n) begin
-        wait_for_int_q <= 0;
-    end
-    else begin
-        wait_for_int_q <= wait_for_int;
-    end
-end
+//always_comb begin
+//    wait_for_int = wait_for_int_q;
+//    if (wait_for_int) begin
+//        wait_for_int = ~int_excep;
+//    end
+//    else begin
+//        wait_for_int = retire_request_o[0] ? 0 : rob_commit_q[0].idle_en;
+//    end
+//end
+////当处于等待状态时，一直flush，要求rob来的所有指令都不valid！
+//
+//always_ff @( posedge clk ) begin
+//    if (~rst_n) begin
+//        wait_for_int_q <= 0;
+//    end
+//    else begin
+//        wait_for_int_q <= wait_for_int;
+//    end
+//end
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1536,10 +1532,14 @@ always_comb begin
         commit_icache_req   = '0;
         commit_axi_req      = '0;
 
-        // 如果是Cache维护指令
         if (!rob_commit_q[0].c_valid | cur_exception_q) begin
             ls_fsm = S_NORMAL;
         end
+        else if(commit_request_q && rob_commit_q[0].idle_en) begin
+            stall = 1;
+            ls_fsm = S_IDLE;
+        end//TODO 要做其他的吗？
+        // 如果是Cache维护指令
         else if(is_cache_fix[0]) begin
             commit_icache_valid_o = '0;
             icache_wait = '0;
@@ -1981,7 +1981,7 @@ always_comb begin
                 fsm_flush = '1;
                 fsm_npc = pc_s + 4;
                 cache_rd_need_back = '0;
-
+                
                 cache_block_ptr = '0;
                 cache_block_len = '0;
                 axi_block_ptr = '0;
@@ -2135,6 +2135,19 @@ always_comb begin
                           (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                           csr_q.eentry;
             end
+        end
+    end
+
+    else if(ls_fsm_q == S_IDLE) begin
+        if (int_excep) begin
+            ls_fsm = S_NORMAL;
+            stall = '0;
+            fsm_flush = '1;
+            fsm_npc = pc_s + 4;
+        end else begin
+            ls_fsm = S_IDLE;
+            stall = '1;
+            fsm_flush = '0;
         end
     end
 

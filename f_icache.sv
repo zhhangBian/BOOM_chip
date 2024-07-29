@@ -389,7 +389,7 @@ always_comb begin
             else if (commit_req_valid_i) begin
                 case(commit_icache_req.cache_op)
                     0, 1: begin
-                        commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
+                        commit_cache_req.addr                  = commit_icache_req.addr;
                         commit_cache_req.way_choose            = commit_icache_req.addr[0] ? 2'b10 : 2'b01;
                         commit_cache_req.tag_data              = '0;
                         commit_cache_req.tag_we                = '1;
@@ -397,7 +397,7 @@ always_comb begin
                         commit_resp_valid_o                    = '1;
                     end
                     2: begin
-                        commit_cache_req.addr[11:TAG_ADDR_LOW] = commit_icache_req.addr[11:TAG_ADDR_LOW];
+                        commit_cache_req.addr                  = commit_icache_req.addr;
                         commit_cache_req.way_choose            = '0;
                         commit_cache_req.tag_data              = '0;
                         commit_cache_req.tag_we                = '0;
