@@ -2291,7 +2291,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .index (i),
         .valid ({2'b0, rob_commit_q[i].is_ll, ld_w, ld_hu, ld_h, ld_bu, ld_b}),
         .paddr (rob_commit_q[i].lsu_info.paddr),
-        .vaddr (rob_commit_q[i].data_rj)
+        .vaddr (rob_commit_q[i].lsu_ifno.vaddr)
     );
 
     wire st_h = (|(rob_commit_q[i].lsu_info.strb)) & (rob_commit_q[i].lsu_info.msize == 2'd0);
