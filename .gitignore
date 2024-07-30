@@ -1,0 +1,13 @@
+TODO
+BPU/
+my_test/
+test.S
+test.c
+test.sh
+.error_log
+obj_dir
+*.swp
+.vscode
+.idea
+
+
