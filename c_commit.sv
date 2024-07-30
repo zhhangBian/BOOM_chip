@@ -2289,9 +2289,9 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock (clk),
         .coreid(0),
         .index (i),
-        .valid ({2'b0, rob_commit_q[i].is_ll, ld_w, ld_hu, ld_h, ld_bu, ld_b}),
+        .valid (commit & (|(rob_commit_q[i].lsu_info.rmask))),
         .paddr (rob_commit_q[i].lsu_info.paddr),
-        .vaddr (rob_commit_q[i].lsu_ifno.vaddr)
+        .vaddr (rob_commit_q[i].lsu_info.vaddr)
     );
 
     wire st_h = (|(rob_commit_q[i].lsu_info.strb)) & (rob_commit_q[i].lsu_info.msize == 2'd0);
@@ -2309,7 +2309,7 @@ for(genvar i = 0; i < 2; i += 1) begin
       .clock(clk),
       .coreid(0),
       .index(i),
-      .valid({4'b0, (ll_bit & rob_commit_q[i].is_sc & !cur_exception_q), st_w & !cur_exception_q, st_h & !cur_exception_q, st_b & !cur_exception_q}),
+      .valid(commit & (|(rob_commit_q[i].lsu_info.strb))),
       .storePAddr(rob_commit_q[i].lsu_info.paddr),
       .storeVAddr(rob_commit_q[i].lsu_info.vaddr),
       .storeData(temp_wdata)
