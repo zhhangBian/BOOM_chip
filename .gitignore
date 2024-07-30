@@ -3,7 +3,6 @@ TODO
 tags
 .vscode
 .idea
-BPU/
 test*
 obj_dir
 my_test/
