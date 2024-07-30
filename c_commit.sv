@@ -2237,7 +2237,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .valid         ((retire_request_o[i] || (flush && (i == 0))) && !cur_exception_q),
         .pc            (rob_commit_q[i].pc),
         .instr         (rob_commit_q[i].instr),
-        .skip          ('0),
+        .skip          (rob_commit_q[i].lsu_info.uncached & flush),
 
         .is_TLBFILL    (rob_commit_q[i].tlbfill_en), // TODO: CHECK
         .TLBFILL_index (timer_64_q[$clog2(`_TLB_ENTRY_NUM) - 1:0]-1),
