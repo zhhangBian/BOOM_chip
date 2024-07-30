@@ -503,6 +503,7 @@ always_comb begin
             decode_info_o.mem_signed = 1'd1;
             decode_info_o.mem_write = 1'd1;
             decode_info_o.sc_inst = 1'd1;
+            decode_info_o.flush_inst = 1'd1;
         end
         /*==================== CACHE ====================*/
         // CACOP

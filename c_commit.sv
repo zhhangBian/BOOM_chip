@@ -302,6 +302,17 @@ always_comb begin
             //有了上面哪个时序，这个rob_commit_q就可以直接用了
         end
     end
+
+    else if (is_sc[0]) begin
+      commit_arf_we_o[0]     = retire_request_o[0] & !cur_exception_q;
+
+      commit_debug_pc_o[0]   = rob_commit_q[0].pc;
+      commit_arf_data_o[0]   = csr_q.llbit;
+
+      commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
+      commit_arf_preg_o[0] = rob_commit_q[0].rob_id;
+      commit_arf_check_o[0] = rob_commit_q[0].check;
+    end
 // TODO 好像还有sc
 /*
     if(~stall) begin
@@ -1354,6 +1365,9 @@ always_comb begin
         else if (is_ll[0]) begin//注意，这个信号虽然没有_q，但是的确是第二拍的！
             csr_update.llbit = 1;
         end
+        else if (is_sc[0]) begin
+            csr_update.llbit = 0;
+        end
     end
 
     if (|icache_cacop_tlb_exc_i) begin
@@ -1709,6 +1723,9 @@ always_comb begin
                         else begin
                             ls_fsm = S_NORMAL;
                             stall = '0;
+                            `ifdef _DIFFTEST
+                            fsm_commit = '1;
+                            `endif
                             fsm_flush = '0;
                         end
                     end
@@ -2329,7 +2346,7 @@ for(genvar i = 0; i < 2; i += 1) begin
       .clock(clk),
       .coreid(0),
       .index(i),
-      .valid(commit & (|(rob_commit_q[i].lsu_info.strb))),
+      .valid(commit & (|(rob_commit_q[i].lsu_info.strb)) & ((is_sc[0] & ll_bit & (i == 0)) | (~is_sc[0]))),
       .storePAddr(rob_commit_q[i].lsu_info.paddr),
       .storeVAddr(rob_commit_q[i].lsu_info.vaddr),
       .storeData(temp_wdata)
