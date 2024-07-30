@@ -167,7 +167,7 @@ initial begin
 end
 
 for (genvar i = 0; i < 2; i=i+1) begin
-    assign bht_wdata[i].history = correct_info.type_miss ? {{(`BPU_HISTORY_LEN-1){1'b0}}, correct_info.taken} :
+    assign bht_wdata[i].history = correct_info.type_miss ? {(`BPU_HISTORY_LEN){correct_info.taken}} :
                                     {correct_info.history[3:0], correct_info.taken};
     assign bht_rdata[i] = bht[i][bht_raddr];
 end

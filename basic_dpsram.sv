@@ -125,9 +125,9 @@ module dpsram #(
   // PORT B
   always_ff @(posedge clk1) begin
     if(!rst_n0) begin
-        for(integer i = 0 ; i < (DATA_DEPTH) ; i++) begin
-            sim_ram[i] <= '0;
-        end
+        // for(integer i = 0 ; i < (DATA_DEPTH) ; i++) begin
+        //     sim_ram[i] <= '0;
+        // end
     end
     else if(en1_i) begin
         for(integer i = 0 ; i < (DATA_WIDTH/BYTE_SIZE) ; i++) begin
