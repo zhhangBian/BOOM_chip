@@ -127,7 +127,7 @@ always_comb begin
     end
     else if(&choose) begin
         entry_init[iq_tail_q]     |= other_ready;
-        entry_init[iq_tail_q + 1] |= other_ready;
+        entry_init[(iq_tail_q[2:0] + 3'b1)] |= other_ready;
     end
 end
 
@@ -149,10 +149,10 @@ always_comb begin
         iq_valid  [iq_tail_q]        |= p_valid_i[0];
         iq_di     [iq_tail_q]        |= p_di_i[0];
 
-        iq_data   [iq_tail_q + 1]    |= p_data_i[1] ;
-        iq_reg_id [iq_tail_q + 1]    |= p_reg_id_i[1];
-        iq_valid  [iq_tail_q + 1]    |= p_valid_i[1];
-        iq_di     [iq_tail_q + 1]    |= p_di_i[1];
+        iq_data   [(iq_tail_q[2:0] + 3'b1)]    |= p_data_i[1] ;
+        iq_reg_id [(iq_tail_q[2:0] + 3'b1)]    |= p_reg_id_i[1];
+        iq_valid  [(iq_tail_q[2:0] + 3'b1)]    |= p_valid_i[1];
+        iq_di     [(iq_tail_q[2:0] + 3'b1)]    |= p_di_i[1];
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
