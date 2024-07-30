@@ -35,7 +35,7 @@ end
 
 logic valid_q;
 always_ff @(posedge clk) begin
-    valid_q <= cpu_lsu_receiver.valid;
+    valid_q <= cpu_lsu_receiver.valid & !stall & cpu_lsu_receiver.ready;
 end
 
 // commit 传入请求

@@ -127,7 +127,7 @@ always_comb begin
     end
     else if(&choose) begin
         entry_init[iq_tail_q]     |= other_ready;
-        entry_init[(iq_tail_q[2:0] + 3'b1)] |= other_ready;
+        entry_init[iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)] |= other_ready;
     end
 end
 
@@ -149,10 +149,10 @@ always_comb begin
         iq_valid  [iq_tail_q]        |= p_valid_i[0];
         iq_di     [iq_tail_q]        |= p_di_i[0];
 
-        iq_data   [(iq_tail_q[2:0] + 3'b1)]    |= p_data_i[1] ;
-        iq_reg_id [(iq_tail_q[2:0] + 3'b1)]    |= p_reg_id_i[1];
-        iq_valid  [(iq_tail_q[2:0] + 3'b1)]    |= p_valid_i[1];
-        iq_di     [(iq_tail_q[2:0] + 3'b1)]    |= p_di_i[1];
+        iq_data   [iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)]    |= p_data_i[1] ;
+        iq_reg_id [iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)]    |= p_reg_id_i[1];
+        iq_valid  [iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)]    |= p_valid_i[1];
+        iq_di     [iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)]    |= p_di_i[1];
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -299,7 +299,7 @@ always_comb begin
     // (select_di_q.msize == 0) ? real_data[0] << (iq_lsu_request.vaddr[4:0] & 5'b00011 << 3) :
     //                           (select_di_q.msize == 1) ? real_data[0] << (iq_lsu_request.vaddr[4:1] & 4'b0001  << 4) :
     //                           real_data[0];
-    iq_lsu_request.rmask    = select_di_q.wmem ? '0 :
+    iq_lsu_request.rmask    = select_di_q.wmem ? '0 : 
                               (select_di_q.msize == 0) ? (1'b1 << iq_lsu_request.vaddr[1:0]) :
                               (select_di_q.msize == 1) ? (2'b11 << iq_lsu_request.vaddr[1:0]) :
                               4'b1111;
