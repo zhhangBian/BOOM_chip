@@ -153,6 +153,7 @@ logic [31:0] pc_s;
 
 `ifdef _DIFFTEST
 logic not_need_again;
+logic fsm_commit;
 `endif
 
 //idle指令
@@ -1046,7 +1047,7 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
                 `write_csr_mask(tcfg, `_TCFG_PERIODIC);
                 `write_csr_mask(tcfg, `_TCFG_INITVAL);
                 timer_set = 1;//设置定时器初始状态
-                csr.timer_en = write_data[`_TCFG_EN];  
+                csr.timer_en = write_data[`_TCFG_EN];
             end
             `_CSR_TVAL: begin
                 //do nothing
@@ -1509,6 +1510,7 @@ always_comb begin
 
     `ifdef _DIFFTEST
     not_need_again      = '0;
+    fsm_commit          = '0;
     `endif
 
     axi_wait            = axi_wait_q;
@@ -1560,6 +1562,9 @@ always_comb begin
                 ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
                 fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
+                `ifdef _DIFFTEST
+                not_need_again = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
+                `endif
                 fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
                           (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                           csr_q.eentry;
@@ -1586,7 +1591,7 @@ always_comb begin
                         stall = '0;
                         fsm_flush = '1;
                         `ifdef _DIFFTEST
-                        not_need_again = '0;
+                        not_need_again = '1;
                         `endif
                         fsm_npc = pc_s + 4;
 
@@ -1604,6 +1609,9 @@ always_comb begin
                             ls_fsm = S_CACHE_RD;
                             stall = '1;
                             cache_rd_need_back = '1;
+                            `ifdef _DIFFTEST
+                            fsm_commit = '1;
+                            `endif
 
                             // 设置Cache请求
                             cache_dirty_addr = lsu_info[0].cacop_addr;
@@ -1639,7 +1647,7 @@ always_comb begin
                             stall = '0;
                             fsm_flush = '1;
                             `ifdef _DIFFTEST
-                            not_need_again = '0;
+                            not_need_again = '1;
                             `endif
                             fsm_npc = pc_s + 4;
                         end
@@ -1656,6 +1664,9 @@ always_comb begin
                                 ls_fsm = S_CACHE_RD;
                                 stall = '1;
                                 cache_rd_need_back = '1;
+                                `ifdef _DIFFTEST
+                                fsm_commit = '1;
+                                `endif
                                 // 将Cache无效化，先读出对应的tag
                                 cache_dirty_addr = lsu_info[0].paddr & 32'hfffffff0;
                                 commit_cache_req.addr       = cache_dirty_addr;
@@ -1689,7 +1700,7 @@ always_comb begin
                                 stall = '0;
                                 fsm_flush = '1;
                                 `ifdef _DIFFTEST
-                                not_need_again = '0;
+                                not_need_again = '1;
                                 `endif
                                 fsm_npc = pc_s + 4;
                                 cache_rd_need_back = '0;
@@ -2018,12 +2029,12 @@ always_comb begin
                 `endif
                 fsm_npc = pc_s + 4;
                 cache_rd_need_back = '0;
-                
+
                 cache_block_ptr = '0;
                 cache_block_len = '0;
                 axi_block_ptr = '0;
                 axi_block_len = '0;
-                for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin 
+                for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
                     axi_block_data[i] = '0;
                     cache_block_data[i] = '0;
                 end
@@ -2266,7 +2277,7 @@ end
 `ifdef _DIFFTEST
 
 for(genvar i = 0; i < 2; i += 1) begin
-    wire commit = (retire_request_o[i] || ((flush && (i == 0)) && ( not_need_again))) && (~cur_exception_q);
+    wire commit = (retire_request_o[i] || ((flush && (i == 0)) && (not_need_again)) || (fsm_commit && (i == 0))) && (~cur_exception_q);
     DifftestInstrCommit DifftestInstrCommit(
         .clock         (clk),
         .coreid        ('0),
