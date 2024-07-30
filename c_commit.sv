@@ -151,10 +151,6 @@ logic fsm_flush;
 logic [31:0] fsm_npc;
 logic [31:0] pc_s;
 
-`ifdef _DIFFTEST
-logic not_need_again;
-`endif
-
 //idle指令
 logic wait_for_int_q, wait_for_int;
 
@@ -1507,10 +1503,6 @@ always_comb begin
     fsm_flush           = '0;
     fsm_npc             = pc_s + 4;
 
-    `ifdef _DIFFTEST
-    not_need_again      = '0;
-    `endif
-
     axi_wait            = axi_wait_q;
     icache_wait         = icache_wait_q;
 
@@ -1718,12 +1710,8 @@ always_comb begin
                 ls_fsm = S_UNCACHED_WB;
                 stall = '1;
                 fsm_flush = '1;
-                `ifdef _DIFFTEST
-                not_need_again = '1;
-                `endif
                 fsm_npc = pc_s + 4;
                 // 发起AXI请求
-                commit_cache_req.fetch_sb = |lsu_info[0].strb;
                 commit_axi_req.waddr = lsu_info[0].paddr;
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
@@ -1837,7 +1825,7 @@ always_comb begin
                     end
                     else begin
                         // 直接刷掉流水
-                        fsm_flush = '0;
+                        fsm_flush = '1;
                         fsm_npc = pc_s;
                         // 不是脏的，先读出Cache，再写
                         if(~cache_commit_dirty[0]) begin
@@ -1919,9 +1907,6 @@ always_comb begin
                 stall = '0;
                 // uncache读入后再刷
                 fsm_flush = '1;
-                `ifdef _DIFFTEST
-                not_need_again = '1;
-                `endif
                 fsm_npc = pc_s + 4;
 
                 axi_block_data[axi_block_ptr_q] = axi_commit_resp_i.rdata;
@@ -1994,7 +1979,7 @@ always_comb begin
             commit_axi_req.wdata = cache_block_data[axi_block_ptr_q];
             commit_axi_wlast_o = (axi_block_ptr_q == axi_block_len - 1);
 
-            if(axi_commit_wready_i & commit_axi_wvalid_o) begin
+            if(axi_commit_wready_i) begin
                 axi_block_ptr = axi_block_ptr_q + 1;
             end
         end
@@ -2004,9 +1989,6 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
-                `ifdef _DIFFTEST
-                not_need_again = '0;
-                `endif
                 fsm_npc = pc_s + 4;
                 cache_rd_need_back = '0;
                 
@@ -2080,9 +2062,6 @@ always_comb begin
 
         if(cache_block_ptr_q == cache_block_len) begin
             fsm_flush = '1;
-            `ifdef _DIFFTEST
-            not_need_again = '0;
-            `endif
             fsm_npc   = pc_s;
             ls_fsm = S_NORMAL;
             stall = '0;
@@ -2162,9 +2141,6 @@ always_comb begin
                 ls_fsm = S_NORMAL;
                 stall = '0;
                 fsm_flush = '1;
-                `ifdef _DIFFTEST
-                not_need_again = '1;
-                `endif
                 fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
                           (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                           csr_q.eentry;
@@ -2177,9 +2153,6 @@ always_comb begin
             ls_fsm = S_NORMAL;
             stall = '0;
             fsm_flush = '1;
-            `ifdef _DIFFTEST
-            not_need_again = '1;
-            `endif
             fsm_npc = pc_s + 4;
         end else begin
             ls_fsm = S_IDLE;
@@ -2207,8 +2180,8 @@ always_ff @(posedge clk) begin
         lsu_info_q          <= '0;
         cache_dirty_addr_q  <= '0;
 
-        cache_rd_need_back_q<= '0;
-        axi_rd_need_wb_q    <= '0;
+        cache_rd_need_back_q   <= '0;
+        axi_rd_need_wb_q <= '0;
 
         commit_icache_req_q <= '0;
         commit_cache_req_q  <= '0;
@@ -2257,12 +2230,11 @@ end
 `ifdef _DIFFTEST
 
 for(genvar i = 0; i < 2; i += 1) begin
-    wire commit = (retire_request_o[i] || ((flush && (i == 0)) && ( not_need_again))) && (~cur_exception_q);
     DifftestInstrCommit DifftestInstrCommit(
         .clock         (clk),
         .coreid        ('0),
         .index         (i),
-        .valid         (commit),
+        .valid         ((retire_request_o[i] || (flush && (i == 0))) && !cur_exception_q),
         .pc            (rob_commit_q[i].pc),
         .instr         (rob_commit_q[i].instr),
         .skip          ('0),
