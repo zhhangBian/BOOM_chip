@@ -13,8 +13,8 @@ typedef enum logic[1:0] {
 typedef struct packed {
     logic [31:0]                    target_pc; // 跳转到的目标 PC 
     logic [31:0]                    next_pc;
-    logic                           is_branch;
     br_type_t                       br_type;
+    logic                           is_branch;
     logic                           taken;
     logic [ 1:0]                    scnt;
     logic                           need_update;
@@ -37,19 +37,18 @@ typedef struct packed {
 } correct_info_t;
 
 typedef struct packed {
-    logic                           is_branch;
-    logic  [`BPU_TAG_LEN-1 : 0]     tag;
-    logic  [31:0]                   target_pc;
-    br_type_t                       br_type;
+    logic  [`BPU_TAG_LEN-1 : 0] tag;
+    logic  [31:0]               target_pc;
+    br_type_t                   branch_type; // 强行和后端适配
+    logic                       is_call;
+    logic                       is_ret;
+    logic                       is_uncond_branch;
+    logic                       is_normal_branch;
+    logic                       is_branch;
 } bpu_btb_entry_t;
 
-typedef struct packed {
-    logic  [`BPU_HISTORY_LEN-1 : 0]  history;
-} bpu_bht_entry_t;
-
-typedef struct packed {
-    logic  [1:0]    scnt;
-} bpu_pht_entry_t;
+typedef logic [`BPU_HISTORY_LEN-1 : 0]  bpu_bht_entry_t;
+typedef logic [1:0] bpu_pht_entry_t;
 
 /* ============================== Decoder ==============================*/
 typedef logic [0 : 0] ertn_inst_t;

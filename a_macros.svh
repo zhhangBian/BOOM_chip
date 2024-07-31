@@ -12,12 +12,12 @@
 // BPU macro
 
 `define BPU_HISTORY_LEN 5 // 历史总共 5 位
-`define BPU_PHT_PC_LEN 8 // PC[10:3] 共 8 位
-`define BPU_PHT_LEN (`BPU_HISTORY_LEN + `BPU_PHT_PC_LEN) // = 13
-`define BPU_PHT_DEPTH (1 << `BPU_PHT_LEN) // PHT大小 = 8192 项，奇偶共16324项
+`define BPU_PHT_PC_LEN 7 // PC[9:3] 共 7 位
+`define BPU_PHT_LEN (`BPU_HISTORY_LEN + `BPU_PHT_PC_LEN) // = 12
+`define BPU_PHT_DEPTH (1 << `BPU_PHT_LEN) // PHT大小 = 4096 项，奇偶共 8192 项，共 16324 bits
 
-`define BPU_RAS_LEN 4
-`define BPU_RAS_DEPTH (1 << `BPU_RAS_LEN) //  RAS 的栈的大小 = 16
+`define BPU_RAS_LEN 3 // 足够用了
+`define BPU_RAS_DEPTH (1 << `BPU_RAS_LEN) //  RAS 的栈的大小 = 8
 
 `define BPU_BTB_LEN 9
 `define BPU_BTB_DEPTH (1 << `BPU_BTB_LEN) // 奇偶 BTB 各 512 项，共 1024 项
