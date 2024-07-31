@@ -29,6 +29,7 @@ logic [`ROB_WIDTH-1:0] reg_addr_s_1, reg_addr_s_2, reg_addr_s_3;
 logic [32:0] r0_q, r1_q;
 logic [63:0] result_q;
 
+logic busy;
 assign ready_o = (~busy) || (busy && valid_o);
 
 always_ff @(posedge clk) begin
