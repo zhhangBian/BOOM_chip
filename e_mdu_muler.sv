@@ -29,9 +29,7 @@ logic [`ROB_WIDTH-1:0] reg_addr_s_1, reg_addr_s_2, reg_addr_s_3;
 logic [32:0] r0_q, r1_q;
 logic [63:0] result_q;
 
-assign ready_o = ready_i;
-
-logic busy;
+assign ready_o = (~busy) || (busy && valid_o);
 
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin
@@ -59,11 +57,16 @@ always_ff @(posedge clk) begin
 end
 
 always_ff @(posedge clk) begin
-    if(~busy) begin
-        busy <= valid_i;
+    if(!rst_n || flush) begin
+        busy <= '0;
     end
     else begin
-        busy <= valid_o ? valid_i : busy;
+        if(~busy) begin
+            busy <= valid_i;
+        end
+        else begin
+            busy <= valid_o ? valid_i : busy;
+        end
     end
 end
 
