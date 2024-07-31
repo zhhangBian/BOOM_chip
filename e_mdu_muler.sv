@@ -30,7 +30,7 @@ logic [32:0] r0_q, r1_q;
 logic [63:0] result_q;
 
 logic busy;
-assign ready_o = (~busy) || (busy && valid_o);
+assign ready_o = (~busy) & ready_i;
 
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin
@@ -66,7 +66,7 @@ always_ff @(posedge clk) begin
             busy <= valid_i;
         end
         else begin
-            busy <= valid_o ? valid_i : busy;
+            busy <= valid_o ? 0 : busy;
         end
     end
 end
