@@ -31,6 +31,8 @@ logic [63:0] result_q;
 
 assign ready_o = ready_i;
 
+logic busy;
+
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin
         valid_s_1 <= '0;
@@ -38,23 +40,30 @@ always_ff @(posedge clk) begin
         valid_s_3 <= '0;
     end
     else if(ready_i) begin
-        r0_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[0][31], req_i.data[0]};
-        r1_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[1][31], req_i.data[1]};
-
-        cal_result_q <= $signed(r0_q) * $signed(r1_q);
-        result_q <= cal_result_q;
-
-        valid_s_1 <= valid_i;
+        valid_s_1 <= busy ? '0 : valid_i;
         reg_addr_s_1 <= req_i.reg_id;
         op_s_1 <= req_i.op;
+        r0_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[0][31], req_i.data[0]};
+        r1_q <= {!(req_i.op == `_MDU_MULHU) & req_i.data[1][31], req_i.data[1]};
 
         valid_s_2 <= valid_s_1;
         reg_addr_s_2 <= reg_addr_s_1;
         op_s_2 <= op_s_1;
+        cal_result_q <= $signed(r0_q) * $signed(r1_q);
 
         valid_s_3 <= valid_s_2;
         reg_addr_s_3 <= reg_addr_s_2;
         op_s_3 <= op_s_2;
+        result_q <= cal_result_q;
+    end
+end
+
+always_ff @(posedge clk) begin
+    if(~busy) begin
+        busy <= valid_i;
+    end
+    else begin
+        busy <= valid_o ? valid_i : busy;
     end
 end
 
