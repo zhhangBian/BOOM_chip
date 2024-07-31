@@ -2074,12 +2074,11 @@ always_comb begin
                 for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
                     axi_block_data[i] = '0;
                 end
-
+                cache_block_ptr = '0;
+                cache_block_len = 4;
                 if(axi_commit_arready_i) begin
                     axi_wait = '0;
-                    // 设置相应的指针
-                    cache_block_ptr = '0;
-                    cache_block_len = 4;
+                    // 设置相应的指针    
                     for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
                         cache_block_data[i] = '0;
                     end
