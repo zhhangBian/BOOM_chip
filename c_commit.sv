@@ -2063,7 +2063,7 @@ always_comb begin
 
                 // 设置相应的AXI请求
                 commit_axi_req = '0;
-                commit_axi_req.raddr = cache_dirty_addr;
+                commit_axi_req.raddr = lsu_info_s.paddr;
                 commit_axi_req.rlen = 4;
                 commit_axi_req.strb = '0;
                 commit_axi_arvalid_o = '1;
