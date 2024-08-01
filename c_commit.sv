@@ -438,8 +438,6 @@ logic [1:0]       predict_branch_q;
 logic [1:0]       is_branch_q;
 
 always_comb begin
-    flush = |commit_flush_info;
-
     case (1'b1)
         (fsm_flush): begin
             //访存相关的flush,以及idle
@@ -494,6 +492,8 @@ always_comb begin
     end //存储指令
 */
 end
+
+assign flush = |commit_flush_info;
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -2560,7 +2560,8 @@ always_ff @(posedge clk) begin
                     first = 0;
                 end
                 $fdisplay(handle,"}}");
-                $display("%p", excute_cycle);
+                $fclose(handle);
+                // $display("%p", excute_cycle);
                 $display("succ: %d fail: %d, frac: %f", succ_cnt, fail_cnt, 100.0 * succ_cnt / (succ_cnt + fail_cnt));
                 $display("Flush count: %d", flush_cnt);
                 // $finish();
@@ -2603,8 +2604,11 @@ always_ff @(posedge clk) begin
                 $display("[%d] fail target! pred:%x actual:%x", excute_cnt[rob_commit_q[i].pc], predict_info_q[i].next_pc, next_pc_q[i]);
             end
         end
-        end
-    //   if(fsm_q == ) flush_cnt = flush_cnt + 1;
+    end
+
+    if(flush) begin 
+        flush_cnt = flush_cnt + 1;
+    end
         cyc_counter = cyc_counter + 1;
     end
 `endif
