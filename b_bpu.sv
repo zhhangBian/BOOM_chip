@@ -169,6 +169,13 @@ end
 (* ramstyle = "distributed" *) reg [`BPU_HISTORY_LEN-1:0] bht0 [`BPU_BHT_DEPTH-1:0];
 (* ramstyle = "distributed" *) reg [`BPU_HISTORY_LEN-1:0] bht1 [`BPU_BHT_DEPTH-1:0];
 
+initial begin
+    for (integer i = 0; i < `BPU_BHT_DEPTH; i=i+1) begin
+        bht0[i] = '0;
+        bht1[i] = '0;
+    end
+end
+
 bpu_bht_entry_t [1:0]       bht_rdata;
 bpu_bht_entry_t             bht_wdata;
 logic [`BPU_BHT_LEN-1:0]    bht_raddr;
@@ -267,6 +274,13 @@ end
  */
 (* ramstyle = "distributed" *) reg [1:0] pht0 [`BPU_PHT_DEPTH - 1 : 0];
 (* ramstyle = "distributed" *) reg [1:0] pht1 [`BPU_PHT_DEPTH - 1 : 0];
+
+initial begin
+    for (integer i = 0; i < `BPU_PHT_DEPTH; i=i+1) begin
+        pht0[i] = 2'b01;
+        pht1[i] = 2'b01;
+    end
+end
 
 bpu_pht_entry_t  [1:0]              pht_rdata;
 bpu_pht_entry_t                     pht_wdata;
