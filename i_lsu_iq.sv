@@ -291,6 +291,7 @@ wire  [1:0]  addr_mask = iq_lsu_request.vaddr[1:0];
 
 // 配置iq到lsu的信息
 always_comb begin
+    iq_lsu_di_o             = select_di_q;
     iq_lsu_request          = '0;
     iq_lsu_request.wid      = select_di_q.wreg_id;
     iq_lsu_request.msigned  = select_di_q.msigned;

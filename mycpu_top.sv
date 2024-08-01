@@ -92,7 +92,7 @@ module mycpu_top (
 );
 
 parameter int CDB_COUNT = 2;
-parameter int WKUP_COUNT = 2;
+parameter int WKUP_COUNT = 3; // 0801 加入lsu唤醒
 
 wire clk;
 wire rst_n;
@@ -401,6 +401,13 @@ fifo # (
 handshake_if #(.T(iq_lsu_pkg_t)) cpu_lsu_if();
 handshake_if #(.T(lsu_iq_pkg_t)) lsu_cpu_if();
 
+decode_info_t iq_lsu_di;
+decode_info_t lsu_iq_di;
+
+logic lsu_wkup_valid;
+logic [5:0] lsu_wkup_reg_id;
+word_t lsu_wkup_data;
+
 lsu_iq # (
     .CDB_COUNT(CDB_COUNT),
     .WKUP_COUNT(WKUP_COUNT)
@@ -429,10 +436,14 @@ lsu_iq # (
     .iq_lsu_valid_o(cpu_lsu_if.valid),
     .iq_lsu_ready_i(cpu_lsu_if.ready),
     .iq_lsu_req_o(cpu_lsu_if.data),
+    .iq_lsu_di_o(iq_lsu_di),
 
     .lsu_iq_valid_i(lsu_cpu_if.valid),
     .lsu_iq_ready_o(lsu_cpu_if.ready),
     .lsu_iq_resp_i(lsu_cpu_if.data),
+    .lsu_iq_di_i(lsu_iq_di),
+
+    .wkup_data_o(wkup_data[2]),
 
     .result_o(fu_cdb_data[2]),
     .fifo_ready(fu_fifo[2].ready),
@@ -658,6 +669,12 @@ dcache # () dcache(
     .csr_i(csr),
     .cpu_lsu_receiver(cpu_lsu_if.receiver),
     .lsu_cpu_sender(lsu_cpu_if.sender),
+
+    .iq_lsu_di_i(iq_lsu_di),
+    .lsu_iq_di_o(lsu_iq_di),
+
+    .wkup_reg_id_o(wkup_reg_id[2]),
+    .wkup_valid_o(wkup_valid[2]),
 
     .commit_cache_req(commit_cache_req), /* 2024/07/24 fix interface to struct*/
     .cache_commit_resp(cache_commit_resp), /* 2024/07/24 fix interface to struct*/
