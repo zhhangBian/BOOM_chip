@@ -2311,7 +2311,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock         (clk),
         .coreid        ('0),
         .index         (i),
-        .valid         (commit),
+        .valid         (commit[i]),
         .pc            (rob_commit_q[i].pc),
         .instr         (rob_commit_q[i].instr),
         .skip          ('0),
@@ -2502,12 +2502,32 @@ integer    succ_cnt;
 integer    first;
 integer    flush_cnt; // 记录刷新流水线所用周期
 
-branch_info_t [1:0] branch_info_q;
-predict_
-logic [1:0] taken_q;
+logic [1:0] need_jump, need_jump_q;
+
 always_ff @(posedge clk) begin
-    branch_info_q <= branch_info;
-    taken_q <= taken;
+    need_jump_q <= need_jump;
+end
+
+for(genvar i = 0; i < 2; i += 1) begin
+    always_comb begin
+        case (branch_info[i].br_type)
+                BR_B: begin
+                    need_jump = '1;
+                end
+                BR_NORMAL: begin
+                    need_jump = (rob_commit_i[i].w_data == 1);
+                end
+                BR_CALL: begin
+                    need_jump = '1;
+                end
+                BR_RET: begin
+                    need_jump = '1;
+                end
+                default: begin
+                    need_jump = '0;
+                end
+            endcase
+    end
 end
 
 always_ff @(posedge clk) begin
@@ -2550,12 +2570,12 @@ always_ff @(posedge clk) begin
         // 分支预测监视器
         if(commit[i] && rob_commit_q[i].pc == 32'h1c001d08) begin
             // 只监视失败情况
-            if(h_entry_q[i].need_jump != h_entry_q[i].bpu_predict.taken) begin
+            if(need_jump_q[i] != taken_q[i]) begin
                 $display("[%d] fail direction! pred:%x actual:%x history:%b",
                     excute_cnt[rob_commit_q[i].pc],
-                    h_entry_q[i].bpu_predict.taken,
-                    h_entry_q[i].need_jump,
-                    h_entry_q[i].bpu_predict.history
+                    taken_q[i],
+                    need_jump_q[i],
+                    predict_info_q[i].history
                 );
                 fail_cnt = fail_cnt + 1;
             end
@@ -2563,13 +2583,13 @@ always_ff @(posedge clk) begin
             else begin
                 $display("[%d] true direction! pred:%x actual:%x history:%b",
                     excute_cnt[rob_commit_q[i].pc],
-                    h_entry_q[i].bpu_predict.taken,
-                    h_entry_q[i].need_jump,
-                    h_entry_q[i].bpu_predict.history
+                    taken_q[i],
+                    need_jump_q[i],
+                    predict_info_q[i].history
                 );
 
-                if(h_entry_q[i].target_addr == h_entry_q[i].bpu_predict.predict_pc ||
-                    !h_entry_q[i].need_jump) begin
+                if(predict_success_q[i] ||
+                    !need_jump_q[i]) begin
                     succ_cnt = succ_cnt + 1;
                 end
                 else begin
@@ -2577,16 +2597,16 @@ always_ff @(posedge clk) begin
                 end
             end
 
-            if(h_entry_q[i].need_jump &&
-                (h_entry_q[i].need_jump == h_entry_q[i].bpu_predict.taken) &&
-                h_entry_q[i].target_addr != h_entry_q[i].bpu_predict.predict_pc) begin
-                $display("[%d] fail target! pred:%x actual:%x", excute_cnt[rob_commit_q[i].pc], h_entry_q[i].bpu_predict.predict_pc, h_entry_q[i].target_addr);
+            if(need_jump_q[i] &&
+                (need_jump_q[i] == taken_q[i]) &&
+                (~predict_success_q[i])) begin
+                $display("[%d] fail target! pred:%x actual:%x", excute_cnt[rob_commit_q[i].pc], predict_info_q[i].next_pc, next_pc_q[i]);
             end
         end
         end
     //   if(fsm_q == ) flush_cnt = flush_cnt + 1;
         cyc_counter = cyc_counter + 1;
     end
-`ednif
+`endif
 
 endmodule
