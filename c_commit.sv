@@ -13,32 +13,46 @@ function cache_tag_t get_cache_tag(
     return cache_tag;
 endfunction
 
-function automatic logic [31:0] offset(input logic [31:0] data, input [1:0] m_size, input [3:0] mask, input msigned);
+function automatic logic [31:0] offset(
+    input logic [31:0] data,
+    input [1:0] m_size,
+    input [3:0] mask,
+    input msigned
+);
     logic [31:0] lw_data;
     logic        sign;
     lw_data = '0;
     sign    = '0;
-    if (m_size == 2'd0) begin
-        for (integer i = 0; i < 4; i++) begin
-            lw_data[7 : 0]     |= mask[i] ? data[(i << 3) + 7 -: 8] : '0;
-            sign               |= mask[i] ? data[(i << 3) + 7]      : '0;
+
+    case (m_size)
+        2'd0: begin
+            for (integer i = 0; i < 4; i++) begin
+                lw_data[7 : 0]     |= mask[i] ? data[(i << 3) + 7 -: 8] : '0;
+                sign               |= mask[i] ? data[(i << 3) + 7]      : '0;
+            end
+            lw_data[31: 8]         |= {24{sign & msigned}};
         end
-        lw_data[31: 8]         |= {24{sign & msigned}};
-    end else if (m_size == 2'd1) begin
-        for (integer i = 0; i < 2; i++) begin
-            lw_data[15: 0]     |= mask[i << 1] ? data[(i << 4) + 15 -: 16] : '0;
-            sign               |= mask[i << 1] ? data[(i << 4) + 15]       : '0;
+
+        2'd1: begin
+            for (integer i = 0; i < 2; i++) begin
+                lw_data[15: 0]     |= mask[i << 1] ? data[(i << 4) + 15 -: 16] : '0;
+                sign               |= mask[i << 1] ? data[(i << 4) + 15]       : '0;
+            end
+            lw_data[31:16]         |= {16{sign & msigned}};
         end
-        lw_data[31:16]         |= {16{sign & msigned}};
-    end else begin
-        lw_data                |= data;
-    end
+
+        default: begin
+            lw_data                |= data;
+        end
+    endcase
+
     return lw_data;
 endfunction
 
 module commit #(
     parameter int CACHE_BLOCK_NUM = 4,
-    parameter int CPU_ID = 0
+    parameter int CPU_ID = 0,
+    parameter int CACHE_BLOCK_LEN = 4
 ) (
     input   logic   clk,
     input   logic   rst_n,
@@ -280,38 +294,38 @@ always_comb begin
         commit_arf_we_o[i]   = retire_request_o[i] & rob_commit_q[i].w_reg & !cur_exception_q;
         //接到rename级的要用这个！
 
-        commit_debug_pc_o[i]   = rob_commit_q[i].pc;
-        commit_arf_data_o[i] =  (rob_commit_q[i].is_branch && (rob_commit_q[i].branch_info.br_type == BR_CALL || rob_commit_q[i].branch_info.br_type == BR_RET)) ? rob_commit_q[i].pc + 4 :
+        commit_debug_pc_o[i] = rob_commit_q[i].pc;
+        commit_arf_data_o[i] = (rob_commit_q[i].is_branch && (rob_commit_q[i].branch_info.br_type == BR_CALL || rob_commit_q[i].branch_info.br_type == BR_RET)) ? rob_commit_q[i].pc + 4 :
                                 rob_commit_q[i].rdcnt_en  ? rdcnt_data_q:
                                |rob_commit_q[i].csr_type ? commit_csr_data_q:
                                rob_commit_q[i].w_data;
 
         commit_arf_areg_o[i] = rob_commit_q[i].arf_id;
         commit_arf_preg_o[i] = rob_commit_q[i].rob_id;
-        commit_arf_check_o[i] = rob_commit_q[i].check;
+        commit_arf_check_o[i]= rob_commit_q[i].check;
     end
 
     if(ls_fsm_q == S_UNCACHED_RD) begin
         if(axi_commit_rvalid_i) begin
-            commit_debug_pc_o[0]   = rob_commit_q[0].pc;
+            commit_debug_pc_o[0] = rob_commit_q[0].pc;
             commit_arf_we_o[0]   = |rob_commit_q[0].lsu_info.rmask;
             commit_arf_data_o[0] = offset(axi_commit_resp_i.rdata, rob_commit_q[0].lsu_info.msize, rob_commit_q[0].lsu_info.rmask, rob_commit_q[0].lsu_info.msigned);//TODO rdata mask
             commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
             commit_arf_preg_o[0] = rob_commit_q[0].rob_id;
-            commit_arf_check_o[0] = rob_commit_q[0].check;
+            commit_arf_check_o[0]= rob_commit_q[0].check;
             //有了上面哪个时序，这个rob_commit_q就可以直接用了
         end
     end
 
     else if (is_sc[0]) begin
-      commit_arf_we_o[0]     = retire_request_o[0] & !cur_exception_q;
+        commit_arf_we_o[0]   = retire_request_o[0] & !cur_exception_q;
 
-      commit_debug_pc_o[0]   = rob_commit_q[0].pc;
-      commit_arf_data_o[0]   = csr_q.llbit;
+        commit_debug_pc_o[0] = rob_commit_q[0].pc;
+        commit_arf_data_o[0] = csr_q.llbit;
 
-      commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
-      commit_arf_preg_o[0] = rob_commit_q[0].rob_id;
-      commit_arf_check_o[0] = rob_commit_q[0].check;
+        commit_arf_areg_o[0] = rob_commit_q[0].arf_id;
+        commit_arf_preg_o[0] = rob_commit_q[0].rob_id;
+        commit_arf_check_o[0]= rob_commit_q[0].check;
     end
 // TODO 好像还有sc
 /*
@@ -424,28 +438,42 @@ logic [1:0]       predict_branch_q;
 logic [1:0]       is_branch_q;
 
 always_comb begin
-    commit_flush_info = '0;
+    flush = |commit_flush_info;
 
-    if (fsm_flush) begin
-        commit_flush_info = 2'b01;
-    end//访存相关的flush,以及idle
-
-    else if (retire_request_o[0]) begin
-        if (cur_exception_q) begin
+    case (1'b1)
+        (fsm_flush): begin
+            //访存相关的flush,以及idle
             commit_flush_info = 2'b01;
         end
-        //异常则flush
-        else if (rob_commit_q[0].flush_inst) begin
-            commit_flush_info = 2'b01;//把idle删掉
-        end//要提交且一定会flush的指令
-        else if (~predict_success_q[0])begin
-            commit_flush_info = 2'b01;
-        end//分支预测失败
-        else if (retire_request_o[1] & ~predict_success_q[1]) begin
-            commit_flush_info = 2'b10;
-        end//第一条成功但第二条失败了
-    end
 
+        (retire_request_o[0]): begin
+            case (1'b1)
+                (cur_exception_q): begin
+                    commit_flush_info = 2'b01;
+                end
+                //异常则flush
+                (rob_commit_q[0].flush_inst): begin
+                    commit_flush_info = 2'b01;//把idle删掉
+                end//要提交且一定会flush的指令
+
+                (~predict_success_q[0]): begin
+                    commit_flush_info = 2'b01;
+                end//分支预测失败
+
+                (retire_request_o[1] & ~predict_success_q[1]): begin
+                    commit_flush_info = 2'b10;
+                end//第一条成功但第二条失败了
+
+                default: begin
+                    commit_flush_info = '0;
+                end
+            endcase
+        end
+
+        default: begin
+            commit_flush_info = '0;
+        end
+    endcase
 //下面这一大坨就用上面的替代掉了
 /*
     if(((ls_fsm_q == S_ICACHE) && icache_commit_valid_i) ||
@@ -465,9 +493,6 @@ always_comb begin
         end
     end //存储指令
 */
-
-
-    flush = |commit_flush_info;
 end
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -526,6 +551,8 @@ for(genvar i = 0; i < 2; i += 1) begin
                     next_pc[i] = real_target[i]; // TODO: check
                 end
                 default: begin
+                    real_target[i] = '0;
+                    next_pc[i] = rob_commit_i[i].pc + 4;
                 end
             endcase
         end
@@ -660,16 +687,23 @@ end
 
 //第一级读取
 always_comb begin
-    rdcnt_data = '0;
-    if (rob_commit_i[0].rdcntvl_en) begin
-        rdcnt_data = timer_64_q[31:0];
-    end
-    else if (rob_commit_i[0].rdcntvh_en) begin
-        rdcnt_data = timer_64_q[63:32];
-    end
-    else if (rob_commit_i[0].rdcntid_en) begin
-        rdcnt_data = csr_q.tid;
-    end
+    case (1'b1)
+        (rob_commit_i[0].rdcntvl_en): begin
+            rdcnt_data = timer_64_q[31:0];
+        end
+
+        (rob_commit_i[0].rdcntvh_en): begin
+            rdcnt_data = timer_64_q[63:32];
+        end
+
+        (rob_commit_i[0].rdcntid_en): begin
+            rdcnt_data = csr_q.tid;
+        end
+
+        default: begin
+            rdcnt_data = '0;
+        end
+    endcase
 end
 
 always_ff @( posedge clk ) begin
@@ -733,7 +767,8 @@ always_comb begin
     csr_exception_update.crmd[`_CRMD_PLV]  = '0;
     csr_exception_update.crmd[`_CRMD_IE]   = '0;
     /*对应文档的1，进入核心态和关中断*/
-    csr_exception_update.era               = (rob_commit_i[0].exc_code == `_ECODE_ADEF) ? rob_commit_i[0].badva :
+    csr_exception_update.era               = (rob_commit_i[0].exc_code == `_ECODE_ADEF) ?
+                                              rob_commit_i[0].badva :
                                               rob_commit_i[0].pc;
     /*对应2，要pc，如果在状态机里面要去其他地方拿!!!*//*不用了*/
 
@@ -901,6 +936,7 @@ always_comb begin
         `_CSR_DMW0:     commit_csr_data_o  |= csr_q.dmw0;
         `_CSR_DMW1:     commit_csr_data_o  |= csr_q.dmw1;
         default: begin
+            commit_csr_data_o  = '0;
         end
     endcase
 end
@@ -1278,11 +1314,15 @@ always_comb begin
     end//不是将要提交的命令，则上面全部不用，注意可能有异常！！！
 end
 
-function automatic logic vppn_match(input logic [31:0] va,
-                                    input logic huge_page, input logic [18: 0] vppn);
+function automatic logic vppn_match(
+    input logic [31:0] va,
+    input logic huge_page,
+    input logic [18: 0] vppn
+);
     if (huge_page) begin
         return va[31:22] == vppn[18:9]; //this right
-    end else begin
+    end
+    else begin
         return va[31:13] == vppn;
     end
 endfunction
@@ -1342,32 +1382,43 @@ csr_t csr_update;
 always_comb begin
     csr_update = csr_q;
     if (retire_request_o[0]) begin
-        if (rob_commit_q[0].is_tlb_fix) begin
-            csr_update = tlb_update_csr_q;
-        end
-        else if (rob_commit_q[0].is_csr_fix) begin
-            csr_update = csr_maintain_q;
-        end
-        else if (rob_commit_q[0].ertn_en) begin
-            csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
-            csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
-            if (csr_q.estat[`_ESTAT_ECODE] == `_ECODE_TLBR) begin
-                csr_update.crmd[`_CRMD_DA] = 0;
-                csr_update.crmd[`_CRMD_PG] = 1;
-            end//返回变成映射翻译
-            if (csr_q.llbctl[`_LLBCT_KLO]) begin
-                csr_update.llbctl[`_LLBCT_KLO] = 0;
+        case (1'b1)
+            (rob_commit_q[0].is_tlb_fix): begin
+                csr_update = tlb_update_csr_q;
             end
-            else begin
+
+            (rob_commit_q[0].is_csr_fix): begin
+                csr_update = csr_maintain_q;
+            end
+
+            (rob_commit_q[0].ertn_en): begin
+                csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
+                csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
+
+                if (csr_q.estat[`_ESTAT_ECODE] == `_ECODE_TLBR) begin
+                    csr_update.crmd[`_CRMD_DA] = 0;
+                    csr_update.crmd[`_CRMD_PG] = 1;
+                end//返回变成映射翻译
+
+                if (csr_q.llbctl[`_LLBCT_KLO]) begin
+                    csr_update.llbctl[`_LLBCT_KLO] = 0;
+                end
+                else begin
+                    csr_update.llbit = 0;
+                end
+            end
+            (is_ll[0]): begin//注意，这个信号虽然没有_q，但是的确是第二拍的！
+                csr_update.llbit = 1;
+            end
+
+            (is_sc[0]): begin
                 csr_update.llbit = 0;
             end
-        end
-        else if (is_ll[0]) begin//注意，这个信号虽然没有_q，但是的确是第二拍的！
-            csr_update.llbit = 1;
-        end
-        else if (is_sc[0]) begin
-            csr_update.llbit = 0;
-        end
+
+            default: begin
+                csr_update = csr_q;
+            end
+        endcase
     end
 
     if (|icache_cacop_tlb_exc_i) begin
@@ -1555,30 +1606,41 @@ always_comb begin
 
     commit_icache_valid_o = '0;
 
-    if(ls_fsm_q == S_NORMAL) begin
+    case (ls_fsm_q)
+
+    S_NORMAL: begin
         commit_cache_req    = '0;
         commit_icache_req   = '0;
         commit_axi_req      = '0;
 
-        if (!rob_commit_q[0].c_valid | cur_exception_q) begin
+        case (1'b1)
+
+        // 如果是异常
+        (!rob_commit_q[0].c_valid | cur_exception_q): begin
             ls_fsm = S_NORMAL;
         end
-        else if(commit_request_q[0] && rob_commit_q[0].idle_en) begin
+
+        // IDLE指令
+        (commit_request_q[0] && rob_commit_q[0].idle_en): begin
             stall = 1;
             ls_fsm = S_IDLE;
         end//TODO 要做其他的吗？
-        // 如果是Cache维护指令
-        else if(is_cache_fix[0]) begin
+
+        // Cache维护指令
+        (is_cache_fix[0]): begin
             commit_icache_valid_o = '0;
             icache_wait = '0;
 
-            if(cache_tar == 0) begin
+            case (cache_tar)
+            3'b0: begin
                 ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
                 fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
+
                 `ifdef _DIFFTEST
                 not_need_again = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
                 `endif
+
                 fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
                           (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                           csr_q.eentry;
@@ -1588,7 +1650,8 @@ always_comb begin
                 commit_icache_req.addr     = lsu_info[0].paddr;
                 commit_icache_req.cache_op = cache_op;
             end
-            else if(cache_tar == 1) begin
+
+            3'b1: begin
                 // 对于Cache维护指令，将维护地址视作目的地址
                 commit_cache_req.addr         = lsu_info[0].paddr;
                 commit_cache_req.way_choose   = commit_cache_req.addr[0] ? 2'b10 : 2'b1;
@@ -1607,6 +1670,7 @@ always_comb begin
                         `ifdef _DIFFTEST
                         not_need_again = '1;
                         `endif
+
                         fsm_npc = pc_s + 4;
 
                         commit_cache_req.tag_data = '0;
@@ -1636,24 +1700,18 @@ always_comb begin
                             commit_cache_req.fetch_sb     = '0;
 
                             cache_block_ptr = '0;
-                            cache_block_len = 4;
-                            for(int i =0; i < CACHE_BLOCK_NUM; i += 1) begin
-                                cache_block_data[i] = '0;
-                            end
+                            cache_block_len = CACHE_BLOCK_LEN;
 
                             // 设置相应的AXI请求
                             commit_axi_req = '0;
                             commit_axi_req.waddr = cache_dirty_addr;
-                            commit_axi_req.wlen = 4;
+                            commit_axi_req.wlen = CACHE_BLOCK_LEN;
                             commit_axi_req.strb = '1;
                             commit_axi_awvalid_o = '1;
                             axi_wait = ~axi_commit_awready_i;
                             // 设置相应的指针
                             axi_block_ptr = '0;
-                            axi_block_len = 4;
-                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                                axi_block_data[i] = '0;
-                            end
+                            axi_block_len = CACHE_BLOCK_LEN;
                         end
                         // 否则即完成
                         else begin
@@ -1689,24 +1747,18 @@ always_comb begin
                                 commit_cache_req.strb       = '0;
                                 commit_cache_req.fetch_sb   = '0;
                                 cache_block_ptr = '0;
-                                cache_block_len = 4;
-                                for(int i =0; i < CACHE_BLOCK_NUM; i += 1) begin
-                                    cache_block_data[i] = '0;
-                                end
+                                cache_block_len = CACHE_BLOCK_LEN;
 
                                 // 设置相应的AXI请求
                                 commit_axi_req = '0;
                                 commit_axi_req.waddr = cache_dirty_addr;
-                                commit_axi_req.wlen = 4;
+                                commit_axi_req.wlen = CACHE_BLOCK_LEN;
                                 commit_axi_req.strb = '1;
                                 commit_axi_awvalid_o = '1;
                                 axi_wait = ~axi_commit_awready_i;
                                 // 设置相应的指针
                                 axi_block_ptr = '0;
-                                axi_block_len = 4;
-                                for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                                    axi_block_data[i] = '0;
-                                end
+                                axi_block_len = CACHE_BLOCK_LEN;
                             end
                             // 不脏回Normal
                             else begin
@@ -1733,11 +1785,15 @@ always_comb begin
                     default: begin
                     end
                 endcase
-
             end
+
+            default: begin
+            end
+            endcase
         end
+
         // 如果是Uncached指令
-        else if(is_uncached[0]) begin
+        (is_uncached[0]): begin
             stall = '1;
             // 如果是Uncached read
             if(is_lsu_read[0]) begin
@@ -1770,12 +1826,14 @@ always_comb begin
                 axi_wait = ~axi_commit_awready_i;
             end
         end
-        // 如果是一般的访存指令
-        else if(is_lsu[0]) begin
+
+        // 一般LSU指令
+        (is_lsu[0]): begin
             // lsu指令先存下指令
             lsu_info_s = lsu_info[0];
             // 如果是load指令 且 缺失
-            if(is_lsu_read[0]) begin
+            case (1'b1)
+            (is_lsu_read[0]): begin
                 // 读命中直接提交即可
                 if(cache_commit_hit[0]) begin
                     ls_fsm = S_NORMAL;
@@ -1796,14 +1854,10 @@ always_comb begin
                         // 进行AXI握手
                         axi_wait = ~axi_commit_arready_i;
                         // 设置相应的指针
-                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                            axi_block_data[i] = '0;
-                            cache_block_data[i] = '0;
-                        end
                         axi_block_ptr = '0;
-                        axi_block_len = 4;
-                        cache_block_len = 4;
+                        axi_block_len = CACHE_BLOCK_LEN;
                         cache_block_ptr = '0;
+                        cache_block_len = CACHE_BLOCK_LEN;
                     end
                     // 开始重填，将Cache原始数据读出
                     else begin
@@ -1819,30 +1873,24 @@ always_comb begin
                         commit_cache_req.strb       = '0;
                         commit_cache_req.fetch_sb   = '0;
                         // 设置相应的指针
-                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                            cache_block_data[i] = '0;
-                        end
                         cache_block_ptr = '0;
-                        cache_block_len = 4;
+                        cache_block_len = CACHE_BLOCK_LEN;
                         cache_dirty_addr = lsu_info[0].cache_dirty_addr & 32'hfffffff0;
                         // 设置相应的AXI请求
                         commit_axi_req = '0;
                         commit_axi_req.waddr = cache_dirty_addr;
-                        commit_axi_req.wlen = 4;
+                        commit_axi_req.wlen = CACHE_BLOCK_LEN;
                         commit_axi_req.strb = '1;
                         commit_axi_awvalid_o = '1;
                         axi_wait = ~axi_commit_awready_i;
                         // 设置相应的指针
                         axi_block_ptr = '0;
-                        axi_block_len = 4;
-                        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                            axi_block_data[i] = '0;
-                        end
+                        axi_block_len = CACHE_BLOCK_LEN;
                     end
                 end
             end
-            // 如果是store指令，只能单提交
-            else if(is_lsu_write[0]) begin
+
+            (is_lsu_write[0]): begin
                 // 如果命中，只需要写回
                 if(cache_commit_hit[0]) begin
                     fsm_flush = '0;
@@ -1889,13 +1937,10 @@ always_comb begin
                             // 进行AXI握手
                             axi_wait = ~axi_commit_arready_i;
                             // 设置相应的指针
-                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                                cache_block_data[i] = '0;
-                            end
                             axi_block_ptr = '0;
-                            axi_block_len = 4;
+                            axi_block_len = CACHE_BLOCK_LEN;
                             cache_block_ptr = '0;
-                            cache_block_len = 4;
+                            cache_block_len = CACHE_BLOCK_LEN;
                         end
                         // 开始重填
                         else begin
@@ -1912,38 +1957,39 @@ always_comb begin
                             commit_cache_req.strb       = '0;
                             commit_cache_req.fetch_sb   = |lsu_info[0].strb;
                             // 设置相应的指针
-                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                                cache_block_data[i] = '0;
-                            end
                             cache_block_ptr = '0;
-                            cache_block_len = 4;
+                            cache_block_len = CACHE_BLOCK_LEN;
                             cache_dirty_addr = lsu_info[0].cache_dirty_addr;
                             // 设置相应的AXI请求
                             commit_axi_req = '0;
                             commit_axi_req.waddr = cache_dirty_addr & 32'hfffffff0;
-                            commit_axi_req.wlen = 4;
+                            commit_axi_req.wlen = CACHE_BLOCK_LEN;
                             commit_axi_req.strb = '1;
                             commit_axi_awvalid_o = '1;
                             axi_wait = ~axi_commit_awready_i;
                             // 设置相应的指针
                             axi_block_ptr = '0;
-                            axi_block_len = 4;
-                            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                                axi_block_data[i] = '0;
-                            end
+                            axi_block_len = CACHE_BLOCK_LEN;
                         end
                     end
                 end
             end
+
+            default: begin
+            end
+            endcase
         end
-        else begin
+
+        // 不该进入的其他情况
+        default: begin
             ls_fsm = S_NORMAL;
             stall = '0;
             fsm_flush = '0;
         end
+        endcase
     end
 
-    else if(ls_fsm_q == S_UNCACHED_RD) begin
+    S_UNCACHED_RD: begin
         // 等待握手
         if(axi_wait_q) begin
             axi_wait = axi_wait_q & ~axi_commit_arready_i;
@@ -1966,8 +2012,7 @@ always_comb begin
         end
     end
 
-    else if(ls_fsm_q == S_UNCACHED_WB) begin
-        // 等待握手
+    S_UNCACHED_WB: begin
         if(axi_wait_q) begin
             commit_axi_awvalid_o = '1;
             if(axi_commit_awready_i) begin
@@ -1998,7 +2043,7 @@ always_comb begin
     end
 
     // 读了立即发送AXI，同时读写
-    else if(ls_fsm_q == S_CACHE_RD) begin
+    S_CACHE_RD: begin
         if(cache_block_ptr_q == cache_block_len) begin
         end
         else begin
@@ -2051,10 +2096,6 @@ always_comb begin
                 cache_block_len = '0;
                 axi_block_ptr = '0;
                 axi_block_len = '0;
-                for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                    axi_block_data[i] = '0;
-                    cache_block_data[i] = '0;
-                end
             end
             else begin
                 ls_fsm = S_AXI_RD;
@@ -2064,28 +2105,17 @@ always_comb begin
                 // 设置相应的AXI请求
                 commit_axi_req = '0;
                 commit_axi_req.raddr = lsu_info_s.paddr & 32'hfffffff0;
-                commit_axi_req.rlen = 4;
+                commit_axi_req.rlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '0;
                 commit_axi_arvalid_o = '1;
 
                 // 设置相应的指针
                 axi_block_ptr = '0;
-                axi_block_len = 4;
-                for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                    axi_block_data[i] = '0;
-                end
+                axi_block_len = CACHE_BLOCK_LEN;
                 cache_block_ptr = '0;
-                cache_block_len = 4;
-                if(axi_commit_arready_i) begin
-                    axi_wait = '0;
-                    // 设置相应的指针    
-                    for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                        cache_block_data[i] = '0;
-                    end
-                end
-                else begin
-                    axi_wait = '1;
-                end
+                cache_block_len = CACHE_BLOCK_LEN;
+
+                axi_wait = ~axi_commit_arready_i;
             end
         end
         else begin
@@ -2094,7 +2124,7 @@ always_comb begin
     end
 
     // 读了立即发送Cache，同时读写
-    else if(ls_fsm_q == S_AXI_RD) begin
+    S_AXI_RD: begin
         if(axi_block_ptr_q == axi_block_len) begin
         end
         else begin
@@ -2127,10 +2157,6 @@ always_comb begin
             cache_block_len = '0;
             axi_block_ptr = '0;
             axi_block_len = '0;
-            for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-                cache_block_data[i] = '0;
-                axi_block_data[i] = '0;
-            end
 
             if(axi_rd_need_wb_q) begin
                 axi_rd_need_wb = '0;
@@ -2175,21 +2201,12 @@ always_comb begin
         end
     end
 
-    else if(ls_fsm_q == S_ICACHE) begin
+    S_ICACHE: begin
         // commit_icache_valid_o = icache_wait_q;
         icache_wait = icache_wait_q & ~icache_commit_ready_i;
 
         if(icache_wait) begin
             commit_icache_valid_o      = icache_wait_q;
-            // if(icache_commit_valid_i) begin
-            //     ls_fsm = S_NORMAL;
-            //     stall = '0;
-            //     fsm_flush = '1;
-            //     fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
-            //               (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
-            //               csr_q.eentry;
-            //     commit_icache_valid_o      = '0;
-            // end
         end
         else begin
             commit_icache_valid_o      = icache_wait_q ^ icache_wait;
@@ -2208,7 +2225,7 @@ always_comb begin
         end
     end
 
-    else if(ls_fsm_q == S_IDLE) begin
+    S_IDLE: begin
         if (int_excep) begin
             ls_fsm = S_NORMAL;
             stall = '0;
@@ -2224,11 +2241,12 @@ always_comb begin
         end
     end
 
-    else begin
+    default: begin
         ls_fsm = S_NORMAL;
         stall = '0;
         fsm_flush = '0;
     end
+    endcase
 end
 
 // 时序逻辑只保存状态
@@ -2250,15 +2268,8 @@ always_ff @(posedge clk) begin
         commit_cache_req_q  <= '0;
         commit_axi_req_q    <= '0;
 
-        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-            cache_block_data_q[i] <= '0;
-        end
         cache_block_ptr_q   <= '0;
         cache_block_len_q   <= '0;
-
-        for(integer i = 0; i < CACHE_BLOCK_NUM; i += 1) begin
-            axi_block_data_q[i] <= '0;
-        end
         axi_block_ptr_q     <= '0;
         axi_block_len_q     <= '0;
     end
@@ -2292,13 +2303,15 @@ end
 // 接入差分测试
 `ifdef _DIFFTEST
 
+wire [1:0] commit;
+
 for(genvar i = 0; i < 2; i += 1) begin
-    wire commit = (retire_request_o[i] || ((flush && (i == 0)) && (not_need_again)) || (fsm_commit && (i == 0))) && (~cur_exception_q);
+    assign commit[i] = (retire_request_o[i] || ((flush && (i == 0)) && (not_need_again)) || (fsm_commit && (i == 0))) && (~cur_exception_q);
     DifftestInstrCommit DifftestInstrCommit(
         .clock         (clk),
         .coreid        ('0),
         .index         (i),
-        .valid         (commit),
+        .valid         (commit[i]),
         .pc            (rob_commit_q[i].pc),
         .instr         (rob_commit_q[i].instr),
         .skip          ('0),
@@ -2312,7 +2325,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .wdata         (commit_arf_data_o[i]),
         .csr_rstat     ((rob_commit_q[i].csr_type[i] == `_CSR_CSRRD || rob_commit_q[i].csr_type[i] == `_CSR_CSRWR || rob_commit_q[i].csr_type[i] == `_CSR_CSRXCHG) & (rob_commit_q[i].csr_num == `_CSR_ESTAT)),
         .csr_data      (commit_csr_data_q)
-        // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && l_commit_o[p]),
+        // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && commit_o[p]),
         // .scw_llbit     (l_data_o[p][0])
     );
 
@@ -2336,19 +2349,19 @@ for(genvar i = 0; i < 2; i += 1) begin
 
     logic [31:0] temp_wdata;
     always_comb begin
-      for(integer j =0; j < 4; j ++) begin
-          temp_wdata[8*(j+1) - 1 -: 8] = (rob_commit_q[i].lsu_info.strb[j] == 1) ? rob_commit_q[i].lsu_info.wdata[8*(j+1) - 1 -: 8] :8'b0;
-      end
+        for(integer j =0; j < 4; j ++) begin
+            temp_wdata[8*(j+1) - 1 -: 8] = (rob_commit_q[i].lsu_info.strb[j] == 1) ? rob_commit_q[i].lsu_info.wdata[8*(j+1) - 1 -: 8] :8'b0;
+        end
     end
 
     DifftestStoreEvent DifftestStoreEvent (
-      .clock(clk),
-      .coreid(0),
-      .index(i),
-      .valid(commit & (|(rob_commit_q[i].lsu_info.strb)) & ((is_sc[0] & ll_bit & (i == 0)) | (~is_sc[0]))),
-      .storePAddr(rob_commit_q[i].lsu_info.paddr),
-      .storeVAddr(rob_commit_q[i].lsu_info.vaddr),
-      .storeData(temp_wdata)
+        .clock(clk),
+        .coreid(0),
+        .index(i),
+        .valid(commit & (|(rob_commit_q[i].lsu_info.strb)) & ((is_sc[0] & ll_bit & (i == 0)) | (~is_sc[0]))),
+        .storePAddr(rob_commit_q[i].lsu_info.paddr),
+        .storeVAddr(rob_commit_q[i].lsu_info.vaddr),
+        .storeData(temp_wdata)
     );
 end
 
@@ -2359,15 +2372,15 @@ always_comb begin
     ref_regs = ref_regs_q;
 
     for(integer i = 0; i < 32; i += 1) begin
-      if(~rst_n) begin
-          ref_regs[i] = '0;
-      end
-      else if(commit_arf_we_o[1] && commit_arf_areg_o[1] == i[5:0] && i != 0) begin
-          ref_regs[i] = commit_arf_data_o[1];
-      end
-      else if(commit_arf_we_o[0] && commit_arf_areg_o[0] == i[5:0] && i != 0) begin
-          ref_regs[i] = commit_arf_data_o[0];
-    end
+        if(~rst_n) begin
+            ref_regs[i] = '0;
+        end
+        else if(commit_arf_we_o[1] && commit_arf_areg_o[1] == i[5:0] && i != 0) begin
+            ref_regs[i] = commit_arf_data_o[1];
+        end
+        else if(commit_arf_we_o[0] && commit_arf_areg_o[0] == i[5:0] && i != 0) begin
+            ref_regs[i] = commit_arf_data_o[0];
+        end
     end
 end
 
@@ -2466,6 +2479,134 @@ DifftestCSRRegState DifftestCSRRegState_inst (
     .llbctl   ({csr_update.llbctl[31:1],csr_update.llbit})
 );
 
+`endif
+
+`ifdef _PREDICT
+// dbg 使用
+parameter string ColorTable[4] = {"\033[40;97m", "\033[41;97m", "\033[43;97m", "\033[44;97m"};
+parameter string ColorID = ColorTable[CPU_ID];
+
+int excute_cnt[int];
+int excute_cycle[int];
+reg [31:0] reset_counter = 0;
+reg [31:0] cyc_counter = 0;
+integer    handle;
+
+initial begin
+    handle = $fopen("./perf.json");
+    $display("handle is %d", handle);
+end
+
+integer    fail_cnt;
+integer    succ_cnt;
+integer    first;
+integer    flush_cnt; // 记录刷新流水线所用周期
+
+logic [1:0] need_jump, need_jump_q;
+
+always_ff @(posedge clk) begin
+    need_jump_q <= need_jump;
+end
+
+for(genvar i = 0; i < 2; i += 1) begin
+    always_comb begin
+        case (branch_info[i].br_type)
+                BR_B: begin
+                    need_jump = '1;
+                end
+                BR_NORMAL: begin
+                    need_jump = (rob_commit_i[i].w_data == 1);
+                end
+                BR_CALL: begin
+                    need_jump = '1;
+                end
+                BR_RET: begin
+                    need_jump = '1;
+                end
+                default: begin
+                    need_jump = '0;
+                end
+            endcase
+    end
+end
+
+always_ff @(posedge clk) begin
+    // LL-SC 监视器
+    // if(commit[0] && h_entry_q[0].di.llsc_inst && h_entry_q[0].di.mem_write) begin
+    //     $display("%s[Core%d] %s with data %d\033[0m",ColorID, CPU_ID, l_data[0] ?
+    //     "SUCC" : "FAIL", c_lsu_resp_i.wdata);
+    // end
+
+    reset_counter <= reset_counter + 1;
+    for(integer i = 0 ; i < 2 ; i += 1) begin
+        if((reset_counter >= 100) && commit[i]) begin
+            // Performance Counter
+            excute_cnt[rob_commit_q[i].pc]   = excute_cnt[rob_commit_q[i].pc] + 1;
+            excute_cycle[rob_commit_q[i].pc] = excute_cycle[rob_commit_q[i].pc] + cyc_counter;
+            cyc_counter = 0;
+
+            if(rob_commit_q[i].pc == 32'h1c000100) begin
+                $fdisplay(handle,"{\"freq\": {");
+                first = 1;
+                foreach(excute_cnt[i]) begin
+                    $fdisplay(handle,"%s\"%x\": %d", first ? " " : ",", i, excute_cnt[i]);
+                    first = 0;
+                end
+                // $display("%p", excute_cnt);
+                first = 1;
+                $fdisplay(handle,"},\"cyc\": {");
+                foreach(excute_cnt[i]) begin
+                    $fdisplay(handle,"%s\"%x\": %d", first ? " " : ",", i, excute_cycle[i]);
+                    first = 0;
+                end
+                $fdisplay(handle,"}}");
+                $display("%p", excute_cycle);
+                $display("succ: %d fail: %d, frac: %f", succ_cnt, fail_cnt, 100.0 * succ_cnt / (succ_cnt + fail_cnt));
+                $display("Flush count: %d", flush_cnt);
+                // $finish();
+            end
+        end
+
+        // 分支预测监视器
+        if(commit[i] && rob_commit_q[i].pc == 32'h1c001d08) begin
+            // 只监视失败情况
+            if(need_jump_q[i] != taken_q[i]) begin
+                $display("[%d] fail direction! pred:%x actual:%x history:%b",
+                    excute_cnt[rob_commit_q[i].pc],
+                    taken_q[i],
+                    need_jump_q[i],
+                    predict_info_q[i].history
+                );
+                fail_cnt = fail_cnt + 1;
+            end
+
+            else begin
+                $display("[%d] true direction! pred:%x actual:%x history:%b",
+                    excute_cnt[rob_commit_q[i].pc],
+                    taken_q[i],
+                    need_jump_q[i],
+                    predict_info_q[i].history
+                );
+
+                if(predict_success_q[i] ||
+                    !need_jump_q[i]) begin
+                    succ_cnt = succ_cnt + 1;
+                end
+                else begin
+                    fail_cnt = fail_cnt + 1;
+                end
+            end
+
+            if(need_jump_q[i] &&
+                (need_jump_q[i] == taken_q[i]) &&
+                (~predict_success_q[i])) begin
+                $display("[%d] fail target! pred:%x actual:%x", excute_cnt[rob_commit_q[i].pc], predict_info_q[i].next_pc, next_pc_q[i]);
+            end
+        end
+        end
+    //   if(fsm_q == ) flush_cnt = flush_cnt + 1;
+        cyc_counter = cyc_counter + 1;
+    end
 `endif
 
 endmodule

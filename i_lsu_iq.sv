@@ -1,5 +1,10 @@
 `include "a_defines.svh"
 
+// TODO：LSU/MDU的唤醒
+// 在向Cache发请求时发送wkup信号
+// 在Cache后本来进FIFO，现在同步进行data-wkup
+// 真正发送数据时和FIFO在同一拍，又进FIFO又发请求
+
 module lsu_iq # (
     // 设置IQ共有4个表项
     parameter int IQ_SIZE = 8,
@@ -36,11 +41,15 @@ module lsu_iq # (
     output  logic           iq_lsu_valid_o,
     input   logic           iq_lsu_ready_i,
     output  iq_lsu_pkg_t    iq_lsu_req_o,
+    output  decode_info_t   iq_lsu_di_o,  // 0801 dcache
 
     // 读Cache的握手信息
     input   logic           lsu_iq_valid_i,
     output  logic           lsu_iq_ready_o,
     input   lsu_iq_pkg_t    lsu_iq_resp_i,
+    input   decode_info_t   lsu_iq_di_i,  // 0801 dcache
+    // 利用Dcache数据打一拍进行唤醒  0801
+    output  word_t          wkup_data_o,
 
     // 读LSU的读出的数据
     output  cdb_info_t      result_o,
@@ -220,7 +229,7 @@ end
 
 // ------------------------------------------------------------------
 // 填入发射指令所需的执行信息：下一个周期填入执行单元
-decode_info_t   select_di, select_di_q, select_di_qq;
+decode_info_t   select_di, select_di_q;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
@@ -244,12 +253,10 @@ word_t [1:0] real_data_q;
 always_ff @(posedge clk) begin
     if (!rst_n | flush) begin
         select_di_q  <= '0;
-        select_di_qq <= '0;
         real_data_q  <= '0;
     end
     else if(excute_ready) begin
         select_di_q  <= select_di;
-        select_di_qq <= select_di_q;
         real_data_q  <= real_data;
     end
 end
@@ -284,6 +291,7 @@ wire  [1:0]  addr_mask = iq_lsu_request.vaddr[1:0];
 
 // 配置iq到lsu的信息
 always_comb begin
+    iq_lsu_di_o             = select_di_q;
     iq_lsu_request          = '0;
     iq_lsu_request.wid      = select_di_q.wreg_id;
     iq_lsu_request.msigned  = select_di_q.msigned;
@@ -310,17 +318,37 @@ always_comb begin
 end
 
 // 配置lsu到iq的信息，向FIFO输出
+// 打一拍出结果，实际上是在下一个周期
 always_comb begin
     result_o.w_data   = lsu_iq_resp_i.rdata;
     result_o.s_data   = real_data_q;
-    result_o.rob_id   = select_di_qq.wreg_id;
-    result_o.w_reg    = select_di_qq.wreg;
-    result_o.r_valid  = select_di_qq.inst_valid;
+    result_o.rob_id   = lsu_iq_di_i.wreg_id;
+    result_o.w_reg    = lsu_iq_di_i.wreg;
+    result_o.r_valid  = lsu_iq_di_i.inst_valid;
     result_o.lsu_info = lsu_iq_resp_i;
-    result_o.ctrl.exc_info.fetch_exception      =  select_di_qq.fetch_exc_info.fetch_exception;
-    result_o.ctrl.exc_info.execute_exception    =  lsu_iq_resp_i.execute_exc_info.execute_exception;
-    result_o.ctrl.exc_info.exc_code             =  result_o.ctrl.exc_info.fetch_exception ? select_di_qq.fetch_exc_info.exc_code : lsu_iq_resp_i.execute_exc_info.exc_code;
-    result_o.ctrl.exc_info.badva                =  result_o.ctrl.exc_info.fetch_exception ? select_di_qq.fetch_exc_info.badv     : lsu_iq_resp_i.execute_exc_info.badv    ;
+    result_o.ctrl.exc_info.fetch_exception   =  lsu_iq_di_i.fetch_exc_info.fetch_exception;
+
+    result_o.ctrl.exc_info.execute_exception =  lsu_iq_resp_i.execute_exc_info.execute_exception;
+
+    result_o.ctrl.exc_info.exc_code =  result_o.ctrl.exc_info.fetch_exception ? 
+        lsu_iq_di_i.fetch_exc_info.exc_code : lsu_iq_resp_i.execute_exc_info.exc_code;
+
+    result_o.ctrl.exc_info.badva    =  result_o.ctrl.exc_info.fetch_exception ? 
+        lsu_iq_di_i.fetch_exc_info.badv     : lsu_iq_resp_i.execute_exc_info.badv    ;
+end
+
+// 打一拍进行唤醒
+word_t wkup_data_q;
+assign wkup_data_o = wkup_data_q;
+always_ff @(posedge clk) begin
+    if(~rst_n || flush) begin
+        wkup_data_q <= '0;
+    end
+    else begin
+        if(lsu_iq_valid_i) begin
+            wkup_data_q <= lsu_iq_resp_i.rdata;
+        end
+    end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
