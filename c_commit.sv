@@ -194,27 +194,27 @@ always_comb begin
     first_commit[0]     = rob_commit_i[0].flush_inst | //一定flush指令
                           (|rob_commit_i[0].lsu_info.strb) | //store
                           cur_exception | //异常
-                          ~rob_commit_i[0].lsu_info.hit | //cache miss
+                          (rob_commit_i[0].lsu_inst && (~rob_commit_i[0].lsu_info.hit || rob_commit_i[0].is_uncached)/*uncached*/) | //cache miss
                           ~predict_success[0];//预测错
 
     first_commit[1]     = rob_commit_i[1].flush_inst |
                           (|rob_commit_i[1].lsu_info.strb) |
                           another_exception |
-                          ~rob_commit_i[1].lsu_info.hit;//仅第二条分支预测失败也可以双提
+                          (rob_commit_i[1].lsu_inst && (~rob_commit_i[1].lsu_info.hit || rob_commit_i[1].is_uncached)/*访存uncached*/);//仅第二条分支预测失败也可以双提
 
     commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
 
-`ifdef _VERILATOR
+// `ifdef _VERILATOR
     commit_request_o[1] = rob_commit_valid_i[0] &
                           rob_commit_valid_i[1] &
                           ~stall &
                           ~first_commit[0] &
                           ~first_commit[1];
-`endif
+// `endif
 
-`ifdef _FPGA
-    commit_request_o[1]  = 0;
-`endif
+// `ifdef _FPGA
+//     commit_request_o[1]  = 0;
+// `endif
 
 end
 

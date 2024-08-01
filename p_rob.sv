@@ -177,6 +177,7 @@ always_comb begin
         commit_info_o[i].is_cache_fix = commit_inst_o[i].cacop_inst;
         commit_info_o[i].cache_code = commit_inst_o[i].inst_4_0;
         commit_info_o[i].is_tlb_fix = commit_inst_o[i].tlb_inst;
+        commit_info_o[i].lsu_inst = commit_inst_o[i].lsu_type;
 
         commit_info_o[i].flush_inst = commit_inst_o[i].flush_inst;
 

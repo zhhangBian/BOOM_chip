@@ -487,6 +487,7 @@ typedef struct packed {
     logic   is_cache_fix;
     logic   [4:0]   cache_code;
     logic   is_tlb_fix;
+    logic   lsu_inst;
 
     logic   flush_inst;
 
