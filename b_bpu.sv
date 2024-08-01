@@ -84,8 +84,23 @@ wire [`BPU_PHT_LEN-1:0] rst_cnt_next;
 assign rst_cnt_add_1 = rst_cnt_q + 1;
 assign rst_cnt_next = rst_n ? rst_cnt_q : rst_cnt_add_1;
 
+reg sigq, sigqq;
+
+always_ff @(posedge clk) begin
+    sigq <= ~rst_n;
+    sigqq <= sigq;
+end
+
 always_ff @(posedge clk) begin : rst_cnt_logic
-    rst_cnt_q <= rst_cnt_next;
+    if (sigqq) begin
+        rst_cnt_q <= rst_cnt_next;
+    end
+    else if (sigq) begin
+        rst_cnt_q <= '0;
+    end
+    else begin
+        rst_cnt_q <= rst_cnt_q;
+    end
     // rst_cnt_q <= '0;
 end
 
@@ -126,7 +141,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     ) btb_dpsram (
         .clk0(clk),    
         .rst_n0(rst_n),
-        .addr0_i(btb_raddr[i]),
+        .addr0_i(btb_raddr),
         .en0_i('1),
         .we0_i('0),
         .wdata0_i('0),
@@ -134,7 +149,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
 
         .clk1(clk),
         .rst_n1(rst_n),
-        .addr1_i(btb_waddr[i]),
+        .addr1_i(btb_waddr),
         .en1_i('1),
         .we1_i(btb_we[i]),
         .wdata1_i(btb_wdata),
