@@ -444,7 +444,7 @@ always_comb begin
         (fsm_flush): begin
             //访存相关的flush,以及idle
             commit_flush_info = 2'b01;
-        end 
+        end
 
         (retire_request_o[0]): begin
             case (1'b1)
@@ -699,7 +699,7 @@ always_comb begin
         (rob_commit_i[0].rdcntid_en): begin
             rdcnt_data = csr_q.tid;
         end
-        
+
         default: begin
             rdcnt_data = '0;
         end
@@ -767,7 +767,7 @@ always_comb begin
     csr_exception_update.crmd[`_CRMD_PLV]  = '0;
     csr_exception_update.crmd[`_CRMD_IE]   = '0;
     /*对应文档的1，进入核心态和关中断*/
-    csr_exception_update.era               = (rob_commit_i[0].exc_code == `_ECODE_ADEF) ? 
+    csr_exception_update.era               = (rob_commit_i[0].exc_code == `_ECODE_ADEF) ?
                                               rob_commit_i[0].badva :
                                               rob_commit_i[0].pc;
     /*对应2，要pc，如果在状态机里面要去其他地方拿!!!*//*不用了*/
@@ -1316,12 +1316,12 @@ end
 
 function automatic logic vppn_match(
     input logic [31:0] va,
-    input logic huge_page, 
+    input logic huge_page,
     input logic [18: 0] vppn
 );
     if (huge_page) begin
         return va[31:22] == vppn[18:9]; //this right
-    end 
+    end
     else begin
         return va[31:13] == vppn;
     end
@@ -1394,12 +1394,12 @@ always_comb begin
             (rob_commit_q[0].ertn_en): begin
                 csr_update.crmd[`_CRMD_PLV] = csr_q.prmd[`_PRMD_PPLV];
                 csr_update.crmd[`_CRMD_IE]  = csr_q.prmd[`_PRMD_PIE];
-                
+
                 if (csr_q.estat[`_ESTAT_ECODE] == `_ECODE_TLBR) begin
                     csr_update.crmd[`_CRMD_DA] = 0;
                     csr_update.crmd[`_CRMD_PG] = 1;
                 end//返回变成映射翻译
-                
+
                 if (csr_q.llbctl[`_LLBCT_KLO]) begin
                     csr_update.llbctl[`_LLBCT_KLO] = 0;
                 end
@@ -2303,8 +2303,10 @@ end
 // 接入差分测试
 `ifdef _DIFFTEST
 
+wire [1:0] commit;
+
 for(genvar i = 0; i < 2; i += 1) begin
-    wire commit = (retire_request_o[i] || ((flush && (i == 0)) && (not_need_again)) || (fsm_commit && (i == 0))) && (~cur_exception_q);
+    assign commit[i] = (retire_request_o[i] || ((flush && (i == 0)) && (not_need_again)) || (fsm_commit && (i == 0))) && (~cur_exception_q);
     DifftestInstrCommit DifftestInstrCommit(
         .clock         (clk),
         .coreid        ('0),
@@ -2323,7 +2325,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .wdata         (commit_arf_data_o[i]),
         .csr_rstat     ((rob_commit_q[i].csr_type[i] == `_CSR_CSRRD || rob_commit_q[i].csr_type[i] == `_CSR_CSRWR || rob_commit_q[i].csr_type[i] == `_CSR_CSRXCHG) & (rob_commit_q[i].csr_num == `_CSR_ESTAT)),
         .csr_data      (commit_csr_data_q)
-        // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && l_commit_o[p]),
+        // .is_SC_W       (df_entry_q[p].di.llsc_inst && df_entry_q[p].di.mem_write && commit_o[p]),
         // .scw_llbit     (l_data_o[p][0])
     );
 
@@ -2478,5 +2480,113 @@ DifftestCSRRegState DifftestCSRRegState_inst (
 );
 
 `endif
+
+`ifdef _PREDICT
+// dbg 使用
+parameter string ColorTable[4] = {"\033[40;97m", "\033[41;97m", "\033[43;97m", "\033[44;97m"};
+parameter string ColorID = ColorTable[CPU_ID];
+
+int excute_cnt[int];
+int excute_cycle[int];
+reg [31:0] reset_counter = 0;
+reg [31:0] cyc_counter = 0;
+integer    handle;
+
+initial begin
+    handle = $fopen("./perf.json");
+    $display("handle is %d", handle);
+end
+
+integer    fail_cnt;
+integer    succ_cnt;
+integer    first;
+integer    flush_cnt; // 记录刷新流水线所用周期
+
+branch_info_t [1:0] branch_info_q;
+predict_
+logic [1:0] taken_q;
+always_ff @(posedge clk) begin
+    branch_info_q <= branch_info;
+    taken_q <= taken;
+end
+
+always_ff @(posedge clk) begin
+    // LL-SC 监视器
+    // if(commit[0] && h_entry_q[0].di.llsc_inst && h_entry_q[0].di.mem_write) begin
+    //     $display("%s[Core%d] %s with data %d\033[0m",ColorID, CPU_ID, l_data[0] ?
+    //     "SUCC" : "FAIL", c_lsu_resp_i.wdata);
+    // end
+
+    reset_counter <= reset_counter + 1;
+    for(integer i = 0 ; i < 2 ; i += 1) begin
+        if((reset_counter >= 100) && commit[i]) begin
+            // Performance Counter
+            excute_cnt[rob_commit_q[i].pc]   = excute_cnt[rob_commit_q[i].pc] + 1;
+            excute_cycle[rob_commit_q[i].pc] = excute_cycle[rob_commit_q[i].pc] + cyc_counter;
+            cyc_counter = 0;
+
+            if(rob_commit_q[i].pc == 32'h1c000100) begin
+                $fdisplay(handle,"{\"freq\": {");
+                first = 1;
+                foreach(excute_cnt[i]) begin
+                    $fdisplay(handle,"%s\"%x\": %d", first ? " " : ",", i, excute_cnt[i]);
+                    first = 0;
+                end
+                // $display("%p", excute_cnt);
+                first = 1;
+                $fdisplay(handle,"},\"cyc\": {");
+                foreach(excute_cnt[i]) begin
+                    $fdisplay(handle,"%s\"%x\": %d", first ? " " : ",", i, excute_cycle[i]);
+                    first = 0;
+                end
+                $fdisplay(handle,"}}");
+                $display("%p", excute_cycle);
+                $display("succ: %d fail: %d, frac: %f", succ_cnt, fail_cnt, 100.0 * succ_cnt / (succ_cnt + fail_cnt));
+                $display("Flush count: %d", flush_cnt);
+                // $finish();
+            end
+        end
+
+        // 分支预测监视器
+        if(commit[i] && rob_commit_q[i].pc == 32'h1c001d08) begin
+            // 只监视失败情况
+            if(h_entry_q[i].need_jump != h_entry_q[i].bpu_predict.taken) begin
+                $display("[%d] fail direction! pred:%x actual:%x history:%b",
+                    excute_cnt[rob_commit_q[i].pc],
+                    h_entry_q[i].bpu_predict.taken,
+                    h_entry_q[i].need_jump,
+                    h_entry_q[i].bpu_predict.history
+                );
+                fail_cnt = fail_cnt + 1;
+            end
+
+            else begin
+                $display("[%d] true direction! pred:%x actual:%x history:%b",
+                    excute_cnt[rob_commit_q[i].pc],
+                    h_entry_q[i].bpu_predict.taken,
+                    h_entry_q[i].need_jump,
+                    h_entry_q[i].bpu_predict.history
+                );
+
+                if(h_entry_q[i].target_addr == h_entry_q[i].bpu_predict.predict_pc ||
+                    !h_entry_q[i].need_jump) begin
+                    succ_cnt = succ_cnt + 1;
+                end
+                else begin
+                    fail_cnt = fail_cnt + 1;
+                end
+            end
+
+            if(h_entry_q[i].need_jump &&
+                (h_entry_q[i].need_jump == h_entry_q[i].bpu_predict.taken) &&
+                h_entry_q[i].target_addr != h_entry_q[i].bpu_predict.predict_pc) begin
+                $display("[%d] fail target! pred:%x actual:%x", excute_cnt[rob_commit_q[i].pc], h_entry_q[i].bpu_predict.predict_pc, h_entry_q[i].target_addr);
+            end
+        end
+        end
+    //   if(fsm_q == ) flush_cnt = flush_cnt + 1;
+        cyc_counter = cyc_counter + 1;
+    end
+`ednif
 
 endmodule
