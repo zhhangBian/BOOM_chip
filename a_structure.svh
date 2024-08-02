@@ -759,7 +759,8 @@ typedef struct packed {
     // Data SRAM向commit级发送读结果
     logic   [31:0]  data;       // 返回的数据
     logic   [31:0]  data_other; // 返回的另一路数据，默认当返回两路数据的时候，data为0路，data_other为1路
-} cache_commit_resp_t;
+    logic           miss_dirty;
+  } cache_commit_resp_t;
 
 // commit与Icache的交互反馈
 typedef struct packed {
