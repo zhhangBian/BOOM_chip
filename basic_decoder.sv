@@ -43,6 +43,9 @@ always_comb begin
     decode_info_o.invtlb_inst = 1'd0;
     decode_info_o.ll_inst = 1'd0;
     decode_info_o.lsu_inst = 1'd0;
+    decode_info_o.jirl_as_call = 1'd0;
+    decode_info_o.jirl_as_ret = 1'd0;
+    decode_info_o.jirl_as_normal = 1'd0;
     decode_info_o.jump_inst = 1'd0;
     decode_info_o.cacop_inst = 1'd0;
     decode_info_o.mem_read = 1'd0;
@@ -356,8 +359,36 @@ always_comb begin
         end
         /*==================== 分支指令 ====================*/
         // JIRL
-        32'b010011??????????????????????????: begin
+        32'b010011000000000000000000001????? : begin
+            // JIRL as Ret
             decode_info_o.alu_inst = 1'd1;
+            decode_info_o.jirl_as_ret = 1'd1;
+            decode_info_o.br_type = BR_RET;
+            decode_info_o.reg_type_r0 = `_REG_RJ;
+            decode_info_o.reg_type_w = `_REG_W_RD;
+            decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
+            decode_info_o.alu_op = `_COM_PCADD4;
+            decode_info_o.target_type = `_TARGET_ABS;
+            decode_info_o.jump_inst = 1'd1;
+        end
+        32'b010011?????????????????????00001 : begin
+            // JIRL as Call
+            decode_info_o.alu_inst = 1'd1;
+            decode_info_o.jirl_as_call = 1'd1;
+            decode_info_o.br_type = BR_RET;
+            decode_info_o.reg_type_r0 = `_REG_RJ;
+            decode_info_o.reg_type_w = `_REG_W_RD;
+            decode_info_o.addr_imm_type = `_ADDR_IMM_S16;
+            decode_info_o.alu_grand_op = `_GRAND_OP_COM;
+            decode_info_o.alu_op = `_COM_PCADD4;
+            decode_info_o.target_type = `_TARGET_ABS;
+            decode_info_o.jump_inst = 1'd1;
+        end
+        32'b010011??????????????????????????: begin
+            // JIRL as normal branch instruction
+            decode_info_o.alu_inst = 1'd1;
+            decode_info_o.jirl_as_normal = 1'd1;
             decode_info_o.br_type = BR_RET;
             decode_info_o.reg_type_r0 = `_REG_RJ;
             decode_info_o.reg_type_w = `_REG_W_RD;

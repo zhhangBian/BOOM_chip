@@ -29,6 +29,9 @@ typedef struct packed {
     logic           type_miss; // TODO:类型预测错误，说明一定这条指令一定不在表中，全部更新 TODO: 暂时可能用不上
     logic           taken; // 是否跳转
     logic           is_branch;
+    logic           jirl_as_call;
+    logic           jirl_as_normal;
+    logic           jirl_as_ret;
     br_type_t       branch_type; // 分支类型，用于更新 BTB
     logic           update; // 如果这条指令是分支或者预测成了分支，就要置 1 。
     logic  [31:0]   target_pc; // 正确的跳转地址，用于更新 BTB
@@ -133,6 +136,9 @@ typedef struct packed {
     imm_type_t      imm_type; // 立即数类型 _IMM_...
     inst_t          inst; // 指令本身
     invtlb_inst_t   invtlb_inst; // 是否是invtlb指令
+    logic           jirl_as_call; // jirl 是否是 call 指令
+    logic           jirl_as_normal; // jirl 是否是 normal 类型
+    logic           jirl_as_ret; // jirl 是否是 ret 类型
     jump_inst_t     jump_inst; // 是否是跳转指令
     ll_inst_t       ll_inst; // 是否是原子访问指令
     lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
@@ -263,6 +269,10 @@ typedef struct packed {
     // branch
     logic        [1:0] is_branch;
     br_type_t    [1:0] br_type;
+    logic [1:0]     jirl_as_call;
+    logic [1:0]     jirl_as_normal;
+    logic [1:0]     jirl_as_ret;
+
     fetch_exc_info_t    fetch_exc_info;
 } d_r_pkg_t;
 
@@ -336,6 +346,10 @@ typedef struct packed {
     // branch
     logic        [1:0] is_branch;
     br_type_t    [1:0] br_type;
+    logic [1:0]     jirl_as_call;
+    logic [1:0]     jirl_as_normal;
+    logic [1:0]     jirl_as_ret;
+    
     fetch_exc_info_t    fetch_exc_info;
 } r_p_pkg_t;
 
@@ -413,8 +427,13 @@ typedef struct packed {
     logic [13:0] csr_num;
     logic [ 4:0] inst_4_0;
     logic decode_err;
+
+    // branch
     logic is_branch;
     br_type_t br_type;
+    logic jirl_as_call;
+    logic jirl_as_normal;
+    logic jirl_as_ret;
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
@@ -519,6 +538,9 @@ typedef struct packed {
     logic   is_branch;
     predict_info_t  predict_info;
     branch_info_t   branch_info;
+    logic jirl_as_call;
+    logic jirl_as_normal;
+    logic jirl_as_ret;
 } rob_commit_pkg_t;
 
 typedef struct packed {
@@ -629,6 +651,9 @@ typedef struct packed {
     // branch
     logic is_branch;
     br_type_t br_type;
+    logic jirl_as_call;
+    logic jirl_as_normal;
+    logic jirl_as_ret;
 } rob_inst_entry_t;
 
 // 有效信息表项

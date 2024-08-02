@@ -260,8 +260,13 @@ always_comb begin
     r_p_pkg_temp.csr_num        = d_r_pkg_i.csr_num;
     r_p_pkg_temp.inst_4_0       = d_r_pkg_i.inst_4_0;
     r_p_pkg_temp.decode_err     = d_r_pkg_i.decode_err;
+
+    // branch
     r_p_pkg_temp.is_branch      = d_r_pkg_i.is_branch;
     r_p_pkg_temp.br_type        = d_r_pkg_i.br_type;
+    r_p_pkg_temp.jirl_as_call   = d_r_pkg_i.jirl_as_call;
+    r_p_pkg_temp.jirl_as_normal = d_r_pkg_i.jirl_as_normal;
+    r_p_pkg_temp.jirl_as_ret    = d_r_pkg_i.jirl_as_ret;
 
     r_p_pkg_temp.fetch_exc_info = d_r_pkg_i.fetch_exc_info;
 end

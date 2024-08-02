@@ -84,8 +84,13 @@ always_comb begin
         dispatch_rob_o[i].csr_num = r_p_pkg.csr_num[i];
         dispatch_rob_o[i].inst_4_0  = r_p_pkg.inst_4_0[i];
         dispatch_rob_o[i].decode_err = r_p_pkg.decode_err[i];
+
+        // branch
         dispatch_rob_o[i].is_branch = r_p_pkg.is_branch[i];
         dispatch_rob_o[i].br_type = r_p_pkg.br_type[i];
+        dispatch_rob_o[i].jirl_as_call = r_p_pkg.jirl_as_call[i];
+        dispatch_rob_o[i].jirl_as_normal = r_p_pkg.jirl_as_normal[i];
+        dispatch_rob_o[i].jirl_as_ret = r_p_pkg.jirl_as_ret[i];
     end
 end
 

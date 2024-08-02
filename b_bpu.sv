@@ -140,9 +140,9 @@ always_comb begin : btb_wdata_logic
     btb_wdata.tag               = get_tag(correct_info.pc);
     btb_wdata.target_pc         = correct_info.target_pc;
     btb_wdata.branch_type       = correct_info.branch_type;
-    btb_wdata.is_call           = (correct_info.branch_type == BR_CALL) & correct_info.is_branch;
-    btb_wdata.is_ret            = (correct_info.branch_type == BR_RET) & correct_info.is_branch;
-    btb_wdata.is_uncond_branch  = (correct_info.branch_type != BR_NORMAL) & correct_info.is_branch;
+    btb_wdata.is_call           = (correct_info.branch_type == BR_CALL | correct_info.jirl_as_call) & correct_info.is_branch;
+    btb_wdata.is_ret            = correct_info.jirl_as_ret;
+    btb_wdata.is_uncond_branch  = (correct_info.branch_type != BR_NORMAL | correct_info.jirl_as_normal) & correct_info.is_branch;
     btb_wdata.is_normal_branch  = (correct_info.branch_type == BR_NORMAL) & correct_info.is_branch;
     // reset logic
     btb_wdata &= {($bits(bpu_btb_entry_t)){rst_n}};
@@ -279,12 +279,14 @@ logic                               ras_we; // 写使能一定会 push
 // RAS 的更新来自两个方面. 首先，如果前端预测到了 CALL 或者 RET 类型指令，则正常入栈出栈
 // 如果后端发现预测信息有误，则也需要更新。
 // 但是为了简单起见先**暂时**一致由后端进行更新，即后端但凡遇到 CALL 或者 RET 就反馈给前端进行更新
-assign ras_wdata = btb_rdata[0].is_call ? btb_rdata[0].target_pc : btb_rdata[1].target_pc;
+assign ras_wdata = correct_info.pc + 4;
 assign ras_rdata = ras[ras_top_ptr];
 
-assign ras_pop = {btb_rdata[1].is_ret, btb_rdata[0].is_ret} & mask;
+// assign ras_pop = {btb_rdata[1].is_ret, btb_rdata[0].is_ret} & mask;
+assign ras_pop = btb_wdata.is_ret;
 assign ras_push = ras_we;
-assign ras_we = {btb_rdata[1].is_call, btb_rdata[0].is_call} & mask;
+// assign ras_we = {btb_rdata[1].is_call, btb_rdata[0].is_call} & mask;
+assign ras_we = btb_wdata.is_call & correct_info.update;
 
 always_ff @(posedge clk) begin : ras_logic
     if (rst) begin

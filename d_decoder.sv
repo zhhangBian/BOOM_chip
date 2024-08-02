@@ -178,6 +178,11 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.csr_num[i] = decode_infos[i].inst[23:10];
     assign d_r_pkg.inst_4_0[i] = decode_infos[i].inst[4:0];
     assign d_r_pkg.decode_err[i] = decode_infos[i].decode_err;
+
+    // branch
+    assign d_r_pkg.jirl_as_call[i] = decode_infos[i].jirl_as_call;
+    assign d_r_pkg.jirl_as_ret[i] = decode_infos[i].jirl_as_ret;
+    assign d_r_pkg.jirl_as_normal[i] = decode_infos[i].jirl_as_normal;
     assign d_r_pkg.is_branch[i] = decode_infos[i].jump_inst;
     assign d_r_pkg.br_type[i] = decode_infos[i].br_type;
 end

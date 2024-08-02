@@ -136,8 +136,13 @@ always_comb begin
         dispatch_inst_i[i].csr_num      = dispatch_info_i[i].csr_num;
         dispatch_inst_i[i].inst_4_0     = dispatch_info_i[i].inst_4_0 ;
         dispatch_inst_i[i].decode_err   = dispatch_info_i[i].decode_err ;
+
+        // branch
         dispatch_inst_i[i].is_branch    = dispatch_info_i[i].is_branch ;
         dispatch_inst_i[i].br_type      = dispatch_info_i[i].br_type ;
+        dispatch_inst_i[i].jirl_as_call = dispatch_info_i[i].jirl_as_call;
+        dispatch_inst_i[i].jirl_as_normal = dispatch_info_i[i].jirl_as_normal;
+        dispatch_inst_i[i].jirl_as_ret = dispatch_info_i[i].jirl_as_ret;
 
         dispatch_preg_i[i]       = dispatch_info_i[i].preg;
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
@@ -211,6 +216,9 @@ always_comb begin
         commit_info_o[i].branch_info.br_type = commit_inst_o[i].br_type;
         commit_info_o[i].branch_info.is_branch = commit_inst_o[i].is_branch;
         commit_info_o[i].branch_info.target_pc = '0; // TODO: branch_info 似乎不需要 target 域
+        commit_info_o[i].jirl_as_call = commit_inst_o[i].jirl_as_call;
+        commit_info_o[i].jirl_as_normal = commit_inst_o[i].jirl_as_normal;
+        commit_info_o[i].jirl_as_ret = commit_inst_o[i].jirl_as_ret;
         end
 end
 

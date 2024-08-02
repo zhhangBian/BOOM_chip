@@ -645,6 +645,9 @@ assign correct_info_o[1].update = retire_request_o[1] &
 for(genvar i = 0; i < 2; i += 1) begin
     always_comb begin
         correct_info_o[i].pc = rob_commit_q[i].pc;
+        correct_info_o[i].jirl_as_call = rob_commit_q[i].jirl_as_call;
+        correct_info_o[i].jirl_as_normal = rob_commit_q[i].jirl_as_normal;
+        correct_info_o[i].jirl_as_ret = rob_commit_q[i].jirl_as_ret;
 
         correct_info_o[i].target_miss = (predict_info_q[i].target_pc != real_target_q[i]);
         correct_info_o[i].type_miss = (predict_info_q[i].br_type != branch_info_q[i].br_type) | predict_info_q[i].need_update | (predict_info_q[i].is_branch != is_branch_q[i]);
