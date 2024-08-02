@@ -389,6 +389,7 @@ always_comb begin
     cache_commit_resp.data = commit_way_choose_q[0] ? data_ans1[0] : data_ans1[1];
     cache_commit_resp.data_other = data_ans1[1];
     cache_commit_resp.sb_entry = r_sb_entry;
+    cache_commit_resp.miss_dirty = commit_way_choose_q[0] ? tag_ans1[0].d : tag_ans1[1].d;
 end
 
 endmodule
