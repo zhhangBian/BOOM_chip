@@ -110,7 +110,7 @@ bpu_btb_entry_t [1:0]       btb_rdata;
 bpu_btb_entry_t             btb_wdata;
 logic [`BPU_BTB_LEN-1:0]    btb_raddr;
 logic [`BPU_BTB_LEN-1:0]    btb_waddr;
-logic [1:0]                 btb_we;
+wire  [1:0]                 btb_we;
 logic [1:0]                 btb_tag_match;
 logic [1:0]                 btb_valid;
 
@@ -128,9 +128,34 @@ always_comb begin : btb_wdata_logic
     btb_wdata.is_ret            = (correct_info.branch_type == BR_RET) & correct_info.is_branch;
     btb_wdata.is_uncond_branch  = (correct_info.branch_type != BR_NORMAL) & correct_info.is_branch;
     btb_wdata.is_normal_branch  = (correct_info.branch_type == BR_NORMAL) & correct_info.is_branch;
-    btb_wdata.is_branch         = correct_info.is_branch;
     // reset logic
     btb_wdata &= {($bits(bpu_btb_entry_t)){rst_n}};
+end
+
+// BTB 的有效位需要复位，单独使用一位进行复位
+(* ramstyle="distributed" *) reg [`BPU_BTB_DEPTH-1:0] valid_ram [1:0];
+logic [1:0] valid_ram_rdata;
+logic [1:0][`BPU_BTB_DEPTH-1:0] valid_ram_wdata;
+logic [1:0] valid_ram_we;
+
+assign valid_ram_we = btb_we;
+
+for (genvar i = 0; i < 2; i=i+1) begin
+    always_comb begin
+        valid_ram_wdata[i] = valid_ram[i];
+        if (rst) begin
+            valid_ram_wdata[i] = '0;
+        end
+        else if (valid_ram_we[i]) begin
+            valid_ram_wdata[i][btb_waddr] = correct_info.is_branch;
+        end
+    end
+
+    always_ff @(posedge clk) begin
+        valid_ram[i] <= '0;
+    end
+
+    assign valid_ram_rdata[i] = valid_ram[i][btb_raddr +: 1];
 end
 
 for (genvar i = 0; i < 2; i=i+1) begin
@@ -156,7 +181,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
         .rdata1_o(/* floating */)
     );
     assign btb_tag_match[i] = btb_rdata[i].tag == get_tag(pc_q);
-    assign btb_valid[i] = btb_rdata[i].is_branch & btb_tag_match;
+    assign btb_valid[i] = valid_ram[i][btb_raddr] & btb_tag_match[i]; // this has to be none x
 end
 
 /* ============================== BHT ============================== */
@@ -370,7 +395,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign predict_infos[i].target_pc   =  target_pc[i];
     assign predict_infos[i].next_pc     =  npc[i];
     assign predict_infos[i].br_type     =  btb_rdata[i].branch_type;
-    assign predict_infos[i].is_branch   =  btb_rdata[i].is_branch;
+    assign predict_infos[i].is_branch   =  valid_ram_rdata[i];
     assign predict_infos[i].taken       =  branch[i];
     assign predict_infos[i].scnt        =  pht_rdata[i];
     assign predict_infos[i].need_update =  !btb_tag_match[i]; // 没有这一项就要 update

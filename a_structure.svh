@@ -44,7 +44,7 @@ typedef struct packed {
     logic                       is_ret;
     logic                       is_uncond_branch;
     logic                       is_normal_branch;
-    logic                       is_branch;
+    // logic                       is_branch; // 放在 valid_ram 中，需要复位
 } bpu_btb_entry_t;
 
 typedef logic [`BPU_HISTORY_LEN-1 : 0]  bpu_bht_entry_t;
