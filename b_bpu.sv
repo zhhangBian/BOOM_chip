@@ -63,8 +63,12 @@ assign rst = ~rst_n;
 /* ============================== correct_info ============================== */
 // 每次选中第一条需要update的指令进行update
 correct_info_t correct_info;
+correct_info_t correct_info_q;
 assign correct_info = correct_infos_i[0].update ? correct_infos_i[0] : correct_infos_i[1];
 
+always_ff @(posedge clk) begin
+    correct_info_q <= correct_info;
+end
 
 /* ============================== PC ============================== */
 logic ready;
@@ -106,13 +110,25 @@ end
 
 /* ============================== BTB ============================== */
 
+bpu_btb_entry_t [1:0]       btb_rdata_raw;
 bpu_btb_entry_t [1:0]       btb_rdata;
 bpu_btb_entry_t             btb_wdata;
+bpu_btb_entry_t             btb_wdata_q;
 logic [`BPU_BTB_LEN-1:0]    btb_raddr;
+logic [`BPU_BTB_LEN-1:0]    btb_raddr_q;
 logic [`BPU_BTB_LEN-1:0]    btb_waddr;
+logic [`BPU_BTB_LEN-1:0]    btb_waddr_q;
 wire  [1:0]                 btb_we;
+logic [1:0]                 btb_we_q;
 logic [1:0]                 btb_tag_match;
 logic [1:0]                 btb_valid;
+
+always_ff @(posedge clk) begin
+    btb_wdata_q <= btb_wdata;
+    btb_waddr_q <= btb_waddr;
+    btb_raddr_q <= btb_raddr;
+    btb_we_q <= btb_we;
+end
 
 assign btb_raddr = hash(pc_next);
 assign btb_waddr = rst_n ? hash(correct_info.pc) : rst_cnt_q[`BPU_BTB_LEN-1:0];
@@ -134,11 +150,15 @@ end
 
 // BTB 的有效位需要复位，单独使用一位进行复位
 (* ramstyle="distributed" *) reg [`BPU_BTB_DEPTH-1:0] valid_ram [1:0];
+logic [`BPU_BTB_LEN-1:0] valid_ram_raddr;
+logic [`BPU_BTB_LEN-1:0] valid_ram_waddr;
 logic [1:0] valid_ram_rdata;
 logic [1:0][`BPU_BTB_DEPTH-1:0] valid_ram_wdata;
 logic [1:0] valid_ram_we;
 
 assign valid_ram_we = btb_we;
+assign valid_ram_raddr = bht_raddr;
+assign valid_ram_waddr = btb_waddr;
 
 for (genvar i = 0; i < 2; i=i+1) begin
     always_comb begin
@@ -147,15 +167,15 @@ for (genvar i = 0; i < 2; i=i+1) begin
             valid_ram_wdata[i] = '0;
         end
         else if (valid_ram_we[i]) begin
-            valid_ram_wdata[i][btb_waddr] = correct_info.is_branch;
+            valid_ram_wdata[i][valid_ram_waddr] = correct_info.is_branch;
         end
     end
 
     always_ff @(posedge clk) begin
-        valid_ram[i] <= '0;
+        valid_ram[i] <= valid_ram_wdata[i];
     end
 
-    assign valid_ram_rdata[i] = valid_ram[i][btb_raddr +: 1];
+    assign valid_ram_rdata[i] = valid_ram[i][valid_ram_raddr];
 end
 
 for (genvar i = 0; i < 2; i=i+1) begin
@@ -170,7 +190,7 @@ for (genvar i = 0; i < 2; i=i+1) begin
         .en0_i('1),
         .we0_i('0),
         .wdata0_i('0),
-        .rdata0_o(btb_rdata[i]),
+        .rdata0_o(btb_rdata_raw[i]),
 
         .clk1(clk),
         .rst_n1(rst_n),
@@ -180,8 +200,9 @@ for (genvar i = 0; i < 2; i=i+1) begin
         .wdata1_i(btb_wdata),
         .rdata1_o(/* floating */)
     );
+    assign btb_rdata[i] = (btb_raddr_q == btb_waddr_q) && btb_we_q[i] && correct_info_q.pc[2] == i ? btb_wdata_q : btb_rdata_raw[i];
     assign btb_tag_match[i] = btb_rdata[i].tag == get_tag(pc_q);
-    assign btb_valid[i] = valid_ram[i][btb_raddr] & btb_tag_match[i]; // this has to be none x
+    assign btb_valid[i] = valid_ram_rdata[i] & btb_tag_match[i]; // this has to be none x
 end
 
 /* ============================== BHT ============================== */
@@ -206,15 +227,13 @@ bpu_bht_entry_t             bht_wdata;
 logic [`BPU_BHT_LEN-1:0]    bht_raddr;
 logic [`BPU_BHT_LEN-1:0]    bht_waddr;
 reg   [`BPU_BHT_LEN-1:0]    bht_raddr_q;
-reg   [`BPU_BHT_LEN-1:0]    bht_waddr_q;
 logic [1:0]                 bht_we;
 
 // address_logic : 需要打一拍
 assign bht_raddr = bht_raddr_q;
-assign bht_waddr = bht_waddr_q;
+assign bht_waddr = btb_waddr; // 写入是当拍写入
 always_ff @(posedge clk) begin : bht_addr_q_logic
     bht_raddr_q <= btb_raddr; // notice: this is from BTB
-    bht_waddr_q <= btb_waddr; // notice: this is from BTB
 end
 
 // 下一排的 logic
