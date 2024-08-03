@@ -235,7 +235,6 @@ assign m_axi_awid      = '0;
 typedef enum logic [3:0] {
     IDLE,
     DCACHE_RD,
-    DCACHE_WB,
     ICACHE
 } fsm_state ;
 
@@ -249,15 +248,23 @@ always_ff @(posedge clk) begin
         choose_q <= choose;
     end
 end
+// if (s_axi_awvalid[0]) begin
+//                 fsm_next = DCACHE_WB;
+//             end else 
+// DCACHE_WB: begin
+//             if (s_axi_wvalid[0] & s_axi_wlast[0] & m_axi_wready) begin
+//                 fsm_next = IDLE;
+//             end else begin
+//                 fsm_next = DCACHE_WB;
+//             end
+//         end
 
 always_comb begin
     fsm_next = fsm_cur;
     choose   = '0;
     case(fsm_cur) 
         IDLE:begin
-            if (s_axi_awvalid[0]) begin
-                fsm_next = DCACHE_WB;
-            end else if (s_axi_arvalid[0]) begin
+            if (s_axi_arvalid[0]) begin
                 choose = '0;
                 fsm_next = DCACHE_RD;
             end else if (s_axi_arvalid[1]) begin
@@ -266,14 +273,7 @@ always_comb begin
             end else begin
                 fsm_next = IDLE;
             end
-        end
-        DCACHE_WB: begin
-            if (s_axi_wvalid[0] & s_axi_wlast[0] & m_axi_wready) begin
-                fsm_next = IDLE;
-            end else begin
-                fsm_next = DCACHE_WB;
-            end
-        end
+        end 
         DCACHE_RD: begin
             if (s_axi_rready[0] & m_axi_rvalid & m_axi_rlast) begin
                 fsm_next = IDLE;
