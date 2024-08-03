@@ -281,7 +281,9 @@ typedef enum logic[4:0] {
     S_UNCACHED_WB,
     // 等待ICache请求完成
     S_ICACHE,
-    S_IDLE
+    S_IDLE,
+    // 返回状态的缓冲状态
+    S_BACK_BUF
 } ls_fsm_s;
 ls_fsm_s ls_fsm, ls_fsm_q;
 
@@ -1601,6 +1603,7 @@ word_t axi_block_data [CACHE_BLOCK_LEN:0];
 word_t axi_block_data_q [CACHE_BLOCK_LEN:0];
 logic [$clog2(CACHE_BLOCK_LEN):0] axi_block_ptr,    axi_block_ptr_q;
 logic [$clog2(CACHE_BLOCK_LEN):0] axi_block_len,    axi_block_len_q;
+logic [31:0] fsm_npc_q; /* change 2024/08/04 */
 
 logic axi_wait,    axi_wait_q;
 logic icache_wait, icache_wait_q;
@@ -2274,12 +2277,13 @@ always_comb begin
         icache_wait = icache_wait_q & ~icache_commit_ready_i;
 
         if((~icache_wait_q || icache_commit_ready_i) && icache_commit_valid_i) begin
-            ls_fsm = S_NORMAL;
-            stall = '0;
-            fsm_flush = '1;
-            `ifdef _DIFFTEST
-            not_need_again = '1;
-            `endif
+            /* change 2024/08/04 */
+            ls_fsm = S_BACK_BUF;
+            // stall = '1;
+            // fsm_flush = '1;
+            // `ifdef _DIFFTEST
+            // not_need_again = '1;
+            // `endif
             fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
                       (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                       csr_q.eentry;
@@ -2300,6 +2304,17 @@ always_comb begin
             stall = '1;
             fsm_flush = '0;
         end
+    end
+
+    /* change 2024/08/04 */
+    S_BACK_BUF: begin
+        ls_fsm = S_NORMAL;
+        stall = '0;
+        fsm_flush = '1; //ATTENTION: NEED FLUSH HERE!!!
+        `ifdef _DIFFTEST
+        not_need_again = '1;
+        `endif
+        fsm_npc = fsm_npc_q;
     end
 
     default: begin
@@ -2333,6 +2348,7 @@ always_ff @(posedge clk) begin
         cache_block_len_q   <= '0;
         axi_block_ptr_q     <= '0;
         axi_block_len_q     <= '0;
+        fsm_npc_q           <= '0;
     end
     else begin
         ls_fsm_q            <= ls_fsm;
@@ -2358,6 +2374,7 @@ always_ff @(posedge clk) begin
         axi_block_data_q    <= axi_block_data;
         axi_block_ptr_q     <= axi_block_ptr;
         axi_block_len_q     <= axi_block_len;
+        fsm_npc_q           <= fsm_npc;
     end
 end
 
