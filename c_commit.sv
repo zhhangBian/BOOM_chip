@@ -1639,20 +1639,12 @@ always_comb begin
             case (cache_tar)
             // 对于ICache
             3'b0: begin
-                ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
-                stall = ~(icache_commit_ready_i & icache_commit_valid_i);
-                fsm_flush = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
-
-                `ifdef _DIFFTEST
-                not_need_again = (icache_commit_ready_i & icache_commit_valid_i) ? '1 : '0;
-                `endif
-
-                fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
-                          (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
-                          csr_q.eentry;
-                icache_wait = ~icache_commit_ready_i;
-
-                commit_icache_valid_o      = '1;
+                ls_fsm = S_ICACHE;
+                stall = '1;
+                fsm_flush = '0;
+                // 下一拍发请求
+                icache_wait = '1;
+                commit_icache_valid_o      = '0;
                 commit_icache_req.addr     = lsu_info[0].paddr;
                 commit_icache_req.cache_op = cache_op;
             end
@@ -2238,26 +2230,19 @@ always_comb begin
     end
 
     S_ICACHE: begin
-        // commit_icache_valid_o = icache_wait_q;
+        commit_icache_valid_o = icache_wait_q;
         icache_wait = icache_wait_q & ~icache_commit_ready_i;
 
-        if(icache_wait) begin
-            commit_icache_valid_o      = icache_wait_q;
-        end
-        else begin
-            commit_icache_valid_o      = icache_wait_q ^ icache_wait;
-
-            if(icache_commit_valid_i) begin
-                ls_fsm = S_NORMAL;
-                stall = '0;
-                fsm_flush = '1;
-                `ifdef _DIFFTEST
-                not_need_again = '1;
-                `endif
-                fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
-                          (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
-                          csr_q.eentry;
-            end
+        if((~icache_wait_q || icache_commit_ready_i) && icache_commit_valid_i) begin
+            ls_fsm = S_NORMAL;
+            stall = '0;
+            fsm_flush = '1;
+            `ifdef _DIFFTEST
+            not_need_again = '1;
+            `endif
+            fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
+                      (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
+                      csr_q.eentry;
         end
     end
 
