@@ -269,8 +269,6 @@ logic [31:0] commit_csr_data_q;
 typedef enum logic[4:0] {
     // 正常状态
     S_NORMAL,
-    // Cache维护的读脏位
-    S_CACHE_FIX,
     // 对应Cache缺失，读出脏位
     S_CACHE_MISS,
     // 将Cache的内容读出
@@ -1923,11 +1921,6 @@ always_comb begin
             fsm_flush = '0;
         end
         endcase
-    end
-
-    S_CACHE_FIX: begin
-
-
     end
 
     S_CACHE_MISS: begin
