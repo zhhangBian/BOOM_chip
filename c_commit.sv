@@ -571,19 +571,8 @@ for(genvar i = 0; i < 2; i += 1) begin
     end
 end
 
-always_ff @( posedge clk ) begin
-    if (~rst_n) begin
-        predict_success_q <= '0;
-        next_pc_q         <= '0;
-        predict_info_q    <= '{'0,'0};
-        taken_q           <= '0;
-        branch_info_q     <= '{'0,'0};
-        real_target_q     <= '0;
-        exp_pc_q          <= '0;
-        predict_branch_q  <= '0;
-        is_branch_q       <= '0;
-    end
-    else if (stall) begin
+always_ff @(posedge clk) begin
+    if (stall) begin
         predict_success_q <= predict_success_q;
         next_pc_q         <= next_pc_q;
         predict_info_q    <= predict_info_q;
@@ -593,17 +582,6 @@ always_ff @( posedge clk ) begin
         exp_pc_q          <= exp_pc_q;
         predict_branch_q  <= predict_branch_q;
         is_branch_q       <= is_branch_q;
-    end
-    else if (flush) begin
-        predict_success_q <= '0;
-        next_pc_q         <= '0;
-        predict_info_q    <= '{'0,'0};
-        taken_q           <= '0;
-        branch_info_q     <= '{'0,'0};
-        real_target_q     <= '0;
-        exp_pc_q          <= '0;
-        predict_branch_q  <= '0;
-        is_branch_q       <= '0;
     end
     else begin
         predict_success_q <= predict_success;
@@ -617,6 +595,53 @@ always_ff @( posedge clk ) begin
         is_branch_q       <= is_branch;
     end
 end
+
+// always_ff @( posedge clk ) begin
+//     if (~rst_n) begin
+//         predict_success_q <= '0;
+//         next_pc_q         <= '0;
+//         predict_info_q    <= '{'0,'0};
+//         taken_q           <= '0;
+//         branch_info_q     <= '{'0,'0};
+//         real_target_q     <= '0;
+//         exp_pc_q          <= '0;
+//         predict_branch_q  <= '0;
+//         is_branch_q       <= '0;
+//     end
+//     else if (stall) begin
+//         predict_success_q <= predict_success_q;
+//         next_pc_q         <= next_pc_q;
+//         predict_info_q    <= predict_info_q;
+//         taken_q           <= taken_q;
+//         branch_info_q     <= branch_info_q;
+//         real_target_q     <= real_target_q;
+//         exp_pc_q          <= exp_pc_q;
+//         predict_branch_q  <= predict_branch_q;
+//         is_branch_q       <= is_branch_q;
+//     end
+//     else if (flush) begin
+//         predict_success_q <= '0;
+//         next_pc_q         <= '0;
+//         predict_info_q    <= '{'0,'0};
+//         taken_q           <= '0;
+//         branch_info_q     <= '{'0,'0};
+//         real_target_q     <= '0;
+//         exp_pc_q          <= '0;
+//         predict_branch_q  <= '0;
+//         is_branch_q       <= '0;
+//     end
+//     else begin
+//         predict_success_q <= predict_success;
+//         next_pc_q         <= next_pc;
+//         predict_info_q    <= {predict_info[1],predict_info[0]};
+//         taken_q           <= taken;
+//         branch_info_q     <= {branch_info[1],branch_info[0]};
+//         real_target_q     <= real_target;
+//         exp_pc_q          <= exp_pc;
+//         predict_branch_q  <= predict_branch;
+//         is_branch_q       <= is_branch;
+//     end
+// end
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -858,26 +883,30 @@ always_comb begin
     end//idle不响应中断
 end
 
+always_ff @( posedge clk) begin
+    csr_exception_update_q <= csr_exception_update;
+end
+
 always_ff @( posedge clk ) begin
     if (~rst_n) begin
         cur_exception_q <= '0;
-        cur_tlbr_exception_q <= '0;
-        csr_exception_update_q <= '0;
+        // cur_tlbr_exception_q <= '0;
+        // csr_exception_update_q <= '0;
     end
     else if (stall) begin
         cur_exception_q      <= cur_exception_q;
-        cur_tlbr_exception_q <= cur_tlbr_exception_q;
-        csr_exception_update_q <= csr_exception_update_q;
+        // cur_tlbr_exception_q <= cur_tlbr_exception_q;
+        // csr_exception_update_q <= csr_exception_update_q;
     end
     else if (flush) begin
         cur_exception_q <= '0;
-        cur_tlbr_exception_q <= '0;
-        csr_exception_update_q <= '0;
+        // cur_tlbr_exception_q <= '0;
+        // csr_exception_update_q <= '0;
     end
     else begin
         cur_exception_q <= cur_exception;
-        cur_tlbr_exception_q <= cur_tlbr_exception;
-        csr_exception_update_q <= csr_exception_update;
+        // cur_tlbr_exception_q <= cur_tlbr_exception;
+        // csr_exception_update_q <= csr_exception_update;
     end
 end
 
@@ -946,17 +975,22 @@ always_comb begin
     endcase
 end
 
-//传到第二级arf，不管有没有用都读出来
 always_ff @( posedge clk ) begin
-    if (~rst_n) begin
-        commit_csr_data_q <= '0;
-        csr_maintain_q    <= '0;
-    end
-    else begin
-        commit_csr_data_q <= commit_csr_data_o;
-        csr_maintain_q    <= csr;
-    end
+    commit_csr_data_q <= commit_csr_data_o;
+    csr_maintain_q    <= csr;
 end
+
+//传到第二级arf，不管有没有用都读出来
+// always_ff @( posedge clk ) begin
+//     if (~rst_n) begin
+//         commit_csr_data_q <= '0;
+//         csr_maintain_q    <= '0;
+//     end
+//     else begin
+//         commit_csr_data_q <= commit_csr_data_o;
+//         csr_maintain_q    <= csr;
+//     end
+// end
 
 ////////////////////////////////////////////////////////////////////////////////
 //csr写
@@ -1167,24 +1201,29 @@ logic [`_TLB_ENTRY_NUM - 1:0] tlb_wr_req, tlb_wr_req_q;/*更新进tlb的使能�
 //__forward()
 
 always_ff @( posedge clk ) begin
+    tlb_update_csr_q <= tlb_update_csr;
+    tlb_update_entry_q <= tlb_update_entry;
+end
+
+always_ff @( posedge clk ) begin
     if (~rst_n) begin
-        tlb_update_csr_q <= '0;
-        tlb_update_entry_q <= '0;
+        // tlb_update_csr_q <= '0;
+        // tlb_update_entry_q <= '0;
         tlb_wr_req_q <= '0;
     end
     else if (stall) begin
-        tlb_update_csr_q     <= tlb_update_csr_q;
-        tlb_update_entry_q   <= tlb_update_entry_q;
+        // tlb_update_csr_q     <= tlb_update_csr_q;
+        // tlb_update_entry_q   <= tlb_update_entry_q;
         tlb_wr_req_q         <= tlb_wr_req_q;
     end
     else if (flush) begin
-        tlb_update_csr_q <= '0;
-        tlb_update_entry_q <= '0;
+        // tlb_update_csr_q <= '0;
+        // tlb_update_entry_q <= '0;
         tlb_wr_req_q <= '0;
     end
     else begin
-        tlb_update_csr_q <= tlb_update_csr;
-        tlb_update_entry_q <= tlb_update_entry;
+        // tlb_update_csr_q <= tlb_update_csr;
+        // tlb_update_entry_q <= tlb_update_entry;
         tlb_wr_req_q <= tlb_wr_req;
     end
 end
