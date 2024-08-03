@@ -2514,14 +2514,20 @@ int excute_cycle[int];
 reg [31:0] reset_counter = 0;
 reg [31:0] cyc_counter = 0;
 integer    handle;
+integer    log;
 
 initial begin
     handle = $fopen("./perf.json");
     $display("handle is %d", handle);
+
+    log = $fopen("./log.txt");
+    $display("log is %d", log);
 end
 
 integer    fail_cnt;
 integer    succ_cnt;
+integer    fail_target;
+integer    succ_target;
 integer    first;
 integer    flush_cnt; // 记录刷新流水线所用周期
 
@@ -2585,17 +2591,19 @@ always_ff @(posedge clk) begin
                 $fdisplay(handle,"}}");
                 $fclose(handle);
                 // $display("%p", excute_cycle);
-                $display("succ: %d fail: %d, frac: %f", succ_cnt, fail_cnt, 100.0 * succ_cnt / (succ_cnt + fail_cnt));
+                $display("direction: succ: %d fail: %d, frac: %f", succ_cnt, fail_cnt, 100.0 * succ_cnt / (succ_cnt + fail_cnt));
+                $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
                 $display("Flush count: %d", flush_cnt);
-                // $finish();
+
+                //$finish();
             end
         end
 
         // 分支预测监视器
-        if(commit[i] && rob_commit_q[i].pc == 32'h1c001d08) begin
+        if(commit[i]/* && rob_commit_q[i].pc == 32'h1c001d08*/) begin
             // 只监视失败情况
             if(need_jump_q[i] != taken_q[i]) begin
-                $display("[%d] fail direction! pred:%x actual:%x history:%b",
+                $fdisplay(log, "[%x] fail direction! pred:%x actual:%x history:%b",
                     excute_cnt[rob_commit_q[i].pc],
                     taken_q[i],
                     need_jump_q[i],
@@ -2605,7 +2613,7 @@ always_ff @(posedge clk) begin
             end
 
             else begin
-                $display("[%d] true direction! pred:%x actual:%x history:%b",
+                $fdisplay(log, "[%x] true direction! pred:%x actual:%x history:%b",
                     excute_cnt[rob_commit_q[i].pc],
                     taken_q[i],
                     need_jump_q[i],
@@ -2620,14 +2628,16 @@ always_ff @(posedge clk) begin
                 end
             end
 
-            if(need_jump_q[i] && 
-                  (need_jump_q[i] == taken_q[i]) &&
-                (~predict_success_q[i])) begin
-                $display("[%d] fail target! pred:%x actual:%x", 
+            if(~predict_success_q[i]) begin
+                $fdisplay(log, "[%x] fail target! pred:%x actual:%x", 
                     excute_cnt[rob_commit_q[i].pc], 
                     predict_info_q[i].next_pc, 
                     next_pc_q[i]
                 );
+                fail_target = fail_target + 1;
+            end
+            else begin
+                succ_target = succ_target + 1;
             end
         end
     end
