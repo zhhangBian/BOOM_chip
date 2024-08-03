@@ -168,7 +168,6 @@ end
 //     end
 // end
 
-
 always_ff @( posedge clk) begin
     trans_result_o <= trans_result;
     tlb_exception_o.ecode <= ecode;
