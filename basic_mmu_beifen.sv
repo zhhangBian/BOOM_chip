@@ -21,8 +21,9 @@ module mmu #(
     //output tlb_entry_t    tlb_entry_o        //tlb维护（读）时找到的tlb_entry，暂时写成一拍后得到结果，但也可以马上得到
 );
 
-logic [31:0] va_q;
-logic [1:0]  mmu_mem_type_q;
+
+// logic [31:0] va;
+// logic [1:0]  mmu_mem_type;
 
 //查tlb
 wire  [9:0] cur_asid = csr.asid[`_ASID];
@@ -147,14 +148,14 @@ always_comb begin
     end
 end
 
-always_ff @(posedge clk) begin
-    va_q <= va;
-    mmu_mem_type_q <= mmu_mem_type;
-end//没有reset，外面需要有效位保证
+// always_ff @(posedge clk) begin
+//     va_q <= va;
+//     mmu_mem_type_q <= mmu_mem_type;
+// end//没有reset，外面需要有效位保证
 
-assign trans_result_o = trans_result;
-assign tlb_exception_o.ecode = ecode;
-assign tlb_exception_o.esubcode = esubcode;
+// assign trans_result_o = trans_result;
+// assign tlb_exception_o.ecode = ecode;
+// assign tlb_exception_o.esubcode = esubcode;
 
 // always_ff @(posedge clk) begin
 //     if (~rst_n | flush) begin
@@ -166,5 +167,13 @@ assign tlb_exception_o.esubcode = esubcode;
 //         tlb_exception_o.esubcode <= esubcode;
 //     end
 // end
+
+
+always_ff @( posedge clk) begin
+    trans_result_o <= trans_result;
+    tlb_exception_o.ecode <= ecode;
+    tlb_exception_o.esubcode <= esubcode;
+end
+
 
 endmodule
