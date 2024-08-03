@@ -49,10 +49,11 @@ function automatic logic [31:0] offset(
     return lw_data;
 endfunction
 
+`define CACHE_MASK 32'hffffffe0
+
 module commit #(
-    parameter int CACHE_BLOCK_NUM = 4,
     parameter int CPU_ID = 0,
-    parameter int CACHE_BLOCK_LEN = 4
+    parameter int CACHE_BLOCK_LEN = 8
 ) (
     input   logic   clk,
     input   logic   rst_n,
@@ -1552,15 +1553,15 @@ logic axi_rd_need_wb,     axi_rd_need_wb_q;
 
 lsu_iq_pkg_t lsu_info_s, lsu_info_q;
 
-word_t cache_block_data [CACHE_BLOCK_NUM:0];
-word_t cache_block_data_q [CACHE_BLOCK_NUM:0];
-logic [$clog2(CACHE_BLOCK_NUM):0] cache_block_ptr,  cache_block_ptr_q;
-logic [$clog2(CACHE_BLOCK_NUM):0] cache_block_len,  cache_block_len_q;
+word_t cache_block_data [CACHE_BLOCK_LEN:0];
+word_t cache_block_data_q [CACHE_BLOCK_LEN:0];
+logic [$clog2(CACHE_BLOCK_LEN):0] cache_block_ptr,  cache_block_ptr_q;
+logic [$clog2(CACHE_BLOCK_LEN):0] cache_block_len,  cache_block_len_q;
 
-word_t axi_block_data [CACHE_BLOCK_NUM:0];
-word_t axi_block_data_q [CACHE_BLOCK_NUM:0];
-logic [$clog2(CACHE_BLOCK_NUM):0] axi_block_ptr,    axi_block_ptr_q;
-logic [$clog2(CACHE_BLOCK_NUM):0] axi_block_len,    axi_block_len_q;
+word_t axi_block_data [CACHE_BLOCK_LEN:0];
+word_t axi_block_data_q [CACHE_BLOCK_LEN:0];
+logic [$clog2(CACHE_BLOCK_LEN):0] axi_block_ptr,    axi_block_ptr_q;
+logic [$clog2(CACHE_BLOCK_LEN):0] axi_block_len,    axi_block_len_q;
 
 logic axi_wait,    axi_wait_q;
 logic icache_wait, icache_wait_q;
@@ -1742,7 +1743,7 @@ always_comb begin
                                 fsm_commit = '1;
                                 `endif
                                 // 将Cache无效化，先读出对应的tag
-                                cache_dirty_addr = lsu_info[0].paddr & 32'hfffffff0;
+                                cache_dirty_addr = lsu_info[0].paddr & `CACHE_MASK;
                                 commit_cache_req.addr       = cache_dirty_addr;
                                 commit_cache_req.way_choose = lsu_info[0].tag_hit;
                                 commit_cache_req.data_data  = '0;
@@ -1847,7 +1848,7 @@ always_comb begin
                     stall = '1;
                     ls_fsm = S_CACHE_MISS;
                     // 读出脏位
-                    commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
+                    commit_cache_req.addr       = lsu_info[0].paddr & `CACHE_MASK;
                     commit_cache_req.way_choose = lsu_info[0].refill;
                 end
             end
@@ -1891,7 +1892,7 @@ always_comb begin
                         ls_fsm = S_CACHE_MISS;
                         // 读出脏位
                         commit_cache_req = '0;
-                        commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
+                        commit_cache_req.addr       = lsu_info[0].paddr & `CACHE_MASK;
                         commit_cache_req.way_choose = lsu_info[0].refill;
                         commit_cache_req.fetch_sb   = |lsu_info[0].strb;
                     end
@@ -1922,7 +1923,7 @@ always_comb begin
                 ls_fsm = S_AXI_RD;
                 axi_rd_need_wb = '0;
                 // 设置相应的AXI请求
-                commit_axi_req.raddr = lsu_info_s.paddr & 32'hfffffff0;
+                commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen  = CACHE_BLOCK_LEN;
                 commit_axi_req.rmask = '1;
                 commit_axi_arvalid_o = '1;
@@ -1939,7 +1940,7 @@ always_comb begin
                 ls_fsm = S_CACHE_RD;
                 cache_rd_need_back = '0;
                 // 设置相应的Cache请求
-                commit_cache_req.addr       = lsu_info_s.paddr & 32'hfffffff0;
+                commit_cache_req.addr       = lsu_info_s.paddr & `CACHE_MASK;
                 commit_cache_req.way_choose = lsu_info_s.refill;
                 commit_cache_req.tag_data   = '0;
                 commit_cache_req.tag_we     = '1;
@@ -1949,7 +1950,7 @@ always_comb begin
                 // 设置相应的指针
                 cache_block_ptr = '0;
                 cache_block_len = CACHE_BLOCK_LEN;
-                cache_dirty_addr = lsu_info_s.cache_dirty_addr & 32'hfffffff0;
+                cache_dirty_addr = lsu_info_s.cache_dirty_addr & `CACHE_MASK;
                 // 设置相应的AXI请求
                 commit_axi_req = '0;
                 commit_axi_req.waddr = cache_dirty_addr;
@@ -1969,7 +1970,7 @@ always_comb begin
                 ls_fsm = S_AXI_RD;
                 axi_rd_need_wb = '1;
                 // 设置相应的AXI请求
-                commit_axi_req.raddr = lsu_info_s.paddr & 32'hfffffff0;
+                commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen  = CACHE_BLOCK_LEN;
                 commit_axi_req.rmask = '1;
                 commit_axi_arvalid_o = '1;
@@ -1987,7 +1988,7 @@ always_comb begin
                 cache_rd_need_back = '0;
                 // 设置相应的Cache数据
                 // 对齐一块的数据
-                commit_cache_req.addr       = lsu_info_s.paddr & 32'hfffffff0;
+                commit_cache_req.addr       = lsu_info_s.paddr & `CACHE_MASK;
                 commit_cache_req.way_choose = lsu_info_s.refill;
                 commit_cache_req.tag_data   = '0;
                 commit_cache_req.tag_we     = '1;
@@ -2000,7 +2001,7 @@ always_comb begin
                 cache_dirty_addr = lsu_info_s.cache_dirty_addr;
                 // 设置相应的AXI请求
                 commit_axi_req = '0;
-                commit_axi_req.waddr = cache_dirty_addr & 32'hfffffff0;
+                commit_axi_req.waddr = cache_dirty_addr & `CACHE_MASK;
                 commit_axi_req.wlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '1;
                 commit_axi_awvalid_o = '1;
@@ -2132,7 +2133,7 @@ always_comb begin
 
                 // 设置相应的AXI请求
                 commit_axi_req = '0;
-                commit_axi_req.raddr = lsu_info_s.paddr & 32'hfffffff0;
+                commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '0;
                 commit_axi_arvalid_o = '1;
@@ -2210,10 +2211,10 @@ always_comb begin
                 // 设置相应的Cache数据
                 cache_block_ptr = cache_block_ptr_q + 1;
                 // 对齐一块的数据
-                commit_cache_req.addr       = (lsu_info_s.paddr & 32'hfffffff0) |
+                commit_cache_req.addr       = (lsu_info_s.paddr & `CACHE_MASK) |
                                               ({29'b0, cache_block_ptr_q} << 2);
                 commit_cache_req.way_choose = lsu_info_s.refill;
-                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & 32'hfffffff0, '1, '0);
+                commit_cache_req.tag_data   = get_cache_tag(lsu_info_s.paddr & `CACHE_MASK, '1, '0);
                 commit_cache_req.tag_we     = '1;
                 commit_cache_req.data_data  = axi_block_data[cache_block_ptr_q];
                 commit_cache_req.strb       = '1;
@@ -2594,7 +2595,7 @@ always_ff @(posedge clk) begin
                 $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
                 $display("Flush count: %d", flush_cnt);
 
-                //$finish();
+                $finish();
             end
         end
 

@@ -4,8 +4,9 @@ module dcache #(
     // Cache 规格设置
     parameter int unsigned WAY_NUM = 2,
     parameter int unsigned WORD_SIZE = 32,
-    parameter int unsigned DATA_DEPTH = 256,
-    parameter int unsigned BLOCK_SIZE = 4 * 32, //4个字
+    parameter int unsigned CACHE_BLOCK_LEN = 8,
+    parameter int unsigned DATA_DEPTH = 1024 / CACHE_BLOCK_LEN,
+    parameter int unsigned BLOCK_SIZE = CACHE_BLOCK_LEN * 32, // len个字
     parameter int unsigned SB_SIZE = 4,
     parameter int unsigned TAG_ADDR_LOW = 12 - $clog2(DATA_DEPTH),
     parameter int unsigned DATA_ADDR_LOW = $clog2(WORD_SIZE / 8)
