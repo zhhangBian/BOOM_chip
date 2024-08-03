@@ -41,13 +41,13 @@ always_comb begin
     for (integer i = 0; i < TLB_ENTRY_NUM; i+= 1) begin
         if (tlb_key_q[i].e 
         && (tlb_key_q[i].g || (tlb_key_q[i].asid == cur_asid))
-        && vppn_match(va_q, tlb_key_q[i].huge_page, tlb_key_q[i].vppn)) begin
+        && vppn_match(va, tlb_key_q[i].huge_page, tlb_key_q[i].vppn)) begin
             tlb_found = 1;
             tlb_key_read = tlb_key_q[i];
             if (tlb_key_q[i].huge_page) begin
-                tlb_value_read = tlb_value_q[i][va_q[21]];   //4MB,2MB，TODO ？
+                tlb_value_read = tlb_value_q[i][va[21]];   //4MB,2MB，TODO ？
             end else begin
-                tlb_value_read = tlb_value_q[i][va_q[12]];   //4KB
+                tlb_value_read = tlb_value_q[i][va[12]];   //4KB
             end
         end
     end
@@ -82,8 +82,8 @@ wire    plv3     = csr.crmd[`_CRMD_PLV] == 2'd3;
 wire dmw0_plv_ok = (plv0 && dmw0[`_DMW_PLV0]) || (plv3 && dmw0[`_DMW_PLV3]);
 wire dmw1_plv_ok = (plv0 && dmw1[`_DMW_PLV0]) || (plv3 && dmw1[`_DMW_PLV3]);
 
-wire    dmw0_hit = (dmw0[`_DMW_VSEG] == va_q[31:29]) && dmw0_plv_ok;
-wire    dmw1_hit = (dmw1[`_DMW_VSEG] == va_q[31:29]) && dmw1_plv_ok;
+wire    dmw0_hit = (dmw0[`_DMW_VSEG] == va[31:29]) && dmw0_plv_ok;
+wire    dmw1_hit = (dmw1[`_DMW_VSEG] == va[31:29]) && dmw1_plv_ok;
 
 wire        dmw_hit  = dmw0_hit || dmw1_hit;
 wire [31:0] dmw_read = dmw0_hit ? dmw0 :
@@ -105,21 +105,21 @@ always_comb begin
     trans_result = '0;
 
     if (da) begin
-        trans_result.pa = va_q;
-        trans_result.mat = (mmu_mem_type_q == `_MEM_FETCH) ? 
+        trans_result.pa = va;
+        trans_result.mat = (mmu_mem_type == `_MEM_FETCH) ? 
             csr.crmd[`_CRMD_DATF] : csr.crmd[`_CRMD_DATM];
         trans_result.valid = 1;
     end else begin
         if (dmw_hit) begin
-            trans_result.pa = {dmw_read[`_DMW_PSEG],va_q[28:0]};
+            trans_result.pa = {dmw_read[`_DMW_PSEG],va[28:0]};
             trans_result.mat = dmw_read[`_DMW_MAT];
             trans_result.valid = 1;
         end else begin
             if (tlb_key_read.huge_page) begin //fixed
-                trans_result.pa = {tlb_value_read.ppn, va_q[11:0]};
+                trans_result.pa = {tlb_value_read.ppn, va[11:0]};
                 trans_result.mat = tlb_value_read.mat;
             end else begin
-                trans_result.pa = {tlb_value_read.ppn[19:10], va_q[21:0]};
+                trans_result.pa = {tlb_value_read.ppn[19:10], va[21:0]};
                 trans_result.mat = tlb_value_read.mat;
             end
             trans_result.valid = tlb_found;
@@ -127,7 +127,7 @@ always_comb begin
                 ecode = `_ECODE_TLBR;
             end else if (!tlb_value_read.v) begin
                 trans_result.valid = 0;
-                case (mmu_mem_type_q)
+                case (mmu_mem_type)
                     `_MEM_FETCH:
                         ecode = `_ECODE_PIF;
                     `_MEM_LOAD:
@@ -140,7 +140,7 @@ always_comb begin
             end else if(csr.crmd[`_CRMD_PLV] > tlb_value_read.plv) begin
                 trans_result.valid = 0;
                 ecode = `_ECODE_PPI;
-            end else if((mmu_mem_type_q == `_MEM_STORE) && (!tlb_value_read.d)) begin//fixed
+            end else if((mmu_mem_type == `_MEM_STORE) && (!tlb_value_read.d)) begin//fixed
                 trans_result.valid = 0;
                 ecode = `_ECODE_PME;
             end
