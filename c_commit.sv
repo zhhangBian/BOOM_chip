@@ -269,6 +269,8 @@ logic [31:0] commit_csr_data_q;
 typedef enum logic[4:0] {
     // 正常状态
     S_NORMAL,
+    // Cache维护的读脏位
+    S_CACHE_FIX,
     // 对应Cache缺失，读出脏位
     S_CACHE_MISS,
     // 将Cache的内容读出
@@ -1637,6 +1639,7 @@ always_comb begin
             icache_wait = '0;
 
             case (cache_tar)
+            // 对于ICache
             3'b0: begin
                 ls_fsm = (icache_commit_ready_i & icache_commit_valid_i) ? S_NORMAL : S_ICACHE;
                 stall = ~(icache_commit_ready_i & icache_commit_valid_i);
@@ -1656,6 +1659,7 @@ always_comb begin
                 commit_icache_req.cache_op = cache_op;
             end
 
+            // 对于DCache
             3'b1: begin
                 // 对于Cache维护指令，将维护地址视作目的地址
                 commit_cache_req.addr         = lsu_info[0].paddr;
@@ -1687,6 +1691,9 @@ always_comb begin
                         // 将Cache的tag无效化
                         commit_cache_req.tag_data  = '0;
                         commit_cache_req.tag_we    = '1;
+
+                        // 需要读出脏位
+
                         //如果数据是脏的，则需要写回
                         if (lsu_info[0].cacop_dirty) begin
                             ls_fsm = S_CACHE_RD;
@@ -1820,8 +1827,9 @@ always_comb begin
                 not_need_again = '1;
                 `endif
                 fsm_npc = pc_s + 4;
-                // 发起AXI请求
+                // 进行一次SB提交
                 commit_cache_req.fetch_sb = |lsu_info[0].strb;
+                // 发起AXI请求
                 commit_axi_req.waddr = lsu_info[0].paddr;
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
@@ -1849,7 +1857,6 @@ always_comb begin
                     stall = '1;
                     ls_fsm = S_CACHE_MISS;
                     // 读出脏位
-                    commit_cache_req = '0;
                     commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
                     commit_cache_req.way_choose = lsu_info[0].refill;
                 end
@@ -1863,6 +1870,8 @@ always_comb begin
                     if(is_sc[0] && ~ll_bit) begin
                         ls_fsm = S_NORMAL;
                         stall = '0;
+                        // 提交SB
+                        commit_cache_req.fetch_sb = |lsu_info[0].strb;
                     end
                     else begin
                         // 命中一周期即可返回
@@ -1884,6 +1893,8 @@ always_comb begin
                     if(is_sc[0]) begin
                         ls_fsm = S_NORMAL;
                         stall = '0;
+                        // SC没有命中不做任何事，但需要提交SB
+                        commit_cache_req.fetch_sb  = |lsu_info[0].strb;
                     end
                     else begin
                         stall = '1;
@@ -1892,11 +1903,15 @@ always_comb begin
                         commit_cache_req = '0;
                         commit_cache_req.addr       = lsu_info[0].paddr & 32'hfffffff0;
                         commit_cache_req.way_choose = lsu_info[0].refill;
+                        commit_cache_req.fetch_sb   = |lsu_info[0].strb;
                     end
                 end
             end
 
             default: begin
+                ls_fsm = S_NORMAL;
+                stall = '0;
+                fsm_flush = '0;
             end
             endcase
         end
@@ -1908,6 +1923,11 @@ always_comb begin
             fsm_flush = '0;
         end
         endcase
+    end
+
+    S_CACHE_FIX: begin
+
+
     end
 
     S_CACHE_MISS: begin
@@ -2590,6 +2610,7 @@ always_ff @(posedge clk) begin
                 end
                 $fdisplay(handle,"}}");
                 $fclose(handle);
+                $fclose(log);
                 // $display("%p", excute_cycle);
                 $display("direction: succ: %d fail: %d, frac: %f", succ_cnt, fail_cnt, 100.0 * succ_cnt / (succ_cnt + fail_cnt));
                 $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
