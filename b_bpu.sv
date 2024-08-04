@@ -157,10 +157,11 @@ logic [1:0][`BPU_BTB_DEPTH-1:0] valid_ram_wdata;
 logic [1:0] valid_ram_we;
 
 assign valid_ram_we = btb_we;
-assign valid_ram_raddr = bht_raddr;
+assign valid_ram_raddr = btb_raddr_q;
 assign valid_ram_waddr = btb_waddr;
 
-for (genvar i = 0; i < 2; i=i+1) begin
+// valid_ram 
+for (genvar i = 0; i < 2; i=i+1) begin : valid_ram_logic
     always_comb begin
         valid_ram_wdata[i] = valid_ram[i];
         if (rst) begin
@@ -226,15 +227,11 @@ bpu_bht_entry_t [1:0]       bht_rdata;
 bpu_bht_entry_t             bht_wdata;
 logic [`BPU_BHT_LEN-1:0]    bht_raddr;
 logic [`BPU_BHT_LEN-1:0]    bht_waddr;
-reg   [`BPU_BHT_LEN-1:0]    bht_raddr_q;
 logic [1:0]                 bht_we;
 
 // address_logic : 需要打一拍
-assign bht_raddr = bht_raddr_q;
+assign bht_raddr = btb_raddr_q;
 assign bht_waddr = btb_waddr; // 写入是当拍写入
-always_ff @(posedge clk) begin : bht_addr_q_logic
-    bht_raddr_q <= btb_raddr; // notice: this is from BTB
-end
 
 // 下一排的 logic
 assign bht_we[0] = (~correct_info.pc[2] & correct_info.update) | rst;
@@ -251,17 +248,11 @@ always_comb begin: bht_wdata_logic
 end
 
 always_ff @(posedge clk) begin : bht_logic;
-    if (rst) begin
+    if (bht_we[0]) begin
         bht0[bht_waddr] <= bht_wdata; // 只需要是一个确定的值就行。 此外 waddr 是从 BTB 的 waddr 来的，自然能够找到rst_cnt
     end
-    else if (bht_we[0]) begin
-        bht0[bht_waddr] <= bht_wdata;
-    end
 
-    if (rst) begin
-        bht1[bht_waddr] <= bht_wdata;
-    end
-    else if (bht_we[1]) begin
+    if (bht_we[1]) begin
         bht1[bht_waddr] <= bht_wdata;
     end
 end
@@ -383,25 +374,51 @@ end
 assign mask = {!branch[0] | pc_q[2], !pc_q[2]};
 
 // pc_next logic
+// always_comb begin : pc_next_logic
+//     // TODO: optimize this f** block
+//     if (rst) begin
+//         pc_next = `BPU_INIT_PC;
+//     end
+//     else if (flush_i) begin
+//         pc_next = redir_addr_i;
+//     end
+//     else if (~ready) begin
+//         pc_next = pc_q;
+//     end
+//     else if (branch[0] && ~pc_q[2]) begin
+//         pc_next = target_pc[0];
+//     end
+//     else if (branch[1]) begin
+//         pc_next = target_pc[1];
+//     end
+//     else begin
+//         pc_next = pc_add_4_8;
+//     end
+// end
+
 always_comb begin : pc_next_logic
-    // TODO: optimize this f** block
-    if (rst) begin
-        pc_next = `BPU_INIT_PC;
+    if (rst | flush_i | ~ready) begin
+        if (rst) begin
+            pc_next = `BPU_INIT_PC;
+        end
+        else if (flush_i) begin
+            pc_next = redir_addr_i;
+        end
+        else begin
+            pc_next = pc_q;
+        end
     end
-    else if (flush_i) begin
-        pc_next = redir_addr_i;
-    end
-    else if (~ready) begin
-        pc_next = pc_q;
-    end
-    else if (branch[0] && ~pc_q[2]) begin
-        pc_next = target_pc[0];
-    end
-    else if (branch[1]) begin
-        pc_next = target_pc[1];
-    end
+
     else begin
-        pc_next = pc_add_4_8;
+        if (branch[0] && ~pc_q[2]) begin
+            pc_next = target_pc[0];
+        end
+        else if (branch[1]) begin
+            pc_next = target_pc[1];
+        end
+        else begin
+            pc_next = pc_add_4_8;
+        end
     end
 end
 
