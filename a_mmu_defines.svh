@@ -14,11 +14,6 @@
 `define _CRMD_DATF  6:5
 `define _CRMD_DATM  8:7
 
-`define _DMW_PLV0   0
-`define _DMW_PLV3   3
-`define _DMW_PSEG   27:25
-`define _DMW_VSEG   31:29
-
 //tlb
 typedef struct packed {
     logic [31:0]  pa;
