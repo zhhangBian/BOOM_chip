@@ -367,15 +367,16 @@ always_comb begin
     temp_data_block = temp_data_block_q;
     refill_addr     = refill_addr_q;
     refill_data     = refill_data_q;
+    addr_o          = addr_q;
+    data_len_o      = data_len_q;
+    
     refill_tag      = '0;
     refill_we       = '0;
     refill_tag_we   = '0;
     commit_cache_req = '0;
     icache_cacop_flush_o = '0;
     icache_cacop_tlb_exc = '0;
-    addr_o          = addr_q;
     addr_valid_o    = '0;
-    data_len_o      = data_len_q;
     commit_resp_valid_o  = '0;
     icache_cacop_bvaddr  = '0;
     case(fsm_cur) 
@@ -416,12 +417,12 @@ always_comb begin
                 req_ptr  = (b_f_pkg_q.mask == 2'b10) ? 1 : 0;
                 // TODO 请求地址和valid_o，默认传入pc最后三位为0
                 addr_o    = b_f_pkg_q.mask[0] ? paddr : (paddr | 32'h00000004);
-                addr_valid_o = '1;
+                // addr_valid_o = '1;
                 data_len_o   = (b_f_pkg_q.mask == 2'b11) ? 8'd2 : (|b_f_pkg_q.mask) ? 8'd1 : 8'd0;
-                if (axi_resp_ready_i) begin
-                    fsm_next = F_UNCACHE_S;
-                    temp_data_block = '0;
-                end
+                // if (axi_resp_ready_i) begin
+                //     fsm_next = F_UNCACHE_S;
+                //     temp_data_block = '0;
+                // end
             end else if (!(|tag_hit)  | (b_f_pkg_q.mask == '0)) begin
                 stall |= '1; // 阻塞
                 fsm_next = F_MISS;
@@ -429,12 +430,12 @@ always_comb begin
                 req_ptr  = 0;
                 // TODO 请求地址和valid_o
                 addr_o    = paddr & 32'hffffffe0; // 块对齐，一个块8个字
-                addr_valid_o = '1;
+                // addr_valid_o = '1;
                 data_len_o   = {3'b0, req_num[4:0]};
-                if (axi_resp_ready_i) begin
-                    fsm_next = F_MISS_S;
-                    temp_data_block = '0;
-                end
+                // if (axi_resp_ready_i) begin
+                //     fsm_next = F_MISS_S;
+                //     temp_data_block = '0;
+                // end
             end else if (!icache_decoder_sender.ready) begin
                 fsm_next = F_STALL;
                 stall    = '1;
