@@ -2684,16 +2684,18 @@ always_ff @(posedge clk) begin
                 end
             end
 
-            if(~predict_success_q[i]) begin
-                $fdisplay(log, "[%x] fail target! pred:%x actual:%x", 
-                    excute_cnt[rob_commit_q[i].pc], 
-                    predict_info_q[i].next_pc, 
-                    next_pc_q[i]
-                );
-                fail_target = fail_target + 1;
-            end
-            else begin
-                succ_target = succ_target + 1;
+            if(rob_commit_q[i].is_branch) begin
+                if(~predict_success_q[i]) begin
+                    $fdisplay(log, "[%x] fail target! pred:%x actual:%x", 
+                        excute_cnt[rob_commit_q[i].pc], 
+                        predict_info_q[i].next_pc, 
+                        next_pc_q[i]
+                    );
+                    fail_target = fail_target + 1;
+                end
+                else begin
+                    succ_target = succ_target + 1;
+                end
             end
         end
     end
