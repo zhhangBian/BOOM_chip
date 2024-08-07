@@ -151,7 +151,7 @@ always_ff @(posedge clk) begin
     end else begin
         refill_addr_q <= refill_addr;
         refill_data_q <= refill_data;
-        refill_we_q   <= refill_we  ; 
+        refill_we_q   <= refill_we  ;
     end 
 end
 // 写入仲裁
