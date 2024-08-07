@@ -1,8 +1,14 @@
+`ifndef _MEGA_SOC
+
 `include "a_defines.svh"
 
 // 我们是双提交
 `define CPU_2CMT
 
+`ifdef _MEGA
+module mycpu_top (
+    input    [ 7:0] ext_int, 
+`endif
 `ifdef _VERILATOR
 module core_top (
     input    [ 7:0] intrpt,
@@ -791,6 +797,8 @@ axi_convert # (
 );
 
 endmodule
+
+`endif
 
 /* 不出bug
 ____________________████████████████__________████████████
