@@ -535,7 +535,9 @@ always_comb begin
         cdb_rob_pkgs[i].w_data    =  cdb_infos[i].w_data;
         cdb_rob_pkgs[i].w_valid   =  cdb_infos[i].r_valid;
         cdb_rob_pkgs[i].ctrl      =  cdb_infos[i].ctrl/* TODO */; 
-        cdb_rob_pkgs[i].lsu_info  =  cdb_infos[i].lsu_info; 
+        cdb_rob_pkgs[i].lsu_info  =  cdb_infos[i].lsu_info;
+        cdb_rob_pkgs[i].single_load =  cdb_infos[i].single_load;
+        cdb_rob_pkgs[i].single_store  =  cdb_infos[i].single_store;
     end
 end
 
