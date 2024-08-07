@@ -192,14 +192,14 @@ wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_
 
 always_comb begin
     //在有效的情况下是不是单提交的情况
-    first_commit[0]     = (|rob_commit_i[0].lsu_info.strb); //store;//预测错
+    first_commit[0]     = (rob_commit_i[0].single_store); //store
 
     first_commit[1]     = rob_commit_i[1].flush_inst |
-                          (|rob_commit_i[1].lsu_info.strb) |
+                          (rob_commit_i[1].single_store) |
                           another_exception |
-                          (rob_commit_i[1].lsu_inst && (~rob_commit_i[1].lsu_info.hit || rob_commit_i[1].is_uncached)/*访存uncached*/);//仅第二条分支预测失败也可以双提
+                          (rob_commit_i[1].single_load);//仅第二条分支预测失败也可以双提
 
-    commit_request_o[0] = /*rob_commit_valid_i[0]*/ & ~stall;
+    commit_request_o[0] = /*rob_commit_valid_i[0] &*/ ~stall;
 
 // `ifdef _VERILATOR
     commit_request_o[1] = rob_commit_valid_i[0] &
@@ -231,16 +231,16 @@ logic [1:0] rob2next_valid;//这个是向后的valid信号
 
 always_comb begin
     rob2next_valid[0] = rob_commit_valid_i[0] & ~stall;
-    rob2next_valid[1] = &rob_commit_valid_i & 
+    rob2next_valid[1] = &rob_commit_valid_i &
                         ~rob_commit_i[0].flush_inst &//一定flush指令
-                        ~(|rob_commit_i[0].lsu_info.strb) &
+                        ~(rob_commit_i[0].single_store) &
                         ~cur_exception &//异常
-                        ~(rob_commit_i[0].lsu_inst && (~rob_commit_i[0].lsu_info.hit || rob_commit_i[0].is_uncached)/*uncached*/) & //cache miss
-                        predict_success[0] &
+                        ~(rob_commit_i[0].single_load) & //cache miss
+                        /*predict_success[0] &*/ //移到第二级
                         ~rob_commit_i[1].flush_inst &
-                        ~(|rob_commit_i[1].lsu_info.strb) &
+                        ~(|rob_commit_i[1].single_store) &
                         ~another_exception &
-                        ~(rob_commit_i[1].lsu_inst && (~rob_commit_i[1].lsu_info.hit || rob_commit_i[1].is_uncached)/*访存uncached*/);//仅第二条分支预测失败也可以双提
+                        ~(rob_commit_i[1].single_load);//仅第二条分支预测失败也可以双提
 end
 
 //注意flush把这一级也flush了
@@ -272,7 +272,7 @@ end
 //第二级
 //引入了retire_request，区别于commit_request
 assign retire_request_o[0] = commit_request_q[0] & ~stall;
-assign retire_request_o[1] = commit_request_q[1] & ~stall;
+assign retire_request_o[1] = commit_request_q[1] & predict_success_q[0] & ~stall;
 
 logic [31:0] rdcnt_data;
 logic [31:0] rdcnt_data_q;
