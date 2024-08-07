@@ -192,22 +192,18 @@ wire another_exception    = |{a_fetch_excp, a_syscall_excp, a_break_excp, a_ine_
 
 always_comb begin
     //在有效的情况下是不是单提交的情况
-    first_commit[0]     = rob_commit_i[0].flush_inst | //一定flush指令
-                          (|rob_commit_i[0].lsu_info.strb) | //store
-                          cur_exception | //异常
-                          (rob_commit_i[0].lsu_inst && (~rob_commit_i[0].lsu_info.hit || rob_commit_i[0].is_uncached)/*uncached*/) | //cache miss
-                          ~predict_success[0];//预测错
+    first_commit[0]     = (|rob_commit_i[0].lsu_info.strb); //store;//预测错
 
     first_commit[1]     = rob_commit_i[1].flush_inst |
                           (|rob_commit_i[1].lsu_info.strb) |
                           another_exception |
                           (rob_commit_i[1].lsu_inst && (~rob_commit_i[1].lsu_info.hit || rob_commit_i[1].is_uncached)/*访存uncached*/);//仅第二条分支预测失败也可以双提
 
-    commit_request_o[0] = rob_commit_valid_i[0] & ~stall;
+    commit_request_o[0] = /*rob_commit_valid_i[0]*/ & ~stall;
 
 // `ifdef _VERILATOR
     commit_request_o[1] = rob_commit_valid_i[0] &
-                          rob_commit_valid_i[1] &
+                          /*rob_commit_valid_i[1] &*/
                           ~stall &
                           ~first_commit[0] &
                           ~first_commit[1];
@@ -219,7 +215,6 @@ always_comb begin
 
 end
 
-
 //下面两个是第二级的数据来源，这样也避免了一些情况，比如说刷掉流水导致找不到之前的数据
 //flush对1->2部分的数据不应该刷掉自己
 logic [1:0] commit_request_q;
@@ -228,8 +223,25 @@ rob_commit_pkg_t rob_commit_q [1:0];
 //下面只是一个组合逻辑，如果传指令过去就一起传包，否则全0
 rob_commit_pkg_t rob_commit_flow[1:0];
 
-assign rob_commit_flow[0] = commit_request_o[0] ? rob_commit_i[0] : '0;
-assign rob_commit_flow[1] = commit_request_o[1] ? rob_commit_i[1] : '0;
+assign rob_commit_flow[0] = rob2next_valid[0] ? rob_commit_i[0] : '0;
+assign rob_commit_flow[1] = rob_commit_i[1];
+//TODO
+
+logic [1:0] rob2next_valid;//这个是向后的valid信号
+
+always_comb begin
+    rob2next_valid[0] = rob_commit_valid_i[0] & ~stall;
+    rob2next_valid[1] = &rob_commit_valid_i & 
+                        ~rob_commit_i[0].flush_inst &//一定flush指令
+                        ~(|rob_commit_i[0].lsu_info.strb) &
+                        ~cur_exception &//异常
+                        ~(rob_commit_i[0].lsu_inst && (~rob_commit_i[0].lsu_info.hit || rob_commit_i[0].is_uncached)/*uncached*/) & //cache miss
+                        predict_success[0] &
+                        ~rob_commit_i[1].flush_inst &
+                        ~(|rob_commit_i[1].lsu_info.strb) &
+                        ~another_exception &
+                        ~(rob_commit_i[1].lsu_inst && (~rob_commit_i[1].lsu_info.hit || rob_commit_i[1].is_uncached)/*访存uncached*/);//仅第二条分支预测失败也可以双提
+end
 
 //注意flush把这一级也flush了
 always_ff @( posedge clk ) begin
@@ -251,7 +263,7 @@ always_ff @( posedge clk ) begin
         rob_commit_q <= '{'0,'0};
     end
     else begin
-        commit_request_q <= commit_request_o;
+        commit_request_q <= rob2next_valid;
         rob_commit_q     <= rob_commit_flow;
     end
 end
@@ -384,7 +396,7 @@ always_ff @( posedge clk ) begin
         rob_commit_will_flush_q <= '{'0, '0};
     end
     else begin
-        rob_commit_will_flush_q <= {'0, commit_request_o[0] ? rob_commit_i[0] : '0};
+        rob_commit_will_flush_q <= {'0, rob2next_valid[0] ? rob_commit_i[0] : '0};
     end
 end
 
@@ -1356,7 +1368,7 @@ always_comb begin
         endcase
     end
 
-    if (!commit_request_o[0]) begin
+    if (!rob2next_valid[0]) begin
         tlb_wr_req = '0;
     end//不是将要提交的命令，则上面全部不用，注意可能有异常！！！
 end
@@ -2416,7 +2428,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock (clk),
         .coreid(0),
         .index (i),
-        .valid (commit & (|(rob_commit_q[i].lsu_info.rmask))),
+        .valid (commit[i] & (|(rob_commit_q[i].lsu_info.rmask))),
         .paddr (rob_commit_q[i].lsu_info.paddr),
         .vaddr (rob_commit_q[i].lsu_info.vaddr)
     );
@@ -2436,7 +2448,7 @@ for(genvar i = 0; i < 2; i += 1) begin
         .clock(clk),
         .coreid(0),
         .index(i),
-        .valid(commit & (|(rob_commit_q[i].lsu_info.strb)) & ((is_sc[0] & ll_bit & (i == 0)) | (~is_sc[0]))),
+        .valid(commit[i] & (|(rob_commit_q[i].lsu_info.strb)) & ((is_sc[0] & ll_bit & (i == 0)) | (~is_sc[0]))),
         .storePAddr(rob_commit_q[i].lsu_info.paddr),
         .storeVAddr(rob_commit_q[i].lsu_info.vaddr),
         .storeData(temp_wdata)

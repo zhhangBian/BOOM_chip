@@ -69,10 +69,10 @@ always_ff @(posedge clk) begin
 end
 
 // comb
-assign tail_ptr0 = tail_ptr0_q + commit_req[0] + commit_req[1];
-assign tail_ptr1 = tail_ptr1_q + commit_req[0] + commit_req[1];
+assign tail_ptr0 = tail_ptr0_q + (commit_req[0] & commit_valid[0]) + (commit_req[1] & commit_valid[1]);
+assign tail_ptr1 = tail_ptr1_q + (commit_req[0] & commit_valid[0]) + (commit_req[1] & commit_valid[1]);
 assign dispatch_valid = {dispatch_info_i[1].issue, dispatch_info_i[0].issue};
-assign rob_cnt = rob_cnt_q + dispatch_valid[1] + dispatch_valid[0] - commit_req[1] - commit_req[0];
+assign rob_cnt = rob_cnt_q + dispatch_valid[1] + dispatch_valid[0] - ((commit_req[0] & commit_valid[0]) + (commit_req[1] & commit_valid[1]));
 
 
 
