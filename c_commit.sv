@@ -1768,8 +1768,8 @@ always_comb begin
                             commit_axi_req.waddr = cache_dirty_addr;
                             commit_axi_req.wlen = CACHE_BLOCK_LEN;
                             commit_axi_req.strb = '1;
-                            commit_axi_awvalid_o = '1;
-                            axi_wait = ~axi_commit_awready_i;
+                            // commit_axi_awvalid_o = '1;
+                            axi_wait = '1;//~axi_commit_awready_i;
                             // 设置相应的指针
                             axi_block_ptr = '0;
                             axi_block_len = CACHE_BLOCK_LEN;
@@ -1815,8 +1815,8 @@ always_comb begin
                                 commit_axi_req.waddr = cache_dirty_addr;
                                 commit_axi_req.wlen = CACHE_BLOCK_LEN;
                                 commit_axi_req.strb = '1;
-                                commit_axi_awvalid_o = '1;
-                                axi_wait = ~axi_commit_awready_i;
+                                // commit_axi_awvalid_o = '1;
+                                axi_wait = '1;//~axi_commit_awready_i;
                                 // 设置相应的指针
                                 axi_block_ptr = '0;
                                 axi_block_len = CACHE_BLOCK_LEN;
@@ -1864,9 +1864,9 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info[0].paddr;
                 commit_axi_req.rlen = 1;
                 commit_axi_req.rmask = lsu_info[0].rmask;
-                commit_axi_arvalid_o = '1;
+                // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
-                axi_wait = ~axi_commit_arready_i;
+                axi_wait = '1;//~axi_commit_arready_i;
             end
             else begin
                 ls_fsm = S_UNCACHED_WB;
@@ -1882,10 +1882,10 @@ always_comb begin
                 commit_axi_req.waddr = lsu_info[0].paddr;
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
-                commit_axi_awvalid_o = '1;
+                // commit_axi_awvalid_o = '1;
                 axi_block_data[0] = lsu_info[0].wdata;
                 // 进行AXI握手
-                axi_wait = ~axi_commit_awready_i;
+                axi_wait = '1;//~axi_commit_awready_i;
             end
         end
 
@@ -1984,9 +1984,9 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen  = CACHE_BLOCK_LEN;
                 commit_axi_req.rmask = '1;
-                commit_axi_arvalid_o = '1;
+                // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
-                axi_wait = ~axi_commit_arready_i;
+                axi_wait = '1;//~axi_commit_arready_i;
                 // 设置相应的指针
                 axi_block_ptr = '0;
                 axi_block_len = CACHE_BLOCK_LEN;
@@ -2014,8 +2014,8 @@ always_comb begin
                 commit_axi_req.waddr = cache_dirty_addr;
                 commit_axi_req.wlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '1;
-                commit_axi_awvalid_o = '1;
-                axi_wait = ~axi_commit_awready_i;
+                // commit_axi_awvalid_o = '1;
+                axi_wait = '1;//~axi_commit_awready_i;
                 // 设置相应的指针
                 axi_block_ptr = '0;
                 axi_block_len = CACHE_BLOCK_LEN;
@@ -2031,9 +2031,9 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen  = CACHE_BLOCK_LEN;
                 commit_axi_req.rmask = '1;
-                commit_axi_arvalid_o = '1;
+                // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
-                axi_wait = ~axi_commit_arready_i;
+                axi_wait = '1;
                 // 设置相应的指针
                 axi_block_ptr = '0;
                 axi_block_len = CACHE_BLOCK_LEN;
@@ -2062,8 +2062,8 @@ always_comb begin
                 commit_axi_req.waddr = cache_dirty_addr & `CACHE_MASK;
                 commit_axi_req.wlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '1;
-                commit_axi_awvalid_o = '1;
-                axi_wait = ~axi_commit_awready_i;
+                // commit_axi_awvalid_o = '1;
+                axi_wait = '1;
                 // 设置相应的指针
                 axi_block_ptr = '0;
                 axi_block_len = CACHE_BLOCK_LEN;
@@ -2194,7 +2194,7 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '0;
-                commit_axi_arvalid_o = '1;
+                // commit_axi_arvalid_o = '1;
 
                 // 设置相应的指针
                 axi_block_ptr = '0;
@@ -2202,7 +2202,7 @@ always_comb begin
                 cache_block_ptr = '0;
                 cache_block_len = CACHE_BLOCK_LEN;
 
-                axi_wait = ~axi_commit_arready_i;
+                axi_wait = '1;//~axi_commit_arready_i;
             end
         end
         else begin
