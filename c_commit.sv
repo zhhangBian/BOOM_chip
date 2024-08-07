@@ -1368,9 +1368,12 @@ always_comb begin
         endcase
     end
 
-    if (!rob2next_valid[0]) begin
+    if (!rob_commit_valid_i[0]) begin
         tlb_wr_req = '0;
-    end//不是将要提交的命令，则上面全部不用，注意可能有异常！！！
+    end
+    // if (!rob2next_valid[0]) begin
+    //     tlb_wr_req = '0;
+    // end//不是将要提交的命令，则上面全部不用，注意可能有异常！！！
 end
 
 function automatic logic vppn_match(
