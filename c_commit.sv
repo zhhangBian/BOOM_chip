@@ -163,7 +163,7 @@ logic cur_tlbr_exception_q;
 csr_t csr_exception_update_q;
 
 logic fsm_flush;
-logic [31:0] fsm_npc;
+logic [31:0] fsm_npc, tmp_fsm_npc;
 logic [31:0] pc_s;
 
 `ifdef _DIFFTEST
@@ -669,12 +669,12 @@ assign redir_addr_o = (fsm_flush) ? fsm_npc ://fsm来的npc
                       (rob_commit_q[0].ertn_en) ? csr_q.era : //异常返回
                       next_pc_q[commit_flush_info[1]];//执行next_pc，这里认为flush只可能来自某条commit
 
-assign correct_info_o[0].update = retire_request_o[0] &
+assign correct_info_o[0].update = commit_request_q[0] &
                            ((predict_info_q[0].need_update) |
                            (predict_branch_q[0]) |
                            (is_branch_q[0]));
 
-assign correct_info_o[1].update = retire_request_o[1] &
+assign correct_info_o[1].update = commit_request_q[1] & predict_success_q[0] &
                            ((predict_info_q[1].need_update) |
                            (predict_branch_q[1]) |
                            (is_branch_q[1])) &
@@ -1615,7 +1615,7 @@ word_t axi_block_data [CACHE_BLOCK_LEN:0];
 word_t axi_block_data_q [CACHE_BLOCK_LEN:0];
 logic [$clog2(CACHE_BLOCK_LEN):0] axi_block_ptr,    axi_block_ptr_q;
 logic [$clog2(CACHE_BLOCK_LEN):0] axi_block_len,    axi_block_len_q;
-logic [31:0] fsm_npc_q; /* change 2024/08/04 */
+logic [31:0] fsm_npc_q, tmp_fsm_npc_q; /* change 2024/08/04 */
 
 logic axi_wait,    axi_wait_q;
 logic icache_wait, icache_wait_q;
@@ -1632,6 +1632,7 @@ always_comb begin
     stall               = stall_q;
     fsm_flush           = '0;
     fsm_npc             = pc_s + 4;
+    tmp_fsm_npc         = tmp_fsm_npc_q;
 
     `ifdef _DIFFTEST
     not_need_again      = '0;
@@ -2296,10 +2297,10 @@ always_comb begin
             // `ifdef _DIFFTEST
             // not_need_again = '1;
             // `endif
-            fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
+        end
+        tmp_fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
                       (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
                       csr_q.eentry;
-        end
     end
 
     S_IDLE: begin
@@ -2326,7 +2327,7 @@ always_comb begin
         `ifdef _DIFFTEST
         not_need_again = '1;
         `endif
-        fsm_npc = fsm_npc_q;
+        fsm_npc = tmp_fsm_npc_q;
     end
 
     default: begin
@@ -2361,6 +2362,7 @@ always_ff @(posedge clk) begin
         axi_block_ptr_q     <= '0;
         axi_block_len_q     <= '0;
         fsm_npc_q           <= '0;
+        tmp_fsm_npc_q       <= '0;
     end
     else begin
         ls_fsm_q            <= ls_fsm;
@@ -2387,6 +2389,7 @@ always_ff @(posedge clk) begin
         axi_block_ptr_q     <= axi_block_ptr;
         axi_block_len_q     <= axi_block_len;
         fsm_npc_q           <= fsm_npc;
+        tmp_fsm_npc_q       <= tmp_fsm_npc;
     end
 end
 
