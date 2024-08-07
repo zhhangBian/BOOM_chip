@@ -534,6 +534,10 @@ typedef struct packed {
 
     logic   [4:0]   tlb_op;
 
+    // 访存单提交维护
+    logic   single_store; // store指令的单提交
+    logic   single_load;  // load指令的单提交
+
     // 分支预测信息
     logic   is_branch;
     predict_info_t  predict_info;
@@ -586,6 +590,10 @@ typedef struct packed {
     // predict_info_t predict_info; // predict_info is in rob
     lsu_iq_pkg_t lsu_info;
     rob_ctrl_entry_t ctrl;
+    
+    logic single_load;
+    logic single_store;
+
 } cdb_info_t;
 
 /**********************rob pkg**********************/
@@ -669,6 +677,8 @@ typedef struct packed {
     logic                    w_valid;  // valid
     rob_ctrl_entry_t         ctrl;
     lsu_iq_pkg_t               lsu_info;
+    logic                    single_load;
+    logic                    single_store;
 } rob_data_entry_t;
 
 /**********************dispatch  to  execute  pkg******************/

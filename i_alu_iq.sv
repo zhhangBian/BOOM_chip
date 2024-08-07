@@ -321,6 +321,7 @@ always_comb begin
     wkup_data_o = e_alu_result_q;
     excute_valid_o = excute_valid_qq;
     
+    result_o         = '0;
     result_o.w_data  = result_q;
     result_o.s_data  = real_data_q;
     result_o.rob_id  = select_di_qq.wreg_id;

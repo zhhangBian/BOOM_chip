@@ -275,6 +275,8 @@ always_comb begin
     req_i.op        = select_di_q.op;
     req_i.reg_id    = select_di_q.wreg_id;
 
+    result_o          = '0;
+
     result_o.w_data   = res_o.data;
     result_o.rob_id   = res_o.reg_id;
     result_o.w_reg    = di_o.wreg;

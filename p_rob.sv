@@ -210,6 +210,9 @@ always_comb begin
 
         commit_info_o[i].tlb_op = commit_inst_o[i].inst_4_0;
 
+        commit_info_o[i].single_load  = commit_data_o[i].single_load;
+        commit_info_o[i].single_store = commit_data_o[i].single_store; 
+
         // 分支预测信息
         commit_info_o[i].is_branch = commit_inst_o[i].is_branch;
         commit_info_o[i].predict_info = commit_inst_o[i].predict_info;
@@ -267,6 +270,8 @@ always_comb begin
         cdb_data_i[i].w_valid   = cdb_info_i[i].w_valid;
         cdb_data_i[i].ctrl      = cdb_info_i[i].ctrl;
         cdb_data_i[i].lsu_info  = cdb_info_i[i].lsu_info;
+        cdb_data_i[i].single_load = cdb_info_i[i].single_load;
+        cdb_data_i[i].single_store = cdb_info_i[i].single_store;
         // C级
         commit_info_o[i].w_data = commit_data_o[i].data;
     end

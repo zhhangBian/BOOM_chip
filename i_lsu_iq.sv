@@ -335,6 +335,9 @@ always_comb begin
 
     result_o.ctrl.exc_info.badva    =  result_o.ctrl.exc_info.fetch_exception ? 
         lsu_iq_di_i.fetch_exc_info.badv     : lsu_iq_resp_i.execute_exc_info.badv    ;
+
+    result_o.single_load  = (~lsu_iq_resp_i.hit) | lsu_iq_resp_i.uncached;
+    result_o.single_store = |lsu_iq_resp_i.strb;
 end
 
 // 打一拍进行唤醒
