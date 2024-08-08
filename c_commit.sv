@@ -473,34 +473,41 @@ always_comb begin
         (fsm_flush): begin
             //访存相关的flush,以及idle
             commit_flush_info = 2'b01;
+            flush             = 1;
         end
 
-        (retire_request_o[0]): begin
+        (commit_request_q[0] & ~stall): begin
             case (1'b1)
                 (cur_exception_q): begin
                     commit_flush_info = 2'b01;
+                    flush             = 1;
                 end
                 //异常则flush
                 (rob_commit_q[0].flush_inst): begin
                     commit_flush_info = 2'b01;//把idle删掉
+                    flush             = 1;
                 end//要提交且一定会flush的指令
 
                 (~predict_success_q[0]): begin
                     commit_flush_info = 2'b01;
+                    flush             = 1;
                 end//分支预测失败
 
-                (retire_request_o[1] & ~predict_success_q[1]): begin
+                (commit_request_q[1] & ~predict_success_q[1]): begin
                     commit_flush_info = 2'b10;
+                    flush             = 1;
                 end//第一条成功但第二条失败了
 
                 default: begin
                     commit_flush_info = '0;
+                    flush             = 0;
                 end
             endcase
         end
 
         default: begin
             commit_flush_info = '0;
+            flush             = 0;
         end
     endcase
 //下面这一大坨就用上面的替代掉了
@@ -524,7 +531,7 @@ always_comb begin
 */
 end
 
-assign flush = |commit_flush_info;
+// assign flush = |commit_flush_info;
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
