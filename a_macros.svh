@@ -30,8 +30,8 @@
 
 // Decoder Macro
 
-`define D_BEFORE_QUEUE_DEPTH 4 // decoder 前的队列深度，共 8 条指令
-`define D_AFTER_QUEUE_DEPTH 8 // decoder 后的队列深度，共 16 条指令
+`define D_BEFORE_QUEUE_DEPTH 2 // decoder 前的队列深度，共 8 条指令
+`define D_AFTER_QUEUE_DEPTH 4 // decoder 后的队列深度，共 16 条指令
 
 `define _INV_TLB_ALL (4'b1111)
 `define _INV_TLB_MASK_G (4'b1000)

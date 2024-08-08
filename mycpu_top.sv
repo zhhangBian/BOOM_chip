@@ -414,6 +414,11 @@ logic lsu_wkup_valid;
 logic [5:0] lsu_wkup_reg_id;
 word_t lsu_wkup_data;
 
+handshake_if #(.T(iq_dcache_pkg_t)) iq_fifo_if();
+handshake_if #(.T(iq_dcache_pkg_t)) fifo_dcache_if();
+iq_lsu_pkg_t  iq_lsu;
+decode_info_t iq_di;
+
 lsu_iq # (
     .CDB_COUNT(CDB_COUNT),
     .WKUP_COUNT(WKUP_COUNT)
@@ -439,10 +444,10 @@ lsu_iq # (
     .wkup_reg_id_i(wkup_reg_id),
     .wkup_valid_i(wkup_valid),
 
-    .iq_lsu_valid_o(cpu_lsu_if.valid),
-    .iq_lsu_ready_i(cpu_lsu_if.ready),
-    .iq_lsu_req_o(cpu_lsu_if.data),
-    .iq_lsu_di_o(iq_lsu_di),
+    .iq_lsu_valid_o(iq_fifo_if.valid),
+    .iq_lsu_ready_i(iq_fifo_if.ready),
+    .iq_lsu_req_o(iq_lsu),
+    .iq_lsu_di_o(iq_di),
 
     .lsu_iq_valid_i(lsu_cpu_if.valid),
     .lsu_iq_ready_o(lsu_cpu_if.ready),
@@ -455,6 +460,26 @@ lsu_iq # (
     .fifo_ready(fu_fifo[2].ready),
     .entry_valid_o(fu_fifo[2].valid)
 );
+
+assign iq_fifo_if.data.di = iq_di;
+assign iq_fifo_if.data.iq_lsu = iq_lsu;
+
+fifo # (
+    .BYPASS(0),
+    .DEPTH(16),
+    .T(iq_dcache_pkg_t)
+) lsu_fifo (
+    .clk(clk),
+    .rst_n(rst_n & !flush),
+    .receiver(iq_fifo_if.receiver),
+    .sender(fifo_dcache_if.sender)
+);
+
+assign iq_lsu_di = fifo_dcache_if.data.di;
+assign cpu_lsu_if.valid = fifo_dcache_if.valid;
+assign fifo_dcache_if.ready = cpu_lsu_if.ready;
+assign cpu_lsu_if.data  = fifo_dcache_if.data.iq_lsu;
+
 
 // handshake_if #(.T(cdb_info_t)) lsu_cdb();
 

@@ -827,4 +827,10 @@ typedef struct packed {
     logic   [1:0]   cache_op;
 } commit_icache_req_t;
 
+/*****************************/
+typedef struct packed {
+    decode_info_t di;
+    iq_lsu_pkg_t  iq_lsu;
+} iq_dcache_pkg_t;
+
 `endif
