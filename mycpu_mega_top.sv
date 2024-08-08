@@ -93,7 +93,7 @@ bpu bpu_inst(
 handshake_if #(b_f_pkg_t) fifo_f_handshake();
 
 // 实际上是一个 skidbuf
-fifo #(
+my_fifo #(
     .DEPTH(2),
     .BYPASS(1),
     .T(b_f_pkg_t)
@@ -162,7 +162,7 @@ icache # (
 handshake_if #(.T(f_d_pkg_t)) fifo_d_handshake();
 
 // decode 前的队列
-fifo #(
+my_fifo #(
     .DEPTH(`D_BEFORE_QUEUE_DEPTH),
     .BYPASS(0), // 不允许 bypass ，因为这个 fifo 也充当了 d 级的流水寄存器。
     .T(f_d_pkg_t)
@@ -185,7 +185,7 @@ handshake_if #(.T(d_r_pkg_t)) fifo_r_handshake();
 
 // decoder 后的队列
 
-fifo #(
+my_fifo #(
     .DEPTH(`D_AFTER_QUEUE_DEPTH),
     .BYPASS(0), // 不允许 BYPASS ，充当前后端之间的流水寄存器
     .T(d_r_pkg_t)
@@ -311,7 +311,7 @@ alu_iq #(
     .excute_valid_o(fu_fifo[0].valid)
 );
 
-fifo # (
+my_fifo # (
     .BYPASS(0),
     .T(cdb_info_t)
 ) alu_iq_fifo_0 (
@@ -357,7 +357,7 @@ alu_iq #(
 
 // handshake_if #(.T(cdb_info_t)) alu_1_cdb();
 
-fifo # (
+my_fifo # (
     .BYPASS(0),
     .T(cdb_info_t)
 ) alu_iq_fifo_1 (
@@ -421,7 +421,7 @@ lsu_iq # (
 
 // handshake_if #(.T(cdb_info_t)) lsu_cdb();
 
-fifo # (
+my_fifo # (
     .BYPASS(0),
     .T(cdb_info_t)
 ) lsu_iq_fifo (
@@ -463,7 +463,7 @@ mdu_iq # (
 
 // handshake_if #(.T(cdb_info_t)) mdu_cdb();
 
-fifo # (
+my_fifo # (
     .BYPASS(0),
     .T(cdb_info_t)
 ) mdu_iq_fifo (
