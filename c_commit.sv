@@ -308,7 +308,7 @@ logic   [1:0]   commit_arf_check_q;
 
 always_ff @( posedge clk ) begin
     if (~rst_n) begin
-        commit_arf_we_q[i] <= 0;
+        commit_arf_we_q <= 0;
     end
 end
 
