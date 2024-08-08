@@ -287,7 +287,8 @@ data_wkup #(
 
 // ------------------------------------------------------------------
 // 创建IQ相联的部件
-word_t e_alu_result, e_alu_result_q;
+word_t e_alu_result;
+(* max_fanout = "8" *) reg [31:0] e_alu_result_q;
 
 e_alu alu(
     .r0_i(real_data[0]),

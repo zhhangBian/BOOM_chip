@@ -177,6 +177,12 @@ typedef struct packed {
 `define _ESUBCODE_ADEF  9'h0
 `define _ESUBCODE_ADEM  9'h1
 
-`define _TLB_ENTRY_NUM  32
+`ifdef _FPGA
+`define _TLB_ENTRY_NUM  2
+`endif
+
+`ifdef _VERILATOR
+`define _TLB_ENTRY_NUM 32
+`endif
 
 `endif

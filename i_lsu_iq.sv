@@ -349,7 +349,7 @@ always_comb begin
 end
 
 // 打一拍进行唤醒
-word_t wkup_data_q;
+(* max_fanout = "8" *)reg [31:0] wkup_data_q;
 assign wkup_data_o = wkup_data_q;
 always_ff @(posedge clk) begin
     if(~rst_n || flush) begin

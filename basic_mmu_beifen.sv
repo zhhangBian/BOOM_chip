@@ -137,7 +137,7 @@ always_comb begin
                     default: begin
                     end
                 endcase
-            end else if(csr.crmd[`_CRMD_PLV] > tlb_value_read.plv) begin
+            end else if(csr.crmd[0] & ~tlb_value_read.plv) begin
                 trans_result.valid = 0;
                 ecode = `_ECODE_PPI;
             end else if((mmu_mem_type == `_MEM_STORE) && (!tlb_value_read.d)) begin//fixed
