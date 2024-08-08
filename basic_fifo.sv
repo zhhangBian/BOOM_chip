@@ -1,7 +1,11 @@
 // 这是一个通用FIFO模块
 `include "a_defines.svh"
 
+`ifdef _MEGA_SOC
+module my_fifo #(
+`else
 module fifo #(
+`endif
     parameter int unsigned DATA_WIDTH = 32,
     parameter int unsigned DEPTH = 32,
     parameter int unsigned ADDR_DEPTH = (DEPTH > 1) ? $clog2(DEPTH) : 1,
