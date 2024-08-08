@@ -59,7 +59,7 @@ module lsu_iq # (
 );
 
 logic excute_ready;                 // 是否发射指令：对于单个IQ而言
-logic excute_valid, excute_valid_q; // 执行结果是否有效
+logic excute_valid, excute_valid_q, excute_valid_qq; // 执行结果是否有效
 logic [IQ_SIZE - 1:0] entry_ready;  // 对应的表项是否可发射
 logic [IQ_SIZE - 1:0] entry_select; // 指令是否发射
 logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
@@ -229,7 +229,7 @@ end
 
 // ------------------------------------------------------------------
 // 填入发射指令所需的执行信息：下一个周期填入执行单元
-decode_info_t   select_di, select_di_q;
+decode_info_t   select_di, select_di_q, select_di_qq;
 word_t [REG_COUNT - 1:0] select_data;
 logic [REG_COUNT - 1:0][WKUP_COUNT - 1:0] select_wkup_hit_q;
 
@@ -281,13 +281,21 @@ data_wkup #(
 
 // ------------------------------------------------------------------
 // 匹配给DCache的接口
-iq_lsu_pkg_t    iq_lsu_request;
+iq_lsu_pkg_t    iq_lsu_request, iq_lsu_request_q;
 assign iq_lsu_req_o     = iq_lsu_request;
 assign iq_lsu_valid_o   = excute_valid_q;
 assign lsu_iq_ready_o   = fifo_ready;
 assign entry_valid_o    = lsu_iq_valid_i;
 
 wire  [1:0]  addr_mask = iq_lsu_request.vaddr[1:0];
+
+always_ff @(posedge clk) begin
+    iq_lsu_request_q <= iq_lsu_request;
+    select_di_qq     <= select_di_q;
+    if (iq_lsu_ready_i) begin
+        excute_valid_qq <= excute_valid_q;
+    end
+end
 
 // 配置iq到lsu的信息
 always_comb begin

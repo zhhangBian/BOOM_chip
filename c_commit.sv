@@ -299,13 +299,26 @@ typedef enum logic[4:0] {
 } ls_fsm_s;
 ls_fsm_s ls_fsm, ls_fsm_q;
 
+logic [31:0] commit_debug_pc_q [1:0];
+logic   [1:0]   commit_arf_we_q;
+word_t  [1:0]   commit_arf_data_q;
+logic [1:0][4:0]commit_arf_areg_q;
+logic [1:0][5:0]commit_arf_preg_q;
+logic   [1:0]   commit_arf_check_q;
+
+always_ff @( posedge clk ) begin
+    if (~rst_n) begin
+        commit_arf_we_q[i] <= 0;
+    end
+end
+
 // 处理对ARF的接口
 always_comb begin
-    commit_arf_we_o = '0;
-    commit_arf_data_o = '0;
-    commit_arf_areg_o = '0;
-    commit_arf_preg_o = '0;
-    commit_arf_check_o = '0;
+    // commit_arf_we_o = '0;
+    // commit_arf_data_o = '0;
+    // commit_arf_areg_o = '0;
+    // commit_arf_preg_o = '0;
+    // commit_arf_check_o = '0;
 
     for (integer i = 0; i < 2; i = i + 1) begin
         commit_arf_we_o[i]   = retire_request_o[i] & rob_commit_q[i].w_reg & !cur_exception_q;
@@ -781,7 +794,7 @@ end
 
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
-wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec/* && !rob_commit_i[0].idle_en*/;
+wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec && !rob_commit_i[0].idle_en;
 logic invtlb_ine;
 
 //TODO 现在为了消除“环”，cur_excpetion信号在无效的时候也可能为1
@@ -799,108 +812,89 @@ wire priv_excp     = rob_commit_i[0].priv_inst && (csr_q.crmd[`_CRMD_PLV] == 3);
 wire execute_excp  = rob_commit_i[0].execute_exception;
 
 wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp} & {7{rob_commit_valid_i[0]}};
+assign cur_exception = |exception;
+assign cur_tlbr_exception = rob_commit_i[0].exc_code == `_ECODE_TLBR;
 
-always_comb begin
-    /*所有例外都要处理的东西，默认处理，如果没有例外在defalut里面改回去*/
-    cur_exception = 1'b1;
-    cur_tlbr_exception = 1'b0;//tlbr
+//直接去第二级修改CSR
+logic [6:0] exception_q;
 
-    csr_exception_update = csr_q;
+always_ff @( posedge clk ) begin
+    exception_q <= exception;
+end
 
-    csr_exception_update.prmd[`_PRMD_PPLV] = csr_q.crmd[`_CRMD_PLV];
-    csr_exception_update.prmd[`_PRMD_PIE]  = csr_q.crmd[`_CRMD_IE];
-    csr_exception_update.crmd[`_CRMD_PLV]  = '0;
-    csr_exception_update.crmd[`_CRMD_IE]   = '0;
+task csr_exception_fix();
+    csr_update.prmd[`_PRMD_PPLV] = csr_q.crmd[`_CRMD_PLV];
+    csr_update.prmd[`_PRMD_PIE]  = csr_q.crmd[`_CRMD_IE];
+    csr_update.crmd[`_CRMD_PLV]  = '0;
+    csr_update.crmd[`_CRMD_IE]   = '0;
     /*对应文档的1，进入核心态和关中断*/
-    csr_exception_update.era               = (rob_commit_i[0].exc_code == `_ECODE_ADEF) ?
-                                              rob_commit_i[0].badva :
-                                              rob_commit_i[0].pc;
+    csr_update.era               = (rob_commit_q[0].exc_code == `_ECODE_ADEF) ?
+                                              rob_commit_q[0].badva :
+                                              rob_commit_q[0].pc;
     /*对应2，要pc，如果在状态机里面要去其他地方拿!!!*//*不用了*/
 
     //例外的仲裁部分，取最优先的例外将例外号存入csr，对应文档的例外操作3
     //部分操作包含4和5，即存badv和vppn的部分
-    unique casez (exception)
+    unique casez (exception_q)
         7'b1??????: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INT;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.estat[`_ESTAT_ECODE]    = `_ECODE_INT;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*中断*/
 
         7'b01?????: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].badva; //存badv
-            if (rob_commit_i[0].exc_code != `_ECODE_ADEF) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badva[31:13];        //tlb例外存vppn
+            csr_update.estat[`_ESTAT_ECODE]    = rob_commit_q[0].exc_code;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.badv                    = rob_commit_q[0].badva; //存badv
+            if (rob_commit_q[0].exc_code != `_ECODE_ADEF) begin
+                csr_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_q[0].badva[31:13];        //tlb例外存vppn
             end
-            if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
-                cur_tlbr_exception = 1'b1;
-                csr_exception_update.crmd[`_CRMD_DA] = 1;
-                csr_exception_update.crmd[`_CRMD_PG] = 0;
+            if (rob_commit_q[0].exc_code == `_ECODE_TLBR) begin
+                // cur_tlbr_exception = 1'b1;
+                csr_update.crmd[`_CRMD_DA] = 1;
+                csr_update.crmd[`_CRMD_PG] = 0;
             end
         end
-        /*取指例外 判断的信号从fetch来，
-        要求fetch如果有例外要传一个fetch_excpetion信号，
-        和一个存到exc_code里面的错误编码,要求在前面仲裁好是地址错还是tlb错
-        （注意，后面如果有访存出错不能把取指错的错误码替掉）
-        以及出错的虚拟地址va*/
+        /*取指例外 判断的信号从fetch来*/
 
         7'b001????: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_SYS;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.estat[`_ESTAT_ECODE]    = `_ECODE_SYS;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*syscall*/
         7'b0001???: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_BRK;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.estat[`_ESTAT_ECODE]    = `_ECODE_BRK;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*break*/
         7'b00001??: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_INE;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.estat[`_ESTAT_ECODE]    = `_ECODE_INE;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*ine指令不存在*/
         7'b000001?: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = `_ECODE_IPE;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.estat[`_ESTAT_ECODE]    = `_ECODE_IPE;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
         end /*ipe指令等级不合规*/
         /*译码例外，这几判断的个信号从decoder来*/
 
         7'b0000001: begin
-            csr_exception_update.estat[`_ESTAT_ECODE]    = rob_commit_i[0].exc_code;
-            csr_exception_update.estat[`_ESTAT_ESUBCODE] = '0;
-            csr_exception_update.badv                    = rob_commit_i[0].badva; //存badv
-            if (rob_commit_i[0].exc_code != `_ECODE_ALE) begin
-                csr_exception_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_i[0].badva[31:13];        //tlb例外存vppn
+            csr_update.estat[`_ESTAT_ECODE]    = rob_commit_q[0].exc_code;
+            csr_update.estat[`_ESTAT_ESUBCODE] = '0;
+            csr_update.badv                    = rob_commit_q[0].badva; //存badv
+            if (rob_commit_q[0].exc_code != `_ECODE_ALE) begin
+                csr_update.tlbehi[`_TLBEHI_VPPN] = rob_commit_q[0].badva[31:13];        //tlb例外存vppn
             end
-            if (rob_commit_i[0].exc_code == `_ECODE_TLBR) begin
-                cur_tlbr_exception = 1'b1;
-                csr_exception_update.crmd[`_CRMD_DA] = 1;
-                csr_exception_update.crmd[`_CRMD_PG] = 0;
+            if (rob_commit_q[0].exc_code == `_ECODE_TLBR) begin
+                // cur_tlbr_exception = 1'b1;
+                csr_update.crmd[`_CRMD_DA] = 1;
+                csr_update.crmd[`_CRMD_PG] = 0;
             end
         end
-        /*执行例外，
-        访存级别如果有地址不对齐错误或者tlb错误
-        要传execute_excpetion信号和错误号过来，
-        同样需要出错虚地址badva，同取指部分的例外*/
+        /*执行例外，同取指部分的例外*/
 
         default: begin
-            csr_exception_update = csr_q;
-            cur_exception = 1'b0;
-            /*csr_exception_update.prmd[`_PRMD_PPLV] = csr_q.prmd[`_PRMD_PPLV];
-            csr_exception_update.prmd[`_PRMD_PIE]  = csr_q.prmd[`_PRMD_PIE];
-            csr_exception_update.crmd[`_CRMD_PLV]  = csr_q.crmd[`_CRMD_PLV];
-            csr_exception_update.crmd[`_CRMD_IE]   = csr_q.crmd[`_CRMD_IE];
-            csr_exception_update.era               = csr_q.era;*/
         end
         /*没有例外，把开始的东西改回去*/
     endcase
+endtask
 
-    if (rob_commit_i[0].idle_en) begin
-        csr_exception_update    = csr_q;
-        cur_exception           = 1'b0;
-    end//idle不响应中断
-end
-
-always_ff @( posedge clk) begin
-    csr_exception_update_q <= csr_exception_update;
-end
 
 always_ff @( posedge clk ) begin
     if (~rst_n) begin
@@ -1028,7 +1022,7 @@ always_ff @( posedge clk ) begin
 end
 
 //定义软件写csr寄存器的行为
-`define write_csr_mask(csr_name, mask) csr.``csr_name``[mask] = write_data[mask];
+`define write_csr_mask(csr_name, mask) csr_update.``csr_name``[mask] = write_data[mask];
 
 task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
     timer_interrupt_clear = 0;
@@ -1083,7 +1077,7 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
             end
             `_CSR_LLBCTL: begin
                 if (write_data[`_LLBCT_WCLLB]) begin
-                    csr.llbit = 0;
+                    csr_update.llbit = 0;
                 end
                 `write_csr_mask(llbctl, `_LLBCT_KLO);
             end
@@ -1147,15 +1141,20 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
                 `write_csr_mask(tcfg, `_TCFG_EN);
                 `write_csr_mask(tcfg, `_TCFG_PERIODIC);
                 `write_csr_mask(tcfg, `_TCFG_INITVAL);
-                timer_set = 1;//设置定时器初始状态
-                csr.timer_en = write_data[`_TCFG_EN];
+
+                csr_update.tval[1:0]            = '0;
+                csr_update.tval[`_TCFG_INITVAL] = write_data[`_TCFG_INITVAL];
+                // csr_update.timer_en             = csr_maintain_q.timer_en;//加入en维护，比硬件优先级高？TODO
+                // timer_set = 1;//设置定时器初始状态
+                csr_update.timer_en = write_data[`_TCFG_EN];
             end
             `_CSR_TVAL: begin
                 //do nothing
             end
             `_CSR_TICLR: begin
                 if (write_data[`_TICLR_CLR]) begin
-                    timer_interrupt_clear = 1;
+                    // timer_interrupt_clear = 1;
+                    csr_update.estat[`_ESTAT_TIMER_IS] = 0;
                 end
             end
             default: //do nothing
@@ -1165,30 +1164,23 @@ task write_csr(input [31:0] write_data, input [13:0] csr_num_param);
     end
 endtask
 
+wire [31:0] csr_write_data_chg = (rob_commit_q[0].data_rk & rob_commit_q[0].data_rj) | (commit_csr_data_q & (~rob_commit_q[0].data_rj));
 
 //csr访问指令对csr寄存器的修改
-//第一级
-always_comb begin
-    csr = csr_q;
-    timer_interrupt_clear = '0;
-    timer_set             = '0;
-
-    unique case (csr_type)
-        `_CSR_CSRRD: begin
-            //do nothing
-        end
+//第二级
+task csr_csr_fix();
+    // csr = csr_q;
+    unique case (rob_commit_q[0].csr_type)
         `_CSR_CSRWR: begin
-            write_csr(rob_commit_i[0].data_rk, csr_num);//rk是rd TODO
+            write_csr(rob_commit_q[0].data_rk, rob_commit_q[0].csr_num);
         end
-
         `_CSR_CSRXCHG: begin
-            write_csr(((rob_commit_i[0].data_rk & rob_commit_i[0].data_rj) | (commit_csr_data_o & (~rob_commit_i[0].data_rj))), csr_num);//rk是rd
-        end/*rk与上rj，再或上其他位置*/
-
-        default: begin//do nothing
+            write_csr(csr_write_data_chg, rob_commit_q[0].csr_num);
+        end
+        default: begin
         end
     endcase
-end
+endtask
 
 
 
@@ -1208,6 +1200,12 @@ wire cur_tlbrd   = rob_commit_i[0].tlbrd_en;
 wire cur_tlbwr   = rob_commit_i[0].tlbwr_en;
 wire cur_tlbfill = rob_commit_i[0].tlbfill_en;
 wire cur_invtlb  = rob_commit_i[0].invtlb_en;
+logic cur_tlbsrch_q, cur_tlbrd_q;
+
+always_ff @( posedge clk ) begin
+    cur_tlbsrch_q <= cur_tlbsrch;
+    cur_tlbrd_q   <= cur_tlbrd;
+end
 
 //给下面准备的一些信号
 csr_t tlb_update_csr, tlb_update_csr_q;/*对csr的更新*/
@@ -1250,58 +1248,7 @@ always_comb begin
     tlb_entry      = '0;
     invtlb_ine     = 0;
 
-    if (cur_tlbsrch) begin
-        //下面找对应的表项，同mmu里面的找法
-        tlb_update_csr.tlbidx[`_TLBIDX_NE] = 1;
-        for (integer i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
-            if (tlb_entries_q[i].key.e
-                && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid[`_ASID]))
-                && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
-                    tlb_update_csr.tlbidx[`_TLBIDX_INDEX] = i[$clog2(`_TLB_ENTRY_NUM) - 1:0]; //不知道这里语法有没有问题
-                    tlb_update_csr.tlbidx[`_TLBIDX_NE] = 0;
-                    //写csr
-            end
-        end
-    end
-
-    else if (cur_tlbrd) begin
-        tlb_entry = tlb_entries_q[csr_q.tlbidx[`_TLBIDX_INDEX]];
-        if (tlb_entry.key.e) begin
-            //找到了要存到特定的csr寄存器里面
-            tlb_update_csr.tlbidx[`_TLBIDX_PS]      = tlb_entry.key.huge_page ? 21 : 12;
-            tlb_update_csr.tlbidx[`_TLBIDX_NE]      = 0;
-
-            tlb_update_csr.asid[`_ASID]             = tlb_entry.key.asid;
-
-            tlb_update_csr.tlbehi[`_TLBEHI_VPPN]    = tlb_entry.key.vppn;
-
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_V]  = tlb_entry.value[0].v;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_D]  = tlb_entry.value[0].d;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_PLV]= tlb_entry.value[0].plv;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_MAT]= tlb_entry.value[0].mat;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.key.g;
-            tlb_update_csr.tlbelo0[`_TLBELO_TLB_PPN]= tlb_entry.value[0].ppn;
-
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_V]  = tlb_entry.value[1].v;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_D]  = tlb_entry.value[1].d;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_PLV]= tlb_entry.value[1].plv;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_MAT]= tlb_entry.value[1].mat;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.key.g;
-            tlb_update_csr.tlbelo1[`_TLBELO_TLB_PPN]= tlb_entry.value[1].ppn;
-        end
-        else begin
-            tlb_update_csr.tlbidx[`_TLBIDX_NE]      = 1;
-            tlb_update_csr.tlbidx[`_TLBIDX_PS]      = '0;
-
-            tlb_update_csr.asid[`_ASID]             = '0;
-
-            tlb_update_csr.tlbehi                   = '0;
-            tlb_update_csr.tlbelo0                  = '0;
-            tlb_update_csr.tlbelo1                  = '0;
-        end
-    end
-
-    else if (cur_tlbwr) begin
+    if (cur_tlbwr) begin
         //把值更新到tlb_update_entry里面
         load_tlb_update_entry();
         tlb_wr_req[csr_q.tlbidx[`_TLBIDX_INDEX]] = 1;
@@ -1423,6 +1370,59 @@ endtask
 //第二级
 //纯组合逻辑输出
 
+task csr_tlb_fix();
+    if (cur_tlbsrch_q) begin
+        //下面找对应的表项，同mmu里面的找法
+        csr_update.tlbidx[`_TLBIDX_NE] = 1;
+        for (integer i = 0; i < `_TLB_ENTRY_NUM; i += 1) begin
+            if (tlb_entries_q[i].key.e
+                && (tlb_entries_q[i].key.g || (tlb_entries_q[i].key.asid == csr_q.asid[`_ASID]))
+                && vppn_match(csr_q.tlbehi, tlb_entries_q[i].key.huge_page, tlb_entries_q[i].key.vppn)) begin
+                    csr_update.tlbidx[`_TLBIDX_INDEX] = i[$clog2(`_TLB_ENTRY_NUM) - 1:0]; //不知道这里语法有没有问题
+                    csr_update.tlbidx[`_TLBIDX_NE] = 0;
+                    //写csr
+            end
+        end
+    end
+
+    else if (cur_tlbrd_q) begin
+        tlb_entry = tlb_entries_q[csr_q.tlbidx[`_TLBIDX_INDEX]];
+        if (tlb_entry.key.e) begin
+            //找到了要存到特定的csr寄存器里面
+            csr_update.tlbidx[`_TLBIDX_PS]      = tlb_entry.key.huge_page ? 21 : 12;
+            csr_update.tlbidx[`_TLBIDX_NE]      = 0;
+
+            csr_update.asid[`_ASID]             = tlb_entry.key.asid;
+
+            csr_update.tlbehi[`_TLBEHI_VPPN]    = tlb_entry.key.vppn;
+
+            csr_update.tlbelo0[`_TLBELO_TLB_V]  = tlb_entry.value[0].v;
+            csr_update.tlbelo0[`_TLBELO_TLB_D]  = tlb_entry.value[0].d;
+            csr_update.tlbelo0[`_TLBELO_TLB_PLV]= tlb_entry.value[0].plv;
+            csr_update.tlbelo0[`_TLBELO_TLB_MAT]= tlb_entry.value[0].mat;
+            csr_update.tlbelo0[`_TLBELO_TLB_G]  = tlb_entry.key.g;
+            csr_update.tlbelo0[`_TLBELO_TLB_PPN]= tlb_entry.value[0].ppn;
+
+            csr_update.tlbelo1[`_TLBELO_TLB_V]  = tlb_entry.value[1].v;
+            csr_update.tlbelo1[`_TLBELO_TLB_D]  = tlb_entry.value[1].d;
+            csr_update.tlbelo1[`_TLBELO_TLB_PLV]= tlb_entry.value[1].plv;
+            csr_update.tlbelo1[`_TLBELO_TLB_MAT]= tlb_entry.value[1].mat;
+            csr_update.tlbelo1[`_TLBELO_TLB_G]  = tlb_entry.key.g;
+            csr_update.tlbelo1[`_TLBELO_TLB_PPN]= tlb_entry.value[1].ppn;
+        end
+        else begin
+            csr_update.tlbidx[`_TLBIDX_NE]      = 1;
+            csr_update.tlbidx[`_TLBIDX_PS]      = '0;
+
+            csr_update.asid[`_ASID]             = '0;
+
+            csr_update.tlbehi                   = '0;
+            csr_update.tlbelo0                  = '0;
+            csr_update.tlbelo1                  = '0;
+        end
+    end
+endtask
+
 always_comb begin
     csr_o = csr_q;
     tlb_write_req_o.tlb_write_req   = cur_exception_q ? 0 : tlb_wr_req_q;//这个放在第二级是因为前一级比较爆炸
@@ -1443,14 +1443,47 @@ csr_t csr_update;
 //下面这个组合逻辑内部顺序不要更改
 always_comb begin
     csr_update = csr_q;
-    if (retire_request_o[0]) begin
+
+    //下面这个放在这里，是因为cpu每个周期都要更新一些软件不能更新的东西
+    //如果放在前面会被覆盖掉，放在后面，由于是软件不能改的位，不会把前面的覆盖掉
+    csr_update.estat[`_ESTAT_HARD_IS]  = hard_is_i; //从外面连过来中断
+
+    //下面维护定时器 定时器中断默认和之前一样
+    if (csr_q.timer_en) begin//tcfg fix
+        if (csr_q.tval != 0) begin
+            csr_update.tval = csr_q.tval - 1;
+        end
+        else if (csr_q.tcfg[`_TCFG_PERIODIC]) begin
+            csr_update.estat[`_ESTAT_TIMER_IS] = 1;
+            csr_update.tval = {csr_q.tcfg[`_TCFG_INITVAL], 2'b0};
+        end
+        else begin
+            csr_update.timer_en                = 0;//tcfg fix
+            csr_update.estat[`_ESTAT_TIMER_IS] = 1;
+        end
+    end
+
+    //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效
+    if(cur_exception_q) begin
+        csr_exception_fix();
+    end
+    //上面那些每周期规定只有一条，因此没有交叉冒险的情况
+
+    else if (|icache_cacop_tlb_exc_i) begin
+        csr_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.ecode;
+        csr_update.estat[`_ESTAT_ESUBCODE] = '0;
+        csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
+        csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
+    end//cacop维护出现的异常 //注意：retire-request-o是不是无效了？TODO
+
+    else if (commit_request_q[0]/*retire_request_o[0]*/) begin
         case (1'b1)
             (rob_commit_q[0].is_tlb_fix): begin
-                csr_update = tlb_update_csr_q;
+                csr_tlb_fix();
             end
 
             (rob_commit_q[0].is_csr_fix): begin
-                csr_update = csr_maintain_q;
+                csr_csr_fix();
             end
 
             (rob_commit_q[0].ertn_en): begin
@@ -1478,54 +1511,21 @@ always_comb begin
             end
 
             default: begin
-                csr_update = csr_q;
             end
         endcase
     end
 
-    if (|icache_cacop_tlb_exc_i) begin
-        csr_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.ecode;
-        csr_update.estat[`_ESTAT_ESUBCODE] = '0;
-        csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
-        csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
-    end//cacop维护出现的异常 //注意：retire-request-o是不是无效了？TODO
-
-    //下面这个放在这里，是因为中断/异常的优先级最高，并且当前指令一定有效
-    if(cur_exception_q) begin
-        csr_update = csr_exception_update_q;
-    end
-    //上面那些每周期规定只有一条，因此没有交叉冒险的情况
-
-    //下面这个放在这里，是因为cpu每个周期都要更新一些软件不能更新的东西
-    //如果放在前面会被覆盖掉，放在后面，由于是软件不能改的位，不会把前面的覆盖掉
-    csr_update.estat[`_ESTAT_HARD_IS]  = hard_is_i; //从外面连过来中断
-
-    //下面维护定时器 定时器中断默认和之前一样
-    if (csr_q.timer_en) begin//tcfg fix
-        if (csr_q.tval != 0) begin
-            csr_update.tval = csr_q.tval - 1;
-        end
-        else if (csr_q.tcfg[`_TCFG_PERIODIC]) begin
-            csr_update.estat[`_ESTAT_TIMER_IS] = 1;
-            csr_update.tval = {csr_q.tcfg[`_TCFG_INITVAL], 2'b0};
-        end
-        else begin
-            csr_update.timer_en                = 0;//tcfg fix
-            csr_update.estat[`_ESTAT_TIMER_IS] = 1;
-        end
-    end
-
-    //这个优先级最高，如果clear了就将其写入
-    if (retire_request_o[0] & !cur_exception_q)  begin
-        if (timer_interrupt_clear_q) begin
-            csr_update.estat[`_ESTAT_TIMER_IS] = 0;
-        end//tclr
-        else if (timer_set_q) begin
-            csr_update.tval[1:0]            = '0;
-            csr_update.tval[`_TCFG_INITVAL] = csr_maintain_q.tcfg[`_TCFG_INITVAL];
-            csr_update.timer_en             = csr_maintain_q.timer_en;//加入en维护，比硬件优先级高？TODO
-        end
-    end//要提交且是csr写，且写入对应位，且无例外
+    // //这个优先级最高，如果clear了就将其写入
+    // if (retire_request_o[0] & !cur_exception_q)  begin
+    //     if (timer_interrupt_clear_q) begin
+    //         csr_update.estat[`_ESTAT_TIMER_IS] = 0;
+    //     end//tclr
+    //     else if (timer_set_q) begin
+    //         csr_update.tval[1:0]            = '0;
+    //         csr_update.tval[`_TCFG_INITVAL] = csr_maintain_q.tcfg[`_TCFG_INITVAL];
+    //         csr_update.timer_en             = csr_maintain_q.timer_en;//加入en维护，比硬件优先级高？TODO
+    //     end
+    // end//要提交且是csr写，且写入对应位，且无例外
 end
 
 // 对csr_q的信息维护，第二级结尾写入
