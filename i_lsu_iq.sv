@@ -308,10 +308,11 @@ always_comb begin
     iq_lsu_request.is_cacop   = select_di_q.is_cacop;
     // 约定0号为数据，1号为地址
     iq_lsu_request.vaddr    = real_data[1] + select_di_q.imm;
-    iq_lsu_request.wdata    = addr_mask == 2'b00 ? real_data[0] :
-                              addr_mask == 2'b01 ? real_data[0] << 8 :
-                              addr_mask == 2'b10 ? real_data[0] << 16:
-                                                   real_data[0] << 24;
+    iq_lsu_request.wdata    = real_data[0];
+                            //   addr_mask == 2'b00 ? real_data[0] :
+                            //   addr_mask == 2'b01 ? real_data[0] << 8 :
+                            //   addr_mask == 2'b10 ? real_data[0] << 16:
+                            //                        real_data[0] << 24;
     // (select_di_q.msize == 0) ? real_data[0] << (iq_lsu_request.vaddr[4:0] & 5'b00011 << 3) :
     //                           (select_di_q.msize == 1) ? real_data[0] << (iq_lsu_request.vaddr[4:1] & 4'b0001  << 4) :
     //                           real_data[0];

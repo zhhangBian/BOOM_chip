@@ -37,7 +37,7 @@ module icache #(
 );
 
 commit_fetch_req_t   commit_cache_req;
-fetch_commit_resp_t  cache_commit_resp;
+// fetch_commit_resp_t  cache_commit_resp;
 
 logic stall, stall_q;
 always_ff @(posedge clk) begin
@@ -87,22 +87,22 @@ mmu #(
     .tlb_exception_o(tlb_exception)
 );
 // MMU
-trans_result_t trans_result_c;
-tlb_exception_t tlb_exception_c;
-mmu #(
-    .TLB_ENTRY_NUM(`_TLB_ENTRY_NUM),
-    .TLB_SWITCH_OFF(0)
-) mmu_commit (
-    .clk(clk),
-    .rst_n(rst_n),
-    .flush(flush_i),
-    .va(commit_cache_req.addr),
-    .csr(csr_i),
-    .mmu_mem_type(mem_type), // icache中，取指
-    .tlb_write_req_i(tlb_write_req_i),
-    .trans_result_o(trans_result_c),
-    .tlb_exception_o(tlb_exception_c)
-);
+// trans_result_t trans_result_c;
+// tlb_exception_t tlb_exception_c;
+// mmu #(
+//     .TLB_ENTRY_NUM(`_TLB_ENTRY_NUM),
+//     .TLB_SWITCH_OFF(0)
+// ) mmu_commit (
+//     .clk(clk),
+//     .rst_n(rst_n),
+//     .flush(flush_i),
+//     .va(commit_cache_req.addr),
+//     .csr(csr_i),
+//     .mmu_mem_type(mem_type), // icache中，取指
+//     .tlb_write_req_i(tlb_write_req_i),
+//     .trans_result_o(trans_result_c),
+//     .tlb_exception_o(tlb_exception_c)
+// );
 
 logic [31 : 0] paddr; // 假设从mmu打一拍传来的paddr
 logic [19 : 0] ppn;
@@ -240,10 +240,10 @@ end
 // hit逻辑，比dcache简单得多
 logic [WAY_NUM - 1 : 0] tag_hit;
 for (genvar i = 0; i < WAY_NUM ; i++) begin
-    assign tag_hit[i] = (tag_ans0[i].tag == ppn);
-    assign cache_commit_resp.way_hit[i] = (tag_ans1[i].tag == trans_result_c.pa[31:12]);
+    assign tag_hit[i] = (tag_ans0[i].tag == ppn) && tag_ans0[i].v;
+    // assign cache_commit_resp.way_hit[i] = (tag_ans1[i].tag == trans_result_c.pa[31:12]);
 end
-assign cache_commit_resp.tlb_exception  = tlb_exception_c;
+// assign cache_commit_resp.tlb_exception  = tlb_exception_c;
 
 // uncache
 // 根据实际情况选择向axi拿的数量
@@ -401,10 +401,11 @@ always_comb begin
                     end
                     2: begin
                         commit_cache_req.addr                  = commit_icache_req.addr;
-                        commit_cache_req.way_choose            = '0;
+                        commit_cache_req.way_choose            = 2'b11;
                         commit_cache_req.tag_data              = '0;
-                        commit_cache_req.tag_we                = '0;
-                        fsm_next                               = F_CACOP;
+                        commit_cache_req.tag_we                = '1;
+                        // fsm_next                               = F_CACOP;
+                        commit_resp_valid_o                    = '1;
                         cacop_stall                            = '1;
                     end
                     default : begin
@@ -517,22 +518,23 @@ always_comb begin
             end
         end
         F_CACOP: begin
-            fsm_next = F_NORMAL;
-            commit_resp_valid_o  = '1;
-            if (cache_commit_resp.tlb_exception.ecode != '0) begin
-                icache_cacop_flush_o                   = 2'b01;
-                icache_cacop_tlb_exc                   = cache_commit_resp.tlb_exception;
-                icache_cacop_bvaddr                    = cacop_bvaddr;
-            end else if (|cache_commit_resp.way_hit) begin
-                commit_cache_req.addr[11:TAG_ADDR_LOW] = cacop_bvaddr[11:TAG_ADDR_LOW];
-                commit_cache_req.way_choose            = cache_commit_resp.way_hit;
-                commit_cache_req.tag_data              = '0;
-                commit_cache_req.tag_we                = '1;
-                icache_cacop_flush_o                   = 2'b10;  
-            end else begin
-                icache_cacop_flush_o                   = 2'b10;
-                cacop_stall                            = '0;
-            end
+            // fsm_next = F_NORMAL;
+            // commit_resp_valid_o  = '1;
+            // // if (cache_commit_resp.tlb_exception.ecode != '0) begin
+            // //     icache_cacop_flush_o                   = 2'b01;
+            // //     icache_cacop_tlb_exc                   = cache_commit_resp.tlb_exception;
+            // //     icache_cacop_bvaddr                    = cacop_bvaddr;
+            // // end else 
+            // if (|cache_commit_resp.way_hit) begin
+            //     commit_cache_req.addr[11:TAG_ADDR_LOW] = cacop_bvaddr[11:TAG_ADDR_LOW];
+            //     commit_cache_req.way_choose            = cache_commit_resp.way_hit;
+            //     commit_cache_req.tag_data              = '0;
+            //     commit_cache_req.tag_we                = '1;
+            //     icache_cacop_flush_o                   = 2'b10;  
+            // end else begin
+            //     icache_cacop_flush_o                   = 2'b10;
+            //     cacop_stall                            = '0;
+            // end
         end
         F_STALL: begin
             if (!icache_decoder_sender.ready) begin

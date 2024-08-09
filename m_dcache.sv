@@ -200,7 +200,7 @@ logic   [5:0]  exc_code_new;
 logic   [31:0] badv;
 logic          ade_exc;
 logic          not_exc;
-assign  not_exc  = m1_iq_lsu_pkg.is_cacop && (m1_iq_lsu_pkg.cache_code[2:0] == 3'd1) && ((m1_iq_lsu_pkg.cache_code[4:3] == 1) || (m1_iq_lsu_pkg.cache_code[4:3] == 0));
+assign  not_exc  = m1_iq_lsu_pkg.is_cacop && ((m1_iq_lsu_pkg.cache_code[4:3] == 1) || (m1_iq_lsu_pkg.cache_code[4:3] == 0));
 assign  ade_exc  = (m1_iq_lsu_pkg.msize == 3) ? |badv[1:0] : (m1_iq_lsu_pkg.msize == 1) ? badv[0] : '0;
 assign  exc_code_new  =  not_exc ? '0 : ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
 assign  execute_exception = ~not_exc & (ade_exc | (|tlb_exception.ecode));
@@ -279,7 +279,7 @@ assign tmp_data[31:24] = sb_hit[3] ? sb_tmp_data[31:24] : ram_tmp_data[31:24];
 // SB WRITE DATA
 always_comb begin
     w_sb_entry.target_addr = paddr;
-    w_sb_entry.write_data  = m1_iq_lsu_pkg.wdata;
+    w_sb_entry.write_data  = lsu_iq_pkg.wdata;
     w_sb_entry.wstrb       = m1_iq_lsu_pkg.strb;
     w_sb_entry.valid       = '1;
     w_sb_entry.uncached    = uncache;/* MMU结果 */
@@ -325,7 +325,11 @@ always_comb begin
     lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;
     lsu_iq_pkg.hit_dirty   = tag_hit[0] ? tag_ans0[0].d : tag_ans0[1].d;
     lsu_iq_pkg.cacop_addr  = paddr[0] ? {tag_ans0[1].tag, paddr[11:0]} : {tag_ans0[0].tag, paddr[11:0]};
-    lsu_iq_pkg.wdata       = m1_iq_lsu_pkg.wdata;
+    lsu_iq_pkg.wdata       =    //uncache ? m1_iq_lsu_pkg.wdata :
+                                paddr[1:0] == 2'b00 ? m1_iq_lsu_pkg.wdata :
+                                paddr[1:0] == 2'b01 ? m1_iq_lsu_pkg.wdata << 8 :
+                                paddr[1:0] == 2'b10 ? m1_iq_lsu_pkg.wdata << 16:
+                                                      m1_iq_lsu_pkg.wdata << 24;
     lsu_iq_pkg.execute_exc_info.execute_exception  = execute_exception;          
     lsu_iq_pkg.execute_exc_info.exc_code           = exc_code_new; 
     lsu_iq_pkg.execute_exc_info.badv               = badv;

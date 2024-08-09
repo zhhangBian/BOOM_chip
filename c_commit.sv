@@ -814,7 +814,36 @@ wire execute_excp  = rob_commit_i[0].execute_exception;
 
 wire [6:0] exception = {int_excep, fetch_excp, syscall_excp, break_excp, ine_excp, priv_excp, execute_excp} & {7{rob_commit_valid_i[0]}};
 assign cur_exception = |exception;
-assign cur_tlbr_exception = rob_commit_i[0].exc_code == `_ECODE_TLBR;
+
+always_comb begin
+    unique casez (exception)
+        7'b1??????: begin
+            cur_tlbr_exception = 0;
+        end
+        7'b01?????: begin
+            cur_tlbr_exception = rob_commit_i[0].exc_code == `_ECODE_TLBR;
+        end
+        7'b001????: begin
+            cur_tlbr_exception = 0;
+        end
+        7'b0001???: begin
+            cur_tlbr_exception = 0;
+        end
+        7'b00001??: begin
+            cur_tlbr_exception = 0;
+        end
+        7'b000001?: begin
+            cur_tlbr_exception = 0;
+        end
+        7'b0000001: begin
+            cur_tlbr_exception = rob_commit_i[0].exc_code == `_ECODE_TLBR;
+        end
+        default: begin
+            cur_tlbr_exception = 0;
+        end
+    endcase
+end
+// assign cur_tlbr_exception = rob_commit_i[0].exc_code == `_ECODE_TLBR;
 
 //直接去第二级修改CSR
 logic [6:0] exception_q;
@@ -1470,12 +1499,12 @@ always_comb begin
     end
     //上面那些每周期规定只有一条，因此没有交叉冒险的情况
 
-    else if (|icache_cacop_tlb_exc_i) begin
-        csr_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.ecode;
-        csr_update.estat[`_ESTAT_ESUBCODE] = '0;
-        csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
-        csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
-    end//cacop维护出现的异常 //注意：retire-request-o是不是无效了？TODO
+    // else if (|icache_cacop_tlb_exc_i) begin
+    //     csr_update.estat[`_ESTAT_ECODE]    = icache_cacop_tlb_exc_i.ecode;
+    //     csr_update.estat[`_ESTAT_ESUBCODE] = '0;
+    //     csr_update.badv                    = icache_cacop_bvaddr_i; //存badv
+    //     csr_update.tlbehi[`_TLBEHI_VPPN]   = icache_cacop_bvaddr_i[31:13];  //一定是tlb异常，tlb例外存vppn
+    // end//cacop维护出现的异常 //注意：retire-request-o是不是无效了？TODO
 
     else if (commit_request_q[0]/*retire_request_o[0]*/) begin
         case (1'b1)
@@ -1769,6 +1798,7 @@ always_comb begin
                             commit_axi_req.waddr = cache_dirty_addr;
                             commit_axi_req.wlen = CACHE_BLOCK_LEN;
                             commit_axi_req.strb = '1;
+                            commit_axi_req.wsize = 3'b010;
                             // commit_axi_awvalid_o = '1;
                             axi_wait = '1;//~axi_commit_awready_i;
                             // 设置相应的指针
@@ -1816,6 +1846,7 @@ always_comb begin
                                 commit_axi_req.waddr = cache_dirty_addr;
                                 commit_axi_req.wlen = CACHE_BLOCK_LEN;
                                 commit_axi_req.strb = '1;
+                                commit_axi_req.wsize = 3'b010;
                                 // commit_axi_awvalid_o = '1;
                                 axi_wait = '1;//~axi_commit_awready_i;
                                 // 设置相应的指针
@@ -1865,6 +1896,10 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info[0].paddr;
                 commit_axi_req.rlen = 1;
                 commit_axi_req.rmask = lsu_info[0].rmask;
+                // TODO msize
+                commit_axi_req.rsize = lsu_info[0].msize == 0 ? 3'b000:
+                                       lsu_info[0].msize == 1 ? 3'b001:
+                                                                3'b010;
                 // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
                 axi_wait = '1;//~axi_commit_arready_i;
@@ -1880,10 +1915,16 @@ always_comb begin
                 // 进行一次SB提交
                 commit_cache_req.fetch_sb = |lsu_info[0].strb;
                 // 发起AXI请求
-                commit_axi_req.waddr = lsu_info[0].paddr;
+                commit_axi_req.waddr = lsu_info[0].paddr & 32'hfffffffc;
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
+                // lsu_info[0].msize == 0 ? 4'b0001:
+                //                       lsu_info[0].msize == 1 ? 4'b0011:
+                //                                                4'b1111;
                 // commit_axi_awvalid_o = '1;
+                commit_axi_req.wsize = lsu_info[0].msize == 0 ? 3'b000:
+                                       lsu_info[0].msize == 1 ? 3'b001:
+                                                                3'b010;
                 axi_block_data[0] = lsu_info[0].wdata;
                 // 进行AXI握手
                 axi_wait = '1;//~axi_commit_awready_i;
@@ -1985,6 +2026,7 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen  = CACHE_BLOCK_LEN;
                 commit_axi_req.rmask = '1;
+                commit_axi_req.rsize = 3'b010;
                 // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
                 axi_wait = '1;//~axi_commit_arready_i;
@@ -2015,6 +2057,7 @@ always_comb begin
                 commit_axi_req.waddr = cache_dirty_addr;
                 commit_axi_req.wlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '1;
+                commit_axi_req.wsize = 3'b010;
                 // commit_axi_awvalid_o = '1;
                 axi_wait = '1;//~axi_commit_awready_i;
                 // 设置相应的指针
@@ -2032,6 +2075,7 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen  = CACHE_BLOCK_LEN;
                 commit_axi_req.rmask = '1;
+                commit_axi_req.rsize = 3'b010;
                 // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
                 axi_wait = '1;
@@ -2063,6 +2107,7 @@ always_comb begin
                 commit_axi_req.waddr = cache_dirty_addr & `CACHE_MASK;
                 commit_axi_req.wlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '1;
+                commit_axi_req.wsize = 3'b010;
                 // commit_axi_awvalid_o = '1;
                 axi_wait = '1;
                 // 设置相应的指针
@@ -2195,6 +2240,7 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '0;
+                commit_axi_req.wsize = 3'b010;
                 // commit_axi_arvalid_o = '1;
 
                 // 设置相应的指针
@@ -2302,9 +2348,8 @@ always_comb begin
             // not_need_again = '1;
             // `endif
         end
-        tmp_fsm_npc = (|(icache_cacop_flush_i ^ 2'b01)) ? (pc_s + 4) :
-                      (icache_cacop_tlb_exc_i.ecode == `_ECODE_TLBR) ? csr_q.tlbrentry :
-                      csr_q.eentry;
+        tmp_fsm_npc = (pc_s + 4);
+                      
     end
 
     S_IDLE: begin
@@ -2670,7 +2715,7 @@ always_ff @(posedge clk) begin
                 $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
                 $display("Flush count: %d", flush_cnt);
 
-                $finish();
+                // $finish();
             end
         end
 

@@ -736,7 +736,7 @@ axi_convert # (
     .s_axi_awid('0),
     .s_axi_awaddr({icache_axi_addr, commit_axi_req.waddr}),
     .s_axi_awlen({icache_axi_len - 8'b1, commit_axi_req.wlen - 8'b1}),
-    .s_axi_awsize({3'b010,3'b010}),
+    .s_axi_awsize({3'b010,commit_axi_req.wsize}),
     .s_axi_awburst({2'b01,2'b01}),
     .s_axi_awlock('0),
     .s_axi_awcache('0),
@@ -755,7 +755,7 @@ axi_convert # (
     .s_axi_arid({4'b0001, 4'b0000}),
     .s_axi_araddr({icache_axi_addr, commit_axi_req.raddr}), /*2024/07/24 fix waddr -> raddr*/
     .s_axi_arlen({icache_axi_len - 8'b1, commit_axi_req.rlen - 8'b1}), /*2024/07/24 fix wlen -> rlen*/
-    .s_axi_arsize({3'b010,3'b010}),
+    .s_axi_arsize({3'b010,commit_axi_req.rsize}),
     .s_axi_arburst({2'b01,2'b01}),
     .s_axi_arlock('0),
     .s_axi_arcache('0),

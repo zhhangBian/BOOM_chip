@@ -115,7 +115,7 @@ always_comb begin
             trans_result.mat = dmw_read[`_DMW_MAT];
             trans_result.valid = 1;
         end else begin
-            if (tlb_key_read.huge_page) begin //fixed
+            if (!tlb_key_read.huge_page) begin //fixed
                 trans_result.pa = {tlb_value_read.ppn, va[11:0]};
                 trans_result.mat = tlb_value_read.mat;
             end else begin
