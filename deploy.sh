@@ -28,4 +28,11 @@ then
 			cp $f ${NSCSCC_HOME}/BOOM/
 		done
 	fi
+else 
+	mkdir -p ${BOOM}/BOOM
+	rm -rf ${BOOM}/BOOM/*
+	for f in $src
+	do	
+		cp $f ${BOOM}/BOOM/
+	done
 fi

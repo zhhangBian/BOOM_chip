@@ -9,5 +9,6 @@ obj_dir
 *.swp
 .vscode
 .idea
+BOOM/
 
 
