@@ -56,10 +56,13 @@ end
 sb_entry_t [3 : 0] sb_entry_inst;
 sb_entry_t                   sb_entry_in;
 
+logic [1:0] index;
+
 // assign top_entry_o = sb_entry_inst[sb_ptr_head_q - '1];
 always_comb begin
     for (integer i = 0; i < SB_SIZE; i++) begin
-        sb_entry_o[i] = sb_entry_inst[i[SB_DEPTH_LEN - 1:0] + sb_ptr_tail_q];
+        index = i[SB_DEPTH_LEN - 1:0] + sb_ptr_tail_q[SB_DEPTH_LEN - 1:0];
+        sb_entry_o[i] = sb_entry_inst[index[1:0]];
     end
 end
 
