@@ -158,7 +158,7 @@ logic cur_tlbr_exception;  //提交的第0条指令的异常是不是tlbr异常�
 csr_t csr_exception_update;//周期结束时候写入csr_q
 
 //__forward()
-(* max_fanout = "8" *)reg cur_exception_q;
+reg cur_exception_q;
 logic cur_tlbr_exception_q;
 csr_t csr_exception_update_q;
 
@@ -217,7 +217,7 @@ end
 
 //下面两个是第二级的数据来源，这样也避免了一些情况，比如说刷掉流水导致找不到之前的数据
 //flush对1->2部分的数据不应该刷掉自己
-(* max_fanout = "8" *) reg [1:0] commit_request_q;
+reg [1:0] commit_request_q;
 rob_commit_pkg_t rob_commit_q [1:0];
 //__forward()
 //下面只是一个组合逻辑，如果传指令过去就一起传包，否则全0
@@ -298,7 +298,7 @@ typedef enum logic[4:0] {
     S_BACK_BUF
 } ls_fsm_s;
 ls_fsm_s ls_fsm;
-(* max_fanout = "8" *)ls_fsm_s ls_fsm_q;
+ls_fsm_s ls_fsm_q;
 
 logic [31:0] commit_debug_pc_q [1:0];
 logic   [1:0]   commit_arf_we_q;
@@ -2715,7 +2715,7 @@ always_ff @(posedge clk) begin
                 $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
                 $display("Flush count: %d", flush_cnt);
 
-                // $finish();
+                $finish();
             end
         end
 
