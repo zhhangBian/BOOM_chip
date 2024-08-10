@@ -2722,7 +2722,7 @@ always_ff @(posedge clk) begin
                 $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
                 $display("Flush count: %d", flush_cnt);
 
-                $finish();
+                //$finish();
             end
         end
 
