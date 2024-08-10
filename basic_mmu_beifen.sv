@@ -94,22 +94,17 @@ wire [31:0] dmw_read = dmw0_hit ? dmw0 :
 trans_result_t trans_result;
 
 wire da = csr.crmd[`_CRMD_DA];
-// wire pg = csr.crmd[`_CRMD_PG]; /*2024/07/24 fix ??? 没有改，这个好像没用，逻辑上是不是要和DA结合起来*/
-
-logic [5:0] ecode;
-logic [8:0] esubcode;
+wire pg = csr.crmd[`_CRMD_PG]; /*2024/07/24 fix ??? 没有改，这个好像没用，逻辑上是不是要和DA结合起来*/
+logic tlb_mode, tlb_mode_q;
 
 always_comb begin
-    ecode = 6'h0;
-    esubcode = 9'h0;
-    trans_result = '0;
+    trans_result.pa = va;
+    trans_result.mat = (mmu_mem_type == `_MEM_FETCH) ? 
+        csr.crmd[`_CRMD_DATF] : csr.crmd[`_CRMD_DATM];
+    trans_result.valid = 1;
+    tlb_mode           = 0;
 
-    if (da) begin
-        trans_result.pa = va;
-        trans_result.mat = (mmu_mem_type == `_MEM_FETCH) ? 
-            csr.crmd[`_CRMD_DATF] : csr.crmd[`_CRMD_DATM];
-        trans_result.valid = 1;
-    end else begin
+    if (pg) begin
         if (dmw_hit) begin
             trans_result.pa = {dmw_read[`_DMW_PSEG],va[28:0]};
             trans_result.mat = dmw_read[`_DMW_MAT];
@@ -123,33 +118,54 @@ always_comb begin
                 trans_result.mat = tlb_value_read.mat;
             end
             trans_result.valid = tlb_found;
-            if (!tlb_found) begin
-                ecode = `_ECODE_TLBR;
-            end else if (!tlb_value_read.v) begin
-                trans_result.valid = 0;
-                case (mmu_mem_type)
-                    `_MEM_FETCH:
-                        ecode = `_ECODE_PIF;
-                    `_MEM_LOAD:
-                        ecode = `_ECODE_PIL;
-                    `_MEM_STORE:
-                        ecode = `_ECODE_PIS;
-                    default: begin
-                    end
-                endcase
-            end else if(csr.crmd[0] & ~tlb_value_read.plv) begin
-                trans_result.valid = 0;
-                ecode = `_ECODE_PPI;
-            end else if((mmu_mem_type == `_MEM_STORE) && (!tlb_value_read.d)) begin//fixed
-                trans_result.valid = 0;
-                ecode = `_ECODE_PME;
-            end
+            tlb_mode           = 1;
         end
     end
 end
 
-// always_ff @(posedge clk) begin
-//     va_q <= va;
+always_ff @( posedge clk) begin
+    trans_result_o <= trans_result;
+    // tlb_exception_o.ecode <= ecode;
+    // tlb_exception_o.esubcode <= esubcode;
+end
+
+tlb_value_t  tlb_value_read_q;
+logic  [1:0]   mmu_mem_type_q;
+
+always_ff @(posedge clk) begin
+    tlb_value_read_q <= tlb_value_read;
+    mmu_mem_type_q   <= mmu_mem_type;
+    tlb_mode_q       <= tlb_mode;
+end
+
+//第二拍判断异常
+always_comb begin
+    tlb_exception_o.esubcode = '0;
+    tlb_exception_o.ecode    = '0;
+
+    if (tlb_mode_q) begin
+        if (!trans_result_o.valid) begin
+            tlb_exception_o.ecode = `_ECODE_TLBR;
+        end
+        else if (!tlb_value_read_q.v) begin
+            case (mmu_mem_type_q)
+                `_MEM_FETCH:
+                    tlb_exception_o.ecode = `_ECODE_PIF;
+                `_MEM_LOAD:
+                    tlb_exception_o.ecode = `_ECODE_PIL;
+                `_MEM_STORE:
+                    tlb_exception_o.ecode = `_ECODE_PIS;
+                default: begin
+                end
+            endcase
+        end else if(csr.crmd[0] & ~tlb_value_read_q.plv) begin
+            tlb_exception_o.ecode = `_ECODE_PPI;
+        end else if((mmu_mem_type_q == `_MEM_STORE) && (!tlb_value_read_q.d)) begin//fixed
+            tlb_exception_o.ecode = `_ECODE_PME;
+        end
+    end
+end
+
 //     mmu_mem_type_q <= mmu_mem_type;
 // end//没有reset，外面需要有效位保证
 
@@ -167,12 +183,5 @@ end
 //         tlb_exception_o.esubcode <= esubcode;
 //     end
 // end
-
-always_ff @( posedge clk) begin
-    trans_result_o <= trans_result;
-    tlb_exception_o.ecode <= ecode;
-    tlb_exception_o.esubcode <= esubcode;
-end
-
 
 endmodule
