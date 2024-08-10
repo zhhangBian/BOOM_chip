@@ -1827,50 +1827,57 @@ always_comb begin
                     2'd2: begin
                         // 如果命中再维护
                         if(cache_commit_hit[0]) begin
-                            // 无效Cache
-                            commit_cache_req.tag_data     = '0;
-                            commit_cache_req.tag_we       = '1;
-                            // 脏了就写回
-                            //if(lsu_info[0].hit_dirty) begin
-                                ls_fsm = S_CACHE_RD;
-                                stall = '1;
-                                cache_rd_need_back = '1;
-                                `ifdef _DIFFTEST
-                                fsm_commit = '1;
-                                `endif
-                                // 将Cache无效化，先读出对应的tag
-                                cache_dirty_addr = lsu_info[0].paddr & `CACHE_MASK;
-                                commit_cache_req.addr       = cache_dirty_addr;
-                                commit_cache_req.way_choose = lsu_info[0].tag_hit;
-                                commit_cache_req.data_data  = '0;
-                                commit_cache_req.strb       = '0;
-                                commit_cache_req.fetch_sb   = '0;
-                                cache_block_ptr = '0;
-                                cache_block_len = CACHE_BLOCK_LEN;
+                            if(lsu_info[0].tag_hit == 2'b0) begin
+                                ls_fsm = S_NORMAL;
+                                fsm_flush = '1;
+                                fsm_npc = pc_s;
+                            end
+                            else begin
+                                // 无效Cache
+                                commit_cache_req.tag_data     = '0;
+                                commit_cache_req.tag_we       = '1;
+                                // 脏了就写回
+                                //if(lsu_info[0].hit_dirty) begin
+                                    ls_fsm = S_CACHE_RD;
+                                    stall = '1;
+                                    cache_rd_need_back = '1;
+                                    `ifdef _DIFFTEST
+                                    fsm_commit = '1;
+                                    `endif
+                                    // 将Cache无效化，先读出对应的tag
+                                    cache_dirty_addr = lsu_info[0].paddr & `CACHE_MASK;
+                                    commit_cache_req.addr       = cache_dirty_addr;
+                                    commit_cache_req.way_choose = lsu_info[0].tag_hit;
+                                    commit_cache_req.data_data  = '0;
+                                    commit_cache_req.strb       = '0;
+                                    commit_cache_req.fetch_sb   = '0;
+                                    cache_block_ptr = '0;
+                                    cache_block_len = CACHE_BLOCK_LEN;
 
-                                // 设置相应的AXI请求
-                                commit_axi_req = '0;
-                                commit_axi_req.waddr = cache_dirty_addr;
-                                commit_axi_req.wlen = CACHE_BLOCK_LEN;
-                                commit_axi_req.strb = '1;
-                                commit_axi_req.wsize = 3'b010;
-                                // commit_axi_awvalid_o = '1;
-                                axi_wait = '1;//~axi_commit_awready_i;
-                                // 设置相应的指针
-                                axi_block_ptr = '0;
-                                axi_block_len = CACHE_BLOCK_LEN;
-                            // end
-                            // // 不脏回Normal
-                            // else begin
-                            //     ls_fsm = S_NORMAL;
-                            //     stall = '0;
-                            //     fsm_flush = '1;
-                            //     `ifdef _DIFFTEST
-                            //     not_need_again = '1;
-                            //     `endif
-                            //     fsm_npc = pc_s + 4;
-                            //     cache_rd_need_back = '0;
-                            // end
+                                    // 设置相应的AXI请求
+                                    commit_axi_req = '0;
+                                    commit_axi_req.waddr = cache_dirty_addr;
+                                    commit_axi_req.wlen = CACHE_BLOCK_LEN;
+                                    commit_axi_req.strb = '1;
+                                    commit_axi_req.wsize = 3'b010;
+                                    // commit_axi_awvalid_o = '1;
+                                    axi_wait = '1;//~axi_commit_awready_i;
+                                    // 设置相应的指针
+                                    axi_block_ptr = '0;
+                                    axi_block_len = CACHE_BLOCK_LEN;
+                                // end
+                                // // 不脏回Normal
+                                // else begin
+                                //     ls_fsm = S_NORMAL;
+                                //     stall = '0;
+                                //     fsm_flush = '1;
+                                //     `ifdef _DIFFTEST
+                                //     not_need_again = '1;
+                                //     `endif
+                                //     fsm_npc = pc_s + 4;
+                                //     cache_rd_need_back = '0;
+                                // end
+                            end
                         end
                         else begin
                             ls_fsm = S_NORMAL;
@@ -2722,7 +2729,7 @@ always_ff @(posedge clk) begin
                 $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
                 $display("Flush count: %d", flush_cnt);
 
-                $finish();
+                // $finish();
             end
         end
 
