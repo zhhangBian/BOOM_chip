@@ -1755,7 +1755,7 @@ always_comb begin
             3'b1: begin
                 // 对于Cache维护指令，将维护地址视作目的地址
                 commit_cache_req.addr         = lsu_info[0].paddr;
-                commit_cache_req.way_choose   = lsu_info[0].paddr[0] ? 2'b10 : 2'b1;
+                commit_cache_req.way_choose   = (lsu_info[0].paddr[0]) ? 2'b10 : 2'b1;
                 commit_cache_req.tag_data     = '0;
                 commit_cache_req.tag_we       = '0;
                 commit_cache_req.data_data    = '0;
@@ -1790,13 +1790,14 @@ always_comb begin
                     2'd2: begin
                         if(cache_commit_hit[0]) begin
                             if(lsu_info[0].tag_hit == 2'b0) begin
-                                ls_fsm = S_NORMAL;
+                                ls_fsm    = S_NORMAL;
+                                stall     = '0;
                                 fsm_flush = '1;
-                                fsm_npc = pc_s;
+                                fsm_npc   = pc_s;
                             end
                             else begin
                                 cache_fix   = '1;
-                                stall = '1;
+                                stall       = '1;
                                 ls_fsm      = S_CACHE_MISS;
                                 // 读出脏位
                                 commit_cache_req.addr       = lsu_info[0].paddr & `CACHE_MASK;
@@ -1814,11 +1815,17 @@ always_comb begin
                     end
 
                     default: begin
+                        ls_fsm = S_NORMAL;
+                        stall = '0;
+                        fsm_flush = '0;
                     end
                 endcase
             end
 
             default: begin
+                ls_fsm = S_NORMAL;
+                stall = '0;
+                fsm_flush = '0;
             end
             endcase
         end
@@ -2068,6 +2075,9 @@ always_comb begin
                 end
 
                 default: begin
+                    ls_fsm = S_NORMAL;
+                    stall = '0;
+                    fsm_flush = '1;
                 end
             endcase
         end
