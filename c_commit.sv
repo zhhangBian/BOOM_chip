@@ -2400,7 +2400,7 @@ always_comb begin
     end
 
     S_IDLE: begin
-        if (int_excep) begin
+        if (|(csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE])  /*&& csr_q.crmd[`_CRMD_IE]*/) begin
             ls_fsm = S_NORMAL;
             stall = '0;
             fsm_flush = '1;
