@@ -1754,16 +1754,16 @@ always_comb begin
             // 对于DCache
             3'b1: begin
                 // 对于Cache维护指令，将维护地址视作目的地址
-                commit_cache_req.addr         = lsu_info[0].paddr;
-                commit_cache_req.way_choose   = (lsu_info[0].paddr[0]) ? 2'b10 : 2'b1;
+                commit_cache_req.addr         = lsu_info[0].cacop_addr;
+                commit_cache_req.way_choose   = (lsu_info[0].cacop_addr[0]) ? 2'b10 : 2'b1;
                 commit_cache_req.tag_data     = '0;
                 commit_cache_req.tag_we       = '0;
                 commit_cache_req.data_data    = '0;
                 commit_cache_req.strb         = '0;
                 commit_cache_req.fetch_sb     = '0;
 
-                // 仅需要无效化即可
                 case (cache_op)
+                    // 仅需要无效化即可
                     2'd0: begin
                         ls_fsm = S_NORMAL;
                         stall = '0;
@@ -1965,8 +1965,8 @@ always_comb begin
         if(cache_fix_q) begin
             cache_fix   = '0;
             // 对于Cache维护指令，将维护地址视作目的地址
-            commit_cache_req.addr         = lsu_info_s.paddr;
-            commit_cache_req.way_choose   = lsu_info_s.paddr[0] ? 2'b10 : 2'b1;
+            commit_cache_req.addr         = lsu_info_s.cacop_addr;
+            commit_cache_req.way_choose   = lsu_info_s.cacop_addr[0] ? 2'b10 : 2'b1;
             commit_cache_req.tag_data     = '0;
             commit_cache_req.tag_we       = '0;
             commit_cache_req.data_data    = '0;
@@ -1977,12 +1977,17 @@ always_comb begin
                 // 将Cache无效化，并将数据写回
                 2'd1: begin
                     // 将Cache的tag无效化
+                    cache_dirty_addr = lsu_info_s.cacop_addr;
+                    commit_cache_req.addr         = cache_dirty_addr & `CACHE_MASK;
+                    commit_cache_req.way_choose   = cache_dirty_addr[0] ? 2'b10 : 2'b01;
                     commit_cache_req.tag_data  = '0;
                     commit_cache_req.tag_we    = '1;
 
                     // 需要读出脏位
                     //如果数据是脏的，则需要写回
+                    `ifdef _DIRTY_WB
                     if (cache_commit_resp_i.miss_dirty) begin
+                    `endif
                         ls_fsm = S_CACHE_RD;
                         stall = '1;
                         cache_rd_need_back = '1;
@@ -1991,9 +1996,6 @@ always_comb begin
                         `endif
 
                         // 设置Cache请求
-                        cache_dirty_addr = lsu_info_s.cacop_addr;
-                        commit_cache_req.addr         = cache_dirty_addr & `CACHE_MASK;
-                        commit_cache_req.way_choose   = cache_dirty_addr[0] ? 2'b10 : 2'b01;
                         commit_cache_req.data_data    = '0;
                         commit_cache_req.strb         = '0;
                         commit_cache_req.fetch_sb     = '0;
@@ -2015,6 +2017,7 @@ always_comb begin
                         `ifdef _DIFFTEST
                         $display("cacop_addr: %x", lsu_info_s.cacop_addr);
                         `endif
+                    `ifdef _DIRTY_WB
                     end
                     // 否则即完成
                     else begin
@@ -2026,14 +2029,20 @@ always_comb begin
                         `endif
                         fsm_npc = pc_s + 4;
                     end
+                    `endif
                 end
 
                 2'd2: begin
                     // 无效Cache
+                    cache_dirty_addr = lsu_info_s.paddr & `CACHE_MASK;
+                    commit_cache_req.addr       = cache_dirty_addr;
+                    commit_cache_req.way_choose = lsu_info_s.tag_hit;
                     commit_cache_req.tag_data     = '0;
                     commit_cache_req.tag_we       = '1;
                     // 脏了就写回
+                    `ifdef _DIRTY_WB
                     if(cache_commit_resp_i.miss_dirty) begin
+                    `endif
                         ls_fsm = S_CACHE_RD;
                         stall = '1;
                         cache_rd_need_back = '1;
@@ -2041,9 +2050,6 @@ always_comb begin
                         fsm_commit = '1;
                         `endif
                         // 将Cache无效化，先读出对应的tag
-                        cache_dirty_addr = lsu_info_s.paddr & `CACHE_MASK;
-                        commit_cache_req.addr       = cache_dirty_addr;
-                        commit_cache_req.way_choose = lsu_info_s.tag_hit;
                         commit_cache_req.data_data  = '0;
                         commit_cache_req.strb       = '0;
                         commit_cache_req.fetch_sb   = '0;
@@ -2060,6 +2066,7 @@ always_comb begin
                         // 设置相应的指针
                         axi_block_ptr = '0;
                         axi_block_len = CACHE_BLOCK_LEN;
+                    `ifdef _DIRTY_WB
                     end
                     // 不脏回Normal
                     else begin
@@ -2072,6 +2079,7 @@ always_comb begin
                         fsm_npc = pc_s + 4;
                         cache_rd_need_back = '0;
                     end
+                    `endif
                 end
 
                 default: begin

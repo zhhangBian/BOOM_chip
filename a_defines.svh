@@ -5,6 +5,8 @@
 `define _VERILATOR // 只需要注释掉这一行就行了
 // `define _ASIC
 
+// `define _DIRTY_WB
+
 `ifndef _VERILATOR
 `define _FPGA
 `endif
