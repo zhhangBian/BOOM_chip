@@ -715,18 +715,16 @@ always_comb begin
             decode_info_o.alu_inst = 1'd1;
         end
         /*==================== Pre load 指令 ====================*/
-        /*
         // PRELD
         32'b0010101011??????????????????????: begin
             // 修改
-            decode_info_o.lsu_inst = 1'd1;
-            decode_info_o.reg_type_r1 = `_REG_RJ;
-            decode_info_o.reg_type_w = `_REG_W_RD;
-            decode_info_o.addr_imm_type = `_ADDR_IMM_S12;
-            decode_info_o.mem_type = `_MEM_TYPE_UWORD;
-            decode_info_o.mem_read = 1'd1;
+            decode_info_o.alu_inst = 1'd1;
+            decode_info_o.reg_type_r0 = `_REG_ZERO;
+            decode_info_o.reg_type_r1 = `_REG_ZERO;
+            decode_info_o.reg_type_w = `_REG_W_NONE;
+            decode_info_o.alu_grand_op = `_GRAND_OP_INT;
+            decode_info_o.alu_op = `_INT_ADD;
         end
-        */
 
         /*==================== 浮点指令 ====================*/
         /*
