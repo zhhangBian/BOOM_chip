@@ -245,7 +245,7 @@ always_comb begin
     tag_hit = '0;
     ram_tmp_data = '0;
     for (integer i = 0; i < WAY_NUM; i++) begin
-        if (tag_ans0[i].tag == ppn) begin
+        if ((tag_ans0[i].tag == ppn) & tag_ans0[i].v) begin
             tag_hit[i] |= '1;
             ram_tmp_data  = '0;
             ram_tmp_data |= data_ans0[i];
