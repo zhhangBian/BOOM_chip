@@ -1826,6 +1826,10 @@ always_comb begin
 
                     2'd2: begin
                         // 如果命中再维护
+                        `ifdef _DIFFTEST
+                                $display("cacop addr: %x", lsu_info[0].paddr);
+                                $display("cacop hit:  %b%b\n", lsu_info[0].tag_hit[1],lsu_info[0].tag_hit[0]);
+                        `endif
                         if(cache_commit_hit[0]) begin
                             if(lsu_info[0].tag_hit == 2'b0) begin
                                 ls_fsm = S_NORMAL;
@@ -2367,7 +2371,7 @@ always_comb begin
     end
 
     S_IDLE: begin
-        if (int_excep) begin
+        if (|(csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE])  /*&& csr_q.crmd[`_CRMD_IE]*/) begin
             ls_fsm = S_NORMAL;
             stall = '0;
             fsm_flush = '1;
