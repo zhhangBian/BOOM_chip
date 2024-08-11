@@ -1753,6 +1753,15 @@ always_comb begin
 
             // 对于DCache
             3'b1: begin
+                // 对于Cache维护指令，将维护地址视作目的地址
+                commit_cache_req.addr         = lsu_info[0].paddr;
+                commit_cache_req.way_choose   = lsu_info[0].paddr[0] ? 2'b10 : 2'b1;
+                commit_cache_req.tag_data     = '0;
+                commit_cache_req.tag_we       = '0;
+                commit_cache_req.data_data    = '0;
+                commit_cache_req.strb         = '0;
+                commit_cache_req.fetch_sb     = '0;
+
                 // 仅需要无效化即可
                 case (cache_op)
                     2'd0: begin
@@ -1771,7 +1780,7 @@ always_comb begin
 
                     2'd1: begin
                         cache_fix   = '1;
-                        stall = '1;
+                        stall       = '1;
                         ls_fsm      = S_CACHE_MISS;
                         // 读出脏位
                         commit_cache_req.addr       = lsu_info[0].cacop_addr & `CACHE_MASK;
@@ -1947,6 +1956,7 @@ always_comb begin
 
     S_CACHE_MISS: begin
         if(cache_fix_q) begin
+            cache_fix   = '0;
             // 对于Cache维护指令，将维护地址视作目的地址
             commit_cache_req.addr         = lsu_info_s.paddr;
             commit_cache_req.way_choose   = lsu_info_s.paddr[0] ? 2'b10 : 2'b1;
