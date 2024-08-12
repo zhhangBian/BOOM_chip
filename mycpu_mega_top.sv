@@ -3,7 +3,7 @@
 `include "a_defines.svh"
 
 module mycpu_mega_top (
-    (*mark_debug = "true"*)input    [ 7:0] ext_int, 
+    /*(*mark_debug = "true"*)*/input    [ 7:0] ext_int, 
     // other axi interface
     input           aclk,
     input           aresetn,
@@ -52,9 +52,9 @@ module mycpu_mega_top (
     output          bready,
 
     // 官方发布包接口
-    (*mark_debug = "true"*)output [31:0] debug_wb_pc,
-    (*mark_debug = "true"*)output [31:0] debug_wb_rf_wdata,
-    (*mark_debug = "true"*)output [31:0] debug_wb_instr
+    /*(*mark_debug = "true"*)*/output [31:0] debug_wb_pc,
+    /*(*mark_debug = "true"*)*/output [31:0] debug_wb_rf_wdata,
+    /*(*mark_debug = "true"*)*/output [31:0] debug_wb_instr
     // ,output [31:0] debug_wb_inst // 官方包不会使用到这个接口
 );
 
@@ -647,7 +647,7 @@ axi_convert # (
     /*
      * AXI slave interfaces
      */
-    .s_axi_awid('0),
+    .s_axi_awid({4'd1, 4'd0}),
     .s_axi_awaddr({icache_axi_addr, commit_axi_req.waddr}),
     .s_axi_awlen({icache_axi_len - 8'b1, commit_axi_req.wlen - 8'b1}),
     .s_axi_awsize({3'b010,3'b010}),
