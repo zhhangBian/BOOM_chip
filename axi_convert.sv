@@ -94,15 +94,15 @@ module axi_convert #(
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
     parameter M_R_REG_TYPE = {M_COUNT{2'd0}}
 ) (
-    input  wire                             clk,
+    (*mark_debug = "true"*)input  wire                             clk,
     input  wire                             rst_n,
 
     /*
      * AXI slave interfaces
      */
-    input  wire [S_COUNT*S_ID_WIDTH-1:0]    s_axi_awid,
-    input  wire [S_COUNT*ADDR_WIDTH-1:0]    s_axi_awaddr,
-    input  wire [S_COUNT*8-1:0]             s_axi_awlen,
+    (*mark_debug = "true"*)input  wire [S_COUNT*S_ID_WIDTH-1:0]    s_axi_awid,
+    (*mark_debug = "true"*)input  wire [S_COUNT*ADDR_WIDTH-1:0]    s_axi_awaddr,
+    (*mark_debug = "true"*)input  wire [S_COUNT*8-1:0]             s_axi_awlen,
     input  wire [S_COUNT*3-1:0]             s_axi_awsize,
     input  wire [S_COUNT*2-1:0]             s_axi_awburst,
     input  wire [S_COUNT-1:0]               s_axi_awlock,
@@ -110,14 +110,14 @@ module axi_convert #(
     input  wire [S_COUNT*3-1:0]             s_axi_awprot,
     input  wire [S_COUNT*4-1:0]             s_axi_awqos,
     input  wire [S_COUNT*AWUSER_WIDTH-1:0]  s_axi_awuser,
-    input  wire [S_COUNT-1:0]               s_axi_awvalid,
-    output wire [S_COUNT-1:0]               s_axi_awready,
-    input  wire [S_COUNT*DATA_WIDTH-1:0]    s_axi_wdata,
+    (*mark_debug = "true"*)input  wire [S_COUNT-1:0]               s_axi_awvalid,
+    (*mark_debug = "true"*)output wire [S_COUNT-1:0]               s_axi_awready,
+    (*mark_debug = "true"*)input  wire [S_COUNT*DATA_WIDTH-1:0]    s_axi_wdata,
     input  wire [S_COUNT*STRB_WIDTH-1:0]    s_axi_wstrb,
-    input  wire [S_COUNT-1:0]               s_axi_wlast,
+    (*mark_debug = "true"*)input  wire [S_COUNT-1:0]               s_axi_wlast,
     input  wire [S_COUNT*WUSER_WIDTH-1:0]   s_axi_wuser,
-    input  wire [S_COUNT-1:0]               s_axi_wvalid,
-    output wire [S_COUNT-1:0]               s_axi_wready,
+    (*mark_debug = "true"*)input  wire [S_COUNT-1:0]               s_axi_wvalid,
+    (*mark_debug = "true"*)output wire [S_COUNT-1:0]               s_axi_wready,
     output wire [S_COUNT*S_ID_WIDTH-1:0]    s_axi_bid,
     output wire [S_COUNT*2-1:0]             s_axi_bresp,
     output wire [S_COUNT*BUSER_WIDTH-1:0]   s_axi_buser,
@@ -133,15 +133,15 @@ module axi_convert #(
     input  wire [S_COUNT*3-1:0]             s_axi_arprot,
     input  wire [S_COUNT*4-1:0]             s_axi_arqos,
     input  wire [S_COUNT*ARUSER_WIDTH-1:0]  s_axi_aruser,
-    input  wire [S_COUNT-1:0]               s_axi_arvalid,
-    output wire [S_COUNT-1:0]               s_axi_arready,
+    (*mark_debug = "true"*)input  wire [S_COUNT-1:0]               s_axi_arvalid,
+    (*mark_debug = "true"*)output wire [S_COUNT-1:0]               s_axi_arready,
     output wire [S_COUNT*S_ID_WIDTH-1:0]    s_axi_rid,
     output wire [S_COUNT*DATA_WIDTH-1:0]    s_axi_rdata,
     output wire [S_COUNT*2-1:0]             s_axi_rresp,
-    output wire [S_COUNT-1:0]               s_axi_rlast,
+    (*mark_debug = "true"*)output wire [S_COUNT-1:0]               s_axi_rlast,
     output wire [S_COUNT*RUSER_WIDTH-1:0]   s_axi_ruser,
-    output wire [S_COUNT-1:0]               s_axi_rvalid,
-    input  wire [S_COUNT-1:0]               s_axi_rready,
+    (*mark_debug = "true"*)output wire [S_COUNT-1:0]               s_axi_rvalid,
+    (*mark_debug = "true"*)input  wire [S_COUNT-1:0]               s_axi_rready,
 
     /*
      * AXI master interfaces

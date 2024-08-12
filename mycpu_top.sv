@@ -733,7 +733,7 @@ axi_convert # (
     /*
      * AXI slave interfaces
      */
-    .s_axi_awid('0),
+    .s_axi_awid({4'd1, 4'd0}),
     .s_axi_awaddr({icache_axi_addr, commit_axi_req.waddr}),
     .s_axi_awlen({icache_axi_len - 8'b1, commit_axi_req.wlen - 8'b1}),
     .s_axi_awsize({3'b010,commit_axi_req.wsize}),

@@ -3,7 +3,7 @@
 `include "a_defines.svh"
 
 module mycpu_mega_top (
-    input    [ 7:0] ext_int, 
+    (*mark_debug = "true"*)input    [ 7:0] ext_int, 
     // other axi interface
     input           aclk,
     input           aresetn,
