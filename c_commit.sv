@@ -2315,7 +2315,7 @@ always_comb begin
                 commit_axi_req.raddr = lsu_info_s.paddr & `CACHE_MASK;
                 commit_axi_req.rlen = CACHE_BLOCK_LEN;
                 commit_axi_req.strb = '0;
-                commit_axi_req.wsize = 3'b010;
+                commit_axi_req.rsize = 3'b010;
                 // commit_axi_arvalid_o = '1;
 
                 // 设置相应的指针
