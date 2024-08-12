@@ -2432,11 +2432,11 @@ always_comb begin
         if (|(csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE])  /*&& csr_q.crmd[`_CRMD_IE]*/) begin
             ls_fsm = S_NORMAL;
             stall = '0;
-            fsm_flush = '1;
+            // fsm_flush = '1;
             `ifdef _DIFFTEST
             not_need_again = '1;
             `endif
-            fsm_npc = pc_s + 4;
+            // fsm_npc = pc_s + 4;
         end else begin
             ls_fsm = S_IDLE;
             stall = '1;
