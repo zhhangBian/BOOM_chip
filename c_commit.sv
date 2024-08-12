@@ -1838,13 +1838,14 @@ always_comb begin
                 ls_fsm = S_UNCACHED_RD;
                 stall = '1;
                 // 发起AXI请求
-                commit_axi_req.raddr = lsu_info[0].paddr;
+                commit_axi_req.raddr = lsu_info[0].paddr & 32'hfffffffc;
                 commit_axi_req.rlen = 1;
                 commit_axi_req.rmask = lsu_info[0].rmask;
                 // TODO msize
-                commit_axi_req.rsize = lsu_info[0].msize == 0 ? 3'b000:
-                                       lsu_info[0].msize == 1 ? 3'b001:
-                                                                3'b010;
+                commit_axi_req.rsize = 3'b010;
+                // commit_axi_req.rsize = lsu_info[0].msize == 0 ? 3'b000:
+                //                        lsu_info[0].msize == 1 ? 3'b001:
+                //                                                 3'b010;
                 // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
                 axi_wait = '1;//~axi_commit_arready_i;
