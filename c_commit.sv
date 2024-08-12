@@ -231,16 +231,16 @@ logic [1:0] rob2next_valid;//这个是向后的valid信号
 
 always_comb begin
     rob2next_valid[0] = rob_commit_valid_i[0] & ~stall;
-    rob2next_valid[1] = &rob_commit_valid_i &
-                        ~rob_commit_i[0].flush_inst &//一定flush指令
-                        ~(rob_commit_i[0].single_store) &
-                        ~cur_exception &//异常
-                        ~(rob_commit_i[0].single_load) & //cache miss
+    rob2next_valid[1] = (&rob_commit_valid_i) &
+                        (~rob_commit_i[0].flush_inst) &//一定flush指令
+                        (~(rob_commit_i[0].single_store)) &
+                        (~cur_exception) &//异常
+                        (~(rob_commit_i[0].single_load)) & //cache miss
                         /*predict_success[0] &*/ //移到第二级
-                        ~rob_commit_i[1].flush_inst &
-                        ~(|rob_commit_i[1].single_store) &
-                        ~another_exception &
-                        ~(rob_commit_i[1].single_load);//仅第二条分支预测失败也可以双提
+                        (~rob_commit_i[1].flush_inst) &
+                        (~(|rob_commit_i[1].single_store)) &
+                        (~another_exception) &
+                        (~(rob_commit_i[1].single_load));//仅第二条分支预测失败也可以双提
 end
 
 //注意flush把这一级也flush了
@@ -802,7 +802,7 @@ end
 
 //中断识别
 wire [12:0] int_vec = csr_q.estat[`_ESTAT_IS] & csr_q.ecfg[`_ECFG_LIE];
-wire int_excep      = csr_q.crmd[`_CRMD_IE] && |int_vec && !rob_commit_i[0].idle_en;
+wire int_excep      = csr_q.crmd[`_CRMD_IE] && (|int_vec) && (!rob_commit_i[0].idle_en);
 logic invtlb_ine;
 
 //TODO 现在为了消除“环”，cur_excpetion信号在无效的时候也可能为1
