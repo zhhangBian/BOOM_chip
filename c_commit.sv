@@ -1868,10 +1868,14 @@ always_comb begin
                 //                       lsu_info[0].msize == 1 ? 4'b0011:
                 //                                                4'b1111;
                 // commit_axi_awvalid_o = '1;
-                commit_axi_req.wsize = lsu_info[0].msize == 0 ? 3'b000:
+                commit_axi_req.wsize = 
+                // 3'b010;
+                lsu_info[0].msize == 0 ? 3'b000:
                                        lsu_info[0].msize == 1 ? 3'b001:
                                                                 3'b010;
                 axi_block_data[0] = lsu_info[0].wdata;
+                axi_block_ptr = 0;
+                axi_block_len = 1;
                 // 进行AXI握手
                 axi_wait = '1;//~axi_commit_awready_i;
             end
@@ -1927,7 +1931,7 @@ always_comb begin
                 end
                 // 如果没有命中
                 else begin
-                    if(is_sc[0]) begin
+                    if(is_sc[0] && ~ll_bit) begin
                         ls_fsm = S_NORMAL;
                         stall = '0;
                         // SC没有命中不做任何事，但需要提交SB
@@ -2172,7 +2176,7 @@ always_comb begin
                     commit_cache_req.tag_we     = '1;
                     commit_cache_req.data_data  = '0;
                     commit_cache_req.strb       = '0;
-                    commit_cache_req.fetch_sb   = |lsu_info_s.strb;
+                    commit_cache_req.fetch_sb   = '0;
                     // 设置相应的指针
                     cache_block_ptr = '0;
                     cache_block_len = CACHE_BLOCK_LEN;
@@ -2243,6 +2247,8 @@ always_comb begin
                 // fsm_npc = pc_s + 4;
                 ls_fsm = S_NORMAL;
                 stall = '0;
+                axi_block_ptr = '0;
+                cache_block_ptr = '0;
             end
             else begin
                 ls_fsm = S_UNCACHED_WB;
@@ -2379,7 +2385,7 @@ always_comb begin
                 commit_cache_req.tag_we     = '1;
                 commit_cache_req.data_data  = lsu_info_s.wdata;
                 commit_cache_req.strb       = lsu_info_s.strb;
-                commit_cache_req.fetch_sb   = |lsu_info_s.strb;
+                commit_cache_req.fetch_sb   = '0;
             end
             else begin
                 commit_cache_req = '0;
@@ -2796,7 +2802,7 @@ always_ff @(posedge clk) begin
                 $display("target:    succ: %d fail: %d, frac: %f", succ_target, fail_target, 100.0 * succ_target / (succ_target + fail_target));
                 $display("Flush count: %d", flush_cnt);
 
-                $finish();
+                // $finish();
             end
         end
 
