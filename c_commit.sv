@@ -1838,14 +1838,14 @@ always_comb begin
                 ls_fsm = S_UNCACHED_RD;
                 stall = '1;
                 // 发起AXI请求
-                commit_axi_req.raddr = lsu_info[0].paddr & 32'hfffffffc;
+                commit_axi_req.raddr = lsu_info[0].paddr;
                 commit_axi_req.rlen = 1;
                 commit_axi_req.rmask = lsu_info[0].rmask;
                 // TODO msize
-                commit_axi_req.rsize = 3'b010;
-                // commit_axi_req.rsize = lsu_info[0].msize == 0 ? 3'b000:
-                //                        lsu_info[0].msize == 1 ? 3'b001:
-                //                                                 3'b010;
+                //commit_axi_req.rsize = 3'b010;
+                commit_axi_req.rsize = lsu_info[0].msize == 0 ? 3'b000:
+                                       lsu_info[0].msize == 1 ? 3'b001:
+                                                                3'b010;
                 // commit_axi_arvalid_o = '1;
                 // 进行AXI握手
                 axi_wait = '1;//~axi_commit_arready_i;
@@ -1861,16 +1861,14 @@ always_comb begin
                 // 进行一次SB提交
                 commit_cache_req.fetch_sb = |lsu_info[0].strb;
                 // 发起AXI请求
-                commit_axi_req.waddr = lsu_info[0].paddr & 32'hfffffffc;
+                commit_axi_req.waddr = lsu_info[0].paddr;
                 commit_axi_req.wlen = 1;
                 commit_axi_req.strb = lsu_info[0].strb;
                 // lsu_info[0].msize == 0 ? 4'b0001:
                 //                       lsu_info[0].msize == 1 ? 4'b0011:
                 //                                                4'b1111;
                 // commit_axi_awvalid_o = '1;
-                commit_axi_req.wsize = 
-                // 3'b010;
-                lsu_info[0].msize == 0 ? 3'b000:
+                commit_axi_req.wsize = lsu_info[0].msize == 0 ? 3'b000:
                                        lsu_info[0].msize == 1 ? 3'b001:
                                                                 3'b010;
                 axi_block_data[0] = lsu_info[0].wdata;
