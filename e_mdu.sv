@@ -55,9 +55,9 @@ mdu_diver diver(
 logic [2:0] op_q;
 logic is_wait;
 
-assign mul_valid_i = valid_i & ready_i &
+assign mul_valid_i = valid_i & ready_o &
                     (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
-assign div_valid_i = valid_i & ready_i &
+assign div_valid_i = valid_i & ready_o &
                     ~(req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
 
 assign res_o = (op_q == `_MDU_MUL || op_q == `_MDU_MULH || op_q == `_MDU_MULHU) ?
