@@ -1,4 +1,4 @@
-`ifndef _FPGA
+`ifdef _FPGA
 
 `include "a_defines.svh"
 
