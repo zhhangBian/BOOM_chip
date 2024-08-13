@@ -308,6 +308,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RK;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_op = `_MDU_MUL;
+            decode_info_o.flush_inst = 1'd1;
         end
         // MULH.W
         32'b00000000000111001???????????????: begin
@@ -316,6 +317,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RK;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_op = `_MDU_MULH;
+            decode_info_o.flush_inst = 1'd1;
         end
         // MULH.WU
         32'b00000000000111010???????????????: begin
@@ -324,6 +326,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RK;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_op = `_MDU_MULHU;
+            decode_info_o.flush_inst = 1'd1;
         end
         // DIV.W
         32'b00000000001000000???????????????: begin
@@ -332,6 +335,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RK;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_op = `_MDU_DIV;
+            decode_info_o.flush_inst = 1'd1;
         end
         // MOD.W
         32'b00000000001000001???????????????: begin
@@ -340,6 +344,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RK;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_op = `_MDU_MOD;
+            decode_info_o.flush_inst = 1'd1;
         end
         // DIV.WU
         32'b00000000001000010???????????????: begin
@@ -348,6 +353,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RK;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_op = `_MDU_DIVU;
+            decode_info_o.flush_inst = 1'd1;
         end
         // MOD.WU
         32'b00000000001000011???????????????: begin
@@ -356,6 +362,7 @@ always_comb begin
             decode_info_o.reg_type_r1 = `_REG_RK;
             decode_info_o.reg_type_w = `_REG_W_RD;
             decode_info_o.alu_op = `_MDU_MODU;
+            decode_info_o.flush_inst = 1'd1;
         end
         /*==================== 分支指令 ====================*/
         // JIRL
