@@ -191,6 +191,16 @@ always_comb begin
             decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
             decode_info_o.alu_op = `_SFT_SRA;
         end
+		// RRIWINZ
+		32'b110000??????????????????????????: begin
+            decode_info_o.alu_inst = 1'd1;
+            decode_info_o.reg_type_r0 = `_REG_RJ;
+            decode_info_o.reg_type_r1 = `_REG_RK;
+            decode_info_o.reg_type_w = `_REG_W_RD;
+            decode_info_o.addr_imm_type = `_ADDR_IMM_S11;
+            decode_info_o.alu_grand_op = `_GRAND_OP_SFT;
+            decode_info_o.alu_op = `_SFT_WIN;
+		end
         /*==================== 算术 + 立即数 ====================*/
         // SLLI.W
         32'b00000000010000001???????????????: begin

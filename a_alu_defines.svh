@@ -29,6 +29,7 @@
 `define _SFT_SRL        (3'b010)
 `define _SFT_SLA        (3'b011)
 `define _SFT_SRA        (3'b100)
+`define _SFT_WIN        (3'b101)
 
 `define _COM_EQ         (3'b001)
 `define _COM_NE         (3'b010)

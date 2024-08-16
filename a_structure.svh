@@ -90,7 +90,7 @@ typedef logic [2 : 0] reg_type_r0_t;
 typedef logic [2 : 0] reg_type_r1_t;
 typedef logic [1 : 0] reg_type_w_t;
 typedef logic [2 : 0] imm_type_t;
-typedef logic [1 : 0] addr_imm_type_t;
+typedef logic [2 : 0] addr_imm_type_t;
 typedef logic [0 : 0] slot0_t;
 typedef logic [0 : 0] refetch_t;
 typedef logic [0 : 0] need_fa_t;

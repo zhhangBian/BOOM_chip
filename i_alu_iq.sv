@@ -294,6 +294,7 @@ e_alu alu(
     .r0_i(real_data[0]),
     .r1_i(real_data[1]),
     .pc_i(select_di_q.pc),
+    .imm_i(select_di_q.imm),
 
     .grand_op_i(select_di_q.grand_op),
     .op_i(select_di_q.op),

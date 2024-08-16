@@ -20,6 +20,7 @@ function logic [31:0] inst_to_addr_imm (input logic[31:0] inst, input addr_imm_t
         `_ADDR_IMM_S12: ret =  {{20{inst[21]}}, inst[21:10]}; // 仅用于store/load指令，低位不补零;
         `_ADDR_IMM_S14: ret =  {{16{inst[23]}}, inst[23:10], 2'b0}; // 仅用于原子访存指令，低位补两个0;
         `_ADDR_IMM_S16: ret =  {{14{inst[25]}}, inst[25:10], 2'b0}; // 仅用于计算分支offset，低位补两个0;
+        `_ADDR_IMM_S11: ret =  {{21{inst[25]}}, inst[25:15]}; // RRIWINZ
         // _ADDR_IMM_S21:  // 仅用于浮点分支指令使用，也就是暂时不使用
         // `_ADDR_IMM_S26:
         default:        ret =  {{4 {inst[ 9]}}, inst[ 9:0 ], inst[25:10], 2'b0};

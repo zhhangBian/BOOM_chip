@@ -12,8 +12,8 @@
 `endif
 
 `ifdef _VERILATOR
-`define _DIFFTEST
-`define _PREDICT
+// `define _DIFFTEST
+// `define _PREDICT
 `endif
 
 `include "a_macros.svh"
