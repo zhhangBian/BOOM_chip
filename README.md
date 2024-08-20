@@ -49,7 +49,7 @@ BOOM的核心设计采取了13级流水的乱序双发设计，采用了分支�
 
 BOOM采用了chiplab差分测试环境进行测试，并参考了北航EULA团队的AM环境进行辅助测试。
 
-<img src="images/总设计.png" alt="Overview" style="zoom:50%;" />
+<img src="./report/images/总设计.png" alt="Overview" style="zoom:50%;" />
 
 ### 1.2 分支预测 Branch Predict
 
@@ -57,7 +57,7 @@ BOOM 分支预测器实现了单周期的局部历史预测。如下图，BOOM�
 
 在判断是否跳转上，考虑到 BOOM 为双发射乱序处理器，其指令预测块大小也为 2。此外，由于BOOM 的取指级只允许按照 8 字节对齐进行两条指令的取址，因此，在判断的过程中，除了需要使用到从 BTB 表中读取出来的指令信息和饱和计数器的值以外，还需要根据当前 PC 的低三位对 PC 的奇偶性进行判断，并在前一条指令为跳转指令且预测为跳转的时候将后一条指令置无效。BPU 级会计算出两条指令的有效性，并用两位的掩码 mask 通知下一流水级指令的有效性。
 
-<img src="images/BPU.jpg" alt="BPU" style="zoom:33%;" />
+<img src="./report/images/BPU.jpg" alt="BPU" style="zoom:33%;" />
 
 在更新方面，BOOM 仅在 Commit 级对分支预测表项进行更新，以保证分支预测表项的正确性。
 
@@ -87,7 +87,7 @@ icache的设计为两路组相联的dpsram，每一路大小为4KB，每一个�
 
 取指级状态机
 
-<img src="images/icache状态机.png" alt="icache状态机" style="zoom:25%;" />
+<img src="./report/images/icache状态机.png" alt="icache状态机" style="zoom:25%;" />
 
 ### 1.4 译码 Decoder
 
@@ -232,13 +232,13 @@ LSU是和DCache进行交互的元件。包含了StoreBuffer。
 
 状态机的逻辑转移图为：
 
-<img src="images/Commit状态机.png" alt="Commit状态机" style="zoom: 20%;" />
+<img src="./report/images/Commit状态机.png" alt="Commit状态机" style="zoom: 20%;" />
 
 ### 1.10 地址翻译和TLB
 
 处理器支持了LA32位精简指令要求的直接地址翻译模式和映射地址翻译模式两种模式。MMU接收虚拟地址和当前操作（取指/LOAD/STORE），结合核心当前状态，即CSR寄存器中的CRMD和DMW寄存器指定的模式，得到物理地址和访存类型，并在存在异常时抛出异常信息。
 
-<img src="images/translate.png" alt="两种地址翻译模式" style="zoom: 33%;" />
+<img src="./report/images/translate.png" alt="两种地址翻译模式" style="zoom: 33%;" />
 
 在页表映射模式下，地址翻译需要用到TLB。由于取指、访存和提交级都需要对TLB表项进行维护，使用一个统一的TLB需要较为复杂的逻辑，为了降低复杂度，提交级维护了一个单独的JTLB，而取指级和访存级分别维护了ITLB和DTLB作为提交级TLB的副本。取指和访存级的TLB都只进行读和查询操作，由提交级负责维护所有TLB的写入，保证各个TLB数据的一致性。具体来说，对于tlbrd和tlbsrch指令，commit级从JTLB读取数据；对于tlbwr，tlbfill和invtlb指令，由commit级负责选择写入的TLB索引和TLB内容，将其同步写入所有TLB。TLB维护之后刷新管线，保证TLB维护指令后的所有取指和访存操作都可以查到最新的TLB表项。
 
