@@ -22,7 +22,7 @@ module dpsram #(
     output logic [DATA_WIDTH-1             : 0] rdata1_o
 );
 
-/*
+
 `ifdef _FPGA
   logic [(DATA_WIDTH/BYTE_SIZE)-1:0][(BYTE_SIZE/8)-1:0]ext_we0, ext_we1;
   for(genvar i = 0 ; i < (DATA_WIDTH/BYTE_SIZE); i++) begin
@@ -79,9 +79,10 @@ module dpsram #(
     .web           (DATA_WIDTH == BYTE_SIZE ? we1_i : ext_we1)
   );
 `endif
-*/
+
 
 `ifdef _VERILATOR
+  logic [(DATA_WIDTH/BYTE_SIZE)-1:0][BYTE_SIZE-1:0] sim_ram_o[DATA_DEPTH-1:0];
   reg   [(DATA_WIDTH/BYTE_SIZE)-1:0][BYTE_SIZE-1:0] sim_ram[DATA_DEPTH-1:0];
   reg   [(DATA_WIDTH/BYTE_SIZE)-1:0][BYTE_SIZE-1:0] rdata0_split_q,rdata1_split_q;
   logic [(DATA_WIDTH/BYTE_SIZE)-1:0][BYTE_SIZE-1:0] wdata0_split,wdata1_split;
@@ -90,25 +91,27 @@ module dpsram #(
   assign wdata1_split = wdata1_i;
   assign rdata0_o = rdata0_split_q;
   assign rdata1_o = rdata1_split_q;
+
+  assign sim_ram_o = sim_ram;
   
-  // // initial
-  // always_ff @(posedge clk0) begin
-  //   if (!rst_n0) begin
-  //     for (integer i = 0; i < DATA_DEPTH ; i++) begin
-  //       for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
-  //         sim_ram[i][j] <= '0;
-  //       end
-  //     end
-  //     for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
-  //         rdata0_split_q[j] <= '0;
-  //         rdata1_split_q[j] <= '0;
-  //     end
-  //   end
-  // end
+  // initial
+  initial begin
+    for (integer i = 0; i < DATA_DEPTH ; i++) begin
+      for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
+        sim_ram[i][j] = '0;
+      end
+    end
+    for (integer j = 0; j < (DATA_WIDTH/BYTE_SIZE) ; j++) begin
+        rdata0_split_q[j] = '0;
+        rdata1_split_q[j] = '0;
+    end
+  end
 
   // PORT A
   always_ff @(posedge clk0) begin
-    if(en0_i) begin
+    if(!rst_n0) begin
+    end
+    else if(en0_i) begin
         for(integer i = 0 ; i < (DATA_WIDTH/BYTE_SIZE) ; i++) begin
             if(we0_i[i]) begin
                 rdata0_split_q[i] <= wdata0_split[i];
@@ -121,7 +124,12 @@ module dpsram #(
 
   // PORT B
   always_ff @(posedge clk1) begin
-    if(en1_i) begin
+    if(!rst_n0) begin
+        // for(integer i = 0 ; i < (DATA_DEPTH) ; i++) begin
+        //     sim_ram[i] <= '0;
+        // end
+    end
+    else if(en1_i) begin
         for(integer i = 0 ; i < (DATA_WIDTH/BYTE_SIZE) ; i++) begin
             if(we1_i[i]) begin
                 rdata1_split_q[i]   <= wdata1_split[i];

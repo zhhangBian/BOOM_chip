@@ -12,12 +12,12 @@
 // BPU macro
 
 `define BPU_HISTORY_LEN 5 // 历史总共 5 位
-`define BPU_PHT_PC_LEN 8 // PC[10:3] 共 8 位
-`define BPU_PHT_LEN (`BPU_HISTORY_LEN + `BPU_PHT_PC_LEN) // = 13
-`define BPU_PHT_DEPTH (1 << `BPU_PHT_LEN) // PHT大小 = 8192 项，奇偶共16324项
+`define BPU_PHT_PC_LEN 7 // PC[9:3] 共 7 位
+`define BPU_PHT_LEN (`BPU_HISTORY_LEN + `BPU_PHT_PC_LEN) // = 12
+`define BPU_PHT_DEPTH (1 << `BPU_PHT_LEN) // PHT大小 = 4096 项，奇偶共 8192 项，共 16324 bits
 
-`define BPU_RAS_LEN 4
-`define BPU_RAS_DEPTH (1 << `BPU_RAS_LEN) //  RAS 的栈的大小 = 16
+`define BPU_RAS_LEN 3 // 足够用了
+`define BPU_RAS_DEPTH (1 << `BPU_RAS_LEN) //  RAS 的栈的大小 = 8
 
 `define BPU_BTB_LEN 9
 `define BPU_BTB_DEPTH (1 << `BPU_BTB_LEN) // 奇偶 BTB 各 512 项，共 1024 项
@@ -30,8 +30,8 @@
 
 // Decoder Macro
 
-`define D_BEFORE_QUEUE_DEPTH 4 // decoder 前的队列深度，共 8 条指令
-`define D_AFTER_QUEUE_DEPTH 8 // decoder 后的队列深度，共 16 条指令
+`define D_BEFORE_QUEUE_DEPTH 2 // decoder 前的队列深度，共 8 条指令
+`define D_AFTER_QUEUE_DEPTH 4 // decoder 后的队列深度，共 16 条指令
 
 `define _INV_TLB_ALL (4'b1111)
 `define _INV_TLB_MASK_G (4'b1000)
@@ -60,12 +60,12 @@
 `define _IMM_S12 (3'd2)
 `define _IMM_S20 (3'd3)
 `define _IMM_S16 (3'd4)
-`define _IMM_F1 (3'd5)
 `define _IMM_S21 (3'd6)
-`define _ADDR_IMM_S26 (2'd0)
-`define _ADDR_IMM_S12 (2'd1)
-`define _ADDR_IMM_S14 (2'd2)
-`define _ADDR_IMM_S16 (2'd3)
+`define _ADDR_IMM_S26 (3'd0)
+`define _ADDR_IMM_S12 (3'd1)
+`define _ADDR_IMM_S14 (3'd2)
+`define _ADDR_IMM_S16 (3'd3)
+`define _ADDR_IMM_S11 (3'd4)
 `define _ALU_GTYPE_BW (2'd0)
 `define _ALU_GTYPE_LI (2'd1)
 `define _ALU_GTYPE_INT (2'd2)

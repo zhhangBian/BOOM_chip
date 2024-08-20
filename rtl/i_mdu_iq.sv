@@ -47,7 +47,7 @@ logic [IQ_SIZE - 1:0] entry_init;   // 是否填入表项
 // ------------------------------------------------------------------
 // 配置IQ逻辑
 // 当前的表项数
-logic [PTR_LEN - 1:0]   free_cnt, free_cnt_q;
+logic [PTR_LEN    :0]   free_cnt, free_cnt_q;
 // 执行的指针
 logic [PTR_LEN - 1:0]   iq_head, iq_head_q;
 // 写的指针
@@ -65,7 +65,7 @@ always_ff @(posedge clk) begin
         iq_tail_q       <= iq_tail;
         free_cnt_q      <= free_cnt;
         // 有可能同时接收两条指令
-        entry_ready_o   <= (free_cnt_q >= 2); /* 2024/07/24 fix *_q */
+        entry_ready_o   <= (free_cnt >= 2); /* 2024/07/24 fix *_q */
     end
 end
 
@@ -116,7 +116,7 @@ always_comb begin
     end
     else if(&choose) begin
         entry_init[iq_tail_q]     |= other_ready;
-        entry_init[iq_tail_q + 1] |= other_ready;
+        entry_init[iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)] |= other_ready;
     end
 end
 
@@ -138,10 +138,10 @@ always_comb begin
         iq_valid[iq_tail_q]     |= p_valid_i[0];
         iq_di[iq_tail_q]        |= p_di_i[0];
 
-        iq_data[iq_tail_q + 1]  |= p_data_i[1] ;
-        iq_reg_id[iq_tail_q + 1]|= p_reg_id_i[1];
-        iq_valid[iq_tail_q + 1] |= p_valid_i[1];
-        iq_di[iq_tail_q + 1]    |= p_di_i[1];
+        iq_data[iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)]  |= p_data_i[1] ;
+        iq_reg_id[iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)]|= p_reg_id_i[1];
+        iq_valid[iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)] |= p_valid_i[1];
+        iq_di[iq_tail_q == 3'b111 ? 3'b0 : (iq_tail_q + 3'b1)]    |= p_di_i[1];
     end
 end
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -156,8 +156,8 @@ logic   mdu_valid_o, mdu_ready_i;
 
 // ------------------------------------------------------------------
 // 生成执行信号
-assign excute_ready = (!excute_valid_q) | mdu_ready_o; /* 2024/07/24 fix mdu_ready_i -> mdu_ready_o*/
-assign excute_valid = |entry_ready;
+assign excute_ready = mdu_ready_o; /* 2024/07/24 fix mdu_ready_i -> mdu_ready_o*/
+assign excute_valid = entry_ready[iq_head_q];
 
 always_ff @(posedge clk) begin
     if(!rst_n || flush) begin
@@ -237,7 +237,10 @@ always_comb begin
 end
 
 always_ff @(posedge clk) begin
-    if(excute_ready) begin
+    if(~rst_n || flush) begin
+        select_di_q <= '0;
+    end 
+    else if(excute_ready) begin
         select_di_q <= select_di;
     end
 end
@@ -271,6 +274,8 @@ always_comb begin
     req_i.data      = real_data;
     req_i.op        = select_di_q.op;
     req_i.reg_id    = select_di_q.wreg_id;
+
+    result_o          = '0;
 
     result_o.w_data   = res_o.data;
     result_o.rob_id   = res_o.reg_id;

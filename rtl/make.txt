@@ -1,0 +1,33 @@
+CHIPLAB_HOME=/home/pigkiller/project/chiplab
+ln -sf ../../../chip/config-generator.mak ./
+echo func/func_lab4 
+func/func_lab4
+echo func/func_lab4
+func/func_lab4
+make -j8 verilator
+make[1]: Entering directory '/home/pigkiller/project/chiplab/sims/verilator/run_prog'
+=============================================================================================================
+=============================================================================================================
+COMPILING verilog...
+=============================================================================================================
+=============================================================================================================
+mkdir -p log
+mkdir -p ./obj_dir
+verilator -y /home/pigkiller/project/chiplab/IP/myCPU  -y /home/pigkiller/project/chiplab/IP/CONFREG  -y /home/pigkiller/project/chiplab/IP/AXI_DELAY_RAND  -y /home/pigkiller/project/chiplab/IP/AXI_SRAM_BRIDGE  -y /home/pigkiller/project/chiplab/IP/AMBA -y /home/pigkiller/project/chiplab/IP/APB_DEV -y /home/pigkiller/project/chiplab/IP/APB_DEV/URT -y /home/pigkiller/project/chiplab/IP/APB_DEV/NAND -y ../testbench  -y /home/pigkiller/project/chiplab/chip/soc_demo/sim  --trace-fst --savable --threads 1 -O3 -Wno-fatal -DSIMU -DSIMULATION=1 -Wall --trace -cc -DDIFFTEST_EN simu_top.v difftest.v /home/pigkiller/project/chiplab/IP/myCPU/*.sv /home/pigkiller/project/chiplab/IP/CONFREG/confreg_sim.v /home/pigkiller/project/chiplab/IP/AXI_DELAY_RAND/*.v /home/pigkiller/project/chiplab/IP/AXI_SRAM_BRIDGE/*.v /home/pigkiller/project/chiplab/IP/AMBA/axi2apb.v /home/pigkiller/project/chiplab/IP/AMBA/axi_mux_sim.v /home/pigkiller/project/chiplab/IP/APB_DEV/apb_dev_top.v /home/pigkiller/project/chiplab/IP/APB_DEV/apb_mux2.v /home/pigkiller/project/chiplab/IP/APB_DEV/URT/*.v /home/pigkiller/project/chiplab/IP/APB_DEV/NAND/*.v 2>&1 | tee log/compile.log
+- V e r i l a t i o n   R e p o r t: Verilator 5.027 devel rev v5.026-10-g9e2c8aefc
+- Verilator: Built from 0.000 MB sources in 0 modules, into 0.000 MB in 0 C++ files needing 0.000 MB
+- Verilator: Walltime 0.002 s (elab=0.000, cvt=0.000, bld=0.000); cpu 0.000 s on 1 threads; alloced 18.105 MB
+make -C ./obj_dir -f "Vsimu_top.mk" || exit "$?"
+make[2]: Entering directory '/home/pigkiller/project/chiplab/sims/verilator/run_prog/obj_dir'
+make[2]: Nothing to be done for 'default'.
+make[2]: Leaving directory '/home/pigkiller/project/chiplab/sims/verilator/run_prog/obj_dir'
+make[1]: Leaving directory '/home/pigkiller/project/chiplab/sims/verilator/run_prog'
+make -j8 testbench
+make[1]: Entering directory '/home/pigkiller/project/chiplab/sims/verilator/run_prog'
+=============================================================================================================
+=============================================================================================================
+COMPILING testbench...
+=============================================================================================================
+=============================================================================================================
+g++ -O3 -pthread -DCACHE_SEED=0 -DVL_THREADED -DRESET_VAL=0 -DRESET_SEED=1997 -std=c++11 -DWAVEFORM_SLICE_SIZE=10000 -DTRACE_SLICE_SIZE=100000 -DWAVEFORM_TAIL_SIZE=10000 -DTRACE_TAIL_SIZE=100000 -DDEAD_CLOCK_SIZE=10000 -DRUN_FUNC -DTRACE_COMP -DSIMU_TRACE  -DPRINT_CLK_TIME -DDUMP_FST  -DDEAD_CLOCK_EN -I/usr/share/verilator/include  -I/usr/share/verilator/include/vltstd -I../testbench/include -I./obj_dir /usr/share/verilator/include/verilated.cpp /usr/share/verilator/include/verilated_threads.cpp  /usr/share/verilator/include/verilated_vcd_c.cpp  /usr/share/verilator/include/verilated_fst_c.cpp /usr/share/verilator/include/verilated_save.cpp ../testbench/common.cpp ../testbench/cpu_tool.cpp ../testbench/devices.cpp ../testbench/diff_manage.cpp ../testbench/difftest.cpp ../testbench/emu.cpp ../testbench/interface.cpp ../testbench/nemuproxy.cpp ../testbench/ram.cpp ../testbench/rand64.cpp ../testbench/sim_main.cpp ../testbench/testbench.cpp ../testbench/time_limit.cpp ../testbench/uart.cpp ./obj_dir/*__ALL.a -o output -lz -ldl
+make[1]: Leaving directory '/home/pigkiller/project/chiplab/sims/verilator/run_prog'

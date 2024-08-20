@@ -1,8 +1,14 @@
+`ifndef _MEGA_SOC
+
 `include "a_defines.svh"
 
 // 我们是双提交
 `define CPU_2CMT
 
+`ifdef _MEGA
+module mycpu_top (
+    input    [ 7:0] ext_int, 
+`endif
 `ifdef _VERILATOR
 module core_top (
     input    [ 7:0] intrpt,
@@ -92,7 +98,7 @@ module mycpu_top (
 );
 
 parameter int CDB_COUNT = 2;
-parameter int WKUP_COUNT = 2;
+parameter int WKUP_COUNT = 3; // 0801 加入lsu唤醒
 
 wire clk;
 wire rst_n;
@@ -199,7 +205,7 @@ fifo #(
     .T(f_d_pkg_t)
 ) f_d_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(f_fifo_handshake.receiver),
     .sender(fifo_d_handshake.sender)
 );
@@ -222,7 +228,7 @@ fifo #(
     .T(d_r_pkg_t)
 ) d_r_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(d_fifo_handshake.receiver),
     .sender(fifo_r_handshake.sender)
 );
@@ -250,6 +256,7 @@ for(genvar i = 0; i < 2; i += 1) begin
     end
 end
 
+logic [1:0] retire_request;
 rename # () rename (
     .clk(clk),
     .rst_n(rst_n),
@@ -258,7 +265,7 @@ rename # () rename (
     .d_r_receiver(fifo_r_handshake.receiver),
     .r_p_sender(r_p_handshake.sender),
 
-    .c_retire_i(c_retire),
+    .c_retire_i(retire_request),
     .c_retire_info_i(c_retire_infos)
 );
 
@@ -315,7 +322,7 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_alu_handshake_0.data.inst_choose & {2{p_alu_handshake_0.ready}}), /* 2024/07/24 fix*/ 
+    .choose(p_alu_handshake_0.data.inst_choose & {2{p_alu_handshake_0.ready}} & {2{p_alu_handshake_0.valid}}), /* 2024/07/24 fix*/ 
     .p_di_c(p_alu_handshake_0.data.di), //两条指令各自的译码信息  TODO
     .p_data_c(p_alu_handshake_0.data.data), //从P级传入的两条指令各自的两个data数值
     .p_reg_id_c(p_alu_handshake_0.data.preg), // 从P级传入的两条指令各自的两个rob_id(源寄存器数据的物理寄存器编号)
@@ -346,7 +353,7 @@ fifo # (
     .T(cdb_info_t)
 ) alu_iq_fifo_0 (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[0].receiver),
     .sender(fu_cdb[0].sender)
 );
@@ -359,7 +366,7 @@ alu_iq #(
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_alu_handshake_1.data.inst_choose & {2{p_alu_handshake_1.ready}}), /* 2024/07/24 fix*/
+    .choose(p_alu_handshake_1.data.inst_choose & {2{p_alu_handshake_1.ready}} & {2{p_alu_handshake_1.valid}}), /* 2024/07/24 fix*/
     .p_di_c(p_alu_handshake_1.data.di),
     .p_data_c(p_alu_handshake_1.data.data),
     .p_reg_id_c(p_alu_handshake_1.data.preg),
@@ -392,13 +399,25 @@ fifo # (
     .T(cdb_info_t)
 ) alu_iq_fifo_1 (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[1].receiver),
     .sender(fu_cdb[1].sender)
 );
 
 handshake_if #(.T(iq_lsu_pkg_t)) cpu_lsu_if();
 handshake_if #(.T(lsu_iq_pkg_t)) lsu_cpu_if();
+
+decode_info_t iq_lsu_di;
+decode_info_t lsu_iq_di;
+
+logic lsu_wkup_valid;
+logic [5:0] lsu_wkup_reg_id;
+word_t lsu_wkup_data;
+
+// handshake_if #(.T(iq_dcache_pkg_t)) iq_fifo_if();
+// handshake_if #(.T(iq_dcache_pkg_t)) fifo_dcache_if();
+iq_lsu_pkg_t  iq_lsu;
+decode_info_t iq_di;
 
 lsu_iq # (
     .CDB_COUNT(CDB_COUNT),
@@ -408,7 +427,7 @@ lsu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_lsu_handshake.data.inst_choose & {2{p_lsu_handshake.ready}}), /* 2024/07/24 fix*/
+    .choose(p_lsu_handshake.data.inst_choose & {2{p_lsu_handshake.ready}} & {2{p_lsu_handshake.valid}}), /* 2024/07/24 fix*/
     .p_di_i(p_lsu_handshake.data.di),
     .p_data_i(p_lsu_handshake.data.data),
     .p_reg_id_i(p_lsu_handshake.data.preg),
@@ -427,16 +446,40 @@ lsu_iq # (
 
     .iq_lsu_valid_o(cpu_lsu_if.valid),
     .iq_lsu_ready_i(cpu_lsu_if.ready),
-    .iq_lsu_req_o(cpu_lsu_if.data),
+    .iq_lsu_req_o(iq_lsu),
+    .iq_lsu_di_o(iq_di),
 
     .lsu_iq_valid_i(lsu_cpu_if.valid),
     .lsu_iq_ready_o(lsu_cpu_if.ready),
     .lsu_iq_resp_i(lsu_cpu_if.data),
+    .lsu_iq_di_i(lsu_iq_di),
+
+    .wkup_data_o(wkup_data[2]),
 
     .result_o(fu_cdb_data[2]),
     .fifo_ready(fu_fifo[2].ready),
     .entry_valid_o(fu_fifo[2].valid)
 );
+
+// assign iq_fifo_if.data.di = iq_di;
+// assign iq_fifo_if.data.iq_lsu = iq_lsu;
+
+// fifo # (
+//     .BYPASS(0),
+//     .DEPTH(16),
+//     .T(iq_dcache_pkg_t)
+// ) lsu_fifo (
+//     .clk(clk),
+//     .rst_n(rst_n & !flush),
+//     .receiver(iq_fifo_if.receiver),
+//     .sender(fifo_dcache_if.sender)
+// );
+
+// assign cpu_lsu_if.valid = fifo_dcache_if.valid;
+// assign fifo_dcache_if.ready = cpu_lsu_if.ready;
+assign iq_lsu_di = iq_di;
+assign cpu_lsu_if.data  = iq_lsu;
+
 
 // handshake_if #(.T(cdb_info_t)) lsu_cdb();
 
@@ -445,7 +488,7 @@ fifo # (
     .T(cdb_info_t)
 ) lsu_iq_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[2].receiver),
     .sender(fu_cdb[2].sender)
 );
@@ -458,7 +501,7 @@ mdu_iq # (
     .rst_n(rst_n),
     .flush(flush),
 
-    .choose(p_mdu_handshake.data.inst_choose & {2{p_mdu_handshake.ready}}), /* 2024/07/24 fix*/
+    .choose(p_mdu_handshake.data.inst_choose & {2{p_mdu_handshake.ready}} & {2{p_mdu_handshake.valid}}), /* 2024/07/24 fix*/
     .p_di_i(p_mdu_handshake.data.di),
     .p_data_i(p_mdu_handshake.data.data),
     .p_reg_id_i(p_mdu_handshake.data.preg),
@@ -487,7 +530,7 @@ fifo # (
     .T(cdb_info_t)
 ) mdu_iq_fifo (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(rst_n & !flush),
     .receiver(fu_fifo[3].receiver),
     .sender(fu_cdb[3].sender)
 );
@@ -518,11 +561,14 @@ always_comb begin
         // cdb_dispatch_pkg[i].w_mem  =  /* TODO */
         cdb_dispatch_pkg[i].w_valid=  cdb_infos[i].r_valid;           
 
+        cdb_rob_pkgs[i].s_data    =  cdb_infos[i].s_data;
         cdb_rob_pkgs[i].w_preg    =  cdb_infos[i].rob_id;
         cdb_rob_pkgs[i].w_data    =  cdb_infos[i].w_data;
         cdb_rob_pkgs[i].w_valid   =  cdb_infos[i].r_valid;
         cdb_rob_pkgs[i].ctrl      =  cdb_infos[i].ctrl/* TODO */; 
-        cdb_rob_pkgs[i].lsu_info  =  cdb_infos[i].lsu_info; 
+        cdb_rob_pkgs[i].lsu_info  =  cdb_infos[i].lsu_info;
+        cdb_rob_pkgs[i].single_load =  cdb_infos[i].single_load;
+        cdb_rob_pkgs[i].single_store  =  cdb_infos[i].single_store;
     end
 end
 
@@ -585,6 +631,7 @@ commit # () commit(
     .rob_commit_i(commit_infos),
 
     .commit_request_o(commit_request),
+    .retire_request_o(retire_request),
 
     .commit_cache_req_o(commit_cache_req),
     .cache_commit_resp_i(cache_commit_resp),
@@ -656,6 +703,12 @@ dcache # () dcache(
     .cpu_lsu_receiver(cpu_lsu_if.receiver),
     .lsu_cpu_sender(lsu_cpu_if.sender),
 
+    .iq_lsu_di_i(iq_lsu_di),
+    .lsu_iq_di_o(lsu_iq_di),
+
+    .wkup_reg_id_o(wkup_reg_id[2]),
+    .wkup_valid_o(wkup_valid[2]),
+
     .commit_cache_req(commit_cache_req), /* 2024/07/24 fix interface to struct*/
     .cache_commit_resp(cache_commit_resp), /* 2024/07/24 fix interface to struct*/
 
@@ -680,10 +733,10 @@ axi_convert # (
     /*
      * AXI slave interfaces
      */
-    .s_axi_awid('0),
+    .s_axi_awid({4'd1, 4'd0}),
     .s_axi_awaddr({icache_axi_addr, commit_axi_req.waddr}),
-    .s_axi_awlen({icache_axi_len, commit_axi_req.wlen}),
-    .s_axi_awsize({3'b010,3'b010}),
+    .s_axi_awlen({icache_axi_len - 8'b1, commit_axi_req.wlen - 8'b1}),
+    .s_axi_awsize({3'b010,commit_axi_req.wsize}),
     .s_axi_awburst({2'b01,2'b01}),
     .s_axi_awlock('0),
     .s_axi_awcache('0),
@@ -701,8 +754,8 @@ axi_convert # (
     .s_axi_bready('1),
     .s_axi_arid({4'b0001, 4'b0000}),
     .s_axi_araddr({icache_axi_addr, commit_axi_req.raddr}), /*2024/07/24 fix waddr -> raddr*/
-    .s_axi_arlen({icache_axi_len, commit_axi_req.rlen}), /*2024/07/24 fix wlen -> rlen*/
-    .s_axi_arsize({3'b010,3'b010}),
+    .s_axi_arlen({icache_axi_len - 8'b1, commit_axi_req.rlen - 8'b1}), /*2024/07/24 fix wlen -> rlen*/
+    .s_axi_arsize({3'b010,commit_axi_req.rsize}),
     .s_axi_arburst({2'b01,2'b01}),
     .s_axi_arlock('0),
     .s_axi_arcache('0),
@@ -769,6 +822,8 @@ axi_convert # (
 );
 
 endmodule
+
+`endif
 
 /* 不出bug
 ____________________████████████████__________████████████

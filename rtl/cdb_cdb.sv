@@ -21,7 +21,7 @@ logic      [PORT_COUNT - 1 : 0] fifo_valid;
 
 for (genvar i = 0; i < PORT_COUNT; i++) begin
     assign cdb_data_i[i]           = fifo_handshake[i].data; //传输握手数据
-    assign fifo_handshake[i].ready = sel_cdb[0][i] | sel_cdb[1][i];
+    assign fifo_handshake[i].ready = sel_cdb[0][i] | sel_cdb[1][i] | (!cdb_data_i[i].r_valid);
     assign fifo_valid[i]           = fifo_handshake[i].valid;
 end
 

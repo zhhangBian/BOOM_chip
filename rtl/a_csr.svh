@@ -67,6 +67,7 @@ typedef struct packed {
     logic [31:0] tlbrentry;
     logic [31:0] dmw0;
     logic [31:0] dmw1;
+    logic timer_en;
 } csr_t;
 
 typedef struct packed {
@@ -176,6 +177,12 @@ typedef struct packed {
 `define _ESUBCODE_ADEF  9'h0
 `define _ESUBCODE_ADEM  9'h1
 
-`define _TLB_ENTRY_NUM   64
+`ifdef _FPGA
+`define _TLB_ENTRY_NUM  2
+`endif
+
+`ifdef _VERILATOR
+`define _TLB_ENTRY_NUM 32
+`endif
 
 `endif

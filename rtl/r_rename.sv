@@ -21,7 +21,7 @@ module rename #(
 );
 
 // rob控制信号及分配
-logic   [`ROB_WIDTH - 1 :0] rob_cnt, rob_cnt_q;
+logic   [`ROB_WIDTH    :0] rob_cnt, rob_cnt_q;
 logic   rob_available, rob_available_q;
 // rob的相应写指针
 rob_id_t  rob_ptr1, rob_ptr2;
@@ -61,7 +61,7 @@ always_comb begin
     rob_cnt       = rob_cnt_q  + r_issue[0] + r_issue[1] - c_retire_i[0] - c_retire_i[1];
     rob_ptr1      = rob_ptr1_q + r_issue[0] + r_issue[1];
     rob_ptr2      = rob_ptr2_q + r_issue[0] + r_issue[1];
-    rob_available = (rob_cnt_q <= 60);
+    rob_available = (rob_cnt_q <= 7'd60);
 end
 
 
@@ -85,7 +85,7 @@ assign r_warid = d_r_receiver.data.arf_table.w_arfid;
 assign r_issue = d_r_receiver.data.r_valid & 
                 {d_r_receiver.valid, d_r_receiver.valid} & 
                 {d_r_receiver.ready, d_r_receiver.ready};
-assign r_wrobid = {rob_ptr2_q, rob_ptr1_q};
+assign r_wrobid = (!r_issue[0] & r_issue[1]) ?  {rob_ptr1_q, rob_ptr2_q} : {rob_ptr2_q, rob_ptr1_q};
 
 for (genvar i = 0; i < 4; i++) begin
     assign r_rrobid[i] = r_rename_result[i].robid;
@@ -116,9 +116,8 @@ rename_rat # (
 // C级RAT表的实现
 // TODO: C级RAT表的实现
 
-assign c_we = c_retire_i & 
-            {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} & 
-            {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
+assign c_we = {(c_retire_info_i[1].w_valid),(c_retire_info_i[0].w_valid)} & 
+              {(|c_retire_info_i[1].arf_id),(|c_retire_info_i[0].arf_id)};
 
 assign c_warid = {c_retire_info_i[1].arf_id, c_retire_info_i[0].arf_id};
 
@@ -180,15 +179,17 @@ for (genvar i = 0; i < 4; i++) begin
 end
 
 wire ready = r_p_sender.ready;
+r_p_pkg_t r_p_pkg_q;
+assign r_p_pkg_o = r_p_pkg_q;
 
 always_ff @(posedge clk) begin
     if (!rst_n || c_flush_i) begin
-        r_p_pkg_o <= '0;
+        r_p_pkg_q <= '0;
     end else begin
         if (r_p_sender.valid & r_p_sender.ready) begin
-            r_p_pkg_o <= r_p_pkg_temp;
+            r_p_pkg_q <= r_p_pkg_temp;
         end else begin
-            r_p_pkg_o <= r_p_pkg_o;
+            r_p_pkg_q <= r_p_pkg_q;
         end
     end
 end
@@ -197,9 +198,13 @@ always_comb begin
     r_p_pkg_temp.areg      = d_r_pkg_i.arf_table.w_arfid;
     r_p_pkg_temp.preg      = r_wrobid;
     r_p_pkg_temp.src_preg  = r_rrobid; 
+    r_p_pkg_temp.reg_need  = d_r_pkg_i.reg_need;
     r_p_pkg_temp.arf_data  = r_arf_data;
     r_p_pkg_temp.pc        = d_r_pkg_i.pc;
-    r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid;
+    `ifdef _DIFFTEST
+    r_p_pkg_temp.instr     = d_r_pkg_i.instr;
+    `endif
+    r_p_pkg_temp.r_valid   = d_r_pkg_i.r_valid & {d_r_receiver.valid, d_r_receiver.valid} & {r_p_sender.ready, r_p_sender.ready} & {2{rob_available_q}};
     r_p_pkg_temp.w_reg     = d_r_pkg_i.w_reg;
     r_p_pkg_temp.w_mem     = d_r_pkg_i.w_mem;
     r_p_pkg_temp.check     = {r_rename_new[1].check, r_rename_new[0].check};
@@ -255,8 +260,13 @@ always_comb begin
     r_p_pkg_temp.csr_num        = d_r_pkg_i.csr_num;
     r_p_pkg_temp.inst_4_0       = d_r_pkg_i.inst_4_0;
     r_p_pkg_temp.decode_err     = d_r_pkg_i.decode_err;
+
+    // branch
     r_p_pkg_temp.is_branch      = d_r_pkg_i.is_branch;
     r_p_pkg_temp.br_type        = d_r_pkg_i.br_type;
+    r_p_pkg_temp.jirl_as_call   = d_r_pkg_i.jirl_as_call;
+    r_p_pkg_temp.jirl_as_normal = d_r_pkg_i.jirl_as_normal;
+    r_p_pkg_temp.jirl_as_ret    = d_r_pkg_i.jirl_as_ret;
 
     r_p_pkg_temp.fetch_exc_info = d_r_pkg_i.fetch_exc_info;
 end

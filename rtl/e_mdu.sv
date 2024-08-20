@@ -52,18 +52,22 @@ mdu_diver diver(
     .ready_i(ready_i)
 );
 
-assign mul_valid_i = valid_i & (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
-assign div_valid_i = valid_i & ~(req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
+logic [2:0] op_q;
+logic is_wait;
 
-assign res_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
+assign mul_valid_i = valid_i & ready_o &
+                    (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
+assign div_valid_i = valid_i & ready_o &
+                    ~(req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU);
+
+assign res_o = (op_q == `_MDU_MUL || op_q == `_MDU_MULH || op_q == `_MDU_MULHU) ?
                 mul_res_o : div_res_o;
 
 assign data_s_o = data_s;
 
-assign ready_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
-                mul_ready_o : div_ready_o;
+assign ready_o = (~is_wait) & ready_i;
 
-assign valid_o = (req_i.op == `_MDU_MUL || req_i.op == `_MDU_MULH || req_i.op == `_MDU_MULHU) ?
+assign valid_o = (op_q == `_MDU_MUL || op_q == `_MDU_MULH || op_q == `_MDU_MULHU) ?
                 mul_valid_o : div_valid_o;
 
 decode_info_t di_q;
@@ -80,6 +84,42 @@ always_ff @(posedge clk) begin
     else begin
         di_q <= di_q;
         data_s <= data_s;
+    end
+end
+
+always_ff @(posedge clk) begin
+    if(~rst_n || flush) begin
+        op_q <= '0;
+    end
+    else if(ready_o) begin
+        op_q <= req_i.op;
+    end
+    else begin
+        op_q <= op_q;
+    end
+end
+
+always_ff @(posedge clk) begin
+    if(~rst_n || flush) begin
+        is_wait <= '0;
+    end
+    else begin
+        if(is_wait) begin
+            if(valid_o) begin
+                is_wait <= 0;
+            end
+            else begin
+                is_wait <= is_wait;
+            end
+        end
+        else begin
+            if(valid_i) begin
+                is_wait <= '1;
+            end
+            else begin
+                is_wait <= '0;
+            end
+        end
     end
 end
 

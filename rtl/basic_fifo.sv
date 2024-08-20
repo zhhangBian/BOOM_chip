@@ -1,7 +1,11 @@
 // 这是一个通用FIFO模块
 `include "a_defines.svh"
 
+`ifdef _MEGA_SOC
+module my_fifo #(
+`else
 module fifo #(
+`endif
     parameter int unsigned DATA_WIDTH = 32,
     parameter int unsigned DEPTH = 32,
     parameter int unsigned ADDR_DEPTH = (DEPTH > 1) ? $clog2(DEPTH) : 1,
@@ -80,7 +84,10 @@ end
 assign  data_out  =  ((cnt_q == 0 && push) || (cnt_q == 1 && push && pop)) ? receiver.data : data[rptr];
 // write
 always_ff @(posedge clk) begin
-    if (rst_n & push) begin
+    if (~rst_n) begin
+        data <= '0;
+    end
+    else if (rst_n & push) begin
         data[wptr_q] <= receiver.data;
     end
 end

@@ -69,10 +69,10 @@ always_ff @(posedge clk) begin
 end
 
 // comb
-assign tail_ptr0 = tail_ptr0_q + commit_req[0] + commit_req[1];
-assign tail_ptr1 = tail_ptr1_q + commit_req[0] + commit_req[1];
+assign tail_ptr0 = tail_ptr0_q + (commit_req[0] & commit_valid[0]) + (commit_req[1] & commit_valid[1]);
+assign tail_ptr1 = tail_ptr1_q + (commit_req[0] & commit_valid[0]) + (commit_req[1] & commit_valid[1]);
 assign dispatch_valid = {dispatch_info_i[1].issue, dispatch_info_i[0].issue};
-assign rob_cnt = rob_cnt_q + dispatch_valid[1] + dispatch_valid[0] - commit_req[1] - commit_req[0];
+assign rob_cnt = rob_cnt_q + dispatch_valid[1] + dispatch_valid[0] - ((commit_req[0] & commit_valid[0]) + (commit_req[1] & commit_valid[1]));
 
 
 
@@ -88,6 +88,9 @@ always_comb begin
     for (integer i = 0; i < 2; i++) begin
         dispatch_inst_i[i].areg  = dispatch_info_i[i].areg;
         dispatch_inst_i[i].preg  = dispatch_info_i[i].preg;
+        `ifdef _DIFFTEST
+        dispatch_inst_i[i].instr    = dispatch_info_i[i].instr;
+        `endif
         dispatch_inst_i[i].pc    = dispatch_info_i[i].pc;
         dispatch_inst_i[i].w_reg = dispatch_info_i[i].w_reg;
         dispatch_inst_i[i].w_mem = dispatch_info_i[i].w_mem;
@@ -133,8 +136,13 @@ always_comb begin
         dispatch_inst_i[i].csr_num      = dispatch_info_i[i].csr_num;
         dispatch_inst_i[i].inst_4_0     = dispatch_info_i[i].inst_4_0 ;
         dispatch_inst_i[i].decode_err   = dispatch_info_i[i].decode_err ;
+
+        // branch
         dispatch_inst_i[i].is_branch    = dispatch_info_i[i].is_branch ;
         dispatch_inst_i[i].br_type      = dispatch_info_i[i].br_type ;
+        dispatch_inst_i[i].jirl_as_call = dispatch_info_i[i].jirl_as_call;
+        dispatch_inst_i[i].jirl_as_normal = dispatch_info_i[i].jirl_as_normal;
+        dispatch_inst_i[i].jirl_as_ret = dispatch_info_i[i].jirl_as_ret;
 
         dispatch_preg_i[i]       = dispatch_info_i[i].preg;
         dispatch_issue_i[i]      = dispatch_info_i[i].issue;
@@ -150,12 +158,15 @@ always_comb begin
         commit_info_o[i].w_reg  = commit_inst_o[i].w_reg;
         commit_info_o[i].w_mem  = commit_inst_o[i].w_mem;
 
-        commit_info_o[i].c_valid  = commit_inst_o[i].r_valid; // TODO
+        // commit_info_o[i].c_valid  = commit_inst_o[i].r_valid; // TODO
 
+        `ifdef _DIFFTEST
+        commit_info_o[i].instr = commit_inst_o[i].instr;
+        `endif
         commit_info_o[i].pc = commit_inst_o[i].pc;
 
-        commit_info_o[i].data_rk = commit_data_o[i].s_data[0];
-        commit_info_o[i].data_rj = commit_data_o[i].s_data[1];
+        commit_info_o[i].data_rj = commit_data_o[i].s_data[0];
+        commit_info_o[i].data_rk = commit_data_o[i].s_data[1];
         commit_info_o[i].data_imm = commit_inst_o[i].addr_imm;
 
         commit_info_o[i].first_commit = '0;
@@ -171,6 +182,7 @@ always_comb begin
         commit_info_o[i].is_cache_fix = commit_inst_o[i].cacop_inst;
         commit_info_o[i].cache_code = commit_inst_o[i].inst_4_0;
         commit_info_o[i].is_tlb_fix = commit_inst_o[i].tlb_inst;
+        commit_info_o[i].lsu_inst = commit_inst_o[i].lsu_type;
 
         commit_info_o[i].flush_inst = commit_inst_o[i].flush_inst;
 
@@ -198,12 +210,18 @@ always_comb begin
 
         commit_info_o[i].tlb_op = commit_inst_o[i].inst_4_0;
 
+        commit_info_o[i].single_load  = commit_data_o[i].single_load;
+        commit_info_o[i].single_store = commit_data_o[i].single_store; 
+
         // 分支预测信息
         commit_info_o[i].is_branch = commit_inst_o[i].is_branch;
         commit_info_o[i].predict_info = commit_inst_o[i].predict_info;
         commit_info_o[i].branch_info.br_type = commit_inst_o[i].br_type;
         commit_info_o[i].branch_info.is_branch = commit_inst_o[i].is_branch;
         commit_info_o[i].branch_info.target_pc = '0; // TODO: branch_info 似乎不需要 target 域
+        commit_info_o[i].jirl_as_call = commit_inst_o[i].jirl_as_call;
+        commit_info_o[i].jirl_as_normal = commit_inst_o[i].jirl_as_normal;
+        commit_info_o[i].jirl_as_ret = commit_inst_o[i].jirl_as_ret;
         end
 end
 
@@ -252,6 +270,8 @@ always_comb begin
         cdb_data_i[i].w_valid   = cdb_info_i[i].w_valid;
         cdb_data_i[i].ctrl      = cdb_info_i[i].ctrl;
         cdb_data_i[i].lsu_info  = cdb_info_i[i].lsu_info;
+        cdb_data_i[i].single_load = cdb_info_i[i].single_load;
+        cdb_data_i[i].single_store = cdb_info_i[i].single_store;
         // C级
         commit_info_o[i].w_data = commit_data_o[i].data;
     end
@@ -285,12 +305,26 @@ logic [1 : 0]           commit_complete_cdb_o;
 logic [1 : 0][1 : 0]    rob_dispatch_complete_cdb_o;
 logic [1 : 0]           cdb_in_complete_o;      // 写的两项对应的结果
 
+
+// global_valid & inglobal_valid logic
+logic [63 : 0]  global_valid;
+always_ff @(posedge clk) begin
+    if (!rst_n || flush_i) begin
+        global_valid <= '0;
+    end else begin
+        global_valid[tail_ptr0_q] <= !commit_req[0];
+        global_valid[tail_ptr1_q] <= !commit_req[1];
+        global_valid[dispatch_preg_i[0]] <= dispatch_issue_i[0];
+        global_valid[dispatch_preg_i[1]] <= dispatch_issue_i[1];
+    end
+end
+
 always_comb begin
     for (integer i = 0 ; i < 2; i++) begin
         rob_dispatch_o[i].rob_complete = (rob_dispatch_complete_p_o[i] ^ rob_dispatch_complete_cdb_o[i]); //debug
     end
-    commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0);
-    commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1);
+    commit_info_o[0].c_valid = (commit_complete_p_o[0] ^ commit_complete_cdb_o[0]) & (rob_cnt_q > 0); //& global_valid[tail_ptr0_q];
+    commit_info_o[1].c_valid = (commit_complete_p_o[1] ^ commit_complete_cdb_o[1]) & (rob_cnt_q > 1); //& global_valid[tail_ptr1_q];
     commit_valid[0] = commit_info_o[0].c_valid;
     commit_valid[1] = commit_info_o[1].c_valid;
 end
@@ -302,7 +336,7 @@ registers_file_banked # (
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
-    .NEED_RESET(0)
+    .NEED_RESET(1)
 ) dispatch_valid_table (
     .clk,
     .rst_n(rst_n & !flush_i),
@@ -322,7 +356,7 @@ registers_file_banked # (
     .R_PORT_COUNT(8),
     .W_PORT_COUNT(2),
     .REGISTERS_FILE_TYPE(2),
-    .NEED_RESET(0)
+    .NEED_RESET(1)
 ) cdb_valid_table (
     .clk,
     .rst_n(rst_n & !flush_i),
@@ -333,6 +367,8 @@ registers_file_banked # (
     .we_i(cdb_valid_i),
     .wdata_i(~cdb_in_complete_o)
 );
+
+
 
 
 endmodule

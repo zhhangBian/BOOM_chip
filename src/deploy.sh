@@ -1,32 +1,42 @@
 #!/bin/bash
 
-src=$(find ./rtl -name "*sv*")
+src=$(find ../rtl -name "*.sv*")
 
-if [ $1=="chiplab" ] 
+if [[ $1 == "chiplab" ]]
 then
-	if [ -z ${CHIPLAB_HOME}  ]
+	echo "delpoying to $CHIPLAB_HOME/myCPU"
+	if test -z $CHIPLAB_HOME
 	then
-		echo "variable CHIPLAB_HOME not set"
+		echo "CHIPLAB_HOME not set"
 	else
-		mkdir ${CHIPLAB_HOME}/IP/myCPU &> /dev/null
+		mkdir -p ${CHIPLAB_HOME}/IP/myCPU
 		rm -rf ${CHIPLAB_HOME}/IP/myCPU/*
 		for f in $src
-		do
+		do	
+			echo "cp $f ${CHIPLAB_HOME}/IP/myCPU/"
 			cp $f ${CHIPLAB_HOME}/IP/myCPU/
 		done
 	fi
-elif [ $1=="nscscc" ]
+elif [[ $1 == "nscscc" ]]
 then
-	if [ -z ${NSCSCC_HOME}  ]
+	echo "delpoying to $NSCSCC_HOME/BOOM"
+	if test -z $NSCSCC_HOME
 	then
-		echo "variable NSCSCC_HOME not set"
+		echo "NSCSCC_HOME not set"
 	else
-		mkdir ${NSCSCC}/IP/myCPU &> /dev/null
-		rm -rf ${NSCSCC}/IP/myCPU/*
+		mkdir -p ${NSCSCC_HOME}/BOOM
+		rm -rf ${NSCSCC_HOME}/BOOM/*
 		for f in $src
-		do
-			cp $f ${NSCSCC}/IP/myCPU/
+		do	
+			echo "cp $f ${NSCSC_HOME}/BOOM/"
+			cp $f ${NSCSCC_HOME}/BOOM/
 		done
 	fi
+else 
+	mkdir -p ${BOOM}/BOOM
+	rm -rf ${BOOM}/BOOM/*
+	for f in $src
+	do	
+		cp $f ${BOOM}/BOOM/
+	done
 fi
-

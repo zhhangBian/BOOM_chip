@@ -287,12 +287,14 @@ data_wkup #(
 
 // ------------------------------------------------------------------
 // 创建IQ相联的部件
-word_t e_alu_result, e_alu_result_q;
+word_t e_alu_result;
+ reg [31:0] e_alu_result_q;
 
 e_alu alu(
     .r0_i(real_data[0]),
     .r1_i(real_data[1]),
     .pc_i(select_di_q.pc),
+    .imm_i(select_di_q.imm),
 
     .grand_op_i(select_di_q.grand_op),
     .op_i(select_di_q.op),
@@ -321,6 +323,7 @@ always_comb begin
     wkup_data_o = e_alu_result_q;
     excute_valid_o = excute_valid_qq;
     
+    result_o         = '0;
     result_o.w_data  = result_q;
     result_o.s_data  = real_data_q;
     result_o.rob_id  = select_di_qq.wreg_id;

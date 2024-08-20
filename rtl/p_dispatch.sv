@@ -36,7 +36,10 @@ always_comb begin
         dispatch_rob_o[i].preg      = r_p_pkg.preg[i];
         dispatch_rob_o[i].src_preg  = {r_p_pkg.src_preg[i * 2 + 1],r_p_pkg.src_preg[i * 2]};
         dispatch_rob_o[i].pc        = r_p_pkg.pc[i];
-        dispatch_rob_o[i].issue     = r_p_pkg.r_valid[i] & r_p_receiver.ready;
+        `ifdef _DIFFTEST
+        dispatch_rob_o[i].instr        = r_p_pkg.instr[i];
+        `endif
+        dispatch_rob_o[i].issue     = r_p_pkg.r_valid[i] & r_p_receiver.ready & {2{!flush_i}};
         dispatch_rob_o[i].w_reg     = r_p_pkg.w_reg[i];
         dispatch_rob_o[i].w_mem     = r_p_pkg.w_mem[i];
         dispatch_rob_o[i].check     = r_p_pkg.check[i];
@@ -81,8 +84,13 @@ always_comb begin
         dispatch_rob_o[i].csr_num = r_p_pkg.csr_num[i];
         dispatch_rob_o[i].inst_4_0  = r_p_pkg.inst_4_0[i];
         dispatch_rob_o[i].decode_err = r_p_pkg.decode_err[i];
+
+        // branch
         dispatch_rob_o[i].is_branch = r_p_pkg.is_branch[i];
         dispatch_rob_o[i].br_type = r_p_pkg.br_type[i];
+        dispatch_rob_o[i].jirl_as_call = r_p_pkg.jirl_as_call[i];
+        dispatch_rob_o[i].jirl_as_normal = r_p_pkg.jirl_as_normal[i];
+        dispatch_rob_o[i].jirl_as_ret = r_p_pkg.jirl_as_ret[i];
     end
 end
 
@@ -125,6 +133,8 @@ always_comb begin
         sel_data[i] = r_p_pkg.data_valid[i] ? gen_data[i] : rob_data[i];
         data_valid[i] = cdb_data_hit[i] | r_p_pkg.data_valid[i] | rob_data_hit[i];
     end
+    data_valid[2] &= !(r_p_pkg.src_preg[2] == r_p_pkg.preg[0] && r_p_pkg.w_reg[0] && r_p_pkg.r_valid[0]) || !r_p_pkg.reg_need[2] || r_p_pkg.data_valid[2];
+    data_valid[3] &= !(r_p_pkg.src_preg[3] == r_p_pkg.preg[0] && r_p_pkg.w_reg[0] && r_p_pkg.r_valid[0]) || !r_p_pkg.reg_need[3] || r_p_pkg.data_valid[3];
 end
 
 
@@ -164,12 +174,6 @@ end
 // 1 0 :
 // 1 1 : 
 // 0 0 :
-
-assign p_alu_sender_0.valid = '1;
-assign p_alu_sender_1.valid = '1;
-assign p_mdu_sender.valid   = '1;
-assign p_lsu_sender.valid   = '1;
-
 
 p_i_pkg_t [3 : 0] p_i_pkg; // 对应四个发射队列：[3:0]对应lsu,mdu,alu1,alu0
 // p_i_pkg_t [3 : 0] p_i_pkg_q; // 握手缓存 /* 2024/07/24 fix*/
@@ -213,6 +217,9 @@ for (genvar i = 0; i < 2; i=i+1) begin
 
     assign p_di[i].msigned = r_p_pkg.msigned[i];
     assign p_di[i].msize = r_p_pkg.msize[i];
+
+    assign p_di[i].is_cacop   = r_p_pkg.cacop_inst[i];
+    assign p_di[i].cache_code = r_p_pkg.inst_4_0[i];
 
     assign p_di[i].inst_valid = r_p_pkg.r_valid[i];
     assign p_di[i].fetch_exc_info = r_p_pkg.fetch_exc_info;

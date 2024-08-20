@@ -20,6 +20,7 @@ function logic [31:0] inst_to_addr_imm (input logic[31:0] inst, input addr_imm_t
         `_ADDR_IMM_S12: ret =  {{20{inst[21]}}, inst[21:10]}; // 仅用于store/load指令，低位不补零;
         `_ADDR_IMM_S14: ret =  {{16{inst[23]}}, inst[23:10], 2'b0}; // 仅用于原子访存指令，低位补两个0;
         `_ADDR_IMM_S16: ret =  {{14{inst[25]}}, inst[25:10], 2'b0}; // 仅用于计算分支offset，低位补两个0;
+        `_ADDR_IMM_S11: ret =  {{21{inst[25]}}, inst[25:15]}; // RRIWINZ
         // _ADDR_IMM_S21:  // 仅用于浮点分支指令使用，也就是暂时不使用
         // `_ADDR_IMM_S26:
         default:        ret =  {{4 {inst[ 9]}}, inst[ 9:0 ], inst[25:10], 2'b0};
@@ -44,7 +45,7 @@ logic [1:0][31:0]   insts_i;
 d_r_pkg_t           d_r_pkg;
 d_decode_info_t decode_infos [1:0];
 
-assign mask = receiver.data.mask;
+assign mask = receiver.data.mask & {sender.ready, sender.ready} & {receiver.valid, receiver.valid};
 assign pc = {receiver.data.pc | 32'h00000004, receiver.data.pc};
 assign insts_i = receiver.data.insts;
 
@@ -64,6 +65,9 @@ end
 // d_r_pkg 逻辑
 assign d_r_pkg.r_valid = mask;
 assign d_r_pkg.pc = pc;
+`ifdef _DIFFTEST
+assign d_r_pkg.instr = insts_i;
+`endif
 // 2024/07/22 ADD
 assign d_r_pkg.predict_infos = receiver.data.predict_infos;
 assign d_r_pkg.fetch_exc_info = receiver.data.fetch_exc_info;
@@ -175,6 +179,11 @@ for (genvar i = 0; i < 2; i=i+1) begin
     assign d_r_pkg.csr_num[i] = decode_infos[i].inst[23:10];
     assign d_r_pkg.inst_4_0[i] = decode_infos[i].inst[4:0];
     assign d_r_pkg.decode_err[i] = decode_infos[i].decode_err;
+
+    // branch
+    assign d_r_pkg.jirl_as_call[i] = decode_infos[i].jirl_as_call;
+    assign d_r_pkg.jirl_as_ret[i] = decode_infos[i].jirl_as_ret;
+    assign d_r_pkg.jirl_as_normal[i] = decode_infos[i].jirl_as_normal;
     assign d_r_pkg.is_branch[i] = decode_infos[i].jump_inst;
     assign d_r_pkg.br_type[i] = decode_infos[i].br_type;
 end

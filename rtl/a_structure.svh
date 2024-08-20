@@ -13,8 +13,8 @@ typedef enum logic[1:0] {
 typedef struct packed {
     logic [31:0]                    target_pc; // 跳转到的目标 PC 
     logic [31:0]                    next_pc;
-    logic                           is_branch;
     br_type_t                       br_type;
+    logic                           is_branch;
     logic                           taken;
     logic [ 1:0]                    scnt;
     logic                           need_update;
@@ -29,6 +29,9 @@ typedef struct packed {
     logic           type_miss; // TODO:类型预测错误，说明一定这条指令一定不在表中，全部更新 TODO: 暂时可能用不上
     logic           taken; // 是否跳转
     logic           is_branch;
+    logic           jirl_as_call;
+    logic           jirl_as_normal;
+    logic           jirl_as_ret;
     br_type_t       branch_type; // 分支类型，用于更新 BTB
     logic           update; // 如果这条指令是分支或者预测成了分支，就要置 1 。
     logic  [31:0]   target_pc; // 正确的跳转地址，用于更新 BTB
@@ -37,19 +40,18 @@ typedef struct packed {
 } correct_info_t;
 
 typedef struct packed {
-    logic                           is_branch;
-    logic  [`BPU_TAG_LEN-1 : 0]     tag;
-    logic  [31:0]                   target_pc;
-    br_type_t                       br_type;
+    logic  [`BPU_TAG_LEN-1 : 0] tag;
+    logic  [31:0]               target_pc;
+    br_type_t                   branch_type; // 强行和后端适配
+    logic                       is_call;
+    logic                       is_ret;
+    logic                       is_uncond_branch;
+    logic                       is_normal_branch;
+    // logic                       is_branch; // 放在 valid_ram 中，需要复位
 } bpu_btb_entry_t;
 
-typedef struct packed {
-    logic  [`BPU_HISTORY_LEN-1 : 0]  history;
-} bpu_bht_entry_t;
-
-typedef struct packed {
-    logic  [1:0]    scnt;
-} bpu_pht_entry_t;
+typedef logic [`BPU_HISTORY_LEN-1 : 0]  bpu_bht_entry_t;
+typedef logic [1:0] bpu_pht_entry_t;
 
 /* ============================== Decoder ==============================*/
 typedef logic [0 : 0] ertn_inst_t;
@@ -88,7 +90,7 @@ typedef logic [2 : 0] reg_type_r0_t;
 typedef logic [2 : 0] reg_type_r1_t;
 typedef logic [1 : 0] reg_type_w_t;
 typedef logic [2 : 0] imm_type_t;
-typedef logic [1 : 0] addr_imm_type_t;
+typedef logic [2 : 0] addr_imm_type_t;
 typedef logic [0 : 0] slot0_t;
 typedef logic [0 : 0] refetch_t;
 typedef logic [0 : 0] need_fa_t;
@@ -134,6 +136,9 @@ typedef struct packed {
     imm_type_t      imm_type; // 立即数类型 _IMM_...
     inst_t          inst; // 指令本身
     invtlb_inst_t   invtlb_inst; // 是否是invtlb指令
+    logic           jirl_as_call; // jirl 是否是 call 指令
+    logic           jirl_as_normal; // jirl 是否是 normal 类型
+    logic           jirl_as_ret; // jirl 是否是 ret 类型
     jump_inst_t     jump_inst; // 是否是跳转指令
     ll_inst_t       ll_inst; // 是否是原子访问指令
     lsu_inst_t      lsu_inst; // load, store, cacop, dbar指令
@@ -199,6 +204,9 @@ typedef struct packed {
 
 typedef struct packed {
     logic  [1 :0][31:0] pc ; // 指令地址
+    `ifdef _DIFFTEST
+    logic  [1:0][31:0]  instr;
+    `endif
     logic  [1 :0]  r_valid; // 前端发射出来的指令有效
     // ARF 与 源操作数 相关信号
     arf_table_t  arf_table; // 读写地址寄存器表
@@ -261,6 +269,10 @@ typedef struct packed {
     // branch
     logic        [1:0] is_branch;
     br_type_t    [1:0] br_type;
+    logic [1:0]     jirl_as_call;
+    logic [1:0]     jirl_as_normal;
+    logic [1:0]     jirl_as_ret;
+
     fetch_exc_info_t    fetch_exc_info;
 } d_r_pkg_t;
 
@@ -268,8 +280,12 @@ typedef struct packed {
     logic  [1 :0][`ARF_WIDTH - 1:0] areg;
     logic  [1 :0][`ROB_WIDTH - 1:0] preg;
     logic  [3 :0][`ROB_WIDTH - 1:0] src_preg;
+    logic  [3 :0]                   reg_need;
     logic  [3 :0][31:0] arf_data;
     logic  [1 :0][31:0] pc ; // 指令地址
+    `ifdef _DIFFTEST
+    logic  [1:0][31:0] instr;
+    `endif
     logic  [1 :0]       r_valid;
     logic  [1 :0]       w_reg;
     logic  [1 :0]       check;
@@ -330,6 +346,10 @@ typedef struct packed {
     // branch
     logic        [1:0] is_branch;
     br_type_t    [1:0] br_type;
+    logic [1:0]     jirl_as_call;
+    logic [1:0]     jirl_as_normal;
+    logic [1:0]     jirl_as_ret;
+    
     fetch_exc_info_t    fetch_exc_info;
 } r_p_pkg_t;
 
@@ -359,6 +379,9 @@ typedef struct packed {
     logic [`ROB_WIDTH - 1 : 0]                     preg;  // 物理寄存器
     logic [1              : 0][`ROB_WIDTH - 1 : 0] src_preg;  // 源寄存器对应的物理寄存器
     logic [31             : 0]                     pc;    // 指令地址
+    `ifdef _DIFFTEST
+    logic [31:0] instr;
+    `endif
     logic                                          issue; // 是否被分配到ROB valid
     logic                                          w_reg;
     logic                                          w_mem;
@@ -404,8 +427,13 @@ typedef struct packed {
     logic [13:0] csr_num;
     logic [ 4:0] inst_4_0;
     logic decode_err;
+
+    // branch
     logic is_branch;
     br_type_t br_type;
+    logic jirl_as_call;
+    logic jirl_as_normal;
+    logic jirl_as_ret;
 } dispatch_rob_pkg_t;
 
 typedef struct packed {
@@ -427,6 +455,9 @@ typedef struct packed {
     logic           hit;        // 是否命中，总判断
     logic   [1 :0]  tag_hit;    // tag是否命中
     logic   [5 :0]  wid;        // 写回地址
+    `ifdef _DIFFTEST
+    logic   [31:0]  vaddr;
+    `endif
     logic   [31:0]  paddr;      // 物理地址
     logic   [31:0]  rdata;      // 读出的数据结果
     tlb_exception_t tlb_exception; // TLB异常
@@ -434,6 +465,7 @@ typedef struct packed {
     logic           dirty;      // 是否需要写回
     logic           hit_dirty;  // 是否命中dirty位
     logic   [31:0]  cache_dirty_addr;
+    logic   [31:0]  cacop_addr;
     // TODO cache_dirty_addr
     logic           cacop_dirty;// 专门为cacop直接地址映射准备的dirty位
     execute_exc_info_t execute_exc_info;
@@ -445,7 +477,7 @@ typedef struct packed {
 
     // 在CSR指令中复用为rd寄存器的值
     logic   [31: 0] w_data;
-    logic   [1:0][31: 0] s_data;
+    word_t  [1 : 0] s_data ;
     logic   [4 : 0] arf_id;
     logic   [`ROB_WIDTH - 1 :0] rob_id;
     logic   w_reg;
@@ -454,6 +486,9 @@ typedef struct packed {
     logic   c_valid;
 
     logic   [31:0]  pc;
+    `ifdef _DIFFTEST
+    logic   [31:0]  instr;
+    `endif
     logic   [31:0]  data_rk;
     logic   [31:0]  data_rj;
     logic   [31:0]  data_imm;
@@ -471,6 +506,7 @@ typedef struct packed {
     logic   is_cache_fix;
     logic   [4:0]   cache_code;
     logic   is_tlb_fix;
+    logic   lsu_inst;
 
     logic   flush_inst;
 
@@ -498,10 +534,17 @@ typedef struct packed {
 
     logic   [4:0]   tlb_op;
 
+    // 访存单提交维护
+    logic   single_store; // store指令的单提交
+    logic   single_load;  // load指令的单提交
+
     // 分支预测信息
     logic   is_branch;
     predict_info_t  predict_info;
     branch_info_t   branch_info;
+    logic jirl_as_call;
+    logic jirl_as_normal;
+    logic jirl_as_ret;
 } rob_commit_pkg_t;
 
 typedef struct packed {
@@ -530,6 +573,8 @@ typedef struct packed {
     logic                      w_valid;  // valid
     rob_ctrl_entry_t           ctrl;
     lsu_iq_pkg_t               lsu_info;
+    logic                      single_load;
+    logic                      single_store;
 } cdb_rob_pkg_t;
 
 typedef struct packed {
@@ -547,6 +592,10 @@ typedef struct packed {
     // predict_info_t predict_info; // predict_info is in rob
     lsu_iq_pkg_t lsu_info;
     rob_ctrl_entry_t ctrl;
+    
+    logic single_load;
+    logic single_store;
+
 } cdb_info_t;
 
 /**********************rob pkg**********************/
@@ -554,6 +603,9 @@ typedef struct packed {
 // 指令信息表项
 typedef struct packed {
     logic [31: 0] pc;
+    `ifdef _DIFFTEST
+    logic   [31:0]  instr;
+    `endif
     // ARF 相关
     logic [4 : 0] areg;
     logic [5 : 0] preg;
@@ -609,6 +661,9 @@ typedef struct packed {
     // branch
     logic is_branch;
     br_type_t br_type;
+    logic jirl_as_call;
+    logic jirl_as_normal;
+    logic jirl_as_ret;
 } rob_inst_entry_t;
 
 // 有效信息表项
@@ -624,6 +679,8 @@ typedef struct packed {
     logic                    w_valid;  // valid
     rob_ctrl_entry_t         ctrl;
     lsu_iq_pkg_t               lsu_info;
+    logic                    single_load;
+    logic                    single_store;
 } rob_data_entry_t;
 
 /**********************dispatch  to  execute  pkg******************/
@@ -644,7 +701,10 @@ typedef struct packed {
     // logic   dbar;
     // logic   llsc;
     logic   msigned;
-    logic   msize;
+    logic   [1:0] msize;
+
+    logic         is_cacop;
+    logic   [4:0] cache_code;
 
     logic   inst_valid; 
 
@@ -697,6 +757,8 @@ typedef struct packed {
     logic [31:0] wdata;     // 写数据
     logic [3 :0] rmask;     // 读掩码
     logic [3 :0] strb ;     // 写掩码
+    logic        is_cacop;
+    logic [4 :0] cache_code;// cacop_code    
 } iq_lsu_pkg_t;
 
 typedef struct packed {
@@ -734,7 +796,8 @@ typedef struct packed {
     // Data SRAM向commit级发送读结果
     logic   [31:0]  data;       // 返回的数据
     logic   [31:0]  data_other; // 返回的另一路数据，默认当返回两路数据的时候，data为0路，data_other为1路
-} cache_commit_resp_t;
+    logic           miss_dirty;
+  } cache_commit_resp_t;
 
 // commit与Icache的交互反馈
 typedef struct packed {
@@ -746,10 +809,12 @@ typedef struct packed {
 typedef struct packed {
     logic   [31:0]  raddr;
     logic   [7:0]   rlen;
+    logic   [2:0]   rsize;
 
     logic   [31:0]  waddr;
     logic   [31:0]  wdata;
     logic   [7:0]   wlen;
+    logic   [2:0]   wsize;
 
     logic   [3:0]   strb;
     logic   [3:0]   rmask;
@@ -763,5 +828,11 @@ typedef struct packed {
     logic   [31:0]  addr;
     logic   [1:0]   cache_op;
 } commit_icache_req_t;
+
+/*****************************/
+typedef struct packed {
+    decode_info_t di;
+    iq_lsu_pkg_t  iq_lsu;
+} iq_dcache_pkg_t;
 
 `endif

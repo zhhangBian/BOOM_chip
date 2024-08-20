@@ -4,8 +4,9 @@ module dcache #(
     // Cache 规格设置
     parameter int unsigned WAY_NUM = 2,
     parameter int unsigned WORD_SIZE = 32,
-    parameter int unsigned DATA_DEPTH = 256,
-    parameter int unsigned BLOCK_SIZE = 4 * 32, //4个字
+    parameter int unsigned CACHE_BLOCK_LEN = 8,
+    parameter int unsigned DATA_DEPTH = 1024 / CACHE_BLOCK_LEN,
+    parameter int unsigned BLOCK_SIZE = CACHE_BLOCK_LEN * 32, // len个字
     parameter int unsigned SB_SIZE = 4,
     parameter int unsigned TAG_ADDR_LOW = 12 - $clog2(DATA_DEPTH),
     parameter int unsigned DATA_ADDR_LOW = $clog2(WORD_SIZE / 8)
@@ -18,6 +19,12 @@ module dcache #(
     // cpu侧信号
     handshake_if.receiver cpu_lsu_receiver,
     handshake_if.sender   lsu_cpu_sender,
+    // 0801
+    input  decode_info_t   iq_lsu_di_i, // 指令信息
+    output decode_info_t   lsu_iq_di_o, // 指令信息
+    // wkup信号，valid和reg_id,data在iq中发出
+    output logic           wkup_valid_o,
+    output logic [5:0]     wkup_reg_id_o,
     // commit级信号
     input logic              stall_i, // 全局stall信号
     input commit_cache_req_t commit_cache_req,
@@ -33,9 +40,15 @@ always_ff @(posedge clk) begin
     stall_q <= stall;
 end
 
+// handshake
+logic  flush_q;
+always_ff @(posedge clk) begin
+    flush_q <= flush_i;
+end
+
 logic valid_q;
 always_ff @(posedge clk) begin
-    valid_q <= cpu_lsu_receiver.valid;
+    valid_q <= cpu_lsu_receiver.valid & !stall & cpu_lsu_receiver.ready;
 end
 
 // commit 传入请求
@@ -59,7 +72,7 @@ trans_result_t trans_result;
 tlb_exception_t tlb_exception;
 // mmu结果 TODO
 mmu #(
-    .TLB_ENTRY_NUM(64),
+    .TLB_ENTRY_NUM(`_TLB_ENTRY_NUM),
     .TLB_SWITCH_OFF(0)
 ) mmu_ins (
     .clk(clk),
@@ -72,6 +85,14 @@ mmu #(
     .trans_result_o(trans_result),
     .tlb_exception_o(tlb_exception)
 );
+
+`ifdef _DIFFTEST
+logic [31:0] va_diff;
+always_ff @(posedge clk) begin
+    va_diff <= iq_lsu_pkg.vaddr;
+end
+`endif
+
 logic [31 : 0] paddr; // 假设从mmu打一拍传来的paddr
 logic [19 : 0] ppn;
 logic          uncache;
@@ -122,10 +143,18 @@ end
 
 
 /**********************M1 数据传输**********************/
+// 0801 begin
+decode_info_t m1_iq_lsu_di;
+// 0801 end
 iq_lsu_pkg_t m1_iq_lsu_pkg;
 always_ff @(posedge clk) begin
     m1_iq_lsu_pkg <= iq_lsu_pkg;
+    m1_iq_lsu_di  <= iq_lsu_di_i;
 end
+// 0801 begin
+assign wkup_valid_o = valid_q & !stall_q & !flush_i & !flush_q & m1_iq_lsu_di.wreg;
+assign wkup_reg_id_o = m1_iq_lsu_di.wreg_id; 
+// 0801 end 
 
 // DATA SRAM
 logic [WAY_NUM - 1 : 0][WORD_SIZE - 1 : 0] data_ans0, data_ans1;
@@ -170,9 +199,11 @@ logic          execute_exception;
 logic   [5:0]  exc_code_new;
 logic   [31:0] badv;
 logic          ade_exc;
-assign  ade_exc  = (m1_iq_lsu_pkg.msize == 3) ? |badv : (m1_iq_lsu_pkg.msize == 1) ? badv[1] : '0;
-assign  exc_code_new  =  ade_exc ? `_ECODE_ALE : tlb_exception.ecode;
-assign  execute_exception = ade_exc | (|tlb_exception.ecode);
+logic          not_exc;
+assign  not_exc  = m1_iq_lsu_pkg.is_cacop && ((m1_iq_lsu_pkg.cache_code[4:3] == 1) || (m1_iq_lsu_pkg.cache_code[4:3] == 0));
+assign  ade_exc  = (m1_iq_lsu_pkg.msize == 3) ? |badv[1:0] : (m1_iq_lsu_pkg.msize == 1) ? badv[0] : '0;
+assign  exc_code_new  =  not_exc ? '0 : (ade_exc & !(m1_iq_lsu_pkg.is_cacop & (m1_iq_lsu_pkg.cache_code[4:3] == 2))) ? `_ECODE_ALE : tlb_exception.ecode;
+assign  execute_exception = ~not_exc & ((ade_exc & !(m1_iq_lsu_pkg.is_cacop & (m1_iq_lsu_pkg.cache_code[4:3] == 2))) | (|tlb_exception.ecode));
 assign  badv     = m1_iq_lsu_pkg.vaddr;
 
 /**************************HIT DATA***************************/
@@ -186,8 +217,7 @@ sb_entry_t                   w_sb_entry, r_sb_entry;
 handshake_if #(.T(sb_entry_t)) sb_entry_receiver();
 handshake_if #(.T(sb_entry_t)) sb_entry_sender();
 
-// handshake
-assign sb_entry_receiver.valid = !flush_i & !stall_q & |m1_iq_lsu_pkg.strb & valid_q;
+assign sb_entry_receiver.valid = !flush_i & !stall_q & |m1_iq_lsu_pkg.strb & valid_q & !flush_q;
 assign sb_entry_receiver.data  = w_sb_entry;
 assign sb_entry_sender.ready   = commit_cache_req.fetch_sb;/* commit提交sw指令请求 */
 assign r_sb_entry              = sb_entry_sender.data;
@@ -215,7 +245,7 @@ always_comb begin
     tag_hit = '0;
     ram_tmp_data = '0;
     for (integer i = 0; i < WAY_NUM; i++) begin
-        if (tag_ans0[i].tag == ppn) begin
+        if ((tag_ans0[i].tag == ppn) & tag_ans0[i].v) begin
             tag_hit[i] |= '1;
             ram_tmp_data  = '0;
             ram_tmp_data |= data_ans0[i];
@@ -249,7 +279,7 @@ assign tmp_data[31:24] = sb_hit[3] ? sb_tmp_data[31:24] : ram_tmp_data[31:24];
 // SB WRITE DATA
 always_comb begin
     w_sb_entry.target_addr = paddr;
-    w_sb_entry.write_data  = m1_iq_lsu_pkg.wdata;
+    w_sb_entry.write_data  = lsu_iq_pkg.wdata;
     w_sb_entry.wstrb       = m1_iq_lsu_pkg.strb;
     w_sb_entry.valid       = '1;
     w_sb_entry.uncached    = uncache;/* MMU结果 */
@@ -261,31 +291,9 @@ assign lw_valid = ((m1_iq_lsu_pkg.rmask & byte_hit) == m1_iq_lsu_pkg.rmask);
 
 /***************************handshake***********************/
 assign cpu_lsu_receiver.ready = lsu_cpu_sender.ready & sb_entry_receiver.ready & !stall & !flush_i;
-assign lsu_cpu_sender.valid = valid_q & !stall_q & !flush_i;
+wire m1_valid = valid_q & !stall_q & !flush_i & !flush_q; //TODO
 
 lsu_iq_pkg_t lsu_iq_pkg;
-assign lsu_cpu_sender.data  = lsu_iq_pkg;
-logic  [31 : 0] lw_data;
-logic           sign;
-always_comb begin
-    lw_data = '0;
-    sign    = '0;
-    if (m1_iq_lsu_pkg.msize == 2'd0) begin
-        for (integer i = 0; i < 4; i++) begin
-            lw_data[7 : 0]     |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7 -: 8]    : '0;
-            sign               |= m1_iq_lsu_pkg.rmask[i] ? tmp_data[8 * i + 7]         : '0;
-        end
-        lw_data[31: 8]         |= {24{sign & m1_iq_lsu_pkg.msigned}};
-    end else if (m1_iq_lsu_pkg.msize == 2'd1) begin
-        for (integer i = 0; i < 2; i++) begin
-            lw_data[15: 0]     |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15 -: 16]    : '0;
-            sign               |= m1_iq_lsu_pkg.rmask[2*i] ? tmp_data[16 * i + 15]          : '0;
-        end
-        lw_data[31:16]         |= {16{sign & m1_iq_lsu_pkg.msigned}};
-    end else begin
-        lw_data                |= tmp_data;
-    end
-end
 // REFILL LOGIC
 logic [1:0] refill_way;
 always_ff @(posedge clk) begin
@@ -305,25 +313,88 @@ always_comb begin
     lsu_iq_pkg.hit      = (lw_valid & (|m1_iq_lsu_pkg.rmask)) | (|tag_hit);
     lsu_iq_pkg.wid      = m1_iq_lsu_pkg.wid;
     lsu_iq_pkg.paddr    = paddr;
-    lsu_iq_pkg.rdata    = lw_data; //组合逻辑有点长，后续考虑拆两级流水
+    `ifdef _DIFFTEST
+    lsu_iq_pkg.vaddr    = va_diff;
+    `endif
+    lsu_iq_pkg.rdata    = '0;//lw_data; //组合逻辑有点长，后续考虑拆两级流水
     lsu_iq_pkg.tlb_exception = tlb_exception;
     lsu_iq_pkg.refill   = refill_way;
     lsu_iq_pkg.cache_dirty_addr = refill_way[0] ? {tag_ans0[0].tag, paddr[11:0]} : {tag_ans0[1].tag, paddr[11:0]};
     lsu_iq_pkg.dirty    = refill_way[0] ? tag_ans0[0].d : tag_ans0[1].d;
     lsu_iq_pkg.tag_hit  = tag_hit;
     lsu_iq_pkg.cacop_dirty = paddr[0] ? tag_ans0[1].d : tag_ans0[0].d;
-    lsu_iq_pkg.hit_dirty   = tag_hit[0] ? tag_ans0[0].d : tag_ans0[1].d; 
-    lsu_iq_pkg.wdata       = m1_iq_lsu_pkg.wdata;
+    lsu_iq_pkg.hit_dirty   = tag_hit[0] ? tag_ans0[0].d : tag_ans0[1].d;
+    lsu_iq_pkg.cacop_addr  = paddr[0] ? {tag_ans0[1].tag, paddr[11:0]} : {tag_ans0[0].tag, paddr[11:0]};
+    lsu_iq_pkg.wdata       =    //uncache ? m1_iq_lsu_pkg.wdata :
+                                paddr[1:0] == 2'b00 ? m1_iq_lsu_pkg.wdata :
+                                paddr[1:0] == 2'b01 ? m1_iq_lsu_pkg.wdata << 8 :
+                                paddr[1:0] == 2'b10 ? m1_iq_lsu_pkg.wdata << 16:
+                                                      m1_iq_lsu_pkg.wdata << 24;
     lsu_iq_pkg.execute_exc_info.execute_exception  = execute_exception;          
     lsu_iq_pkg.execute_exc_info.exc_code           = exc_code_new; 
     lsu_iq_pkg.execute_exc_info.badv               = badv;
 end
+
+/***************************M2 LOGIC************************/
+
+// 0801 begin
+decode_info_t m2_iq_lsu_di;
+lsu_iq_pkg_t  m2_lsu_iq_pkg, lsu_iq_pkg_o;
+word_t        m2_tmp_data;
+iq_lsu_pkg_t  m2_iq_lsu_pkg;
+logic         m2_valid;
+always_ff @(posedge clk) begin
+    m2_lsu_iq_pkg <= lsu_iq_pkg;
+    m2_iq_lsu_di  <= m1_iq_lsu_di;
+    m2_tmp_data   <= tmp_data;
+    m2_iq_lsu_pkg <= m1_iq_lsu_pkg;
+    m2_valid      <= m1_valid;
+end
+
+logic  [31 : 0] lw_data;
+logic           sign;
+always_comb begin
+    lw_data = '0;
+    sign    = '0;
+    case(m2_iq_lsu_pkg.msize)
+        2'd0: begin
+            for (integer i = 0; i < 4; i++) begin
+                lw_data[7 : 0]     |= m2_iq_lsu_pkg.rmask[i] ? m2_tmp_data[(i << 3) + 7 -: 8]    : '0;
+                sign               |= m2_iq_lsu_pkg.rmask[i] ? m2_tmp_data[(i << 3) + 7]         : '0;
+            end
+            lw_data[31: 8]         |= {24{sign & m2_iq_lsu_pkg.msigned}};
+        end 
+        2'd1: begin
+            for (integer i = 0; i < 2; i++) begin
+                lw_data[15: 0]     |= m2_iq_lsu_pkg.rmask[2*i] ? m2_tmp_data[(i << 4) + 15 -: 16]    : '0;
+                sign               |= m2_iq_lsu_pkg.rmask[2*i] ? m2_tmp_data[(i << 4) * i + 15]          : '0;
+            end
+            lw_data[31:16]         |= {16{sign & m2_iq_lsu_pkg.msigned}};
+        end 
+        default: begin
+            lw_data                |= m2_tmp_data;
+        end
+    endcase
+end
+
+always_comb begin 
+    lsu_iq_pkg_o = m2_lsu_iq_pkg;
+    lsu_iq_pkg_o.rdata = lw_data;
+    lsu_iq_di_o  = m2_iq_lsu_di;
+end
+
+assign lsu_cpu_sender.valid = m2_valid;
+assign lsu_cpu_sender.data  = lsu_iq_pkg_o;
+// 0801 end
+
+
 /*****************************cache2commit***********************/
 always_comb begin
     cache_commit_resp.addr = commit_addr_q;
     cache_commit_resp.data = commit_way_choose_q[0] ? data_ans1[0] : data_ans1[1];
     cache_commit_resp.data_other = data_ans1[1];
     cache_commit_resp.sb_entry = r_sb_entry;
+    cache_commit_resp.miss_dirty = commit_way_choose_q[0] ? tag_ans1[0].d : tag_ans1[1].d;
 end
 
 endmodule

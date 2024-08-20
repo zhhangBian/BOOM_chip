@@ -212,7 +212,7 @@ for(genvar i = 0; i < REG_COUNT; i += 1) begin
 
         for(integer j = 0; j < CDB_COUNT; j += 1) begin
             cdb_hit[i][j] = (cdb_reg_id_i[j] == entry_reg_id[i]) &
-                            cdb_valid_i[i] &
+                            cdb_valid_i[j] &
                             entry_valid & /* 2024/07/24 fix*/
                             (~data_ready_q[i]);
 
